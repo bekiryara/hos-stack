@@ -189,3 +189,37 @@ docker compose exec pazar-app php -r "file_put_contents('storage/logs/perm_test.
 - ✅ Exit 1 on change: Beklenmeyen schema değişikliği FAIL
 
 **Sonuç:** ✅ DB contract gate aktif, schema drift otomatik tespit ediliyor
+
+---
+
+## OBS PACK v1 PASS (2026-01-08)
+
+**Amaç:** Correlation ID + structured logging + runbook
+
+**Eklenenler:**
+- `app/Http/Middleware/RequestId.php` (güncellendi) - Structured log context (service, route, method, request_id, tenant_id, user_id, world)
+- `app/Hos/Remote/RemoteHosHttpClient.php` (güncellendi) - X-Request-Id header propagation to H-OS
+- `app/Http/Controllers/Ui/OidcController.php` (güncellendi) - X-Request-Id header propagation to H-OS
+- `app/Http/Controllers/Ui/AdminControlCenterController.php` (güncellendi) - X-Request-Id header propagation to H-OS
+- `app/Hos/Contract/BaseContract.php` (güncellendi) - Request ID in outbox event payload (non-breaking)
+- `docs/runbooks/observability.md` (yeni) - Request ID ile log/trace bulma runbook (10 adım)
+
+**Kanıt:**
+```bash
+# 1. X-Request-Id in response header
+curl -H "X-Request-Id: test-obs-001" -i http://localhost:8080/up
+# Expected: X-Request-Id: test-obs-001 (or UUID if not provided)
+
+# 2. ops/verify.ps1 PASS
+.\ops\verify.ps1
+# Expected: All checks PASS
+
+# 3. HOS health call with request_id propagation
+# (Request ID propagates to H-OS via X-Request-Id header)
+```
+
+**Structured Log Context:**
+- Minimum fields: `service`, `request_id`, `route`, `method`, `status` (optional), `user_id` (optional), `world` (optional)
+- Laravel `Log::withContext()` kullanılıyor, mevcut log format korunuyor
+
+**Sonuç:** ✅ Observability pack v1 aktif, correlation ID ile log/trace bulma mümkün

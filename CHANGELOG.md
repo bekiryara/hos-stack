@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Architecture conformance gate: `ops/conformance.ps1` and `.github/workflows/conformance.yml` for automated architecture rule validation (world registry drift, forbidden artifacts, disabled-world code policy, canonical docs, secrets safety)
 - Contract gate via route snapshot: `ops/routes_snapshot.ps1`, `ops/snapshots/routes.pazar.json`, and `.github/workflows/contracts.yml` for API contract validation (route signature comparison, diff generation on change)
 - DB contract gate via schema snapshot: `ops/schema_snapshot.ps1`, `ops/snapshots/schema.pazar.sql`, and `.github/workflows/db-contracts.yml` for database schema validation (Postgres schema export, normalization, diff generation on change)
+- Observability pack v1: Request ID middleware with structured logging context (service, route, method, request_id, tenant_id, user_id, world), X-Request-Id header propagation to H-OS API calls, request_id in outbox event payload, and observability runbook
 
 ### Changed
 - Cleanup HIGH risk unused code: archived 3 empty World controller directories (`RealEstate/`, `Services/`, `Vehicles/`) to `_archive/20260108/cleanup_high/` (disabled worlds, no routes, no controllers)
