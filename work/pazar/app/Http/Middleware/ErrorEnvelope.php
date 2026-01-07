@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -39,8 +40,29 @@ class ErrorEnvelope
             return $response;
         }
 
+        // Helper: Get or generate request_id (never null)
+        $getRequestId = function () use ($response, $request): string {
+            // Try multiple sources
+            $requestId = $response->headers->get('X-Request-Id')
+                ?? $request->headers->get('X-Request-Id')
+                ?? $request->attributes->get('request_id')
+                ?? null;
+            
+            // If still null or empty, generate UUID
+            if ($requestId === null || $requestId === '') {
+                $requestId = (string) Str::uuid();
+            }
+            
+            return (string) $requestId;
+        };
+
         // Check if already has standard envelope (ok:false)
         if (isset($decoded['ok']) && $decoded['ok'] === false && isset($decoded['error_code'])) {
+            // Ensure request_id is present and not null
+            if (!isset($decoded['request_id']) || $decoded['request_id'] === null || $decoded['request_id'] === '' || $decoded['request_id'] === '-') {
+                $decoded['request_id'] = $getRequestId();
+                $response->setContent(json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            }
             return $response; // Already in standard format
         }
 
@@ -74,11 +96,8 @@ class ErrorEnvelope
                 $details = ['status' => $errorData['status']];
             }
 
-            // Get request_id from response header or request attribute
-            $requestId = $response->headers->get('X-Request-Id') 
-                ?? $request->attributes->get('request_id')
-                ?? $request->header('X-Request-Id')
-                ?? '-';
+            // Get request_id (never null, generate if missing)
+            $requestId = $getRequestId();
 
             // Build standard envelope
             $envelope = [

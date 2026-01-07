@@ -368,3 +368,35 @@ curl.exe -sS http://localhost:8080/api/non-existent-endpoint
 ```
 
 **Sonuç:** ✅ Error contract runtime'da enforce ediliyor, /api/* ve /auth/* için JSON + standard envelope garantili
+
+---
+
+## ERROR CONTRACT WARNING + REQUEST_ID FIX PASS (2026-01-08)
+
+**Amaç:** Bootstrap warning kaldır ve request_id'nin asla null olmamasını garantile
+
+**Düzeltmeler:**
+- `bootstrap/app.php` (güncellendi) - `use Throwable;` kaldırıldı (built-in interface, use statement gereksiz)
+- `app/Http/Middleware/ErrorEnvelope.php` (güncellendi) - request_id garantisi eklendi
+
+**Request ID Garantisi:**
+- Öncelik sırası:
+  1. Response header: `X-Request-Id`
+  2. Request header: `X-Request-Id`
+  3. Request attribute: `request_id`
+  4. Fallback: UUID generate (Str::uuid())
+- request_id asla null, empty string veya '-' olamaz
+- Zaten standard envelope'da request_id varsa ama null/empty ise, generate edilir
+
+**Kanıt:**
+```bash
+# 1. 422 Validation Error (no warnings, request_id present)
+curl.exe -sS -H "Accept: application/json" -X POST http://localhost:8080/auth/login -H "Content-Type: application/json" -d '{}'
+# Expected: No Warning output, request_id != null
+
+# 2. 404 Not Found (no warnings, request_id present)
+curl.exe -sS -H "Accept: application/json" http://localhost:8080/api/non-existent-endpoint
+# Expected: No Warning output, request_id != null
+```
+
+**Sonuç:** ✅ Bootstrap warning kaldırıldı, request_id her zaman non-null garantili
