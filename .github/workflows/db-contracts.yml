@@ -1,0 +1,59 @@
+name: DB Contract Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  db_contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services
+        run: |
+          echo "Starting docker compose services..."
+          docker compose up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 15
+
+      - name: Check route snapshot
+        shell: pwsh
+        run: |
+          pwsh ./ops/schema_snapshot.ps1
+
+      - name: Upload diff on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-diff
+          path: |
+            ops/diffs/schema.diff
+            ops/diffs/schema.current.sql
+          if-no-files-found: ignore
+
+      - name: DB Contract Gate Summary
+        if: failure()
+        run: |
+          echo "❌ Database schema contract validation failed"
+          echo ""
+          echo "Schema has changed from the snapshot."
+          echo "Review the diff artifact or check the output above."
+          echo ""
+          echo "If changes are intentional:"
+          echo "  1. Review the diff"
+          echo "  2. Update snapshot: docker compose exec -T pazar-db pg_dump --schema-only --no-owner --no-privileges -U pazar pazar > ops/snapshots/schema.pazar.sql"
+          echo "  3. Commit the updated snapshot"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up..."
+          docker compose down -v
+

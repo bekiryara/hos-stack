@@ -16,4 +16,5 @@
 14. **PR merge için repo-guard + smoke PASS zorunlu**: GitHub Actions workflow'ları (repo-guard + smoke) PASS olmadan PR merge edilemez
 15. **PR merge için conformance PASS zorunlu**: Mimari kurallar (world registry, disabled-world code, canonical docs, secrets) conformance gate'de PASS olmalı
 16. **PR merge için contract (routes snapshot) PASS zorunlu**: API route'ları snapshot ile eşleşmeli, değişiklik varsa snapshot güncellenmeli
+17. **PR merge için DB contract PASS zorunlu**: DB şeması snapshot ile eşleşmeli, değişiklik varsa snapshot güncellenmeli
 

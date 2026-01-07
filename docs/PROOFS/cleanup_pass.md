@@ -167,3 +167,25 @@ docker compose exec pazar-app php -r "file_put_contents('storage/logs/perm_test.
 - ✅ Exit 1 on change: Beklenmeyen route değişikliği FAIL
 
 **Sonuç:** ✅ Contract gate aktif, API route'ları snapshot ile kilitledi
+
+---
+
+## DB CONTRACT GATE ADDED (2026-01-08)
+
+**Amaç:** DB şemasını snapshot ile kilitle (drift varsa FAIL)
+
+**Eklenenler:**
+- `ops/schema_snapshot.ps1` - Schema snapshot validation script
+- `ops/snapshots/schema.pazar.sql` - Canonical schema snapshot
+- `ops/diffs/` - Schema diff output directory
+- `.github/workflows/db-contracts.yml` - GitHub Actions workflow
+- `docs/RULES.md` - Rule 17 eklendi (DB contract PASS zorunlu)
+
+**Kontrol:**
+- ✅ Schema export: `pg_dump --schema-only` (Postgres)
+- ✅ Normalization: Timestamp/auto-generated comment satırları temizleme
+- ✅ Schema comparison: Normalized schema ↔ snapshot
+- ✅ Diff generation: Added/removed lines raporu
+- ✅ Exit 1 on change: Beklenmeyen schema değişikliği FAIL
+
+**Sonuç:** ✅ DB contract gate aktif, schema drift otomatik tespit ediliyor
