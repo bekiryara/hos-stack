@@ -269,3 +269,39 @@ curl -i -X POST http://localhost:8080/api/products -H "Content-Type: application
 ```
 
 **Sonuç:** ✅ Error contract v1 aktif, standard error envelope ve structured error logging hazır
+
+---
+
+## ERROR CONTRACT v1 VALIDATION FIX PASS (2026-01-08)
+
+**Amaç:** 422 Validation response'unu standard envelope'a dönüştür (doğrulama ve test)
+
+**Durum:** ValidationException handler zaten standard envelope kullanıyor (bootstrap/app.php satır 136-151)
+
+**Yapılan Kontrol:**
+- ValidationException handler mevcut standard envelope kullanıyor
+- Response format: `{ ok:false, error_code:"VALIDATION_ERROR", message, request_id, details:{fields...} }`
+- HTTP status 422 korunuyor
+- Request ID RequestId middleware'den alınıyor
+
+**Kanıt:**
+```bash
+# Test command
+curl -i -X POST http://localhost:8080/auth/login -H "Content-Type: application/json" -d '{}'
+
+# Expected response (422):
+{
+  "ok": false,
+  "error_code": "VALIDATION_ERROR",
+  "message": "Validation failed.",
+  "request_id": "uuid-here",
+  "details": {
+    "fields": {
+      "email": ["The email field is required."],
+      "password": ["The password field is required."]
+    }
+  }
+}
+```
+
+**Sonuç:** ✅ Validation response standard envelope formatında, request_id mevcut, details.fields validation hatalarını içeriyor
