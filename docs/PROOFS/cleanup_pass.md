@@ -223,3 +223,49 @@ curl -H "X-Request-Id: test-obs-001" -i http://localhost:8080/up
 - Laravel `Log::withContext()` kullanılıyor, mevcut log format korunuyor
 
 **Sonuç:** ✅ Observability pack v1 aktif, correlation ID ile log/trace bulma mümkün
+
+---
+
+## ERROR CONTRACT v1 PASS (2026-01-08)
+
+**Amaç:** Tek tip error response + tek tip error logging + runbook
+
+**Eklenenler:**
+- `bootstrap/app.php` (güncellendi) - Global exception handler'da standard error envelope
+- `docs/runbooks/errors.md` (yeni) - Top 10 error_code açıklaması + request_id ile log bulma
+
+**Standard Error Envelope:**
+- Response JSON: `{ ok:false, error_code, message, request_id, details? }`
+- HTTP status korunuyor (404/422/500 vs), sadece body standardize ediliyor
+- Request ID RequestId middleware'den alınıyor
+
+**Error Code Mapping:**
+- Validation errors → `VALIDATION_ERROR`
+- Not found → `NOT_FOUND`
+- Auth → `UNAUTHORIZED`
+- Forbidden → `FORBIDDEN`
+- Default → `INTERNAL_ERROR`
+
+**Structured Error Log:**
+- `event="error"`
+- `error_code`
+- `request_id`
+- `route/method/world/user_id` (varsa)
+- `exception_class` (debug)
+
+**Kanıt:**
+```bash
+# 1. 404 test: non-existing endpoint
+curl -i http://localhost:8080/api/non-existent
+# Expected: { "ok": false, "error_code": "NOT_FOUND", "request_id": "..." }
+
+# 2. 422 test: invalid payload
+curl -i -X POST http://localhost:8080/api/products -H "Content-Type: application/json" -d '{}'
+# Expected: { "ok": false, "error_code": "VALIDATION_ERROR", "request_id": "...", "details": {...} }
+
+# 3. ops/verify.ps1 PASS
+.\ops\verify.ps1
+# Expected: All checks PASS
+```
+
+**Sonuç:** ✅ Error contract v1 aktif, standard error envelope ve structured error logging hazır
