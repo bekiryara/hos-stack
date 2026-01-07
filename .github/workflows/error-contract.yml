@@ -1,0 +1,152 @@
+name: Error Contract Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  error_contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services
+        run: |
+          echo "Starting docker compose services..."
+          docker compose up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 15
+
+      - name: Test 422 Validation Error Envelope
+        shell: bash
+        run: |
+          echo "=== Testing 422 VALIDATION_ERROR envelope ==="
+          
+          response=$(curl -sS -i -X POST http://localhost:8080/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{}' 2>&1)
+          
+          status=$(echo "$response" | grep -oP 'HTTP/\d\.\d \K\d+' | head -1)
+          body=$(echo "$response" | sed -n '/^{/,/^}/p' | sed -n '/^[^}]/p;$p' || echo "$response" | grep -oP '\{.*\}' || echo "")
+          
+          echo "Status: $status"
+          echo ""
+          echo "Response body:"
+          echo "$body"
+          echo ""
+          
+          if [ "$status" != "422" ]; then
+            echo "❌ FAIL: Expected status 422, got $status"
+            echo "Full response:"
+            echo "$response"
+            exit 1
+          fi
+          
+          if ! echo "$body" | grep -q '"ok"\s*:\s*false'; then
+            echo "❌ FAIL: Missing 'ok:false' in response"
+            echo "Full response:"
+            echo "$response"
+            exit 1
+          fi
+          
+          if ! echo "$body" | grep -q '"error_code"\s*:\s*"VALIDATION_ERROR"'; then
+            echo "❌ FAIL: Missing 'error_code:VALIDATION_ERROR' in response"
+            echo "Full response:"
+            echo "$response"
+            exit 1
+          fi
+          
+          if ! echo "$body" | grep -q '"request_id"'; then
+            echo "❌ FAIL: Missing 'request_id' in response"
+            echo "Full response:"
+            echo "$response"
+            exit 1
+          fi
+          
+          if ! echo "$body" | grep -q '"details"'; then
+            echo "❌ FAIL: Missing 'details' in response"
+            echo "Full response:"
+            echo "$response"
+            exit 1
+          fi
+          
+          echo "✅ PASS: 422 validation error envelope correct"
+
+      - name: Test 404 Not Found Envelope
+        shell: bash
+        run: |
+          echo "=== Testing 404 NOT_FOUND envelope ==="
+          
+          response=$(curl -sS -i http://localhost:8080/api/non-existent-endpoint 2>&1)
+          
+          status=$(echo "$response" | grep -oP 'HTTP/\d\.\d \K\d+' | head -1)
+          body=$(echo "$response" | sed -n '/^{/,/^}/p' | sed -n '/^[^}]/p;$p' || echo "$response" | grep -oP '\{.*\}' || echo "")
+          
+          echo "Status: $status"
+          echo ""
+          echo "Response body:"
+          echo "$body"
+          echo ""
+          
+          if [ "$status" != "404" ]; then
+            echo "❌ FAIL: Expected status 404, got $status"
+            echo "Full response:"
+            echo "$response"
+            exit 1
+          fi
+          
+          if ! echo "$body" | grep -q '"ok"\s*:\s*false'; then
+            echo "❌ FAIL: Missing 'ok:false' in response"
+            echo "Full response:"
+            echo "$response"
+            exit 1
+          fi
+          
+          if ! echo "$body" | grep -q '"error_code"\s*:\s*"NOT_FOUND"'; then
+            echo "❌ FAIL: Missing 'error_code:NOT_FOUND' in response"
+            echo "Full response:"
+            echo "$response"
+            exit 1
+          fi
+          
+          if ! echo "$body" | grep -q '"request_id"'; then
+            echo "❌ FAIL: Missing 'request_id' in response"
+            echo "Full response:"
+            echo "$response"
+            exit 1
+          fi
+          
+          echo "✅ PASS: 404 not found envelope correct"
+
+      - name: Error Contract Summary
+        if: success()
+        run: |
+          echo "✅ Error contract validation passed"
+          echo ""
+          echo "All error responses use standard envelope:"
+          echo "  - 422: { ok:false, error_code:'VALIDATION_ERROR', request_id, details:{fields} }"
+          echo "  - 404: { ok:false, error_code:'NOT_FOUND', request_id }"
+
+      - name: Error Contract Summary (on failure)
+        if: failure()
+        run: |
+          echo "❌ Error contract validation failed"
+          echo ""
+          echo "Error responses must use standard envelope:"
+          echo "  - ok: false"
+          echo "  - error_code: VALIDATION_ERROR | NOT_FOUND | etc."
+          echo "  - request_id: (required)"
+          echo "  - details: (optional, for validation errors)"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up..."
+          docker compose down -v
+

@@ -305,3 +305,23 @@ curl -i -X POST http://localhost:8080/auth/login -H "Content-Type: application/j
 ```
 
 **Sonuç:** ✅ Validation response standard envelope formatında, request_id mevcut, details.fields validation hatalarını içeriyor
+
+---
+
+## ERROR CONTRACT CI GATE ADDED (2026-01-08)
+
+**Amaç:** CI'da error envelope standardını otomatik doğrula
+
+**Eklenenler:**
+- `.github/workflows/error-contract.yml` - GitHub Actions workflow
+- `docs/RULES.md` - Rule 18 eklendi (error-contract PASS zorunlu)
+
+**Kontroller:**
+- ✅ 422 Validation Error: `ok:false`, `error_code:VALIDATION_ERROR`, `request_id`, `details`
+- ✅ 404 Not Found: `ok:false`, `error_code:NOT_FOUND`, `request_id`
+
+**Test endpoints:**
+- 422: `POST /auth/login` with empty payload `{}`
+- 404: `GET /api/non-existent-endpoint`
+
+**Sonuç:** ✅ Error contract CI gate aktif, error envelope standardı otomatik doğrulanıyor

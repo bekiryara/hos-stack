@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DB contract gate via schema snapshot: `ops/schema_snapshot.ps1`, `ops/snapshots/schema.pazar.sql`, and `.github/workflows/db-contracts.yml` for database schema validation (Postgres schema export, normalization, diff generation on change)
 - Observability pack v1: Request ID middleware with structured logging context (service, route, method, request_id, tenant_id, user_id, world), X-Request-Id header propagation to H-OS API calls, request_id in outbox event payload, and observability runbook
 - Error contract pack v1: Standard error envelope in global exception handler ({ ok:false, error_code, message, request_id, details? }), error code mapping (VALIDATION_ERROR, NOT_FOUND, UNAUTHORIZED, FORBIDDEN, INTERNAL_ERROR), structured error logging (event, error_code, request_id, route, method, world, user_id, exception_class), and error runbook
+- Error contract CI gate: `.github/workflows/error-contract.yml` for automated validation of error response envelope format (422 VALIDATION_ERROR with details.fields, 404 NOT_FOUND with request_id)
 
 ### Changed
 - Cleanup HIGH risk unused code: archived 3 empty World controller directories (`RealEstate/`, `Services/`, `Vehicles/`) to `_archive/20260108/cleanup_high/` (disabled worlds, no routes, no controllers)
