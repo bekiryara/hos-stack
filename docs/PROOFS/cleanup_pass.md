@@ -441,3 +441,39 @@ curl.exe -sS -H "Accept: application/json" -X POST http://localhost:8080/auth/lo
 ```
 
 **Sonuç:** ✅ Tüm error response'larda (status >= 400) request_id her zaman non-null garantili
+
+---
+
+## REQUEST_ID NULL FIX PASS (2026-01-08) - Update
+
+**Amaç:** 404 JSON error response'larda request_id null kalmamasını garantile (standard envelope için)
+
+**Düzeltmeler:**
+- `app/Http/Middleware/ErrorEnvelope.php` (güncellendi) - Standard envelope'larda request_id doldurma mantığı iyileştirildi
+
+**Değişiklik:**
+- Önceki: `$response->setContent()` ile sadece body güncelleniyordu
+- Yeni: `response()->json()` kullanarak HTTP status ve tüm headers korunuyor
+- Standard envelope (`ok:false`) kontrolü için `empty()` kullanıldı (daha kapsamlı kontrol)
+
+**Kod Değişikliği:**
+```php
+// Önceki
+$decoded['request_id'] = $getRequestId();
+$response->setContent(json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+// Yeni
+$decoded['request_id'] = $getRequestId();
+$status = $response->getStatusCode();
+$headers = $response->headers->all();
+return response()->json($decoded, $status, $headers);
+```
+
+**Kanıt:**
+```bash
+# 404 Not Found (request_id garantili, status korunur)
+curl.exe -sS -H "Accept: application/json" http://localhost:8080/api/non-existent-endpoint
+# Expected: request_id != null, HTTP 404 status preserved
+```
+
+**Sonuç:** ✅ Standard envelope'larda (`ok:false`) request_id her zaman doldurulur, HTTP status ve headers korunur

@@ -56,25 +56,17 @@ class ErrorEnvelope
             return (string) $requestId;
         };
 
-        // For ANY error response with standard envelope (ok:false OR has error_code), ensure request_id
-        // Check if already has standard envelope
+        // If standard envelope (ok:false), ensure request_id is always filled
         if (isset($decoded['ok']) && $decoded['ok'] === false) {
-            // Standard envelope format - ensure request_id is present and not null
-            if (!isset($decoded['request_id']) || $decoded['request_id'] === null || $decoded['request_id'] === '' || $decoded['request_id'] === '-') {
+            // Standard envelope format - ensure request_id is present and not null/empty/'-'
+            if (empty($decoded['request_id']) || $decoded['request_id'] === null || $decoded['request_id'] === '' || $decoded['request_id'] === '-') {
                 $decoded['request_id'] = $getRequestId();
-                $response->setContent(json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+                $status = $response->getStatusCode();
+                // Preserve all headers and status code
+                $headers = $response->headers->all();
+                return response()->json($decoded, $status, $headers);
             }
-            return $response; // Already in standard format
-        }
-        
-        // Also check if has error_code (even without ok:false)
-        if (isset($decoded['error_code'])) {
-            // Has error_code - ensure request_id is present and not null
-            if (!isset($decoded['request_id']) || $decoded['request_id'] === null || $decoded['request_id'] === '' || $decoded['request_id'] === '-') {
-                $decoded['request_id'] = $getRequestId();
-                $response->setContent(json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-            }
-            return $response; // Already in standard format
+            return $response; // Already in standard format with valid request_id
         }
 
         // Check if has legacy "error" key and no "ok" key
