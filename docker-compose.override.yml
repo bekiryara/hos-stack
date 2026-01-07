@@ -1,0 +1,5 @@
+﻿services:
+  pazar-app:
+    environment:
+      HOS_OIDC_ISSUER: http://localhost:3000
+      HOS_OIDC_WORLD: pazar

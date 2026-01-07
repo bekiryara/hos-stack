@@ -1,0 +1,6 @@
+﻿# Secrets / private
+work/hos/secrets/*.txt
+.env
+oidc_token*.json
+cookies.txt
+headers.txt
