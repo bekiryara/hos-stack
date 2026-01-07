@@ -32,8 +32,8 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{}' 2>&1)
           
-          status=$(echo "$response" | grep -oP 'HTTP/\d\.\d \K\d+' | head -1)
-          body=$(echo "$response" | sed -n '/^{/,/^}/p' | sed -n '/^[^}]/p;$p' || echo "$response" | grep -oP '\{.*\}' || echo "")
+          status=$(echo "$response" | grep -oP 'HTTP/\d\.\d \K\d+' | head -1 || echo "")
+          body=$(echo "$response" | grep -oP '\{.*\}' || echo "")
           
           echo "Status: $status"
           echo ""
@@ -85,8 +85,8 @@ jobs:
           
           response=$(curl -sS -i http://localhost:8080/api/non-existent-endpoint 2>&1)
           
-          status=$(echo "$response" | grep -oP 'HTTP/\d\.\d \K\d+' | head -1)
-          body=$(echo "$response" | sed -n '/^{/,/^}/p' | sed -n '/^[^}]/p;$p' || echo "$response" | grep -oP '\{.*\}' || echo "")
+          status=$(echo "$response" | grep -oP 'HTTP/\d\.\d \K\d+' | head -1 || echo "")
+          body=$(echo "$response" | grep -oP '\{.*\}' || echo "")
           
           echo "Status: $status"
           echo ""
