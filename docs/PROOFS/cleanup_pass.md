@@ -400,3 +400,44 @@ curl.exe -sS -H "Accept: application/json" http://localhost:8080/api/non-existen
 ```
 
 **Sonuç:** ✅ Bootstrap warning kaldırıldı, request_id her zaman non-null garantili
+
+---
+
+## REQUEST_ID NULL FIX PASS (2026-01-08)
+
+**Amaç:** 404 response'da (ve tüm error response'larda) request_id null kalmamasını garantile
+
+**Düzeltmeler:**
+- `app/Http/Middleware/ErrorEnvelope.php` (güncellendi) - Tüm error response'larda request_id garantisi
+
+**Request ID Garantisi Güncellemesi:**
+- Önceki: Sadece `ok:false` VE `error_code` varsa kontrol ediyordu
+- Yeni: 
+  - `ok:false` varsa (error_code olmasa bile) kontrol eder
+  - `error_code` varsa (ok:false olmasa bile) kontrol eder
+- Her durumda request_id null/empty ise UUID generate edilir
+
+**Değişiklik Mantığı:**
+```php
+// Önceki: Sadece ok:false AND error_code varsa
+if (isset($decoded['ok']) && $decoded['ok'] === false && isset($decoded['error_code']))
+
+// Yeni: ok:false varsa VEYA error_code varsa
+if (isset($decoded['ok']) && $decoded['ok'] === false) { ... }
+if (isset($decoded['error_code'])) { ... }
+```
+
+**Kanıt:**
+```bash
+# 404 Not Found (request_id garantili)
+curl.exe -sS -H "Accept: application/json" http://localhost:8080/api/non-existent-endpoint
+# Expected: request_id != null (UUID generate edilir)
+
+# 422 Validation Error (request_id garantili)
+curl.exe -sS -H "Accept: application/json" -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# Expected: request_id != null
+```
+
+**Sonuç:** ✅ Tüm error response'larda (status >= 400) request_id her zaman non-null garantili

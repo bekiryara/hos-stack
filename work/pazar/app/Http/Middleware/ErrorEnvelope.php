@@ -56,9 +56,20 @@ class ErrorEnvelope
             return (string) $requestId;
         };
 
-        // Check if already has standard envelope (ok:false)
-        if (isset($decoded['ok']) && $decoded['ok'] === false && isset($decoded['error_code'])) {
-            // Ensure request_id is present and not null
+        // For ANY error response with standard envelope (ok:false OR has error_code), ensure request_id
+        // Check if already has standard envelope
+        if (isset($decoded['ok']) && $decoded['ok'] === false) {
+            // Standard envelope format - ensure request_id is present and not null
+            if (!isset($decoded['request_id']) || $decoded['request_id'] === null || $decoded['request_id'] === '' || $decoded['request_id'] === '-') {
+                $decoded['request_id'] = $getRequestId();
+                $response->setContent(json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            }
+            return $response; // Already in standard format
+        }
+        
+        // Also check if has error_code (even without ok:false)
+        if (isset($decoded['error_code'])) {
+            // Has error_code - ensure request_id is present and not null
             if (!isset($decoded['request_id']) || $decoded['request_id'] === null || $decoded['request_id'] === '' || $decoded['request_id'] === '-') {
                 $decoded['request_id'] = $getRequestId();
                 $response->setContent(json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
