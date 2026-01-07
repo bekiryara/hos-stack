@@ -79,3 +79,22 @@ docker compose exec pazar-app php -r "file_put_contents('storage/logs/perm_test.
 ```
 
 **Sonuç:** ✅ Permission sorunu çözüldü, log yazma çalışıyor
+
+---
+
+## REPO GUARD ADDED (2026-01-08)
+
+**Amaç:** Otomatik drift/scratch engeli (GitHub Actions workflow)
+
+**Eklenenler:**
+- `.github/workflows/repo-guard.yml` - PR/push'da otomatik kontrol
+- `docs/RULES.md` - 3 yeni kural eklendi (scratch artifacts, archive, runtime logs)
+
+**Guard kontrolleri:**
+- ❌ Root'ta *.zip, *.rar, *.7z, *.tar.gz → FAIL
+- ❌ Root'ta _*.txt (scratch temp) → FAIL
+- ❌ Parantezle biten duplicate dosyalar (*.md), *.json)) → FAIL
+- ❌ Tracked log dosyaları (storage/logs/*.log) → FAIL
+- ❌ Tracked secret dosyaları (secrets/*.txt) → FAIL
+
+**Sonuç:** ✅ Repo guard aktif, drift/scratch otomatik engellenecek

@@ -1,0 +1,70 @@
+name: Repo Guard
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  repo_guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for archive artifacts in root
+        run: |
+          echo "Checking for zip/rar/7z/tar.gz files in root..."
+          if find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.rar" -o -name "*.7z" -o -name "*.tar.gz" \) ! -path "./.git/*" | grep -q .; then
+            echo "❌ FAIL: Archive artifacts found in root (zip/rar/7z/tar.gz)"
+            find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.rar" -o -name "*.7z" -o -name "*.tar.gz" \) ! -path "./.git/*"
+            exit 1
+          fi
+          echo "✅ PASS: No archive artifacts in root"
+
+      - name: Check for scratch temp files in root
+        run: |
+          echo "Checking for _*.txt files in root..."
+          if find . -maxdepth 1 -type f -name "_*.txt" ! -path "./.git/*" | grep -q .; then
+            echo "❌ FAIL: Scratch temp files found in root (_*.txt)"
+            find . -maxdepth 1 -type f -name "_*.txt" ! -path "./.git/*"
+            exit 1
+          fi
+          echo "✅ PASS: No scratch temp files in root"
+
+      - name: Check for duplicate files (parentheses)
+        run: |
+          echo "Checking for duplicate files ending with parentheses..."
+          if find . -type f \( -name "*.md)" -o -name "*.json)" -o -name "*.txt)" -o -name "*.php)" \) ! -path "./.git/*" ! -path "./_archive/*" ! -path "./_backup/*" | grep -q .; then
+            echo "❌ FAIL: Duplicate files found (ending with parentheses)"
+            find . -type f \( -name "*.md)" -o -name "*.json)" -o -name "*.txt)" -o -name "*.php)" \) ! -path "./.git/*" ! -path "./_archive/*" ! -path "./_backup/*"
+            exit 1
+          fi
+          echo "✅ PASS: No duplicate files with parentheses"
+
+      - name: Check for tracked log files
+        run: |
+          echo "Checking for tracked log files in storage/logs..."
+          if git ls-files | grep -E "work/.*/storage/logs/.*\.log$" | grep -q .; then
+            echo "❌ FAIL: Runtime log files are tracked in git"
+            git ls-files | grep -E "work/.*/storage/logs/.*\.log$"
+            exit 1
+          fi
+          echo "✅ PASS: No tracked log files"
+
+      - name: Check for tracked secrets
+        run: |
+          echo "Checking for tracked secret files..."
+          if git ls-files | grep -E "(secrets/.*\.txt|work/.*/secrets/.*\.txt)$" | grep -q .; then
+            echo "❌ FAIL: Secret files are tracked in git"
+            git ls-files | grep -E "(secrets/.*\.txt|work/.*/secrets/.*\.txt)$"
+            exit 1
+          fi
+          echo "✅ PASS: No tracked secret files"
+
+      - name: Repo Guard Summary
+        run: |
+          echo "✅ All repo guard checks passed"
+          echo "No scratch artifacts, duplicates, logs, or secrets found in tracked files"
+
