@@ -22,3 +22,26 @@ HTTP 200 `{"ok":true}`
 ### curl.exe -sS -i http://localhost:8080/up
 
 HTTP 200
+
+---
+
+## Cleanup LOW PASS (2026-01-08)
+
+**Taşınan dosyalar (LOW risk):**
+- `work.zip`, `work dışındakler.zip` (runtime artifacts)
+- `_verify_ps.txt` (temp evidence)
+- `work/pazar/null`, `cd`, `copy` (scratch files)
+- `work/pazar/docs/kafamdaki_sorular_kanonik_surumu.txt` (runtime artifact)
+- `work/pazar/docs/runbooks/QUESTIONS.md)`, `STATUS.md)` (duplicate markdown)
+- `work/hos/secrets.bak-20260107-230146/` (backup folder)
+- `work/pazar/storage/logs/laravel.log` (runtime log)
+
+**Hedef:** `_archive/20260108/cleanup_low/`
+
+**Verify sonucu:**
+```
+=== VERIFICATION PASS ===
+[1] docker compose ps: PASS
+[2] H-OS health: PASS: HTTP 200 {"ok":true}
+[3] Pazar health: PASS: HTTP 200
+```
