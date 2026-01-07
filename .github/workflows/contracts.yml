@@ -1,0 +1,51 @@
+name: Contract Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services
+        run: |
+          echo "Starting docker compose services..."
+          docker compose up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 10
+
+      - name: Check route snapshot
+        shell: pwsh
+        run: |
+          pwsh ./ops/routes_snapshot.ps1
+
+      - name: Upload diff on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: route-diff
+          path: ops/diffs/routes.diff
+          if-no-files-found: ignore
+
+      - name: Contract Gate Summary
+        if: failure()
+        run: |
+          echo "❌ Route contract validation failed"
+          echo ""
+          echo "Routes have changed from the snapshot."
+          echo "Review the diff artifact or check the output above."
+          echo ""
+          echo "If changes are intentional:"
+          echo "  1. Review the diff"
+          echo "  2. Update snapshot: docker compose exec -T pazar-app php artisan route:list --json > ops/snapshots/routes.pazar.json"
+          echo "  3. Commit the updated snapshot"
+

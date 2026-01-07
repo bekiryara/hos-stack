@@ -147,3 +147,23 @@ docker compose exec pazar-app php -r "file_put_contents('storage/logs/perm_test.
 - ✅ E) Secrets safety: Tracked secrets kontrolü (*.env, secrets/*.txt)
 
 **Sonuç:** ✅ Conformance gate aktif, mimari kurallar otomatik doğrulanıyor
+
+---
+
+## CONTRACT GATE ADDED (2026-01-08)
+
+**Amaç:** API sözleşmesini route snapshot ile kilitle
+
+**Eklenenler:**
+- `ops/routes_snapshot.ps1` - Route snapshot validation script
+- `ops/snapshots/routes.pazar.json` - Canonical route snapshot
+- `ops/diffs/` - Route diff output directory
+- `.github/workflows/contracts.yml` - GitHub Actions workflow
+- `docs/RULES.md` - Rule 16 eklendi (contract snapshot PASS zorunlu)
+
+**Kontrol:**
+- ✅ Route snapshot comparison: Current routes ↔ snapshot routes
+- ✅ Diff generation: Added/removed routes raporu
+- ✅ Exit 1 on change: Beklenmeyen route değişikliği FAIL
+
+**Sonuç:** ✅ Contract gate aktif, API route'ları snapshot ile kilitledi

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Architecture conformance gate: `ops/conformance.ps1` and `.github/workflows/conformance.yml` for automated architecture rule validation (world registry drift, forbidden artifacts, disabled-world code policy, canonical docs, secrets safety)
+- Contract gate via route snapshot: `ops/routes_snapshot.ps1`, `ops/snapshots/routes.pazar.json`, and `.github/workflows/contracts.yml` for API contract validation (route signature comparison, diff generation on change)
 
 ### Changed
 - Cleanup HIGH risk unused code: archived 3 empty World controller directories (`RealEstate/`, `Services/`, `Vehicles/`) to `_archive/20260108/cleanup_high/` (disabled worlds, no routes, no controllers)
