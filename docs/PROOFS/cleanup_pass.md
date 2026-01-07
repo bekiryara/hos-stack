@@ -45,3 +45,37 @@ HTTP 200
 [2] H-OS health: PASS: HTTP 200 {"ok":true}
 [3] Pazar health: PASS: HTTP 200
 ```
+
+---
+
+## LOG PERM PASS (2026-01-08)
+
+**Sorun:** Laravel Monolog permission denied (`storage/logs/laravel.log`)
+
+**Çözüm:** Entrypoint script eklendi (php-fpm başlamadan önce permissions düzeltiliyor)
+
+**Değişiklikler:**
+- `work/pazar/docker/docker-entrypoint.sh` (yeni) - Permissions fix script
+- `work/pazar/docker/Dockerfile` (güncellendi) - Entrypoint eklendi
+
+**Kanıt komutları:**
+
+```bash
+# 1. Rebuild
+docker compose up -d --build pazar-app
+# PASS: Container rebuilt with entrypoint
+
+# 2. Ownership check
+docker compose exec pazar-app ls -ld /var/www/html/storage/logs
+# Expected: www-data:www-data drwxrwxr-x
+
+# 3. Write test
+docker compose exec pazar-app php -r "file_put_contents('storage/logs/perm_test.log','ok'); echo 'OK';"
+# Expected: OK (file created successfully)
+
+# 4. Verify
+.\ops\verify.ps1
+# PASS: HTTP 200 (all services healthy)
+```
+
+**Sonuç:** ✅ Permission sorunu çözüldü, log yazma çalışıyor
