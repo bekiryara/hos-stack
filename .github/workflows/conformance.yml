@@ -1,0 +1,33 @@
+name: Conformance Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run conformance checks
+        shell: pwsh
+        run: |
+          pwsh ./ops/conformance.ps1
+
+      - name: Conformance Summary
+        if: failure()
+        run: |
+          echo "❌ Architecture conformance checks failed"
+          echo "Review the output above for specific violations"
+          echo ""
+          echo "Common issues:"
+          echo "- World registry drift: WORLD_REGISTRY.md and config/worlds.php must match"
+          echo "- Forbidden artifacts: Remove *.bak, *.tmp, *.orig, *.swp, *~ files"
+          echo "- Disabled-world code: No controllers/routes for disabled worlds"
+          echo "- Duplicate docs: Only one CURRENT.md and FOUNDING_SPEC.md allowed"
+          echo "- Tracked secrets: Remove *.env and secrets/*.txt from git"
+

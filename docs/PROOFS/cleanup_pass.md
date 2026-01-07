@@ -127,3 +127,23 @@ docker compose exec pazar-app php -r "file_put_contents('storage/logs/perm_test.
 ```
 
 **Sonuç:** ✅ 3 boş World controller klasörü archive'a taşındı, stack çalışıyor
+
+---
+
+## CONFORMANCE GATE ADDED (2026-01-08)
+
+**Amaç:** Mimari kuralları CI'da otomatik doğrulayan conformance gate
+
+**Eklenenler:**
+- `ops/conformance.ps1` - PowerShell conformance script (Windows uyumlu)
+- `.github/workflows/conformance.yml` - GitHub Actions workflow
+- `docs/RULES.md` - Rule 15 eklendi (conformance PASS zorunlu)
+
+**Kontroller:**
+- ✅ A) World registry drift: WORLD_REGISTRY.md ↔ config/worlds.php uyumu
+- ✅ B) Forbidden artifacts: *.bak, *.tmp, *.orig, *.swp, *~ kontrolü
+- ✅ C) Disabled-world code policy: Disabled world'lerde controller/route yok
+- ✅ D) Canonical docs single-source: CURRENT*.md ve FOUNDING_SPEC*.md tek kaynak
+- ✅ E) Secrets safety: Tracked secrets kontrolü (*.env, secrets/*.txt)
+
+**Sonuç:** ✅ Conformance gate aktif, mimari kurallar otomatik doğrulanıyor
