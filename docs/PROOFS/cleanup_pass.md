@@ -325,3 +325,46 @@ curl -i -X POST http://localhost:8080/auth/login -H "Content-Type: application/j
 - 404: `GET /api/non-existent-endpoint`
 
 **Sonuç:** ✅ Error contract CI gate aktif, error envelope standardı otomatik doğrulanıyor
+
+---
+
+## ERROR CONTRACT RUNTIME ENFORCED PASS (2026-01-08)
+
+**Amaç:** Runtime'da error contract enforce et (/api/* ve /auth/* için force JSON + envelope)
+
+**Eklenenler:**
+- `app/Http/Middleware/ForceJsonForApi.php` (yeni) - /api/* ve /auth/* için Accept: application/json header set eder
+- `app/Http/Middleware/ErrorEnvelope.php` (yeni) - Error response'ları (>=400) standard envelope'a normalize eder
+- `bootstrap/app.php` (güncellendi) - Middleware'ler kaydedildi (ForceJsonForApi early, ErrorEnvelope late)
+
+**ForceJsonForApi Middleware:**
+- Path `/api/*` veya `/auth/*` ile başlıyorsa Accept header'ını `application/json` yapar
+- Laravel'in JSON response döndürmesini sağlar (HTML yerine)
+
+**ErrorEnvelope Middleware:**
+- Status >= 400 olan response'ları işler
+- JSON response'ları kontrol eder
+- Legacy "error" formatını standard envelope'a dönüştürür:
+  - `error.type=validation` → `error_code=VALIDATION_ERROR`
+  - `error.type=authentication` → `error_code=UNAUTHORIZED`
+  - `error.type=authorization` → `error_code=FORBIDDEN`
+  - `error.type=not_found` → `error_code=NOT_FOUND`
+  - Diğer → `error_code=HTTP_ERROR`
+- Request ID: response header veya request attribute'dan alır
+
+**Kanıt:**
+```bash
+# 1. 422 Validation Error (/auth/login)
+curl.exe -sS -X POST http://localhost:8080/auth/login -H "Content-Type: application/json" -d '{}'
+# Expected: JSON with ok:false, error_code:"VALIDATION_ERROR", request_id, details.fields
+
+# 2. 404 Not Found (/api/non-existent)
+curl.exe -sS http://localhost:8080/api/non-existent-endpoint
+# Expected: JSON (not HTML) with ok:false, error_code:"NOT_FOUND" or "HTTP_ERROR", request_id
+
+# 3. ops/verify.ps1 PASS
+.\ops\verify.ps1
+# Expected: All checks PASS
+```
+
+**Sonuç:** ✅ Error contract runtime'da enforce ediliyor, /api/* ve /auth/* için JSON + standard envelope garantili

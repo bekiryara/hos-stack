@@ -32,8 +32,15 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        // Force JSON for API/auth routes (early)
+        $middleware->web(prepend: [
+            \App\Http\Middleware\ForceJsonForApi::class,
+        ]);
+
         $middleware->web(append: [
             \App\Http\Middleware\RequestId::class,
+            // Enforce error envelope (late, after response generation)
+            \App\Http\Middleware\ErrorEnvelope::class,
         ]);
 
         // This project is a JSON API (no browser forms). Exempt API endpoints from CSRF protection
