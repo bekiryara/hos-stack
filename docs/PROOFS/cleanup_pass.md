@@ -98,3 +98,32 @@ docker compose exec pazar-app php -r "file_put_contents('storage/logs/perm_test.
 - ❌ Tracked secret dosyaları (secrets/*.txt) → FAIL
 
 **Sonuç:** ✅ Repo guard aktif, drift/scratch otomatik engellenecek
+
+---
+
+## HIGH CLEANUP PASS (2026-01-08)
+
+**Amaç:** HIGH risk kullanılmayan kod adaylarını archive'a taşı (SİLME YOK)
+
+**Taşınan klasörler:**
+- `work/pazar/app/Http/Controllers/World/RealEstate/` (boş, disabled world)
+- `work/pazar/app/Http/Controllers/World/Services/` (boş, disabled world)
+- `work/pazar/app/Http/Controllers/World/Vehicles/` (boş, disabled world)
+
+**Hedef:** `_archive/20260108/cleanup_high/`
+
+**Kanıt:**
+- Config'de `real_estate`, `services`, `vehicles` disabled olarak tanımlı
+- Route'larda referans yok
+- Controller dosyaları yok
+- Test'ler sadece config'i kontrol ediyor (klasör varlığını kontrol etmiyor)
+
+**Verify sonucu:**
+```
+=== VERIFICATION PASS ===
+[1] docker compose ps: PASS
+[2] H-OS health: PASS: HTTP 200 {"ok":true}
+[3] Pazar health: PASS: HTTP 200
+```
+
+**Sonuç:** ✅ 3 boş World controller klasörü archive'a taşındı, stack çalışıyor

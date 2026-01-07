@@ -75,6 +75,12 @@ Detaylar: `work/hos/ops/README.md`
 - Example: `work/pazar/docs/env.example`
 - **ÖNEMLİ**: `.env` dosyası repo'da tutulmamalı (local kullanım)
 
+## Releases
+
+- **Version**: [`VERSION`](VERSION) (current: 0.1.0)
+- **Changelog**: [`CHANGELOG.md`](CHANGELOG.md) (Keep a Changelog format)
+- **Release Checklist**: [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md) (pre-release verification)
+
 ## Daha Fazla Bilgi
 
 - **Repo Envanter**: `docs/REPO_INVENTORY.md` (temizleme ve standartlaştırma detayları)
