@@ -2,6 +2,14 @@
 
 Bu repo, H-OS (evren hukuku) ve Pazar (ilk ticaret dünyası) servislerini birlikte çalıştırmak için standartlaştırılmış bir workspace'tir.
 
+## 🚀 START HERE
+
+**Yeni başlayanlar için:** [`docs/START_HERE.md`](docs/START_HERE.md) (7 kural seti)
+
+**Kurallar:** [`docs/RULES.md`](docs/RULES.md) (10 temel kural)
+
+**Doğrulama:** `.\ops\verify.ps1` (stack health check)
+
 ## Hızlı Başlangıç
 
 ### Canonical Compose (H-OS + Pazar)
