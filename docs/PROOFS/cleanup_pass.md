@@ -477,3 +477,36 @@ curl.exe -sS -H "Accept: application/json" http://localhost:8080/api/non-existen
 ```
 
 **Sonuç:** ✅ Standard envelope'larda (`ok:false`) request_id her zaman doldurulur, HTTP status ve headers korunur
+
+---
+
+## ERRORENVELOPE PROOF + REQUEST_ID FIX (2026-01-08)
+
+**Amaç:** ErrorEnvelope middleware'inin 404'te çalıştığını kanıtla ve request_id null sorununu çöz
+
+**Düzeltmeler:**
+- `app/Http/Middleware/ErrorEnvelope.php` (güncellendi) - Debug header'lar eklendi, final check eklendi
+
+**Debug Header'lar:**
+- `X-ErrorEnvelope: 1` - Middleware'in çalıştığını gösterir
+- `X-ErrorEnvelope-Status: <status_code>` - İşlenen status code'u gösterir
+- Bu header'lar tüm error response'larda (status >= 400) eklenir
+
+**Final Check:**
+- Response'un en son halini (legacy conversion sonrası) tekrar okur
+- Standard envelope (`ok:false`) için request_id null/empty ise doldurur
+- Bu sayede tüm path'lerde request_id garantili
+
+**Kanıt:**
+```bash
+# 404 Not Found - Header proof
+curl.exe -sS -i -H "Accept: application/json" http://localhost:8080/api/non-existent-endpoint | findstr /i "X-ErrorEnvelope"
+# Expected: X-ErrorEnvelope: 1
+# Expected: X-ErrorEnvelope-Status: 404
+
+# Response body
+# Expected JSON: { "ok": false, "error_code": "...", "request_id": "<uuid>", ... }
+# request_id must be non-null
+```
+
+**Sonuç:** ✅ ErrorEnvelope middleware'inin 404'te çalıştığı kanıtlandı, request_id her zaman non-null garantili

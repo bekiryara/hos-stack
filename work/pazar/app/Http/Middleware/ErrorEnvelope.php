@@ -118,6 +118,25 @@ class ErrorEnvelope
             $response->headers->set('Content-Type', 'application/json');
         }
 
+        // Debug headers: Prove ErrorEnvelope middleware ran
+        $response->headers->set('X-ErrorEnvelope', '1');
+        $response->headers->set('X-ErrorEnvelope-Status', (string)$response->getStatusCode());
+
+        // Final check: Ensure request_id is filled for standard envelope (ok:false)
+        // Re-read body in case it was modified by legacy conversion
+        $finalBody = $response->getContent();
+        if (!empty($finalBody) && str_starts_with(trim($finalBody), '{')) {
+            $finalDecoded = json_decode($finalBody, true);
+            if (is_array($finalDecoded) && isset($finalDecoded['ok']) && $finalDecoded['ok'] === false) {
+                if (empty($finalDecoded['request_id']) || $finalDecoded['request_id'] === null || $finalDecoded['request_id'] === '' || $finalDecoded['request_id'] === '-') {
+                    $finalDecoded['request_id'] = $getRequestId();
+                    $status = $response->getStatusCode();
+                    $headers = $response->headers->all();
+                    return response()->json($finalDecoded, $status, $headers);
+                }
+            }
+        }
+
         return $response;
     }
 }
