@@ -32,4 +32,5 @@
 30. **World-spine gate PASS zorunlu**: World-spine gate PASS olmalı; enabled worlds için route/controller surface ve ctx.world lock evidence, disabled worlds için controller directory yokluğu doğrulanmalı
 31. **Env-contract gate PASS zorunlu**: Env-contract gate PASS olmalı; production-related changes için required env vars ve production guardrails (CORS, session security) doğrulanmalı
 32. **Session-posture gate PASS zorunlu**: Session-posture gate PASS olmalı; auth-related PRs için session cookie security flags (Secure, HttpOnly, SameSite) ve auth endpoint security posture doğrulanmalı
+33. **Request trace kullanımı zorunlu**: Incident/triage sırasında request_id varsa request_trace çıktısı veya bundle içine eklenmeli
 

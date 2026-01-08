@@ -2,6 +2,10 @@
 # Incident Triage Script
 # Quick health check for all services
 
+param(
+    [string]$RequestId = ""
+)
+
 $ErrorActionPreference = "Continue"
 
 Write-Host "=== INCIDENT TRIAGE ===" -ForegroundColor Cyan
@@ -169,11 +173,33 @@ $warnCount = ($results | Where-Object { $_.Status -eq "WARN" } | Measure-Object)
 
 if ($failCount -gt 0) {
     Write-Host "OVERALL STATUS: FAIL ($failCount failures, $warnCount warnings)" -ForegroundColor Red
-    exit 1
+    $overallExitCode = 1
 } elseif ($warnCount -gt 0) {
     Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
-    exit 0
+    $overallExitCode = 0
 } else {
     Write-Host "OVERALL STATUS: PASS (All checks passed)" -ForegroundColor Green
-    exit 0
+    $overallExitCode = 0
 }
+
+# If RequestId provided, run request trace
+if (-not [string]::IsNullOrEmpty($RequestId)) {
+    Write-Host ""
+    Write-Host "=== REQUEST TRACE (Request ID: $RequestId) ===" -ForegroundColor Cyan
+    Write-Host ""
+    
+    try {
+        & .\ops\request_trace.ps1 -RequestId $RequestId -Tail 2000 -Context 2
+        $traceExitCode = $LASTEXITCODE
+    } catch {
+        Write-Host "WARN: Could not run request trace: $($_.Exception.Message)" -ForegroundColor Yellow
+        $traceExitCode = 2
+    }
+    
+    # Use the worst exit code
+    if ($traceExitCode -gt $overallExitCode) {
+        $overallExitCode = $traceExitCode
+    }
+}
+
+exit $overallExitCode

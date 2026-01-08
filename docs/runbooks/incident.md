@@ -42,7 +42,15 @@
    - If reproducing via browser/API client, check response headers for `X-Request-Id`
    - If no request_id in response, check if it's a non-JSON error or pre-middleware failure
 
-4. **Search logs** (3 min)
+4. **Run request trace** (1 min)
+   ```powershell
+   .\ops\request_trace.ps1 -RequestId "<uuid>"
+   ```
+   - Purpose: Correlate Pazar vs H-OS logs to isolate service boundaries
+   - Shows matching log entries with context from both services
+   - If no matches found, provides troubleshooting hints
+
+5. **Search logs** (3 min)
    ```powershell
    # Search by request_id
    docker compose logs pazar-app | Select-String "request_id.*<uuid>"
@@ -55,12 +63,12 @@
    - Check both `pazar-app` and `hos-api` logs
    - Look for error patterns, stack traces, or exception messages
 
-5. **Identify service** (1 min)
+6. **Identify service** (1 min)
    - Is it Pazar-specific? (check `pazar-app` logs)
    - Is it H-OS related? (check `hos-api` logs)
    - Is it infrastructure? (check `docker compose ps`, network, volumes)
 
-6. **Document findings** (1 min)
+7. **Document findings** (1 min)
    - SEV level assignment
    - Affected service(s)
    - request_id(s) for tracking
@@ -190,4 +198,5 @@ git push --force-with-lease origin main
 ### Related Runbooks
 - [Observability Runbook](./observability.md) - Using request_id for tracing
 - [Errors Runbook](./errors.md) - Error code reference and handling
+
 
