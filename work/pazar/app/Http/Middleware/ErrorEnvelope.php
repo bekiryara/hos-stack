@@ -118,9 +118,11 @@ class ErrorEnvelope
             $response->headers->set('Content-Type', 'application/json');
         }
 
-        // Debug headers: Prove ErrorEnvelope middleware ran
-        $response->headers->set('X-ErrorEnvelope', '1');
-        $response->headers->set('X-ErrorEnvelope-Status', (string)$response->getStatusCode());
+        // Debug headers: Prove ErrorEnvelope middleware ran (only in debug/local)
+        if (config('app.debug') || config('app.env') === 'local') {
+            $response->headers->set('X-ErrorEnvelope', '1');
+            $response->headers->set('X-ErrorEnvelope-Status', (string)$response->getStatusCode());
+        }
 
         // Final check: Ensure request_id is filled for standard envelope (ok:false)
         // Re-read body in case it was modified by legacy conversion
