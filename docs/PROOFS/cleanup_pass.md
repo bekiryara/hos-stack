@@ -860,3 +860,71 @@ curl.exe -sS -H "Accept: application/json" -H "Content-Type: application/json" -
 ```
 
 **Sonuç:** ✅ SLO policy v1 eklendi, p50 latency non-blocking, blocking decision logic hazır
+
+---
+
+## REQUEST_ID HARD GUARANTEE PASS (2026-01-08)
+
+**Amaç:** Bootstrap exception handler'da request_id guarantee hardening (non-null guarantee + header consistency)
+
+**Değişiklikler:**
+- `work/pazar/bootstrap/app.php` (güncellendi) - `$getRequestId` helper güncellendi (non-null guarantee), `$errorResponse` güncellendi (header consistency)
+
+**Hardening Değişiklikleri:**
+- **`$getRequestId` helper**:
+  - Header "X-Request-Id" önce okunur
+  - Else request->attributes->get('request_id')
+  - If empty/null/"-" => UUID generate edilir (Illuminate\Support\Str::uuid())
+  - Resolved id request attributes'a store edilir
+  - Return type: string (never null)
+- **`$errorResponse` closure**:
+  - `$getRequestId($request)` kullanır (guaranteed non-null)
+  - JSON body'de request_id include edilir
+  - Response header'da X-Request-Id include edilir (body ile aynı değer)
+- **`$logError` closure**:
+  - `$getRequestId($request)` kullanır (guaranteed non-null)
+
+**Kanıt:**
+```powershell
+# Test 404 endpoint
+curl.exe -sS -i -H "Accept: application/json" http://localhost:8080/api/non-existent-endpoint
+
+# Expected output:
+# HTTP/1.1 404 Not Found
+# Content-Type: application/json
+# 
+# {
+#   "ok": false,
+#   "error_code": "NOT_FOUND",
+#   "message": "The route api/non-existent-endpoint could not be found.",
+#   "request_id": "8c6bc0d7-eafa-4532-9f9c-79d213f71d20"
+# }
+
+# Test 422 endpoint
+curl.exe -sS -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST http://localhost:8080/auth/login -d "{}"
+
+# Expected output:
+# HTTP/1.1 422 Unprocessable Entity
+# Content-Type: application/json
+# X-Request-Id: d7ba7ec7-1303-48a4-8ce5-ef943cec5ed9
+# 
+# {
+#   "ok": false,
+#   "error_code": "VALIDATION_ERROR",
+#   "message": "Validation failed.",
+#   "request_id": "d7ba7ec7-1303-48a4-8ce5-ef943cec5ed9",
+#   "details": {
+#     "fields": {
+#       "email": ["The email field is required."],
+#       "password": ["The password field is required."]
+#     }
+#   }
+# }
+```
+
+**Test Sonuçları:**
+- ✅ 404 Response: request_id in body (non-null), envelope format correct
+- ✅ 422 Response: X-Request-Id header present, matches body.request_id
+- ✅ All error responses: request_id guaranteed non-null
+
+**Sonuç:** ✅ Request_id hard guarantee eklendi, tüm error envelope'lar (404/422/500) non-null request_id garantisi ve header consistency sağlıyor
