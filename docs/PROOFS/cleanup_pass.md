@@ -693,3 +693,59 @@ curl.exe -sS -H "Accept: application/json" -H "Content-Type: application/json" -
 ```
 
 **Sonuç:** ✅ Incident bundle v1 eklendi, single-command evidence collection hazır
+
+---
+
+## SLO PACK v1 PASS (2026-01-08)
+
+**Amaç:** SLO pack v1 ekle (SLO tanımları, error budget policy, SLO check script)
+
+**Eklenenler:**
+- `docs/ops/SLO.md` (yeni) - SLO tanımları (availability, latency, error rate)
+- `docs/ops/ERROR_BUDGET.md` (yeni) - Error budget policy ve spending rules
+- `docs/runbooks/slo_breach.md` (yeni) - SLO breach response runbook
+- `ops/slo_check.ps1` (yeni) - SLO check script (lightweight benchmark)
+- `docs/RULES.md` (güncellendi) - Rule 22 eklendi (SLO check release requirement)
+
+**SLO Targets (v1):**
+- **Pazar /up**: Availability 99.5%, p50 < 50ms, p95 < 200ms, Error rate < 1%
+- **H-OS /v1/health**: Availability 99.5%, p50 < 100ms, p95 < 500ms, Error rate < 1%
+
+**Error Budget Policy:**
+- Error budget = 0.5% monthly (~3.6 hours)
+- Two-Day Fail Rule: FAIL for 2 consecutive days → freeze non-stability work
+- Error Rate Threshold: Error rate > 1% → investigate before features
+- Monthly Depletion: Budget depleted → post-mortem required
+
+**SLO Check Script Features:**
+- Configurable N requests (default 30) with sequential execution (concurrency=1)
+- Measures response time, availability, error rate
+- Calculates p50 and p95 latency percentiles
+- Compares against SLO thresholds
+- Exit codes: 0=PASS, 2=WARN, 1=FAIL
+
+**Kanıt:**
+```powershell
+# Run SLO check
+.\ops\slo_check.ps1
+
+# Expected output:
+# === SLO CHECK ===
+# Sample size: 30 requests per endpoint
+# [1] Testing Pazar /up endpoint...
+# [2] Testing H-OS /v1/health endpoint...
+# === SLO CHECK SUMMARY ===
+# Service      Endpoint        Metric          Value           Target          Status
+# --------------------------------------------------------------------------------------
+# Pazar        /up             Availability    100.00%         99.50%          PASS
+# Pazar        /up             p50 Latency     15ms            < 50ms          PASS
+# Pazar        /up             p95 Latency     45ms            < 200ms         PASS
+# Pazar        /up             Error Rate      0.00%           < 1.00%         PASS
+# H-OS         /v1/health      Availability    100.00%         99.50%          PASS
+# H-OS         /v1/health      p50 Latency     25ms            < 100ms         PASS
+# H-OS         /v1/health      p95 Latency     85ms            < 500ms         PASS
+# H-OS         /v1/health      Error Rate      0.00%           < 1.00%         PASS
+# OVERALL STATUS: PASS (All SLOs met)
+```
+
+**Sonuç:** ✅ SLO pack v1 eklendi, SLO tanımları ve error budget policy hazır, SLO check script çalışıyor
