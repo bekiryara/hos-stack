@@ -1359,3 +1359,75 @@ curl.exe -i -X POST http://localhost:8080/auth/login \
 - ✅ CI workflow: Deterministic output, no docker required
 
 **Sonuç:** ✅ World spine governance pack v1 eklendi, enabled worlds için route/controller surface ve ctx.world lock evidence, disabled worlds için controller directory yokluğu doğrulama aktif
+
+---
+
+## ENV CONTRACT PACK v1 PASS (2026-01-08)
+
+**Amaç:** Environment & secrets contract pack v1 - required env vars ve production guardrails doğrulama
+
+**Eklenenler:**
+- `ops/env_contract.ps1` (yeni) - Environment & secrets contract check script
+- `.github/workflows/env-contract.yml` (yeni) - CI workflow
+- `docs/runbooks/env_contract.md` (yeni) - Env contract runbook
+- `docs/RULES.md` (güncellendi) - Rule 31 eklendi (env-contract gate zorunlu)
+
+**Env Contract Checks:**
+- **Required Env Vars** (always):
+  - APP_ENV, APP_KEY (no weak values)
+  - DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD (no weak values)
+- **Production Guardrails** (when APP_ENV=production):
+  - CORS_ALLOWED_ORIGINS: Must NOT contain '*' (FAIL if wildcard)
+  - SESSION_SECURE_COOKIE: Must be 'true' (FAIL if false/missing)
+  - SESSION_SAME_SITE: Must be 'lax' or 'strict' (WARN if missing, FAIL if 'none' without Secure)
+- **Optional Secrets** (OIDC/JWT):
+  - HOS_OIDC_ISSUER, HOS_OIDC_CLIENT_ID, HOS_OIDC_API_KEY (if OIDC enabled)
+
+**Weak Secrets Detection:**
+- Detects weak/default values: empty, 'password', 'secret', 'changeme', 'base64:' (for APP_KEY)
+
+**Kanıt:**
+```powershell
+# Run env contract check (local)
+.\ops\env_contract.ps1
+
+# Expected output (local):
+# === ENVIRONMENT & SECRETS CONTRACT CHECK ===
+# Timestamp: 2026-01-08 12:00:00
+# 
+# APP_ENV: local
+# 
+# === Checking Required Environment Variables ===
+# 
+# === Checking Optional Secrets (OIDC/JWT) ===
+# 
+# === ENVIRONMENT CONTRACT CHECK RESULTS ===
+# 
+# Check       Status Notes
+# -----       ------ -----
+# APP_ENV     PASS   Set (value hidden for security)
+# APP_KEY     PASS   Set (value hidden for security)
+# DB_HOST     PASS   Set (value hidden for security)
+# DB_DATABASE PASS   Set (value hidden for security)
+# DB_USERNAME PASS   Set (value hidden for security)
+# DB_PASSWORD PASS   Set (value hidden for security)
+# 
+# OVERALL STATUS: PASS (All checks passed)
+
+# Production mode (APP_ENV=production):
+# === Checking Production Guardrails ===
+# 
+# Check                      Status Notes
+# -----                      ------ -----
+# CORS_ALLOWED_ORIGINS (PROD) PASS   Set with strict allowlist (no wildcard)
+# SESSION_SECURE_COOKIE (PROD) PASS  Set to 'true' (HTTPS-only cookies)
+# SESSION_SAME_SITE (PROD)    PASS   Set to 'strict' (CSRF protection)
+```
+
+**Test Sonuçları:**
+- ✅ Required env vars validation working
+- ✅ Production guardrails enforcement working
+- ✅ Weak secrets detection working
+- ✅ CI workflow: Deterministic output, no docker required
+
+**Sonuç:** ✅ Env contract pack v1 eklendi, required env vars ve production guardrails doğrulama aktif

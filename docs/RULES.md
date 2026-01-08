@@ -30,4 +30,5 @@
 28. **Auth surface auth-security gate PASS zorunlu**: Auth surface (admin/panel/auth endpoints) için auth-security gate PASS olmalı; unauthorized access protection ve rate limiting doğrulanmalı
 29. **Tenant-boundary gate PASS zorunlu**: Tenant-boundary gate PASS olmalı; cross-tenant access prevention ve tenant isolation doğrulanmalı
 30. **World-spine gate PASS zorunlu**: World-spine gate PASS olmalı; enabled worlds için route/controller surface ve ctx.world lock evidence, disabled worlds için controller directory yokluğu doğrulanmalı
+31. **Env-contract gate PASS zorunlu**: Env-contract gate PASS olmalı; production-related changes için required env vars ve production guardrails (CORS, session security) doğrulanmalı
 

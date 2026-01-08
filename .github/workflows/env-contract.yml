@@ -1,0 +1,55 @@
+name: Env Contract Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  env_contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run env contract check
+        shell: pwsh
+        env:
+          APP_ENV: ${{ secrets.APP_ENV || 'local' }}
+          APP_KEY: ${{ secrets.APP_KEY }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
+          SESSION_SECURE_COOKIE: ${{ secrets.SESSION_SECURE_COOKIE }}
+          SESSION_SAME_SITE: ${{ secrets.SESSION_SAME_SITE }}
+          HOS_OIDC_ISSUER: ${{ secrets.HOS_OIDC_ISSUER }}
+          HOS_OIDC_CLIENT_ID: ${{ secrets.HOS_OIDC_CLIENT_ID }}
+          HOS_OIDC_API_KEY: ${{ secrets.HOS_OIDC_API_KEY }}
+        run: |
+          pwsh ./ops/env_contract.ps1
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: env-contract-logs
+          path: |
+            _archive/incidents/
+          if-no-files-found: ignore
+
+      - name: Env Contract Summary
+        if: failure()
+        run: |
+          echo "❌ Environment contract check failed"
+          echo ""
+          echo "One or more environment/secrets contract checks failed:"
+          echo "  - Required environment variables missing"
+          echo "  - Production guardrails not met"
+          echo "  - Weak/default secrets detected"
+          echo ""
+          echo "Review the output above or check the logs artifact."
+          echo "See docs/runbooks/env_contract.md for remediation guidance."
+
