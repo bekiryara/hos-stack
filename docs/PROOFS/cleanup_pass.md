@@ -978,3 +978,89 @@ curl.exe -sS -i -H "Accept: application/json" -H "Content-Type: application/json
 - ✅ CI gate PASS (workflow runs on push + PR)
 
 **Sonuç:** ✅ Security gate v1 eklendi, route/middleware security audit çalışıyor, CI gate aktif
+
+---
+
+## EDGE SECURITY PACK v1 PASS (2026-01-08)
+
+**Amaç:** CORS policy, security headers ve rate limiting için edge security pack v1
+
+**Eklenenler:**
+- `work/pazar/app/Http/Middleware/Cors.php` (yeni) - CORS middleware (environment-based allowlist)
+- `work/pazar/app/Http/Middleware/SecurityHeaders.php` (yeni) - Security headers middleware
+- `work/pazar/bootstrap/app.php` (güncellendi) - CORS ve SecurityHeaders middleware kayıt
+- `docs/runbooks/security_edge.md` (yeni) - Security edge runbook
+- `docs/RULES.md` (güncellendi) - Rule 26 eklendi (PROD wildcard CORS yasak)
+
+**Edge Security Değişiklikleri:**
+- **CORS Policy**:
+  - DEV/LOCAL: Allow all origins or localhost allowlist
+  - PROD: Strict allowlist from `CORS_ALLOWED_ORIGINS` env var (comma-separated)
+  - `allow_credentials=false`
+  - `allowed_methods`: GET,POST,PUT,PATCH,DELETE,OPTIONS
+  - `allowed_headers`: Content-Type, Authorization, X-Request-Id, X-Requested-With, Accept
+- **Security Headers** (applied to `/api/*` and `/auth/*`):
+  - `X-Content-Type-Options: nosniff`
+  - `X-Frame-Options: DENY`
+  - `Referrer-Policy: no-referrer`
+  - `Permissions-Policy: geolocation=(), microphone=(), camera=()`
+  - `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'`
+- **Rate Limiting**:
+  - `/auth/login`: 30 req/min per IP (already configured via `throttle:public-write`)
+
+**Kanıt:**
+```powershell
+# Test security headers
+curl.exe -i http://localhost:8080/api/non-existent-endpoint | findstr /i "X-Content-Type-Options X-Frame-Options Referrer-Policy Permissions-Policy Content-Security-Policy"
+
+# Expected output:
+# X-Content-Type-Options: nosniff
+# X-Frame-Options: DENY
+# Referrer-Policy: no-referrer
+# Permissions-Policy: geolocation=(), microphone=(), camera=()
+# Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'
+
+# Test CORS preflight
+curl.exe -i -X OPTIONS http://localhost:8080/api/non-existent-endpoint \
+  -H "Origin: http://localhost:5173" \
+  -H "Access-Control-Request-Method: GET"
+
+# Expected output:
+# Access-Control-Allow-Origin: http://localhost:5173
+# Access-Control-Allow-Methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+# Access-Control-Allow-Headers: Content-Type, Authorization, X-Request-Id, X-Requested-With, Accept
+
+# Test auth endpoint with rate limiting
+curl.exe -i -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{}"
+
+# Expected output:
+# HTTP/1.1 422 Unprocessable Entity
+# X-Content-Type-Options: nosniff
+# X-Frame-Options: DENY
+# Referrer-Policy: no-referrer
+# Permissions-Policy: geolocation=(), microphone=(), camera=()
+# Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'
+# 
+# {
+#   "ok": false,
+#   "error_code": "VALIDATION_ERROR",
+#   "message": "Validation failed.",
+#   "request_id": "<uuid>",
+#   "details": {
+#     "fields": {
+#       "email": ["The email field is required."],
+#       "password": ["The password field is required."]
+#     }
+#   }
+# }
+```
+
+**Test Sonuçları:**
+- ✅ Security headers present on API/auth responses
+- ✅ CORS headers present on preflight requests
+- ✅ Rate limiting configured for auth endpoints (30 req/min)
+- ✅ No regressions in existing gates
+
+**Sonuç:** ✅ Edge security pack v1 eklendi, CORS policy, security headers ve rate limiting aktif

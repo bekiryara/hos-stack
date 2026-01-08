@@ -32,6 +32,10 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        // CORS and security headers (early) - global middleware
+        $middleware->prepend(\App\Http\Middleware\Cors::class);
+        $middleware->prepend(\App\Http\Middleware\SecurityHeaders::class);
+        
         // Force JSON for API/auth routes (early) - global middleware
         $middleware->prepend(\App\Http\Middleware\ForceJsonForApi::class);
 
