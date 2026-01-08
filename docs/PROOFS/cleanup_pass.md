@@ -510,3 +510,86 @@ curl.exe -sS -i -H "Accept: application/json" http://localhost:8080/api/non-exis
 ```
 
 **Sonuç:** ✅ ErrorEnvelope middleware'inin 404'te çalıştığı kanıtlandı, request_id her zaman non-null garantili
+
+---
+
+## MIDDLEWARE REGISTER FIX PASS (2026-01-08)
+
+**Amaç:** ForceJsonForApi ve ErrorEnvelope middleware'lerini global olarak kaydet (tüm request'lerde çalışsın)
+
+**Düzeltmeler:**
+- `bootstrap/app.php` (güncellendi) - Middleware'ler global olarak kaydedildi
+
+**Değişiklik:**
+- Önceki: `$middleware->web(prepend/append)` ile sadece web route'larında çalışıyordu
+- Yeni:
+  - `$middleware->prepend(\App\Http\Middleware\ForceJsonForApi::class)` - Global, early
+  - `$middleware->append(\App\Http\Middleware\ErrorEnvelope::class)` - Global, late
+  - RequestId middleware web group'unda kaldı (mevcut davranış korundu)
+
+**Middleware Sırası (Global):**
+1. **ForceJsonForApi** (prepend - en erken)
+   - Tüm request'lerde `/api/*` ve `/auth/*` için Accept: application/json zorlar
+
+2. **... diğer middleware'ler ...**
+
+3. **ErrorEnvelope** (append - en son)
+   - Tüm error response'larda (status >= 400) standard envelope enforce eder
+
+**Kanıt:**
+```bash
+# A) Header proof
+curl.exe -sS -i -H "Accept: application/json" http://localhost:8080/api/non-existent-endpoint | findstr /i "X-ErrorEnvelope X-ErrorEnvelope-Status"
+# Expected: X-ErrorEnvelope: 1 and X-ErrorEnvelope-Status: 404
+
+# B) Body proof (404 request_id)
+curl.exe -sS -H "Accept: application/json" http://localhost:8080/api/non-existent-endpoint
+# Expected: request_id != null
+
+# C) 422 proof
+curl.exe -sS -H "Accept: application/json" -H "Content-Type: application/json" -X POST http://localhost:8080/auth/login -d "{}"
+# Expected: VALIDATION_ERROR with request_id non-null
+```
+
+**Sonuç:** ✅ Middleware'ler global olarak kaydedildi, tüm request'lerde çalışıyor
+
+---
+
+## INCIDENT PACK v1 ADDED (2026-01-08)
+
+**Amaç:** Incident response runbook ve triage script ekle
+
+**Eklenenler:**
+- `docs/runbooks/incident.md` (yeni) - Incident response runbook
+- `ops/triage.ps1` (yeni) - Single-command triage script
+- `docs/RULES.md` (güncellendi) - Rule 19 eklendi (gate/health endpoint güncellemesi)
+
+**Incident Runbook İçeriği:**
+- SEV1/SEV2/SEV3 tanımları
+- 10 dakikalık triage checklist
+- request_id workflow (reproduce → capture → grep → isolate)
+- CI gate failure troubleshooting (repo-guard, smoke, conformance, contracts, db-contracts, error-contract)
+- Safe rollback notları ve prevention discipline
+
+**Triage Script Özellikleri:**
+- Docker Compose services status check
+- H-OS health endpoint check (`/v1/health`)
+- Pazar up endpoint check (`/up`)
+- Son 120 satır log (pazar-app, hos-api)
+- Error pattern detection in logs
+- Summary table (PASS/FAIL/WARN)
+
+**Kanıt:**
+```powershell
+# Run triage script
+.\ops\triage.ps1
+
+# Expected output:
+# - Docker Compose services status
+# - H-OS health: ✓ PASS (HTTP 200)
+# - Pazar up: ✓ PASS (HTTP 200)
+# - Recent logs from both services
+# - Summary table with overall status
+```
+
+**Sonuç:** ✅ Incident pack v1 eklendi, runbook ve triage script hazır
