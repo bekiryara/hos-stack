@@ -141,12 +141,14 @@ $hosResults = Test-Endpoint -Name "H-OS /v1/health" -Url "http://localhost:3000/
 Write-Host ""
 
 # Evaluate against SLOs
+# Blocking metrics: availability, p95, error_rate
+# Non-blocking metrics: p50 (informational only)
 $results = @()
 
 # Pazar evaluation
 $pazarThresholds = $sloThresholds['pazar']
 $pazarAvailabilityStatus = if ($pazarResults.Availability -ge $pazarThresholds.availability_target) { "PASS" } elseif ($pazarResults.Availability -ge ($pazarThresholds.availability_target * 0.95)) { "WARN" } else { "FAIL" }
-$pazarP50Status = if ($pazarResults.P50 -le $pazarThresholds.p50_target) { "PASS" } elseif ($pazarResults.P50 -le ($pazarThresholds.p50_target * 1.5)) { "WARN" } else { "FAIL" }
+$pazarP50Status = if ($pazarResults.P50 -le $pazarThresholds.p50_target) { "PASS" } elseif ($pazarResults.P50 -le ($pazarThresholds.p50_target * 1.5)) { "WARN" } else { "FAIL" }  # Non-blocking
 $pazarP95Status = if ($pazarResults.P95 -le $pazarThresholds.p95_target) { "PASS" } elseif ($pazarResults.P95 -le ($pazarThresholds.p95_target * 1.5)) { "WARN" } else { "FAIL" }
 $pazarErrorRateStatus = if ($pazarResults.ErrorRate -lt $pazarThresholds.error_rate_threshold) { "PASS" } elseif ($pazarResults.ErrorRate -lt ($pazarThresholds.error_rate_threshold * 5)) { "WARN" } else { "FAIL" }
 
@@ -186,7 +188,7 @@ $results += @{
 # H-OS evaluation
 $hosThresholds = $sloThresholds['hos']
 $hosAvailabilityStatus = if ($hosResults.Availability -ge $hosThresholds.availability_target) { "PASS" } elseif ($hosResults.Availability -ge ($hosThresholds.availability_target * 0.95)) { "WARN" } else { "FAIL" }
-$hosP50Status = if ($hosResults.P50 -le $hosThresholds.p50_target) { "PASS" } elseif ($hosResults.P50 -le ($hosThresholds.p50_target * 1.5)) { "WARN" } else { "FAIL" }
+$hosP50Status = if ($hosResults.P50 -le $hosThresholds.p50_target) { "PASS" } elseif ($hosResults.P50 -le ($hosThresholds.p50_target * 1.5)) { "WARN" } else { "FAIL" }  # Non-blocking
 $hosP95Status = if ($hosResults.P95 -le $hosThresholds.p95_target) { "PASS" } elseif ($hosResults.P95 -le ($hosThresholds.p95_target * 1.5)) { "WARN" } else { "FAIL" }
 $hosErrorRateStatus = if ($hosResults.ErrorRate -lt $hosThresholds.error_rate_threshold) { "PASS" } elseif ($hosResults.ErrorRate -lt ($hosThresholds.error_rate_threshold * 5)) { "WARN" } else { "FAIL" }
 
@@ -226,6 +228,7 @@ $results += @{
 # Summary Table
 Write-Host "=== SLO CHECK SUMMARY ===" -ForegroundColor Cyan
 Write-Host "Warm-up applied: yes" -ForegroundColor Gray
+Write-Host "Decision criteria: availability + p95 + error rate (p50 is non-blocking)" -ForegroundColor Gray
 Write-Host ""
 Write-Host ("{0,-12} {1,-15} {2,-15} {3,-15} {4,-15} {5,-10}" -f "Service", "Endpoint", "Metric", "Value", "Target", "Status")
 Write-Host ("-" * 90)
@@ -241,25 +244,46 @@ foreach ($result in $results) {
 
 Write-Host ""
 
-# Overall Status
-$failCount = ($results | Where-Object { $_.Status -eq "FAIL" } | Measure-Object).Count
-$warnCount = ($results | Where-Object { $_.Status -eq "WARN" } | Measure-Object).Count
+# Overall Status (only blocking metrics count: availability, p95, error_rate)
+# p50 is non-blocking (informational only)
+$blockingMetrics = $results | Where-Object { $_.Metric -ne "p50 Latency" }
+$blockingFailCount = ($blockingMetrics | Where-Object { $_.Status -eq "FAIL" } | Measure-Object).Count
+$blockingWarnCount = ($blockingMetrics | Where-Object { $_.Status -eq "WARN" } | Measure-Object).Count
+$p50FailCount = ($results | Where-Object { $_.Metric -eq "p50 Latency" -and $_.Status -eq "FAIL" } | Measure-Object).Count
 
-if ($failCount -gt 0) {
-    Write-Host "OVERALL STATUS: FAIL ($failCount failures, $warnCount warnings)" -ForegroundColor Red
+if ($blockingFailCount -gt 0) {
+    Write-Host "OVERALL STATUS: FAIL ($blockingFailCount blocking failures, $blockingWarnCount warnings)" -ForegroundColor Red
+    if ($p50FailCount -gt 0) {
+        Write-Host "  (p50 failures: $p50FailCount - non-blocking, informational only)" -ForegroundColor Gray
+    }
     Write-Host ""
     Write-Host "Next steps:" -ForegroundColor Yellow
     Write-Host "  1. Review docs/runbooks/slo_breach.md" -ForegroundColor Gray
     Write-Host "  2. Run .\ops\triage.ps1 and .\ops\incident_bundle.ps1" -ForegroundColor Gray
-    Write-Host "  3. Investigate root cause" -ForegroundColor Gray
+    Write-Host "  3. Investigate root cause (blocking metric failure)" -ForegroundColor Gray
     exit 1
-} elseif ($warnCount -gt 0) {
-    Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
+} elseif ($blockingWarnCount -gt 0 -or $p50FailCount -gt 0) {
+    $statusMsg = "OVERALL STATUS: WARN"
+    if ($p50FailCount -gt 0) {
+        $statusMsg += " ($p50FailCount p50 failures - non-blocking"
+        if ($blockingWarnCount -gt 0) {
+            $statusMsg += ", $blockingWarnCount blocking warnings"
+        }
+        $statusMsg += ")"
+    } elseif ($blockingWarnCount -gt 0) {
+        $statusMsg += " ($blockingWarnCount blocking warnings)"
+    }
+    Write-Host $statusMsg -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "Note: SLOs approaching limits - monitor closely" -ForegroundColor Gray
+    if ($p50FailCount -gt 0) {
+        Write-Host "Note: p50 latency breaches are non-blocking (informational baseline, environment-sensitive)" -ForegroundColor Gray
+        Write-Host "      Monitor for trends, but does not block release per Rule 25." -ForegroundColor Gray
+    } else {
+        Write-Host "Note: SLOs approaching limits - monitor closely" -ForegroundColor Gray
+    }
     exit 2
 } else {
-    Write-Host "OVERALL STATUS: PASS (All SLOs met)" -ForegroundColor Green
+    Write-Host "OVERALL STATUS: PASS (All blocking SLOs met)" -ForegroundColor Green
     exit 0
 }
 

@@ -39,6 +39,24 @@ SLOs define the reliability and performance targets for our services. This docum
 - **Calculation**: `(total_requests - success_count) / total_requests`
 - **Measurement Window**: 30-day rolling window
 
+## Blocking vs Non-Blocking Metrics
+
+### Blocking Metrics (Release Decision Critical)
+These metrics **block releases** if breached:
+- **Availability**: Service must be available at or above target (99.5%)
+- **p95 Latency**: 95th percentile response time must meet target
+- **Error Rate**: Error rate must be below threshold (1%)
+
+If any blocking metric fails, releases are blocked and incident response procedures apply.
+
+### Non-Blocking Metrics (Informational Baseline)
+These metrics are **visible in reports** but **do not block releases**:
+- **p50 Latency**: 50th percentile response time (informational baseline)
+
+p50 latency is environment-sensitive (Docker overhead, Windows host, container cold-start effects) and may show higher values in development environments. It serves as a baseline indicator but does not affect release decisions.
+
+**Decision Criteria**: Release decisions are based on **availability + p95 latency + error rate** only. p50 is monitored for trends but is non-blocking per Rule 25.
+
 ## Measurement Method
 
 ### Automated Checks

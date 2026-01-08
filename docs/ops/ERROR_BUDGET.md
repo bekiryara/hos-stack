@@ -14,7 +14,11 @@ For our 99.5% availability target:
 Error budget is "spent" when:
 - Service is unavailable (HTTP 5xx, timeout)
 - Health check fails (non-200 or invalid response)
-- SLO check shows availability < 99.5%
+- SLO check shows availability < 99.5% (blocking metric failure)
+- p95 latency exceeds target (blocking metric failure)
+- Error rate exceeds threshold (blocking metric failure)
+
+**Note**: p50 latency breaches do not spend error budget as it is a non-blocking, informational metric.
 
 ### Preserving Error Budget
 Error budget is "preserved" when:

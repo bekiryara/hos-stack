@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incident bundle v1: `ops/incident_bundle.ps1` (evidence collection tool), `docs/runbooks/incident_bundle.md` (bundle generator runbook)
 - SLO pack v1: `docs/ops/SLO.md` (SLO definitions), `docs/ops/ERROR_BUDGET.md` (error budget policy), `docs/runbooks/slo_breach.md` (breach response), `ops/slo_check.ps1` (lightweight SLO benchmark)
 - Performance baseline v1: `ops/perf_baseline.ps1` (warm-up + first-hit analysis), `docs/ops/PERFORMANCE_BASELINE.md` (performance baseline methodology), updated `ops/slo_check.ps1` with warm-up phase
+- SLO policy hardening v1: Made p50 latency non-blocking in release decisions, added blocking vs non-blocking metric classification, updated error budget and breach runbooks
 
 ### Changed
 - Cleanup HIGH risk unused code: archived 3 empty World controller directories (`RealEstate/`, `Services/`, `Vehicles/`) to `_archive/20260108/cleanup_high/` (disabled worlds, no routes, no controllers)

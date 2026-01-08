@@ -69,6 +69,8 @@ If errors are occurring:
 
 ### Step 4: Severity Assignment
 
+**Important**: Only **blocking metrics** (availability, p95, error rate) trigger SEV escalation. p50 latency breaches are informational and treated as WARN (non-blocking per Rule 25).
+
 Map SLO breach to SEV level:
 
 | SLO Breach Severity | SEV Level | Response Time |

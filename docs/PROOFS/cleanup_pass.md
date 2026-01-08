@@ -810,3 +810,53 @@ curl.exe -sS -H "Accept: application/json" -H "Content-Type: application/json" -
 ```
 
 **Sonuç:** ✅ Performance baseline v1 eklendi, warm-up ve first-hit analysis ile production-realistic SLO ölçümü hazır
+
+---
+
+## SLO POLICY v1 PASS (2026-01-08)
+
+**Amaç:** SLO policy hardening v1 - p50 latency'i non-blocking yap, blocking decision logic ekle
+
+**Eklenenler:**
+- `ops/slo_check.ps1` (güncellendi) - Blocking vs non-blocking metric logic eklendi
+- `docs/ops/SLO.md` (güncellendi) - Blocking vs non-blocking metrics section eklendi
+- `docs/ops/ERROR_BUDGET.md` (güncellendi) - Error budget triggers clarified (only blocking metrics)
+- `docs/runbooks/slo_breach.md` (güncellendi) - p50-only failure guidance eklendi
+- `docs/RULES.md` (güncellendi) - Rule 24 eklendi (release blockers policy)
+
+**Policy Changes:**
+- **Blocking metrics**: availability, p95 latency, error rate (release kararına etki eder)
+- **Non-blocking metrics**: p50 latency (informational baseline, release'i bloklamaz)
+- **Overall status logic**:
+  - PASS: No blocking failures
+  - WARN: Only p50 fails (or non-blocking breaches)
+  - FAIL: Any blocking failure (availability/p95/error_rate)
+- **Exit codes**: 0=PASS, 2=WARN, 1=FAIL (unchanged)
+
+**Kanıt:**
+```powershell
+# Run SLO check
+.\ops\slo_check.ps1 -N 10
+
+# Expected output showing p50 FAIL but overall WARN:
+# === SLO CHECK SUMMARY ===
+# Warm-up applied: yes
+# Decision criteria: availability + p95 + error rate (p50 is non-blocking)
+# 
+# Service      Endpoint        Metric          Value           Target          Status
+# ------------------------------------------------------------------------------------------
+# Pazar        /up             Availability    100.00%         99.50%          PASS
+# Pazar        /up             p50 Latency     106ms           < 50ms          FAIL
+# Pazar        /up             p95 Latency     124ms           < 200ms         PASS
+# Pazar        /up             Error Rate      0.00%           < 1.00%         PASS
+# H-OS         /v1/health      Availability    100.00%         99.50%          PASS
+# H-OS         /v1/health      p50 Latency     56ms            < 100ms         PASS
+# H-OS         /v1/health      p95 Latency     68ms            < 500ms         PASS
+# H-OS         /v1/health      Error Rate      0.00%           < 1.00%         PASS
+# 
+# OVERALL STATUS: WARN (1 p50 failures - non-blocking)
+# Note: p50 latency breaches are non-blocking (informational baseline, environment-sensitive)
+#       Monitor for trends, but does not block release per Rule 24.
+```
+
+**Sonuç:** ✅ SLO policy v1 eklendi, p50 latency non-blocking, blocking decision logic hazır

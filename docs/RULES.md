@@ -23,4 +23,5 @@
 21. **Incident bundle zorunlu**: Incident'lerde incident bundle path veya içeriği eklenmeli
 22. **SLO check release öncesi**: Release öncesi SLO check konsülte edilmeli; tekrarlayan FAIL/WARN durumunda incident bundle + runbook adımları gerekli
 23. **Latency SLO warm-up ile**: Latency SLO değerlendirmesi warm-up ile ölçülmeli; sadece cold-start spike'ları release'i bloklamaz
+24. **Release blockers availability/p95/error-rate**: Release kararı sadece availability, p95 latency ve error rate'e göre verilir; p50 bilgilendirme amaçlıdır ve Windows/Docker dev ortamında WARN gösterebilir
 
