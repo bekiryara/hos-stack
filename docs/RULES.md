@@ -27,4 +27,5 @@
 25. **PR merge için security-gate PASS zorunlu**: Route/middleware security audit PASS olmalı; admin/panel surface ve state-changing route'lar security policy'ye uygun olmalı
 26. **PROD wildcard CORS yasak**: Production ortamında CORS_ALLOWED_ORIGINS env var ile strict allowlist kullanılmalı; wildcard (*) CORS sadece dev/local ortamında kullanılabilir
 27. **Yeni ops gate/check entegrasyonu**: Yeni ops gate veya check eklendiğinde ops_status.ps1'e entegre edilmeli; unified dashboard tüm ops check'leri içermeli
+28. **Auth surface auth-security gate PASS zorunlu**: Auth surface (admin/panel/auth endpoints) için auth-security gate PASS olmalı; unauthorized access protection ve rate limiting doğrulanmalı
 

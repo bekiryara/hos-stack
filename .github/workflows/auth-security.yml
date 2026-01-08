@@ -1,0 +1,57 @@
+name: Auth Security Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  auth_security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services
+        run: |
+          echo "Starting docker compose services..."
+          docker compose up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 15
+
+      - name: Run auth security check
+        shell: pwsh
+        run: |
+          pwsh ./ops/auth_security_check.ps1
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-security-logs
+          path: |
+            _archive/incidents/
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up services..."
+          docker compose down -v
+
+      - name: Auth Security Summary
+        if: failure()
+        run: |
+          echo "❌ Auth security check failed"
+          echo ""
+          echo "One or more auth security checks failed:"
+          echo "  - Unauthorized access protection (401/403)"
+          echo "  - Rate limiting enforcement"
+          echo "  - Session cookie flags (PROD)"
+          echo ""
+          echo "Review the output above or check the logs artifact."
+
