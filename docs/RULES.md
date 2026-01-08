@@ -26,4 +26,5 @@
 24. **Release blockers availability/p95/error-rate**: Release kararı sadece availability, p95 latency ve error rate'e göre verilir; p50 bilgilendirme amaçlıdır ve Windows/Docker dev ortamında WARN gösterebilir
 25. **PR merge için security-gate PASS zorunlu**: Route/middleware security audit PASS olmalı; admin/panel surface ve state-changing route'lar security policy'ye uygun olmalı
 26. **PROD wildcard CORS yasak**: Production ortamında CORS_ALLOWED_ORIGINS env var ile strict allowlist kullanılmalı; wildcard (*) CORS sadece dev/local ortamında kullanılabilir
+27. **Yeni ops gate/check entegrasyonu**: Yeni ops gate veya check eklendiğinde ops_status.ps1'e entegre edilmeli; unified dashboard tüm ops check'leri içermeli
 

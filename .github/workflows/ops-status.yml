@@ -1,0 +1,64 @@
+name: Ops Status Dashboard
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  ops_status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services
+        run: |
+          echo "Starting docker compose services..."
+          docker compose up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 15
+
+      - name: Run ops status dashboard
+        shell: pwsh
+        run: |
+          pwsh ./ops/ops_status.ps1
+
+      - name: Upload incident bundle on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: incident-bundle
+          path: |
+            incident_bundles/
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up services..."
+          docker compose down -v
+
+      - name: Ops Status Summary
+        if: failure()
+        run: |
+          echo "❌ Ops status dashboard failed"
+          echo ""
+          echo "One or more operational checks failed."
+          echo "Review the output above or check the incident bundle artifact."
+          echo ""
+          echo "Checks performed:"
+          echo "  - Repository Doctor"
+          echo "  - Stack Verification"
+          echo "  - Incident Triage"
+          echo "  - SLO Check"
+          echo "  - Security Audit"
+          echo "  - Conformance"
+          echo "  - Routes Snapshot"
+          echo "  - Schema Snapshot"
+          echo "  - Error Contract"
+
