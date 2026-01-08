@@ -8,6 +8,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
@@ -31,16 +32,16 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
-        // Force JSON for API/auth routes (early)
-        $middleware->web(prepend: [
-            \App\Http\Middleware\ForceJsonForApi::class,
-        ]);
+        // Force JSON for API/auth routes (early) - global middleware
+        $middleware->prepend(\App\Http\Middleware\ForceJsonForApi::class);
 
+        // Request ID and error envelope - global middleware
         $middleware->web(append: [
             \App\Http\Middleware\RequestId::class,
-            // Enforce error envelope (late, after response generation)
-            \App\Http\Middleware\ErrorEnvelope::class,
         ]);
+        
+        // Enforce error envelope (late, after response generation) - global middleware
+        $middleware->append(\App\Http\Middleware\ErrorEnvelope::class);
 
         // This project is a JSON API (no browser forms). Exempt API endpoints from CSRF protection
         // so token-authenticated requests (and webhooks) work in real HTTP clients.
@@ -77,9 +78,25 @@ return Application::configure(basePath: dirname(__DIR__))
                 || $request->is('payments*');
         };
 
-        // Helper: Get request_id from request attributes
-        $getRequestId = function (Request $request): ?string {
-            return $request->attributes->get('request_id');
+        // Helper: Get or generate request_id (guaranteed non-null)
+        $getRequestId = function (Request $request): string {
+            // Try header first
+            $requestId = $request->header('X-Request-Id');
+            
+            // Else try request attributes
+            if (empty($requestId)) {
+                $requestId = $request->attributes->get('request_id');
+            }
+            
+            // If empty/null/"-" => generate UUID
+            if (empty($requestId) || $requestId === '-' || $requestId === null) {
+                $requestId = (string) Str::uuid();
+            }
+            
+            // Ensure resolved id is stored in request attributes
+            $request->attributes->set('request_id', $requestId);
+            
+            return (string) $requestId;
         };
 
         // Helper: Map exception to error code
@@ -107,11 +124,14 @@ return Application::configure(basePath: dirname(__DIR__))
         };
 
         // Helper: Structured error logging
-        $logError = function (Throwable $e, Request $request, string $errorCode): void {
+        $logError = function (Throwable $e, Request $request, string $errorCode) use ($getRequestId): void {
+            // Get guaranteed non-null request_id
+            $requestId = $getRequestId($request);
+            
             Log::error('error', [
                 'event' => 'error',
                 'error_code' => $errorCode,
-                'request_id' => $request->attributes->get('request_id'),
+                'request_id' => $requestId,
                 'route' => $request->route()?->getName() ?? $request->path(),
                 'method' => $request->method(),
                 'world' => $request->header('X-World') ?? $request->input('world'),
@@ -122,17 +142,22 @@ return Application::configure(basePath: dirname(__DIR__))
         };
 
         // Helper: Standard error envelope
-        $errorResponse = function (Request $request, string $errorCode, string $message, int $status, ?array $details = null): \Illuminate\Http\JsonResponse {
+        $errorResponse = function (Request $request, string $errorCode, string $message, int $status, ?array $details = null) use ($getRequestId): \Illuminate\Http\JsonResponse {
+            // Get guaranteed non-null request_id
+            $requestId = $getRequestId($request);
+            
             $body = [
                 'ok' => false,
                 'error_code' => $errorCode,
                 'message' => $message,
-                'request_id' => $request->attributes->get('request_id'),
+                'request_id' => $requestId,
             ];
             if ($details !== null) {
                 $body['details'] = $details;
             }
-            return response()->json($body, $status);
+            
+            // Return JSON response with X-Request-Id header
+            return response()->json($body, $status)->header('X-Request-Id', $requestId);
         };
 
         $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $e) use ($isApiRequest) {
