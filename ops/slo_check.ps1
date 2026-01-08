@@ -50,10 +50,23 @@ function Test-Endpoint {
     
     Write-Host "Testing $Name ($Url)..." -ForegroundColor Yellow
     
+    # Warm-up phase (5 requests, not measured)
+    $warmUpCount = 5
+    Write-Host "  Warm-up phase ($warmUpCount requests)..." -ForegroundColor DarkGray
+    for ($i = 1; $i -le $warmUpCount; $i++) {
+        try {
+            $null = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
+        } catch {
+            # Ignore warm-up errors
+        }
+    }
+    
     $responseTimes = @()
     $successCount = 0
     $errorCount = 0
     
+    # Measurement phase
+    Write-Host "  Measurement phase ($RequestCount requests)..." -ForegroundColor DarkGray
     for ($i = 1; $i -le $RequestCount; $i++) {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         

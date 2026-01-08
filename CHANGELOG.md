@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Repo standardization v1: `docs/ARCHITECTURE.md` (architecture overview), `docs/REPO_LAYOUT.md` (layout contract), `ops/doctor.ps1` (repository health check), expanded CODEOWNERS for docs/ops/workflows
 - Incident bundle v1: `ops/incident_bundle.ps1` (evidence collection tool), `docs/runbooks/incident_bundle.md` (bundle generator runbook)
 - SLO pack v1: `docs/ops/SLO.md` (SLO definitions), `docs/ops/ERROR_BUDGET.md` (error budget policy), `docs/runbooks/slo_breach.md` (breach response), `ops/slo_check.ps1` (lightweight SLO benchmark)
+- Performance baseline v1: `ops/perf_baseline.ps1` (warm-up + first-hit analysis), `docs/ops/PERFORMANCE_BASELINE.md` (performance baseline methodology), updated `ops/slo_check.ps1` with warm-up phase
 
 ### Changed
 - Cleanup HIGH risk unused code: archived 3 empty World controller directories (`RealEstate/`, `Services/`, `Vehicles/`) to `_archive/20260108/cleanup_high/` (disabled worlds, no routes, no controllers)

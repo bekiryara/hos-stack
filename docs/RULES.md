@@ -22,4 +22,5 @@
 20. **Repo layout değişikliği**: `docs/REPO_LAYOUT.md` ve `docs/ARCHITECTURE.md` güncellenmeli, `ops/doctor.ps1` PASS kalmalı
 21. **Incident bundle zorunlu**: Incident'lerde incident bundle path veya içeriği eklenmeli
 22. **SLO check release öncesi**: Release öncesi SLO check konsülte edilmeli; tekrarlayan FAIL/WARN durumunda incident bundle + runbook adımları gerekli
+23. **Latency SLO warm-up ile**: Latency SLO değerlendirmesi warm-up ile ölçülmeli; sadece cold-start spike'ları release'i bloklamaz
 
