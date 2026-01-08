@@ -1,0 +1,61 @@
+name: Tenant Boundary Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  tenant_boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services
+        run: |
+          echo "Starting docker compose services..."
+          docker compose up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 15
+
+      - name: Run tenant boundary check
+        shell: pwsh
+        env:
+          TENANT_TEST_EMAIL: ${{ secrets.TENANT_TEST_EMAIL }}
+          TENANT_TEST_PASSWORD: ${{ secrets.TENANT_TEST_PASSWORD }}
+          TENANT_A_SLUG: ${{ secrets.TENANT_A_SLUG }}
+          TENANT_B_SLUG: ${{ secrets.TENANT_B_SLUG }}
+        run: |
+          pwsh ./ops/tenant_boundary_check.ps1
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tenant-boundary-logs
+          path: |
+            _archive/incidents/
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up services..."
+          docker compose down -v
+
+      - name: Tenant Boundary Summary
+        if: failure()
+        run: |
+          echo "❌ Tenant boundary check failed"
+          echo ""
+          echo "One or more tenant boundary checks failed:"
+          echo "  - Unauthorized access protection (401/403)"
+          echo "  - Tenant boundary isolation (cross-tenant access prevention)"
+          echo ""
+          echo "Review the output above or check the logs artifact."
+
