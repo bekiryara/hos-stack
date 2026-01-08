@@ -1,0 +1,41 @@
+name: World Spine Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  world_spine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run world spine check
+        shell: pwsh
+        run: |
+          pwsh ./ops/world_spine_check.ps1
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-spine-logs
+          path: |
+            _archive/incidents/
+          if-no-files-found: ignore
+
+      - name: World Spine Summary
+        if: failure()
+        run: |
+          echo "❌ World spine check failed"
+          echo ""
+          echo "One or more world governance checks failed:"
+          echo "  - Enabled worlds must have route/controller surface"
+          echo "  - Enabled worlds should have ctx.world lock evidence"
+          echo "  - Disabled worlds must not have controller directories"
+          echo ""
+          echo "Review the output above or check the logs artifact."
+

@@ -29,4 +29,5 @@
 27. **Yeni ops gate/check entegrasyonu**: Yeni ops gate veya check eklendiğinde ops_status.ps1'e entegre edilmeli; unified dashboard tüm ops check'leri içermeli
 28. **Auth surface auth-security gate PASS zorunlu**: Auth surface (admin/panel/auth endpoints) için auth-security gate PASS olmalı; unauthorized access protection ve rate limiting doğrulanmalı
 29. **Tenant-boundary gate PASS zorunlu**: Tenant-boundary gate PASS olmalı; cross-tenant access prevention ve tenant isolation doğrulanmalı
+30. **World-spine gate PASS zorunlu**: World-spine gate PASS olmalı; enabled worlds için route/controller surface ve ctx.world lock evidence, disabled worlds için controller directory yokluğu doğrulanmalı
 

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **World Spine Governance Pack v1**: Added world spine governance check to ensure enabled worlds have route/controller surfaces and ctx.world lock evidence, while disabled worlds don't have leftover controller code
+
+### Added
 - Architecture conformance gate: `ops/conformance.ps1` and `.github/workflows/conformance.yml` for automated architecture rule validation (world registry drift, forbidden artifacts, disabled-world code policy, canonical docs, secrets safety)
 - Contract gate via route snapshot: `ops/routes_snapshot.ps1`, `ops/snapshots/routes.pazar.json`, and `.github/workflows/contracts.yml` for API contract validation (route signature comparison, diff generation on change)
 - DB contract gate via schema snapshot: `ops/schema_snapshot.ps1`, `ops/snapshots/schema.pazar.sql`, and `.github/workflows/db-contracts.yml` for database schema validation (Postgres schema export, normalization, diff generation on change)
