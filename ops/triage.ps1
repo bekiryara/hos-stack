@@ -19,7 +19,7 @@ $allUp = $true
 foreach ($service in $composeStatus) {
     $isUp = $service.State -eq "running" -or $service.State -eq "Up"
     $allUp = $allUp -and $isUp
-    $status = if ($isUp) { "✓ PASS" } else { "✗ FAIL" }
+    $status = if ($isUp) { "PASS" } else { "FAIL" }
     $results += @{
         Check = "Service: $($service.Service)"
         Status = $status
@@ -30,13 +30,13 @@ foreach ($service in $composeStatus) {
 if ($allUp) {
     $results += @{
         Check = "Docker Compose Services"
-        Status = "✓ PASS"
+        Status = "PASS"
         Details = "All services running"
     }
 } else {
     $results += @{
         Check = "Docker Compose Services"
-        Status = "✗ FAIL"
+        Status = "FAIL"
         Details = "One or more services not running"
     }
 }
@@ -52,20 +52,20 @@ try {
         $hosOk = $hosBody.ok -eq $true
         $results += @{
             Check = "H-OS Health (/v1/health)"
-            Status = if ($hosOk) { "✓ PASS" } else { "✗ FAIL" }
+            Status = if ($hosOk) { "PASS" } else { "FAIL" }
             Details = "HTTP $($hosResponse.StatusCode) - ok: $($hosBody.ok)"
         }
     } else {
         $results += @{
             Check = "H-OS Health (/v1/health)"
-            Status = "✗ FAIL"
+            Status = "FAIL"
             Details = "HTTP $($hosResponse.StatusCode)"
         }
     }
 } catch {
     $results += @{
         Check = "H-OS Health (/v1/health)"
-        Status = "✗ FAIL"
+        Status = "FAIL"
         Details = "Error: $($_.Exception.Message)"
     }
 }
@@ -79,20 +79,20 @@ try {
     if ($pazarResponse.StatusCode -eq 200) {
         $results += @{
             Check = "Pazar Up (/up)"
-            Status = "✓ PASS"
+            Status = "PASS"
             Details = "HTTP $($pazarResponse.StatusCode)"
         }
     } else {
         $results += @{
             Check = "Pazar Up (/up)"
-            Status = "✗ FAIL"
+            Status = "FAIL"
             Details = "HTTP $($pazarResponse.StatusCode)"
         }
     }
 } catch {
     $results += @{
         Check = "Pazar Up (/up)"
-        Status = "✗ FAIL"
+        Status = "FAIL"
         Details = "Error: $($_.Exception.Message)"
     }
 }
@@ -118,13 +118,13 @@ if ($pazarErrors) {
     $errorCount = ($pazarErrors | Measure-Object).Count
     $results += @{
         Check = "Pazar App Logs (Errors)"
-        Status = "⚠ WARN"
+        Status = "WARN"
         Details = "$errorCount error/exception entries in last 120 lines"
     }
 } else {
     $results += @{
         Check = "Pazar App Logs (Errors)"
-        Status = "✓ PASS"
+        Status = "PASS"
         Details = "No errors in last 120 lines"
     }
 }
@@ -133,13 +133,13 @@ if ($hosErrors) {
     $errorCount = ($hosErrors | Measure-Object).Count
     $results += @{
         Check = "H-OS API Logs (Errors)"
-        Status = "⚠ WARN"
+        Status = "WARN"
         Details = "$errorCount error/exception entries in last 120 lines"
     }
 } else {
     $results += @{
         Check = "H-OS API Logs (Errors)"
-        Status = "✓ PASS"
+        Status = "PASS"
         Details = "No errors in last 120 lines"
     }
 }
@@ -153,9 +153,9 @@ Write-Host ("{0,-40} {1,-10} {2}" -f "Check", "Status", "Details")
 Write-Host ("-" * 80)
 foreach ($result in $results) {
     $color = switch ($result.Status) {
-        "✓ PASS" { "Green" }
-        "✗ FAIL" { "Red" }
-        "⚠ WARN" { "Yellow" }
+        "PASS" { "Green" }
+        "FAIL" { "Red" }
+        "WARN" { "Yellow" }
         default { "Gray" }
     }
     Write-Host ("{0,-40} {1,-10} {2}" -f $result.Check, $result.Status, $result.Details) -ForegroundColor $color
@@ -164,17 +164,16 @@ foreach ($result in $results) {
 Write-Host ""
 
 # Overall Status
-$failCount = ($results | Where-Object { $_.Status -eq "✗ FAIL" } | Measure-Object).Count
-$warnCount = ($results | Where-Object { $_.Status -eq "⚠ WARN" } | Measure-Object).Count
+$failCount = ($results | Where-Object { $_.Status -eq "FAIL" } | Measure-Object).Count
+$warnCount = ($results | Where-Object { $_.Status -eq "WARN" } | Measure-Object).Count
 
 if ($failCount -gt 0) {
-    Write-Host "OVERALL STATUS: ✗ FAIL ($failCount failures, $warnCount warnings)" -ForegroundColor Red
+    Write-Host "OVERALL STATUS: FAIL ($failCount failures, $warnCount warnings)" -ForegroundColor Red
     exit 1
 } elseif ($warnCount -gt 0) {
-    Write-Host "OVERALL STATUS: ⚠ WARN ($warnCount warnings)" -ForegroundColor Yellow
+    Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
     exit 0
 } else {
-    Write-Host "OVERALL STATUS: ✓ PASS (All checks passed)" -ForegroundColor Green
+    Write-Host "OVERALL STATUS: PASS (All checks passed)" -ForegroundColor Green
     exit 0
 }
-

@@ -18,4 +18,5 @@
 16. **PR merge için contract (routes snapshot) PASS zorunlu**: API route'ları snapshot ile eşleşmeli, değişiklik varsa snapshot güncellenmeli
 17. **PR merge için DB contract PASS zorunlu**: DB şeması snapshot ile eşleşmeli, değişiklik varsa snapshot güncellenmeli
 18. **PR merge için error-contract PASS zorunlu**: Error response'ları standard envelope formatında olmalı (ok:false, error_code, request_id, details?)
+19. **Yeni gate/health endpoint eklerken**: `docs/runbooks/incident.md` ve `ops/triage.ps1` güncellenmeli
 
