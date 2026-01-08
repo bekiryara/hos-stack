@@ -635,3 +635,61 @@ curl.exe -sS -H "Accept: application/json" -H "Content-Type: application/json" -
 ```
 
 **Sonuç:** ✅ Repo standardization v1 eklendi, architecture overview ve layout contract tanımlandı, doctor script hazır
+
+---
+
+## INCIDENT BUNDLE v1 PASS (2026-01-08)
+
+**Amaç:** Incident bundle generator ekle (evidence collection için single-command tool)
+
+**Eklenenler:**
+- `ops/incident_bundle.ps1` (yeni) - Incident bundle generator script
+- `docs/runbooks/incident_bundle.md` (yeni) - Bundle generator runbook
+- `docs/RULES.md` (güncellendi) - Rule 21 eklendi (incident bundle requirement)
+
+**Bundle Generator Özellikleri:**
+- Timestamped folder: `_archive/incidents/incident-YYYYMMDD-HHMMSS/`
+- Collected files:
+  1. meta.txt (git branch, commit, status)
+  2. compose_ps.txt (docker compose ps)
+  3. hos_health.txt (H-OS /v1/health response)
+  4. pazar_up.txt (Pazar /up response with headers)
+  5. pazar_routes_snapshot.txt (routes snapshot if exists)
+  6. pazar_schema_snapshot.txt (schema snapshot if exists)
+  7. version.txt (VERSION file contents)
+  8. changelog_unreleased.txt ([Unreleased] section from CHANGELOG.md)
+  9. logs_pazar_app.txt (last 500 lines)
+  10. logs_hos_api.txt (last 500 lines)
+  11. incident_note.md (template for incident notes)
+- Error handling: Captures errors gracefully, continues collection
+- Always exits 0 unless folder creation fails
+
+**Kanıt:**
+```powershell
+# Run bundle generator
+.\ops\incident_bundle.ps1
+
+# Expected output:
+# === INCIDENT BUNDLE GENERATOR ===
+# Creating bundle: _archive/incidents/incident-20260108-HHMMSS/
+# [1] Collecting metadata...
+# [2] Collecting Docker Compose status...
+# ...
+# === BUNDLE COMPLETE ===
+# Bundle location: _archive/incidents/incident-20260108-HHMMSS/
+
+# Verify files created:
+# - meta.txt
+# - compose_ps.txt
+# - hos_health.txt
+# - pazar_up.txt
+# - pazar_routes_snapshot.txt
+# - pazar_schema_snapshot.txt
+# - version.txt
+# - changelog_unreleased.txt
+# - logs_pazar_app.txt
+# - logs_hos_api.txt
+# - incident_note.md
+```
+
+**Sonuç:** ✅ Incident bundle v1 eklendi, single-command evidence collection hazır

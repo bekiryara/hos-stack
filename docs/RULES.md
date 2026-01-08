@@ -20,4 +20,5 @@
 18. **PR merge için error-contract PASS zorunlu**: Error response'ları standard envelope formatında olmalı (ok:false, error_code, request_id, details?)
 19. **Yeni gate/health endpoint eklerken**: `docs/runbooks/incident.md` ve `ops/triage.ps1` güncellenmeli
 20. **Repo layout değişikliği**: `docs/REPO_LAYOUT.md` ve `docs/ARCHITECTURE.md` güncellenmeli, `ops/doctor.ps1` PASS kalmalı
+21. **Incident bundle zorunlu**: Incident'lerde incident bundle path veya içeriği eklenmeli
 
