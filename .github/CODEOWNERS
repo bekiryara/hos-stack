@@ -1,7 +1,7 @@
 /docker-compose.yml     @bekiryara
 /WORLD_REGISTRY.md      @bekiryara
 /config/worlds.php     @bekiryara
-/docs/FOUNDING_SPEC.md @bekiryara
-/docs/CURRENT.md       @bekiryara
-/docs/PROOFS/*         @bekiryara
+/docs/*                @bekiryara
+/ops/*                 @bekiryara
+/.github/workflows/*   @bekiryara
 

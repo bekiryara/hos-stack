@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Error contract CI gate: `.github/workflows/error-contract.yml` for automated validation of error response envelope format (422 VALIDATION_ERROR with details.fields, 404 NOT_FOUND with request_id)
 - Incident pack v1: `docs/runbooks/incident.md` runbook with SEV definitions, triage checklist, request_id workflow, and CI gate troubleshooting
 - Triage script: `ops/triage.ps1` for single-command health checks and log inspection
+- Repo standardization v1: `docs/ARCHITECTURE.md` (architecture overview), `docs/REPO_LAYOUT.md` (layout contract), `ops/doctor.ps1` (repository health check), expanded CODEOWNERS for docs/ops/workflows
 
 ### Changed
 - Cleanup HIGH risk unused code: archived 3 empty World controller directories (`RealEstate/`, `Services/`, `Vehicles/`) to `_archive/20260108/cleanup_high/` (disabled worlds, no routes, no controllers)

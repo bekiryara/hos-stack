@@ -593,3 +593,45 @@ curl.exe -sS -H "Accept: application/json" -H "Content-Type: application/json" -
 ```
 
 **Sonuç:** ✅ Incident pack v1 eklendi, runbook ve triage script hazır
+
+---
+
+## REPO STANDARDIZATION v1 PASS (2026-01-08)
+
+**Amaç:** Repository standardı oluştur (architecture overview, repo layout contract, ownership expansion, doctor script)
+
+**Eklenenler:**
+- `docs/ARCHITECTURE.md` (yeni) - Architecture overview (H-OS vs Pazar, services, ports, request flows, contracts)
+- `docs/REPO_LAYOUT.md` (yeni) - Repo layout contract (structure, naming rules, do's/don'ts)
+- `ops/doctor.ps1` (yeni) - Comprehensive repository health check script
+- `.github/CODEOWNERS` (güncellendi) - Expanded ownership (docs/*, ops/*, .github/workflows/*)
+- `docs/RULES.md` (güncellendi) - Rule 20 eklendi (repo layout change requirement)
+
+**Doctor Script Özellikleri:**
+- Docker Compose services status check
+- H-OS health endpoint check (`/v1/health` expects `{"ok":true}`)
+- Pazar up endpoint check (`/up` expects HTTP 200)
+- Tracked secrets check (no `secrets/*.txt` or `.env` files)
+- Forbidden root artifacts check (no `*.zip`, `*.rar`, `*.bak`, `*.tmp`)
+- Snapshot files check (`ops/snapshots/routes.pazar.json`, `ops/snapshots/schema.pazar.sql`)
+- Next-step hints on failure
+- Exit code: 0 on PASS, 1 on FAIL
+
+**Kanıt:**
+```powershell
+# Run doctor script
+.\ops\doctor.ps1
+
+# Expected output:
+# === REPOSITORY DOCTOR ===
+# [1] Checking Docker Compose services...
+# [2] Checking H-OS health endpoint...
+# [3] Checking Pazar up endpoint...
+# [4] Checking for tracked secrets...
+# [5] Checking for forbidden root artifacts...
+# [6] Checking snapshot files...
+# === DOCTOR SUMMARY ===
+# OVERALL STATUS: PASS (All checks passed)
+```
+
+**Sonuç:** ✅ Repo standardization v1 eklendi, architecture overview ve layout contract tanımlandı, doctor script hazır
