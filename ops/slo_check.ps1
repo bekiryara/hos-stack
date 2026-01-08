@@ -225,6 +225,7 @@ $results += @{
 
 # Summary Table
 Write-Host "=== SLO CHECK SUMMARY ===" -ForegroundColor Cyan
+Write-Host "Warm-up applied: yes" -ForegroundColor Gray
 Write-Host ""
 Write-Host ("{0,-12} {1,-15} {2,-15} {3,-15} {4,-15} {5,-10}" -f "Service", "Endpoint", "Metric", "Value", "Target", "Status")
 Write-Host ("-" * 90)
