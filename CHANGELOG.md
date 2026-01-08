@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance baseline v1: `ops/perf_baseline.ps1` (warm-up + first-hit analysis), `docs/ops/PERFORMANCE_BASELINE.md` (performance baseline methodology), updated `ops/slo_check.ps1` with warm-up phase
 - SLO policy hardening v1: Made p50 latency non-blocking in release decisions, added blocking vs non-blocking metric classification, updated error budget and breach runbooks
 - Environment & secrets contract pack v1: Added `ops/env_contract.ps1` and `.github/workflows/env-contract.yml` for validating required environment variables and production guardrails (CORS policy, session security)
+- Identity & session posture pack v1: Added `ops/session_posture_check.ps1` and `.github/workflows/session-posture.yml` for validating session cookie security flags (Secure, HttpOnly, SameSite) and auth endpoint security posture (JSON envelope, security headers, rate limit headers)
 
 ### Changed
 - Cleanup HIGH risk unused code: archived 3 empty World controller directories (`RealEstate/`, `Services/`, `Vehicles/`) to `_archive/20260108/cleanup_high/` (disabled worlds, no routes, no controllers)

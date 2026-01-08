@@ -1431,3 +1431,67 @@ curl.exe -i -X POST http://localhost:8080/auth/login \
 - ✅ CI workflow: Deterministic output, no docker required
 
 **Sonuç:** ✅ Env contract pack v1 eklendi, required env vars ve production guardrails doğrulama aktif
+
+---
+
+## SESSION POSTURE PACK v1 PASS (2026-01-08)
+
+**Amaç:** Identity & session posture pack v1 - session cookie security flags ve auth endpoint security posture doğrulama
+
+**Eklenenler:**
+- `ops/session_posture_check.ps1` (yeni) - Session posture check script
+- `.github/workflows/session-posture.yml` (yeni) - CI workflow
+- `docs/runbooks/session_posture.md` (yeni) - Session posture runbook
+- `ops/ops_status.ps1` (güncellendi) - Session posture check entegrasyonu
+- `docs/RULES.md` (güncellendi) - Rule 32 eklendi (session-posture gate zorunlu)
+
+**Session Posture Checks:**
+- **Session Cookie Configuration** (production):
+  - SESSION_SECURE_COOKIE: Must be 'true' (FAIL if false/missing)
+  - SESSION_HTTP_ONLY: Must be 'true' (FAIL if false/missing)
+  - SESSION_SAME_SITE: Must be 'lax' or 'strict' (WARN if missing, FAIL if 'none' without Secure)
+  - CORS_ALLOWED_ORIGINS: Report only (enforced by env-contract gate)
+- **Auth Endpoint Response** (`/auth/login`):
+  - JSON envelope: Standard error envelope with request_id
+  - Security headers: X-Content-Type-Options, X-Frame-Options, Referrer-Policy
+  - Rate limit headers: X-RateLimit-Limit, X-RateLimit-Remaining (on throttled requests)
+
+**Kanıt:**
+```powershell
+# Run session posture check
+.\ops\session_posture_check.ps1
+
+# Expected output (production):
+# === IDENTITY & SESSION POSTURE CHECK ===
+# Timestamp: 2026-01-08 12:00:00
+# 
+# APP_ENV: production
+# 
+# === Checking Session Cookie Configuration ===
+# 
+# === Checking Auth Endpoint Response ===
+# 
+# === SESSION POSTURE CHECK RESULTS ===
+# 
+# Check                          Status Notes
+# -----                          ------ -----
+# Session Cookie Configuration   PASS   All session cookie flags correct (Secure, HttpOnly, SameSite)
+# Auth Endpoint Response         PASS   JSON envelope, security headers, and rate limit headers present
+# 
+# OVERALL STATUS: PASS (All checks passed)
+
+# Local mode:
+# Check                          Status Notes
+# -----                          ------ -----
+# Session Cookie Configuration   PASS   Local/dev mode: Checks are recommendations
+# Auth Endpoint Response         WARN   Docker services not running, endpoint checks skipped
+```
+
+**Test Sonuçları:**
+- ✅ Session cookie configuration validation working (production guardrails)
+- ✅ Auth endpoint response validation working (JSON envelope, security headers, rate limit headers)
+- ✅ Local/dev mode: Checks are recommendations (no FAIL for local)
+- ✅ CI workflow: Deterministic output, docker compose integration
+- ✅ Ops status dashboard: Session posture check integrated
+
+**Sonuç:** ✅ Session posture pack v1 eklendi, session cookie security flags ve auth endpoint security posture doğrulama aktif

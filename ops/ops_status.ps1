@@ -175,6 +175,9 @@ $schemaResult = Invoke-OpsCheck -CheckName "Schema Snapshot" -ScriptPath ".\ops\
 # i) error-contract check
 $errorContractResult = Test-ErrorContract
 
+# j) session-posture check
+$sessionPostureResult = Invoke-OpsCheck -CheckName "Session Posture" -ScriptPath ".\ops\session_posture_check.ps1"
+
 # Print results table
 Write-Host ""
 Write-Host "=== OPS STATUS RESULTS ===" -ForegroundColor Cyan
@@ -195,18 +198,19 @@ if ($failCount -gt 0) {
     Write-Host "Generating incident bundle..." -ForegroundColor Yellow
     try {
         $bundleOutput = & .\ops\incident_bundle.ps1 2>&1 | Out-String
-        # Extract bundle path from output (look for "incident_bundle_YYYYMMDD_HHMMSS" pattern)
-        $bundlePath = ($bundleOutput | Select-String -Pattern "incident_bundle_\d{8}_\d{6}" | Select-Object -First 1)
+        # Extract bundle path from output (look for "_archive/incidents/incident-YYYYMMDD-HHMMSS" pattern)
+        $bundlePath = ($bundleOutput | Select-String -Pattern "_archive[\\/]incidents[\\/]incident-\d{8}-\d{6}" | Select-Object -First 1)
         if ($bundlePath) {
             $bundlePath = $bundlePath.Matches.Value
-            Write-Host "INCIDENT_BUNDLE_PATH=incident_bundles/$bundlePath" -ForegroundColor Yellow
+            Write-Host "INCIDENT_BUNDLE_PATH=$bundlePath" -ForegroundColor Yellow
         } else {
-            # Fallback: try to find any path mentioned
-            $bundlePath = ($bundleOutput | Select-String -Pattern "incident_bundles[\\/]incident_bundle_\d{8}_\d{6}" | Select-Object -First 1)
+            # Fallback: try to find "Bundle location:" line
+            $bundlePath = ($bundleOutput | Select-String -Pattern "Bundle location:\s*(.+)" | Select-Object -First 1)
             if ($bundlePath) {
-                Write-Host "INCIDENT_BUNDLE_PATH=$($bundlePath.Matches.Value)" -ForegroundColor Yellow
+                $bundlePath = $bundlePath.Matches.Groups[1].Value.Trim()
+                Write-Host "INCIDENT_BUNDLE_PATH=$bundlePath" -ForegroundColor Yellow
             } else {
-                Write-Host "INCIDENT_BUNDLE_PATH=incident_bundles/ (check output above)" -ForegroundColor Yellow
+                Write-Host "INCIDENT_BUNDLE_PATH=_archive/incidents/ (check output above)" -ForegroundColor Yellow
             }
         }
     } catch {
