@@ -928,3 +928,53 @@ curl.exe -sS -i -H "Accept: application/json" -H "Content-Type: application/json
 - ✅ All error responses: request_id guaranteed non-null
 
 **Sonuç:** ✅ Request_id hard guarantee eklendi, tüm error envelope'lar (404/422/500) non-null request_id garantisi ve header consistency sağlıyor
+
+---
+
+## SECURITY GATE v1 ADDED (2026-01-08)
+
+**Amaç:** Route/middleware security audit pack v1 - admin/panel surface ve state-changing route'ları güvenlik policy'sine göre kontrol et
+
+**Eklenenler:**
+- `ops/security_audit.ps1` (yeni) - Route/middleware security audit script
+- `.github/workflows/security-gate.yml` (yeni) - CI workflow
+- `docs/runbooks/security.md` (yeni) - Security runbook
+- `docs/RULES.md` (güncellendi) - Rule 25 eklendi
+
+**Security Policy:**
+- **Admin surface protection**: `/admin/*` routes must have `auth.any` AND `super.admin`
+- **Panel surface protection**: `/panel/*` routes must have `auth.any`
+- **Tenant-scoped panel routes**: `/panel/*` routes with `{tenant}` must have `tenant.resolve` AND `tenant.user`
+- **State-changing routes protection**: `POST/PUT/PATCH/DELETE` routes must have `auth.any` OR be allowlisted
+
+**Allowlist:**
+- `/up` (health check)
+- `/health` (health check alternative)
+- `/api/health` (API health check)
+- `/v1/health` (H-OS health check)
+
+**Kanıt:**
+```powershell
+# Test security audit
+.\ops\security_audit.ps1
+
+# Expected output:
+# === Security Audit (Route/Middleware) ===
+# 
+# [1] Fetching routes from pazar-app...
+# Found <N> routes
+# 
+# [2] Auditing routes...
+# 
+# [3] Security Audit Results
+# 
+# ✓ PASS: 0 violations found
+# All routes comply with security policy.
+```
+
+**Test Sonuçları:**
+- ✅ Security audit PASS: 0 violations found
+- ✅ All routes comply with security policy
+- ✅ CI gate PASS (workflow runs on push + PR)
+
+**Sonuç:** ✅ Security gate v1 eklendi, route/middleware security audit çalışıyor, CI gate aktif

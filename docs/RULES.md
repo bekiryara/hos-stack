@@ -24,4 +24,5 @@
 22. **SLO check release öncesi**: Release öncesi SLO check konsülte edilmeli; tekrarlayan FAIL/WARN durumunda incident bundle + runbook adımları gerekli
 23. **Latency SLO warm-up ile**: Latency SLO değerlendirmesi warm-up ile ölçülmeli; sadece cold-start spike'ları release'i bloklamaz
 24. **Release blockers availability/p95/error-rate**: Release kararı sadece availability, p95 latency ve error rate'e göre verilir; p50 bilgilendirme amaçlıdır ve Windows/Docker dev ortamında WARN gösterebilir
+25. **PR merge için security-gate PASS zorunlu**: Route/middleware security audit PASS olmalı; admin/panel surface ve state-changing route'lar security policy'ye uygun olmalı
 

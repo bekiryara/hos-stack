@@ -1,0 +1,59 @@
+name: Security Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  security_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start services
+        run: |
+          echo "Starting docker compose services..."
+          docker compose up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 15
+
+      - name: Run security audit
+        shell: pwsh
+        run: |
+          pwsh ./ops/security_audit.ps1
+
+      - name: Upload violations on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-violations
+          path: |
+            ops/violations.txt
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up services..."
+          docker compose down -v
+
+      - name: Security Gate Summary
+        if: failure()
+        run: |
+          echo "❌ Security audit failed"
+          echo ""
+          echo "One or more routes violate security policy."
+          echo "Review the output above or check the violations artifact."
+          echo ""
+          echo "Security Policy:"
+          echo "  1. /admin/* routes must have: auth.any AND super.admin"
+          echo "  2. /panel/* routes must have: auth.any"
+          echo "  3. /panel/* routes with {tenant} must have: tenant.resolve AND tenant.user"
+          echo "  4. POST/PUT/PATCH/DELETE routes must have: auth.any (or be allowlisted)"
+
