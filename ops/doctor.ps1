@@ -11,6 +11,85 @@ Write-Host ""
 $results = @()
 $hasFailures = $false
 
+# 0. Check if running from repo root (WARN only, not FAIL)
+Write-Host "[0] Checking execution directory..." -ForegroundColor Yellow
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+$currentDir = (Get-Location).Path
+
+# Normalize paths for comparison
+$repoRootNormalized = [System.IO.Path]::GetFullPath($repoRoot).TrimEnd('\')
+$currentDirNormalized = [System.IO.Path]::GetFullPath($currentDir).TrimEnd('\')
+
+if ($repoRootNormalized -ne $currentDirNormalized) {
+    $results += @{
+        Check = "Execution Directory"
+        Status = "WARN"
+        Details = "Not running from repo root. Current: $currentDirNormalized, Expected: $repoRootNormalized"
+    }
+    Write-Host "WARNING: Script should be run from repo root" -ForegroundColor Yellow
+    Write-Host "Hint: cd $repoRootNormalized" -ForegroundColor Gray
+} else {
+    $results += @{
+        Check = "Execution Directory"
+        Status = "PASS"
+        Details = "Running from repo root"
+    }
+}
+
+Write-Host ""
+
+# 0.1. Check for duplicate compose usage patterns (WARN only)
+Write-Host "[0.1] Checking for duplicate compose service/port conflicts..." -ForegroundColor Yellow
+try {
+    $rootComposeFile = "docker-compose.yml"
+    $hosComposeFile = "work\hos\docker-compose.yml"
+    $conflicts = @()
+    
+    if ((Test-Path $rootComposeFile) -and (Test-Path $hosComposeFile)) {
+        # Check for duplicate service names
+        $rootServices = docker compose -f $rootComposeFile config --services 2>&1 | Where-Object { $_ -ne "" }
+        $hosServices = docker compose -f $hosComposeFile config --services 2>&1 | Where-Object { $_ -ne "" }
+        
+        $duplicateServices = $rootServices | Where-Object { $hosServices -contains $_ }
+        
+        if ($duplicateServices.Count -gt 0) {
+            $conflicts += "Duplicate service names: $($duplicateServices -join ', ')"
+        }
+        
+        # Check for port conflicts (simplified: check if both have services on same ports)
+        # This is a heuristic check - actual conflicts depend on which compose is used
+        $conflictMsg = "Both root and work/hos compose files exist. Ensure obs profile does not start core services."
+        if ($conflicts.Count -eq 0 -and $conflictMsg) {
+            $conflicts += $conflictMsg
+        }
+    }
+    
+    if ($conflicts.Count -gt 0) {
+        $results += @{
+            Check = "Duplicate Compose Patterns"
+            Status = "WARN"
+            Details = ($conflicts -join "; ")
+        }
+        Write-Host "WARNING: Potential compose usage conflicts detected" -ForegroundColor Yellow
+        Write-Host "Guidance: Use ops/stack_up.ps1 -Profile obs to start only observability services" -ForegroundColor Gray
+    } else {
+        $results += @{
+            Check = "Duplicate Compose Patterns"
+            Status = "PASS"
+            Details = "No conflicts detected"
+        }
+    }
+} catch {
+    $results += @{
+        Check = "Duplicate Compose Patterns"
+        Status = "WARN"
+        Details = "Could not check: $($_.Exception.Message)"
+    }
+}
+
+Write-Host ""
+
 # 1. Docker Compose Services Status
 Write-Host "[1] Checking Docker Compose services..." -ForegroundColor Yellow
 try {
@@ -162,6 +241,87 @@ Write-Host ""
 
 # 6. Check Snapshot Files
 Write-Host "[6] Checking snapshot files..." -ForegroundColor Yellow
+$requiredSnapshots = @(
+    "ops/snapshots/routes.pazar.json",
+    "ops/snapshots/schema.pazar.sql"
+)
+$missingSnapshots = @()
+foreach ($snapshot in $requiredSnapshots) {
+    if (-not (Test-Path $snapshot)) {
+        $missingSnapshots += $snapshot
+    }
+}
+if ($missingSnapshots.Count -gt 0) {
+    $missingList = $missingSnapshots -join ", "
+    $results += @{
+        Check = "Snapshot Files"
+        Status = "FAIL"
+        Details = "Missing: $missingList"
+    }
+    $hasFailures = $true
+} else {
+    $results += @{
+        Check = "Snapshot Files"
+        Status = "PASS"
+        Details = "All required snapshots present"
+    }
+}
+
+Write-Host ""
+
+# 7. Repository Integrity Check (non-destructive, WARN-only unless critical)
+Write-Host "[7] Running repository integrity check..." -ForegroundColor Yellow
+if (Test-Path ".\ops\repo_integrity.ps1") {
+    try {
+        $integrityOutput = & .\ops\repo_integrity.ps1 2>&1 | Out-String
+        $integrityExitCode = $LASTEXITCODE
+        
+        # Extract status from output (look for OVERALL STATUS line)
+        if ($integrityOutput -match "OVERALL STATUS:\s*(PASS|WARN|FAIL)") {
+            $integrityStatus = $matches[1]
+            if ($integrityStatus -eq "FAIL") {
+                $results += @{
+                    Check = "Repository Integrity"
+                    Status = "FAIL"
+                    Details = "Critical integrity issues detected (see repo_integrity.ps1 output above)"
+                }
+                $hasFailures = $true
+            } elseif ($integrityStatus -eq "WARN") {
+                $results += @{
+                    Check = "Repository Integrity"
+                    Status = "WARN"
+                    Details = "Minor integrity issues detected (non-critical drift)"
+                }
+            } else {
+                $results += @{
+                    Check = "Repository Integrity"
+                    Status = "PASS"
+                    Details = "No integrity issues detected"
+                }
+            }
+        } else {
+            $results += @{
+                Check = "Repository Integrity"
+                Status = "WARN"
+                Details = "Could not parse integrity check output"
+            }
+        }
+    } catch {
+        $results += @{
+            Check = "Repository Integrity"
+            Status = "WARN"
+            Details = "Error running integrity check: $($_.Exception.Message)"
+        }
+    }
+} else {
+    $results += @{
+        Check = "Repository Integrity"
+        Status = "SKIP"
+        Details = "repo_integrity.ps1 not found (optional check)"
+    }
+}
+
+Write-Host ""
 $requiredSnapshots = @(
     "ops/snapshots/routes.pazar.json",
     "ops/snapshots/schema.pazar.sql"

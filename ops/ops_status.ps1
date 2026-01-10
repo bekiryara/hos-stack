@@ -1,5 +1,17 @@
 # ops_status.ps1 - Unified Ops Dashboard
 # Aggregates all ops checks into a single status report
+# PowerShell 5.1 compatible
+
+param(
+    [switch]$Ci
+)
+
+# Load shared output helper if available
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
+    . "${scriptDir}\_lib\ops_output.ps1"
+    Initialize-OpsOutput
+}
 
 $ErrorActionPreference = "Continue"
 
@@ -157,6 +169,23 @@ $verifyResult = Invoke-OpsCheck -CheckName "Stack Verification" -ScriptPath ".\o
 # c) triage.ps1
 $triageResult = Invoke-OpsCheck -CheckName "Incident Triage" -ScriptPath ".\ops\triage.ps1"
 
+# c.1) storage_posture_check.ps1 (conditional)
+if (Test-Path ".\ops\storage_posture_check.ps1") {
+    $storagePostureResult = Invoke-OpsCheck -CheckName "Storage Posture" -ScriptPath ".\ops\storage_posture_check.ps1"
+} else {
+    $results += [PSCustomObject]@{
+        Check = "Storage Posture"
+        Status = "SKIP"
+        ExitCode = 0
+        Notes = "Script not found"
+    }
+}
+
+# c.2) pazar_storage_posture.ps1 (conditional, legacy)
+if (Test-Path ".\ops\pazar_storage_posture.ps1") {
+    $pazarStorageResult = Invoke-OpsCheck -CheckName "Pazar Storage Posture" -ScriptPath ".\ops\pazar_storage_posture.ps1"
+}
+
 # d) slo_check.ps1
 $sloResult = Invoke-OpsCheck -CheckName "SLO Check" -ScriptPath ".\ops\slo_check.ps1" -Arguments @("-N", "10")
 
@@ -217,12 +246,27 @@ if ($failCount -gt 0) {
         Write-Host "Warning: Failed to generate incident bundle: $($_.Exception.Message)" -ForegroundColor Yellow
     }
     
-    exit 1
+    $global:LASTEXITCODE = 1
+    if ($Ci) {
+        exit 1
+    } else {
+        return 1
+    }
 } elseif ($warnCount -gt 0) {
     Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
-    exit 2
+    $global:LASTEXITCODE = 2
+    if ($Ci) {
+        exit 2
+    } else {
+        return 2
+    }
 } else {
     Write-Host "OVERALL STATUS: PASS (All checks passed)" -ForegroundColor Green
-    exit 0
+    $global:LASTEXITCODE = 0
+    if ($Ci) {
+        exit 0
+    } else {
+        return 0
+    }
 }
 
