@@ -26,7 +26,7 @@ jobs:
       - name: Run ops status dashboard
         shell: pwsh
         run: |
-          pwsh ./ops/ops_status.ps1
+          pwsh ./ops/run_ops_status.ps1 -Ci
 
       - name: Upload incident bundle on failure
         if: failure()
