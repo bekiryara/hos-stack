@@ -144,3 +144,4 @@ curl.exe -sS -i http://localhost:3000/v1/health && curl.exe -sS -i http://localh
 - Secrets dosyaları repo'da **kalmıyor** (local kullanım için archive'dan kopyalanabilir)
 - Canonical compose: root'taki `docker-compose.yml` (hos + pazar birlikte)
 
+
