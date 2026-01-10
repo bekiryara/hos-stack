@@ -110,6 +110,9 @@ services:
       - ./work/pazar/resources/views:/var/www/html/resources/views
       - ./work/pazar/app:/var/www/html/app
       - ./work/pazar/routes:/var/www/html/routes
+      # Named volumes for runtime-writable directories (Windows bind mount permission fix)
+      - pazar_storage:/var/www/html/storage
+      - pazar_cache:/var/www/html/bootstrap/cache
     restart: unless-stopped
 
 secrets:
@@ -132,5 +135,9 @@ volumes:
     name: hos_db_data
   pazar_db_data:
     name: pazar_db_data
+  pazar_storage:
+    name: pazar_storage
+  pazar_cache:
+    name: pazar_cache
 
 
