@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Storage Writability + Alert Pipeline Proof Pack v1**: Enhanced `docker-entrypoint.sh` with robust permission enforcement and writability probe (fail-fast behavior), created `ops/storage_posture_check.ps1` for automated storage verification, added webhook `/last` endpoint to `alert-webhook` service for alert payload retrieval, created `ops/alert_pipeline_proof.ps1` for deterministic Alertmanager -> Webhook pipeline verification, and added comprehensive runbooks and proof documentation
+- **Laravel Log Permission Hotfix Pack v1**: Fixed Laravel Monolog permission denied errors for `/var/www/html/storage/logs/laravel.log` by creating `supervisord.conf` (required by Dockerfile), ensuring named volumes are used for runtime-writable directories, and adding deterministic remediation steps to incident runbook
+- **Release-Grade Foundation Pack v1**: Pazar storage hardening (named volumes for runtime-writable directories, idempotent permission enforcement), observability safe bring-up (no port conflicts with core), repo integrity check script (`ops/repo_integrity.ps1`), and comprehensive proof documentation
 - **World Spine Governance Pack v1**: Added world spine governance check to ensure enabled worlds have route/controller surfaces and ctx.world lock evidence, while disabled worlds don't have leftover controller code
 
 ### Added

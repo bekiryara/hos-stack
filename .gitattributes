@@ -1,0 +1,37 @@
+# Git attributes for line ending normalization
+# Ensures consistent line endings across platforms
+
+# Shell scripts: LF
+*.sh text eol=lf
+
+# YAML files: LF
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Markdown: LF
+*.md text eol=lf
+
+# PowerShell scripts: CRLF (Windows standard)
+*.ps1 text eol=crlf
+
+# JSON: LF
+*.json text eol=lf
+
+# PHP: LF
+*.php text eol=lf
+
+# Dockerfile: LF
+Dockerfile text eol=lf
+*.Dockerfile text eol=lf
+
+# Config files: LF
+*.conf text eol=lf
+*.config text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary

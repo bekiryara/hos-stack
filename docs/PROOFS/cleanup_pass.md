@@ -1558,3 +1558,56 @@ curl.exe -sS -i -H "Accept: application/json" http://localhost:8080/api/non-exis
 - ✅ Windows PowerShell quoting sorunsuz çalışıyor
 
 **Sonuç:** ✅ Request trace pack v1 eklendi, request_id ile Pazar + H-OS loglarını tek komutla korele etme aktif
+
+---
+
+## LARAVEL LOG PERMISSION HOTFIX PACK v1 PASS (2026-01-10)
+
+**Problem:** UI routes (e.g., `/ui/admin/control-center`) returning HTTP 500 with `UnexpectedValueException (Monolog StreamHandler) cannot open /var/www/html/storage/logs/laravel.log: Permission denied.`
+
+**Root Cause:** Windows Docker bind mounts do not preserve Linux file permissions, causing `php-fpm` (running as `www-data`) to be unable to write to `laravel.log` when `/var/www/html/storage` is bind-mounted from Windows.
+
+**Solution:**
+- Created `work/pazar/docker/supervisord.conf` (required by Dockerfile but missing from repo)
+- Named volumes (`pazar_storage`, `pazar_cache`) already configured in `docker-compose.yml` (from previous pack)
+- `docker-entrypoint.sh` already includes idempotent permission enforcement (from previous pack)
+- Added deterministic remediation steps to `docs/runbooks/incident.md`
+
+**Acceptance Tests:**
+```powershell
+# 1. Recreate container
+docker compose down pazar-app
+docker compose up -d --force-recreate pazar-app
+
+# 2. Verify permissions
+docker compose exec -T pazar-app sh -lc "ls -ld /var/www/html/storage /var/www/html/storage/logs /var/www/html/bootstrap/cache && ls -l /var/www/html/storage/logs/laravel.log"
+# Expected: www-data:www-data ownership
+
+# 3. Test write operation
+docker compose exec -T pazar-app sh -lc "su -s /bin/sh www-data -c 'php -r \"file_put_contents(\\\"/var/www/html/storage/logs/laravel.log\\\",\\\"probe\\n\\\",FILE_APPEND); echo \\\"OK\\n\\\";\"'"
+# Expected: "OK" with exit code 0
+
+# 4. Verify UI access
+curl.exe -sS -w "\nHTTP_CODE:%{http_code}\n" http://localhost:8080/ui/admin/control-center 2>&1 | Select-Object -Last 3
+# Expected: HTTP 200 or 302, NOT 500
+
+# 5. Verify storage posture check
+.\ops\pazar_storage_posture.ps1
+# Expected: PASS
+```
+
+**Files Changed:**
+- `work/pazar/docker/supervisord.conf` - **NEW** - Supervisor configuration for PHP-FPM, Nginx, and Laravel scheduler
+- `docs/runbooks/incident.md` - Added "Laravel Log Permission Denied Troubleshooting" section with deterministic remediation steps
+- `docs/PROOFS/laravel_log_permission_fix_pass.md` - **NEW** - Complete proof documentation with acceptance tests
+- `CHANGELOG.md` - Added Laravel Log Permission Hotfix Pack v1 entry
+
+**Test Sonuçları:**
+- ✅ `supervisord.conf` created and properly configured (PHP-FPM, Nginx, Laravel scheduler)
+- ✅ Container rebuilds successfully with new supervisord.conf
+- ✅ Permissions persist across container restarts (enforced by entrypoint)
+- ✅ UI routes load without 500 errors
+- ✅ Storage posture check still PASS
+- ✅ Incident runbook includes deterministic remediation steps
+
+**Sonuç:** ✅ Laravel log permission hotfix pack v1 applied, UI no longer returns 500 due to Monolog permission errors

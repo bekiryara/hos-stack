@@ -33,4 +33,7 @@
 31. **Env-contract gate PASS zorunlu**: Env-contract gate PASS olmalı; production-related changes için required env vars ve production guardrails (CORS, session security) doğrulanmalı
 32. **Session-posture gate PASS zorunlu**: Session-posture gate PASS olmalı; auth-related PRs için session cookie security flags (Secure, HttpOnly, SameSite) ve auth endpoint security posture doğrulanmalı
 33. **Request trace kullanımı zorunlu**: Incident/triage sırasında request_id varsa request_trace çıktısı veya bundle içine eklenmeli
+34. **Pazar Storage Posture PASS/WARN zorunlu**: Release öncesi `ops/pazar_storage_posture.ps1` PASS/WARN olmalı; FAIL durumunda incident bundle zorunlu ve container restart/permission fix gerekli
+35. **Storage posture gate release öncesi PASS zorunlu**: Release öncesi `ops/storage_posture_check.ps1` PASS olmalı; UI 500 permission errors önlemek için storage writability garanti edilmeli
+36. **Alert pipeline proof obs profile açıkken PASS olmalı**: Observability profile açıkken `ops/alert_pipeline_proof.ps1` PASS olmalı (obs yoksa WARN kabul edilir); Alertmanager -> Webhook pipeline çalışır durumda olmalı
 

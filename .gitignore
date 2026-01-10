@@ -4,3 +4,21 @@ work/hos/secrets/*.txt
 oidc_token*.json
 cookies.txt
 headers.txt
+
+# Archive / diagnostics / backups (never track)
+_archive/
+_diag_*.txt
+_diagnosis_*.txt
+_evidence_*.txt
+_evidence_*.json
+_verify_output*.txt
+*.bak-*
+*.backup-*
+.env.backup-*
+
+# Ops temporary files
+ops/*.backup
+ops/diffs/
+
+# Temp files
+_temp_*.txt

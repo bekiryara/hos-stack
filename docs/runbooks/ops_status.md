@@ -6,11 +6,29 @@ The Unified Ops Status Dashboard (`ops/ops_status.ps1`) aggregates all operation
 
 ## Running Locally
 
-### Basic Usage
+### Recommended Usage (Terminal-Safe)
+
+```powershell
+.\ops\run_ops_status.ps1
+```
+
+This wrapper prevents the terminal from closing and preserves exit codes. It's the recommended way to run ops_status locally.
+
+### Direct Usage (Alternative)
 
 ```powershell
 .\ops\ops_status.ps1
 ```
+
+**Note:** Direct usage may close the terminal in some environments. Use `run_ops_status.ps1` for better UX.
+
+### CI Usage
+
+```powershell
+.\ops\run_ops_status.ps1 -Ci
+```
+
+The `-Ci` switch ensures proper exit code propagation for CI/CD pipelines.
 
 ### Prerequisites
 
