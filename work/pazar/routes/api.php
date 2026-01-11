@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\Commerce\ListingController as CommerceListingController;
-use App\Http\Controllers\Api\Food\ListingController as FoodListingController;
-use App\Http\Controllers\Api\Rentals\ListingController as RentalsListingController;
+use App\Http\Controllers\Api\Food\FoodListingController;
+use App\Http\Controllers\Api\Rentals\RentalsListingController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\MetricsController;
@@ -31,14 +31,14 @@ Route::prefix('v1')->middleware(['auth.any', 'resolve.tenant', 'tenant.user'])->
 
 // Commerce listings spine
 Route::prefix('v1/commerce')->defaults('world', 'commerce')->group(function () {
-    // GET routes (auth.any + resolve.tenant + tenant.user required)
-    Route::middleware(['auth.any', 'resolve.tenant', 'tenant.user'])->group(function () {
+    // GET routes (world.lock:commerce + auth.any + resolve.tenant + tenant.user required)
+    Route::middleware(['world.lock:commerce', 'auth.any', 'resolve.tenant', 'tenant.user'])->group(function () {
         Route::get('/listings', [CommerceListingController::class, 'index'])->name('api.v1.commerce.listings.index');
         Route::get('/listings/{id}', [CommerceListingController::class, 'show'])->name('api.v1.commerce.listings.show');
     });
     
-    // Write routes (auth.any + resolve.tenant + tenant.user required)
-    Route::middleware(['auth.any', 'resolve.tenant', 'tenant.user'])->group(function () {
+    // Write routes (world.lock:commerce + auth.any + resolve.tenant + tenant.user required)
+    Route::middleware(['world.lock:commerce', 'auth.any', 'resolve.tenant', 'tenant.user'])->group(function () {
         Route::post('/listings', [CommerceListingController::class, 'store'])->name('api.v1.commerce.listings.store');
         Route::patch('/listings/{id}', [CommerceListingController::class, 'update'])->name('api.v1.commerce.listings.update');
         Route::delete('/listings/{id}', [CommerceListingController::class, 'destroy'])->name('api.v1.commerce.listings.destroy');
