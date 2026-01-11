@@ -4,9 +4,15 @@ namespace App\Http\Controllers\Api\Rentals;
 
 use App\Http\Controllers\Controller;
 use App\Models\Listing;
+use App\Support\Api\Cursor;
+use App\Support\Api\ListingQuery;
+use App\Support\Api\ListingReadDTO;
+use App\Support\ApiSpine\ListingWriteModel;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Rentals Listing Controller (API Spine - Read-Path v2)
@@ -40,35 +46,19 @@ final class RentalsListingController extends Controller
             return $this->worldContextInvalid($request);
         }
 
-        // Pagination params (deterministic: limit clamp 1..100, default 20)
-        $limit = (int) $request->input('limit', 20);
-        $limit = min(max($limit, 1), 100); // Clamp between 1 and 100
-        $cursor = $request->input('cursor');
+        // Validate cursor (if provided)
+        $cursorStr = $request->input('cursor');
+        if (!empty($cursorStr) && !Cursor::isValid($cursorStr)) {
+            return $this->invalidCursor($request);
+        }
 
-        // Query listings (tenant-scoped, world-scoped)
+        // Build base query (tenant-scoped, world-scoped)
         $query = Listing::query()
             ->forTenant($tenantId)
-            ->forWorld('rentals')
-            ->orderByDesc('created_at')
-            ->orderByDesc('id'); // Secondary sort for cursor stability
+            ->forWorld('rentals');
 
-        // Cursor pagination (if cursor provided)
-        if ($cursor !== null && $cursor !== '') {
-            $decoded = base64_decode($cursor, true);
-            if ($decoded !== false) {
-                $parts = explode(':', $decoded, 2);
-                if (count($parts) === 2) {
-                    [$cursorCreatedAt, $cursorId] = $parts;
-                    $query->where(function ($q) use ($cursorCreatedAt, $cursorId) {
-                        $q->where('created_at', '<', $cursorCreatedAt)
-                            ->orWhere(function ($q2) use ($cursorCreatedAt, $cursorId) {
-                                $q2->where('created_at', '=', $cursorCreatedAt)
-                                    ->where('id', '<', $cursorId);
-                            });
-                    });
-                }
-            }
-        }
+        // Apply filters and ordering via ListingQuery
+        [$query, $limit, $nextCursorFromQuery] = ListingQuery::apply($query, $request);
 
         // Get items (limit + 1 to check if there's more)
         $items = $query->limit($limit + 1)->get();
@@ -82,37 +72,25 @@ final class RentalsListingController extends Controller
         $nextCursor = null;
         if ($hasMore && $items->count() > 0) {
             $lastItem = $items->last();
-            $cursorData = $lastItem->created_at->toIso8601String() . ':' . $lastItem->id;
-            $nextCursor = base64_encode($cursorData);
+            $afterValue = $lastItem->created_at->toIso8601String() . ':' . $lastItem->id;
+            $nextCursor = Cursor::encode('created_at', 'desc', $afterValue);
         }
 
-        // Format response
+        // Format response using ListingReadDTO
         $formattedItems = $items->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'title' => $item->title,
-                'description' => $item->description,
-                'price_amount' => $item->price_amount,
-                'currency' => $item->currency,
-                'status' => $item->status,
-                'created_at' => $item->created_at?->toIso8601String(),
-                'updated_at' => $item->updated_at?->toIso8601String(),
-            ];
+            return ListingReadDTO::fromModel($item);
         })->toArray();
 
         $requestId = $request->attributes->get('request_id', '');
 
         $response = response()->json([
             'ok' => true,
-            'data' => [
-                'items' => $formattedItems,
-                'cursor' => [
-                    'next' => $nextCursor,
-                ],
-                'meta' => [
-                    'count' => count($formattedItems),
-                    'limit' => $limit,
-                ],
+            'items' => $formattedItems,
+            'cursor' => [
+                'next' => $nextCursor,
+            ],
+            'meta' => [
+                'limit' => $limit,
             ],
             'request_id' => $requestId,
         ]);
@@ -170,25 +148,14 @@ final class RentalsListingController extends Controller
             return $response->header('X-Request-Id', $requestId);
         }
 
-        // Format item
-        $item = [
-            'id' => $listing->id,
-            'title' => $listing->title,
-            'description' => $listing->description,
-            'price_amount' => $listing->price_amount,
-            'currency' => $listing->currency,
-            'status' => $listing->status,
-            'created_at' => $listing->created_at?->toIso8601String(),
-            'updated_at' => $listing->updated_at?->toIso8601String(),
-        ];
+        // Format item using ListingReadDTO
+        $item = ListingReadDTO::fromModel($listing);
 
         $requestId = $request->attributes->get('request_id', '');
 
         $response = response()->json([
             'ok' => true,
-            'data' => [
-                'item' => $item,
-            ],
+            'item' => $item,
             'request_id' => $requestId,
         ]);
 
@@ -200,69 +167,195 @@ final class RentalsListingController extends Controller
     }
 
     /**
-     * Create rentals listing (NOT_IMPLEMENTED - 501 stub)
+     * Create rentals listing
      * 
      * POST /api/v1/rentals/listings
      */
     public function store(Request $request): JsonResponse
     {
+        // Resolve tenant context
+        $tenantId = $this->resolveTenantId($request);
+        if (empty($tenantId)) {
+            return $this->tenantContextMissing($request);
+        }
+
+        // Enforce world scope (defensive: if ctx.world missing, default to rentals; if present and mismatch, error)
+        $worldId = $request->attributes->get('ctx.world');
+        if (empty($worldId)) {
+            // Defensive default: if world.lock middleware didn't run, assume rentals (should not happen, but safe fallback)
+            $worldId = 'rentals';
+            $request->attributes->set('ctx.world', $worldId);
+        } elseif ($worldId !== 'rentals') {
+            // Mismatch protection: if world is set but not rentals, return error
+            return $this->worldContextInvalid($request);
+        }
+
         $requestId = $request->attributes->get('request_id', '');
         if (empty($requestId)) {
             $requestId = (string) Str::uuid();
         }
 
-        $response = response()->json([
-            'ok' => false,
-            'error_code' => 'NOT_IMPLEMENTED',
-            'message' => 'Write endpoints are not implemented yet.',
-            'request_id' => $requestId,
-        ], 501);
+        try {
+            // Create listing using ListingWriteModel
+            $listing = ListingWriteModel::create($worldId, $tenantId, $request->all());
 
-        return $response->header('X-Request-Id', $requestId);
+            // Format item using ListingReadDTO
+            $item = ListingReadDTO::fromModel($listing);
+
+            // Audit log
+            Log::info('Product write path: CREATE_LISTING', [
+                'request_id' => $requestId,
+                'tenant_id' => $tenantId,
+                'world' => $worldId,
+                'listing_id' => $listing->id,
+                'operation' => 'CREATE_LISTING',
+            ]);
+
+            // Return 201 CREATED
+            $response = response()->json([
+                'ok' => true,
+                'item' => $item,
+                'request_id' => $requestId,
+            ], 201);
+
+            return $response->header('X-Request-Id', $requestId);
+        } catch (ValidationException $e) {
+            $response = response()->json([
+                'ok' => false,
+                'error_code' => 'VALIDATION_ERROR',
+                'message' => 'The given data was invalid.',
+                'errors' => $e->errors(),
+                'request_id' => $requestId,
+            ], 422);
+
+            return $response->header('X-Request-Id', $requestId);
+        }
     }
 
     /**
-     * Update rentals listing (NOT_IMPLEMENTED - 501 stub)
+     * Update rentals listing (partial update)
      * 
      * PATCH /api/v1/rentals/listings/{id}
      */
     public function update(Request $request, string $id): JsonResponse
     {
+        // Resolve tenant context
+        $tenantId = $this->resolveTenantId($request);
+        if (empty($tenantId)) {
+            return $this->tenantContextMissing($request);
+        }
+
+        // Enforce world scope (defensive: if ctx.world missing, default to rentals; if present and mismatch, error)
+        $worldId = $request->attributes->get('ctx.world');
+        if (empty($worldId)) {
+            // Defensive default: if world.lock middleware didn't run, assume rentals (should not happen, but safe fallback)
+            $worldId = 'rentals';
+            $request->attributes->set('ctx.world', $worldId);
+        } elseif ($worldId !== 'rentals') {
+            // Mismatch protection: if world is set but not rentals, return error
+            return $this->worldContextInvalid($request);
+        }
+
         $requestId = $request->attributes->get('request_id', '');
         if (empty($requestId)) {
             $requestId = (string) Str::uuid();
         }
 
-        $response = response()->json([
-            'ok' => false,
-            'error_code' => 'NOT_IMPLEMENTED',
-            'message' => 'Write endpoints are not implemented yet.',
-            'request_id' => $requestId,
-        ], 501);
+        try {
+            // Update listing using ListingWriteModel
+            $listing = ListingWriteModel::update($worldId, $tenantId, $id, $request->all());
 
-        return $response->header('X-Request-Id', $requestId);
+            if ($listing === null) {
+                // Not found in tenant+world scope (404 NOT_FOUND, prevents cross-tenant leakage)
+                return $this->notFound($request);
+            }
+
+            // Format item using ListingReadDTO
+            $item = ListingReadDTO::fromModel($listing);
+
+            // Audit log
+            Log::info('Product write path: UPDATE_LISTING', [
+                'request_id' => $requestId,
+                'tenant_id' => $tenantId,
+                'world' => $worldId,
+                'listing_id' => $id,
+                'operation' => 'UPDATE_LISTING',
+            ]);
+
+            // Return 200 OK
+            $response = response()->json([
+                'ok' => true,
+                'item' => $item,
+                'request_id' => $requestId,
+            ], 200);
+
+            return $response->header('X-Request-Id', $requestId);
+        } catch (ValidationException $e) {
+            $response = response()->json([
+                'ok' => false,
+                'error_code' => 'VALIDATION_ERROR',
+                'message' => 'The given data was invalid.',
+                'errors' => $e->errors(),
+                'request_id' => $requestId,
+            ], 422);
+
+            return $response->header('X-Request-Id', $requestId);
+        }
     }
 
     /**
-     * Delete rentals listing (NOT_IMPLEMENTED - 501 stub)
+     * Delete rentals listing (hard delete)
      * 
      * DELETE /api/v1/rentals/listings/{id}
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
+        // Resolve tenant context
+        $tenantId = $this->resolveTenantId($request);
+        if (empty($tenantId)) {
+            return $this->tenantContextMissing($request);
+        }
+
+        // Enforce world scope (defensive: if ctx.world missing, default to rentals; if present and mismatch, error)
+        $worldId = $request->attributes->get('ctx.world');
+        if (empty($worldId)) {
+            // Defensive default: if world.lock middleware didn't run, assume rentals (should not happen, but safe fallback)
+            $worldId = 'rentals';
+            $request->attributes->set('ctx.world', $worldId);
+        } elseif ($worldId !== 'rentals') {
+            // Mismatch protection: if world is set but not rentals, return error
+            return $this->worldContextInvalid($request);
+        }
+
         $requestId = $request->attributes->get('request_id', '');
         if (empty($requestId)) {
             $requestId = (string) Str::uuid();
         }
 
-        $response = response()->json([
-            'ok' => false,
-            'error_code' => 'NOT_IMPLEMENTED',
-            'message' => 'Write endpoints are not implemented yet.',
-            'request_id' => $requestId,
-        ], 501);
+        // Delete listing using ListingWriteModel
+        $deleted = ListingWriteModel::delete($worldId, $tenantId, $id);
 
-        return $response->header('X-Request-Id', $requestId);
+        if (!$deleted) {
+            // Not found in tenant+world scope (404 NOT_FOUND, prevents cross-tenant leakage)
+            return $this->notFound($request);
+        }
+
+        // Audit log
+        Log::info('Product write path: DELETE_LISTING', [
+            'request_id' => $requestId,
+            'tenant_id' => $tenantId,
+            'world' => $worldId,
+            'listing_id' => $id,
+            'operation' => 'DELETE_LISTING',
+        ]);
+
+        // Return 204 NO CONTENT (consistent across all worlds)
+        return response()->json([
+            'ok' => true,
+            'deleted' => true,
+            'id' => $id,
+            'request_id' => $requestId,
+        ], 204)->header('X-Request-Id', $requestId);
     }
 
     /**
@@ -332,6 +425,46 @@ final class RentalsListingController extends Controller
             'message' => 'World context invalid or missing',
             'request_id' => $requestId,
         ], 400);
+
+        return $response->header('X-Request-Id', $requestId);
+    }
+
+    /**
+     * Invalid cursor error response
+     */
+    private function invalidCursor(Request $request): JsonResponse
+    {
+        $requestId = $request->attributes->get('request_id', '');
+        if (empty($requestId)) {
+            $requestId = (string) Str::uuid();
+        }
+
+        $response = response()->json([
+            'ok' => false,
+            'error_code' => 'INVALID_CURSOR',
+            'message' => 'Invalid cursor value',
+            'request_id' => $requestId,
+        ], 400);
+
+        return $response->header('X-Request-Id', $requestId);
+    }
+
+    /**
+     * Not found error response
+     */
+    private function notFound(Request $request): JsonResponse
+    {
+        $requestId = $request->attributes->get('request_id', '');
+        if (empty($requestId)) {
+            $requestId = (string) Str::uuid();
+        }
+
+        $response = response()->json([
+            'ok' => false,
+            'error_code' => 'NOT_FOUND',
+            'message' => 'Listing not found.',
+            'request_id' => $requestId,
+        ], 404);
 
         return $response->header('X-Request-Id', $requestId);
     }

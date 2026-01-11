@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Food;
+namespace App\Http\Controllers\Api\Commerce;
 
 use App\Http\Controllers\Controller;
 use App\Models\Listing;
@@ -15,17 +15,17 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Food Listing Controller (API Spine - Read-Path v2)
+ * Commerce Listing Controller (API Spine - Read/Write-Path)
  * 
- * Canonical Product API spine for food listings.
- * GET endpoints return tenant-scoped data; write endpoints return 501 NOT_IMPLEMENTED.
+ * Canonical Product API spine for commerce listings.
+ * GET endpoints return real data (tenant-scoped); write endpoints return deterministic envelopes.
  */
-final class FoodListingController extends Controller
+final class ListingController extends Controller
 {
     /**
-     * List food listings (tenant-scoped)
+     * List commerce listings (tenant-scoped)
      * 
-     * GET /api/v1/food/listings
+     * GET /api/v1/commerce/listings
      */
     public function index(Request $request): JsonResponse
     {
@@ -35,14 +35,14 @@ final class FoodListingController extends Controller
             return $this->tenantContextMissing($request);
         }
 
-        // Enforce world scope (defensive: if ctx.world missing, default to food; if present and mismatch, error)
+        // Enforce world scope (defensive: if ctx.world missing, default to commerce; if present and mismatch, error)
         $worldId = $request->attributes->get('ctx.world');
         if (empty($worldId)) {
-            // Defensive default: if world.lock middleware didn't run, assume food (should not happen, but safe fallback)
-            $worldId = 'food';
+            // Defensive default: if world.lock middleware didn't run, assume commerce (should not happen, but safe fallback)
+            $worldId = 'commerce';
             $request->attributes->set('ctx.world', $worldId);
-        } elseif ($worldId !== 'food') {
-            // Mismatch protection: if world is set but not food, return error
+        } elseif ($worldId !== 'commerce') {
+            // Mismatch protection: if world is set but not commerce, return error
             return $this->worldContextInvalid($request);
         }
 
@@ -55,7 +55,7 @@ final class FoodListingController extends Controller
         // Build base query (tenant-scoped, world-scoped)
         $query = Listing::query()
             ->forTenant($tenantId)
-            ->forWorld('food');
+            ->forWorld('commerce');
 
         // Apply filters and ordering via ListingQuery
         [$query, $limit, $nextCursorFromQuery] = ListingQuery::apply($query, $request);
@@ -103,9 +103,9 @@ final class FoodListingController extends Controller
     }
 
     /**
-     * Show food listing (tenant-scoped)
+     * Show commerce listing (tenant-scoped)
      * 
-     * GET /api/v1/food/listings/{id}
+     * GET /api/v1/commerce/listings/{id}
      */
     public function show(Request $request, string $id): JsonResponse
     {
@@ -115,21 +115,21 @@ final class FoodListingController extends Controller
             return $this->tenantContextMissing($request);
         }
 
-        // Enforce world scope (defensive: if ctx.world missing, default to food; if present and mismatch, error)
+        // Enforce world scope (defensive: if ctx.world missing, default to commerce; if present and mismatch, error)
         $worldId = $request->attributes->get('ctx.world');
         if (empty($worldId)) {
-            // Defensive default: if world.lock middleware didn't run, assume food (should not happen, but safe fallback)
-            $worldId = 'food';
+            // Defensive default: if world.lock middleware didn't run, assume commerce (should not happen, but safe fallback)
+            $worldId = 'commerce';
             $request->attributes->set('ctx.world', $worldId);
-        } elseif ($worldId !== 'food') {
-            // Mismatch protection: if world is set but not food, return error
+        } elseif ($worldId !== 'commerce') {
+            // Mismatch protection: if world is set but not commerce, return error
             return $this->worldContextInvalid($request);
         }
 
         // Find listing (tenant-scoped, world-scoped)
         $listing = Listing::query()
             ->forTenant($tenantId)
-            ->forWorld('food')
+            ->forWorld('commerce')
             ->find($id);
 
         if (!$listing) {
@@ -167,9 +167,9 @@ final class FoodListingController extends Controller
     }
 
     /**
-     * Create food listing
+     * Create commerce listing
      * 
-     * POST /api/v1/food/listings
+     * POST /api/v1/commerce/listings
      */
     public function store(Request $request): JsonResponse
     {
@@ -179,31 +179,47 @@ final class FoodListingController extends Controller
             return $this->tenantContextMissing($request);
         }
 
-        // Enforce world scope (defensive: if ctx.world missing, default to food; if present and mismatch, error)
+        // Enforce world scope (defensive: if ctx.world missing, default to commerce; if present and mismatch, error)
         $worldId = $request->attributes->get('ctx.world');
         if (empty($worldId)) {
-            // Defensive default: if world.lock middleware didn't run, assume food (should not happen, but safe fallback)
-            $worldId = 'food';
+            // Defensive default: if world.lock middleware didn't run, assume commerce (should not happen, but safe fallback)
+            $worldId = 'commerce';
             $request->attributes->set('ctx.world', $worldId);
-        } elseif ($worldId !== 'food') {
-            // Mismatch protection: if world is set but not food, return error
+        } elseif ($worldId !== 'commerce') {
+            // Mismatch protection: if world is set but not commerce, return error
             return $this->worldContextInvalid($request);
         }
 
-        // Validate required fields
-        try {
-            $validated = $request->validate([
-                'title' => 'required|string|max:255',
-                'price_amount' => 'nullable|integer|min:0',
-                'currency' => 'nullable|string|size:3',
-                'status' => 'nullable|in:draft,published',
-            ]);
-        } catch (ValidationException $e) {
-            $requestId = $request->attributes->get('request_id', '');
-            if (empty($requestId)) {
-                $requestId = (string) Str::uuid();
-            }
+        $requestId = $request->attributes->get('request_id', '');
+        if (empty($requestId)) {
+            $requestId = (string) Str::uuid();
+        }
 
+        try {
+            // Create listing using ListingWriteModel
+            $listing = ListingWriteModel::create($worldId, $tenantId, $request->all());
+
+            // Format item using ListingReadDTO
+            $item = ListingReadDTO::fromModel($listing);
+
+            // Audit log
+            Log::info('Product write path: CREATE_LISTING', [
+                'request_id' => $requestId,
+                'tenant_id' => $tenantId,
+                'world' => $worldId,
+                'listing_id' => $listing->id,
+                'operation' => 'CREATE_LISTING',
+            ]);
+
+            // Return 201 CREATED
+            $response = response()->json([
+                'ok' => true,
+                'item' => $item,
+                'request_id' => $requestId,
+            ], 201);
+
+            return $response->header('X-Request-Id', $requestId);
+        } catch (ValidationException $e) {
             $response = response()->json([
                 'ok' => false,
                 'error_code' => 'VALIDATION_ERROR',
@@ -214,61 +230,12 @@ final class FoodListingController extends Controller
 
             return $response->header('X-Request-Id', $requestId);
         }
-
-        $requestId = $request->attributes->get('request_id', '');
-        if (empty($requestId)) {
-            $requestId = (string) Str::uuid();
-        }
-
-        // Create listing
-        $listing = new Listing();
-        $listing->tenant_id = $tenantId;
-        $listing->world = $worldId;
-        $listing->title = $validated['title'];
-        $listing->description = $request->input('description');
-        
-        // Set optional fields only if provided
-        if (isset($validated['price_amount'])) {
-            $listing->price_amount = $validated['price_amount'];
-        }
-        if (isset($validated['currency'])) {
-            $listing->currency = $validated['currency'];
-        }
-        if (isset($validated['status'])) {
-            $listing->status = $validated['status'];
-        } else {
-            // Default to draft if status not provided
-            $listing->status = 'draft';
-        }
-        
-        $listing->save();
-
-        // Format item using ListingReadDTO
-        $item = ListingReadDTO::fromModel($listing);
-
-        // Audit log
-        Log::info('Product write path: CREATE_LISTING', [
-            'request_id' => $requestId,
-            'tenant_id' => $tenantId,
-            'world' => $worldId,
-            'listing_id' => $listing->id,
-            'operation' => 'CREATE_LISTING',
-        ]);
-
-        // Return 201 CREATED
-        $response = response()->json([
-            'ok' => true,
-            'item' => $item,
-            'request_id' => $requestId,
-        ], 201);
-
-        return $response->header('X-Request-Id', $requestId);
     }
 
     /**
-     * Update food listing (partial update)
+     * Update commerce listing (SPINE_READY - 202 ACCEPTED, no persistence)
      * 
-     * PATCH /api/v1/food/listings/{id}
+     * PATCH /api/v1/commerce/listings/{id}
      */
     public function update(Request $request, string $id): JsonResponse
     {
@@ -278,14 +245,14 @@ final class FoodListingController extends Controller
             return $this->tenantContextMissing($request);
         }
 
-        // Enforce world scope (defensive: if ctx.world missing, default to food; if present and mismatch, error)
+        // Enforce world scope (defensive: if ctx.world missing, default to commerce; if present and mismatch, error)
         $worldId = $request->attributes->get('ctx.world');
         if (empty($worldId)) {
-            // Defensive default: if world.lock middleware didn't run, assume food (should not happen, but safe fallback)
-            $worldId = 'food';
+            // Defensive default: if world.lock middleware didn't run, assume commerce (should not happen, but safe fallback)
+            $worldId = 'commerce';
             $request->attributes->set('ctx.world', $worldId);
-        } elseif ($worldId !== 'food') {
-            // Mismatch protection: if world is set but not food, return error
+        } elseif ($worldId !== 'commerce') {
+            // Mismatch protection: if world is set but not commerce, return error
             return $this->worldContextInvalid($request);
         }
 
@@ -337,9 +304,9 @@ final class FoodListingController extends Controller
     }
 
     /**
-     * Delete food listing (hard delete)
+     * Delete commerce listing (hard delete)
      * 
-     * DELETE /api/v1/food/listings/{id}
+     * DELETE /api/v1/commerce/listings/{id}
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
@@ -349,14 +316,14 @@ final class FoodListingController extends Controller
             return $this->tenantContextMissing($request);
         }
 
-        // Enforce world scope (defensive: if ctx.world missing, default to food; if present and mismatch, error)
+        // Enforce world scope (defensive: if ctx.world missing, default to commerce; if present and mismatch, error)
         $worldId = $request->attributes->get('ctx.world');
         if (empty($worldId)) {
-            // Defensive default: if world.lock middleware didn't run, assume food (should not happen, but safe fallback)
-            $worldId = 'food';
+            // Defensive default: if world.lock middleware didn't run, assume commerce (should not happen, but safe fallback)
+            $worldId = 'commerce';
             $request->attributes->set('ctx.world', $worldId);
-        } elseif ($worldId !== 'food') {
-            // Mismatch protection: if world is set but not food, return error
+        } elseif ($worldId !== 'commerce') {
+            // Mismatch protection: if world is set but not commerce, return error
             return $this->worldContextInvalid($request);
         }
 
@@ -502,4 +469,3 @@ final class FoodListingController extends Controller
         return $response->header('X-Request-Id', $requestId);
     }
 }
-
