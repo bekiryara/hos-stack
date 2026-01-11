@@ -77,17 +77,32 @@ services:
       retries: 20
     restart: unless-stopped
 
+  pazar-perms-init:
+    build:
+      context: ./work/pazar
+      dockerfile: docker/Dockerfile
+    user: "0:0"
+    command: sh -lc "mkdir -p /var/www/html/storage/logs /var/www/html/bootstrap/cache && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache && touch /var/www/html/storage/logs/laravel.log && chmod 0666 /var/www/html/storage/logs/laravel.log && echo '[PASS] Permissions initialized'"
+    volumes:
+      - pazar_storage:/var/www/html/storage
+      - pazar_cache:/var/www/html/bootstrap/cache
+    restart: "no"
+
   pazar-app:
     build:
       context: ./work/pazar
       dockerfile: docker/Dockerfile
+    user: "0:0"
     ports:
       - "127.0.0.1:8080:80"
+    command: sh -lc "cd /var/www/html && ./docker/ensure_storage.sh && exec supervisord -c /etc/supervisord.conf"
     depends_on:
       pazar-db:
         condition: service_healthy
       hos-api:
         condition: service_started
+      pazar-perms-init:
+        condition: service_completed_successfully
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
