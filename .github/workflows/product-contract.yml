@@ -1,0 +1,46 @@
+name: Product Contract Gate
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'work/pazar/routes/api.php'
+      - 'work/pazar/config/worlds.php'
+      - 'ops/product_contract.ps1'
+      - '.github/workflows/product-contract.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'work/pazar/routes/api.php'
+      - 'work/pazar/config/worlds.php'
+      - 'ops/product_contract.ps1'
+      - '.github/workflows/product-contract.yml'
+
+jobs:
+  product-contract:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PowerShell
+        uses: microsoft/setup-powershell@v1
+        with:
+          pwsh-version: '7.4'
+      
+      - name: Run Product Contract Gate
+        shell: pwsh
+        run: |
+          pwsh ./ops/product_contract.ps1
+      
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-contract-logs
+          path: |
+            _archive/audits/*
+            _archive/incidents/*
+          retention-days: 7
+

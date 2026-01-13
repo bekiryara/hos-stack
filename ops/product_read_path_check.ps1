@@ -183,8 +183,59 @@ foreach ($world in $enabledWorlds) {
     }
 }
 
-# Check 5: Optional live endpoint checks (only if credentials provided)
-Write-Info "Check 5: Optional live endpoint checks"
+# Check 5: Validate controllers import ListingReadDTO and Cursor
+Write-Info "Check 5: Validate controllers import DTO and Cursor helpers"
+foreach ($world in $enabledWorlds) {
+    if ($controllerMap.ContainsKey($world)) {
+        $controllerPath = $controllerMap[$world]
+        if (Test-Path $controllerPath) {
+            $controllerContent = Get-Content $controllerPath -Raw
+            $hasListingReadDTO = $controllerContent -match "ListingReadDTO"
+            $hasCursor = $controllerContent -match "use.*Cursor"
+            $hasListingQuery = $controllerContent -match "ListingQuery"
+            
+            if ($hasListingReadDTO -and $hasCursor -and $hasListingQuery) {
+                Write-Pass "Controller $world imports ListingReadDTO, Cursor, and ListingQuery"
+                Add-CheckResult -CheckName "Controller ${world}: DTO imports" -Status "PASS" -Notes "All required imports present"
+            } else {
+                $missing = @()
+                if (-not $hasListingReadDTO) { $missing += "ListingReadDTO" }
+                if (-not $hasCursor) { $missing += "Cursor" }
+                if (-not $hasListingQuery) { $missing += "ListingQuery" }
+                Write-Fail "Controller $world missing imports: $($missing -join ', ')"
+                Add-CheckResult -CheckName "Controller ${world}: DTO imports" -Status "FAIL" -Notes "Missing imports: $($missing -join ', ')"
+            }
+        }
+    }
+}
+
+# Check 6: Validate documentation has response schema indicators
+Write-Info "Check 6: Validate documentation has response schema indicators"
+$docsPath = "docs\product\PRODUCT_API_SPINE.md"
+if (Test-Path $docsPath) {
+    $docsContent = Get-Content $docsPath -Raw
+    $hasCursorNext = $docsContent -match "cursor.*next" -or $docsContent -match "cursor\.next"
+    $hasMetaLimit = $docsContent -match "meta.*limit" -or $docsContent -match "meta\.limit"
+    $hasItems = $docsContent -match "\bitems\b"
+    
+    if ($hasCursorNext -and $hasMetaLimit -and $hasItems) {
+        Write-Pass "Documentation has response schema indicators (items, cursor.next, meta.limit)"
+        Add-CheckResult -CheckName "Documentation: Response Schema" -Status "PASS" -Notes "Schema indicators present"
+    } else {
+        $missing = @()
+        if (-not $hasCursorNext) { $missing += "cursor.next" }
+        if (-not $hasMetaLimit) { $missing += "meta.limit" }
+        if (-not $hasItems) { $missing += "items" }
+        Write-Warn "Documentation missing schema indicators: $($missing -join ', ')"
+        Add-CheckResult -CheckName "Documentation: Response Schema" -Status "WARN" -Notes "Missing indicators: $($missing -join ', ')"
+    }
+} else {
+    Write-Warn "Documentation file not found: $docsPath"
+    Add-CheckResult -CheckName "Documentation: Response Schema" -Status "WARN" -Notes "Documentation file not found"
+}
+
+# Check 7: Optional live endpoint checks (only if credentials provided)
+Write-Info "Check 7: Optional live endpoint checks"
 if ($TestTenantId -and $TestAuth) {
     Write-Info "Live checks enabled (credentials provided)"
     

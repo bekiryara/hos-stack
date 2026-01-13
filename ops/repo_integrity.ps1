@@ -12,6 +12,10 @@ if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
     . "${scriptDir}\_lib\ops_output.ps1"
     Initialize-OpsOutput
 }
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
 
 $ErrorActionPreference = "Continue"
 
@@ -130,39 +134,34 @@ try {
         } else {
             Write-Host "[FAIL] OVERALL STATUS: FAIL ($failCount failures, $warnCount warnings)" -ForegroundColor Red
         }
-        $global:LASTEXITCODE = 1
-        if ($Ci) {
-            exit 1
-        } else {
-            return 1
-        }
+        Invoke-OpsExit 1
+        return
     } elseif ($warnCount -gt 0) {
         if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
             Write-Warn "OVERALL STATUS: WARN ($warnCount warnings)"
         } else {
             Write-Host "[WARN] OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
         }
-        $global:LASTEXITCODE = 2
-        if ($Ci) {
-            exit 2
-        } else {
-            return 2
-        }
+        Invoke-OpsExit 2
+        return
     } else {
         if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
             Write-Pass "OVERALL STATUS: PASS (No integrity issues detected)"
         } else {
             Write-Host "[PASS] OVERALL STATUS: PASS (No integrity issues detected)" -ForegroundColor Green
         }
-        $global:LASTEXITCODE = 0
-        if ($Ci) {
-            exit 0
-        } else {
-            return 0
-        }
+        Invoke-OpsExit 0
+        return
     }
 } finally {
     Pop-Location
 }
+
+
+
+
+
+
+
 
 

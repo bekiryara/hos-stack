@@ -1,0 +1,63 @@
+name: Product E2E Gate
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'work/pazar/**'
+      - 'ops/product_e2e.ps1'
+      - 'docker-compose.yml'
+      - '.github/workflows/product-e2e.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'work/pazar/**'
+      - 'ops/product_e2e.ps1'
+      - 'docker-compose.yml'
+      - '.github/workflows/product-e2e.yml'
+
+jobs:
+  product-e2e:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PowerShell
+        uses: microsoft/setup-powershell@v1
+        with:
+          pwsh-version: '7.4'
+      
+      - name: Bring up core stack
+        run: |
+          docker compose up -d --build
+          # Wait for services to be ready
+          timeout 60 bash -c 'until curl -f http://localhost:8080/up; do sleep 2; done' || true
+      
+      - name: Run Product E2E Gate
+        shell: pwsh
+        env:
+          BASE_URL: http://localhost:8080
+          PRODUCT_TEST_AUTH: ${{ secrets.PRODUCT_TEST_AUTH }}
+          PRODUCT_TEST_EMAIL: ${{ secrets.PRODUCT_TEST_EMAIL }}
+          PRODUCT_TEST_PASSWORD: ${{ secrets.PRODUCT_TEST_PASSWORD }}
+          PRODUCT_TENANT_ID: ${{ secrets.PRODUCT_TENANT_ID }}
+        run: |
+          pwsh ./ops/product_e2e.ps1
+      
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-e2e-logs
+          path: |
+            _archive/audits/*
+            _archive/incidents/*
+          retention-days: 7
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+
