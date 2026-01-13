@@ -35,6 +35,7 @@ $checkRegistry = @(
     @{ Id = "triage"; Name = "Incident Triage"; ScriptPath = ".\ops\triage.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @() },
     @{ Id = "storage_write"; Name = "Storage Write"; ScriptPath = ".\ops\storage_write_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
     @{ Id = "storage_posture"; Name = "Storage Posture"; ScriptPath = ".\ops\storage_posture_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
+    @{ Id = "pazar_ui_smoke"; Name = "Pazar UI Smoke"; ScriptPath = ".\ops\pazar_ui_smoke.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
     @{ Id = "pazar_storage_posture"; Name = "Pazar Storage Posture"; ScriptPath = ".\ops\pazar_storage_posture.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true },
     @{ Id = "slo_check"; Name = "SLO Check"; ScriptPath = ".\ops\slo_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @("-N", "10") },
     @{ Id = "security_audit"; Name = "Security Audit"; ScriptPath = ".\ops\security_audit.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @() },
@@ -48,8 +49,12 @@ $checkRegistry = @(
     @{ Id = "env_contract"; Name = "Environment Contract"; ScriptPath = ".\ops\env_contract.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
     @{ Id = "auth_security"; Name = "Auth Security"; ScriptPath = ".\ops\auth_security_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
     @{ Id = "tenant_boundary"; Name = "Tenant Boundary"; ScriptPath = ".\ops\tenant_boundary_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
+    @{ Id = "world_spine"; Name = "World Spine Governance"; ScriptPath = ".\ops\world_spine_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
     @{ Id = "product_contract"; Name = "Product Contract"; ScriptPath = ".\ops\product_contract.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
+    @{ Id = "product_contract_check"; Name = "Product Contract Check"; ScriptPath = ".\ops\product_contract_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
     @{ Id = "product_e2e"; Name = "Product E2E"; ScriptPath = ".\ops\product_e2e.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true },
+    @{ Id = "product_e2e_contract"; Name = "Product E2E Contract"; ScriptPath = ".\ops\product_e2e_contract.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
+    @{ Id = "product_api_crud_e2e"; Name = "Product API CRUD E2E"; ScriptPath = ".\ops\product_api_crud_e2e.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
     @{ Id = "product_api_smoke"; Name = "Product API Smoke"; ScriptPath = ".\ops\product_api_smoke.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true },
     @{ Id = "product_perf_guard"; Name = "Product Perf Guard"; ScriptPath = ".\ops\product_perf_guard.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true },
     @{ Id = "product_mvp"; Name = "Product MVP Loop"; ScriptPath = ".\ops\product_mvp_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
@@ -61,7 +66,8 @@ $checkRegistry = @(
     @{ Id = "openapi_contract"; Name = "OpenAPI Contract"; ScriptPath = ".\ops\openapi_contract.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
     @{ Id = "smoke_surface"; Name = "Smoke Surface Gate"; ScriptPath = ".\ops\smoke_surface.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
     @{ Id = "observability_status"; Name = "Observability Status"; ScriptPath = ".\ops\observability_status.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true },
-    @{ Id = "rc0_gate"; Name = "RC0 Gate"; ScriptPath = ".\ops\rc0_gate.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true }
+    @{ Id = "rc0_gate"; Name = "RC0 Gate"; ScriptPath = ".\ops\rc0_gate.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true },
+    @{ Id = "rc0_check"; Name = "RC0 Check"; ScriptPath = ".\ops\rc0_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true }
 )
 
 # Results table
@@ -113,8 +119,11 @@ function Invoke-OpsCheckFromRegistry {
         }
     } else {
         try {
-            # Capture output
-            $scriptOutput = & $scriptPath $arguments 2>&1 | Out-String
+            # Capture output (use splatting for argument array)
+            if ($null -eq $arguments) {
+                $arguments = @()
+            }
+            $scriptOutput = & $scriptPath @arguments 2>&1 | Out-String
             $exitCode = $LASTEXITCODE
             
             # Determine status from exit code

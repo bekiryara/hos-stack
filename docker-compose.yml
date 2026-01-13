@@ -118,6 +118,7 @@ services:
       HOS_OIDC_JWKS_URL: http://hos-api:3000/jwks.json
       HOS_OIDC_ISSUER: http://localhost:3000
       HOS_OIDC_WORLD: "pazar"
+      HOS_LARAVEL_LOG_STDOUT: "1"
       SESSION_DRIVER: database
       SESSION_DOMAIN: localhost
     volumes:
