@@ -95,7 +95,7 @@ services:
     user: "0:0"
     ports:
       - "127.0.0.1:8080:80"
-    command: sh -lc "cd /var/www/html && ./docker/ensure_storage.sh && exec supervisord -c /etc/supervisord.conf"
+    command: sh -lc "cd /var/www/html && exec supervisord -c /etc/supervisord.conf"
     depends_on:
       pazar-db:
         condition: service_healthy
@@ -107,6 +107,7 @@ services:
       APP_ENV: local
       APP_DEBUG: "true"
       APP_URL: http://localhost:8080
+      # APP_KEY: base64:... (generate via proof commands, paste here)
       DB_CONNECTION: pgsql
       DB_HOST: pazar-db
       DB_PORT: 5432
@@ -119,10 +120,12 @@ services:
       HOS_OIDC_ISSUER: http://localhost:3000
       HOS_OIDC_WORLD: "pazar"
       HOS_LARAVEL_LOG_STDOUT: "1"
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: debug
       SESSION_DRIVER: database
       SESSION_DOMAIN: localhost
     volumes:
-      - ./work/pazar/.env:/var/www/html/.env:ro
+      # .env mount removed: stateless runtime, all config from ENV
       - ./work/pazar/resources/views:/var/www/html/resources/views
       - ./work/pazar/app:/var/www/html/app
       - ./work/pazar/routes:/var/www/html/routes

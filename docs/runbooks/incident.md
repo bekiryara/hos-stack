@@ -199,7 +199,7 @@ git push --force-with-lease origin main
 - [Observability Runbook](./observability.md) - Using request_id for tracing
 - [Errors Runbook](./errors.md) - Error code reference and handling
 
-## Laravel Log Permission Denied Troubleshooting
+## UI 500: laravel.log Permission Denied Troubleshooting
 
 ### Symptoms
 - UI routes (e.g., `/ui/admin/control-center`) return HTTP 500 errors
@@ -207,64 +207,45 @@ git push --force-with-lease origin main
 - Error pages show "Permission denied" for `laravel.log`
 
 ### Root Cause
-On Windows, Docker bind mounts do not preserve Linux file permissions. If `/var/www/html/storage` is bind-mounted from Windows, `chown`/`chmod` commands inside the container have no effect, causing `php-fpm` (running as `www-data`) to be unable to write to `laravel.log`.
+Named volumes (`pazar_storage`, `pazar_cache`) may be created with incorrect ownership (root-owned) when first initialized. The `pazar-perms-init` one-shot service (in `docker-compose.yml`) fixes this, but if it hasn't run or failed, permissions remain incorrect, causing `php-fpm` (running as `www-data`) to be unable to write to `laravel.log`.
 
-### Remediation Steps (Deterministic)
+### Quick Fix
 
-1. **Verify container status:**
+1. **Check if pazar-perms-init completed:**
    ```powershell
-   docker compose ps pazar-app
+   docker compose ps pazar-perms-init
    ```
-   - **Expected:** `pazar-app` container status is `Up`
-   - **If not `Up`:** Start the container: `docker compose up -d pazar-app`
+   - **Expected:** Status should be "Exited (0)" (completed successfully)
+   - **If not found or failed:** Proceed to step 2
 
-2. **Check permissions inside container:**
+2. **Run permissions init manually:**
    ```powershell
-   docker compose exec -T pazar-app sh -lc "ls -ld /var/www/html/storage /var/www/html/storage/logs /var/www/html/bootstrap/cache; ls -l /var/www/html/storage/logs/laravel.log 2>&1 || echo 'laravel.log not found'"
+   docker compose run --rm pazar-perms-init
    ```
-   - **Expected:** Directories and `laravel.log` should be owned by `www-data:www-data`
-   - **If owned by `root:root`:** Container needs to be recreated (see step 3)
+   - **Expected:** Prints `[PASS] Permissions initialized` and exits with code 0
+   - **If fails:** Check docker compose logs for errors
 
-3. **Force recreate container to apply fix:**
+3. **Restart pazar-app to ensure permissions are correct:**
    ```powershell
-   # Recreate the container to ensure named volumes are used and entrypoint fixes permissions
-   docker compose down pazar-app
-   docker compose up -d --force-recreate pazar-app
-   
-   # Wait a few seconds for container to fully start
-   Start-Sleep -Seconds 5
-   ```
-   - This ensures the latest `docker-compose.yml` (with named volumes) and `docker-entrypoint.sh` (with permission enforcement) are used
-
-4. **Test write operation:**
-   ```powershell
-   docker compose exec -T pazar-app sh -lc "su -s /bin/sh www-data -c 'php -r \"file_put_contents(\\\"/var/www/html/storage/logs/laravel.log\\\",\\\"probe\\n\\\",FILE_APPEND); echo \\\"OK\\n\\\";\"'"
-   ```
-   - **Expected:** Prints "OK" with exit code 0
-   - **If permission denied:** Container may need rebuild (see step 5)
-
-5. **Rebuild container if needed:**
-   ```powershell
-   docker compose build pazar-app
-   docker compose up -d --force-recreate pazar-app
+   docker compose restart pazar-app
    ```
 
-6. **Verify UI access:**
+4. **Verify permissions:**
    ```powershell
-   curl.exe -sS -w "\nHTTP_CODE:%{http_code}\n" http://localhost:8080/ui/admin/control-center 2>&1 | Select-Object -Last 3
+   docker compose exec -T pazar-app sh -lc "test -d storage/logs && touch storage/logs/laravel.log && test -w storage/logs/laravel.log && echo 'PASS' || echo 'FAIL'"
    ```
-   - **Expected:** HTTP 200 or 302 (redirect to login), NOT 500
+   - **Expected:** Prints "PASS" with exit code 0
 
-7. **Run storage posture check:**
+5. **Run verify.ps1 FS posture check:**
    ```powershell
-   .\ops\pazar_storage_posture.ps1
+   .\ops\verify.ps1
    ```
-   - **Expected:** `OVERALL STATUS: PASS`
+   - **Expected:** Step 4 "Pazar FS posture (storage/logs writability)" shows PASS
 
-### Prevention
-- Use named volumes (`pazar_storage`, `pazar_cache`) for runtime-writable directories in `docker-compose.yml`
-- Keep code directories bind-mounted for live development
-- Ensure `docker-entrypoint.sh` enforces permissions idempotently on container start
-- See `docs/PROOFS/laravel_log_permission_fix_pass.md` for complete fix documentation
+### Prevention (docker-compose.yml Configuration)
+- `pazar-perms-init` service (one-shot, restart: "no") runs before `pazar-app` starts
+- `pazar-app` has `depends_on: pazar-perms-init: condition: service_completed_successfully`
+- Named volumes (`pazar_storage`, `pazar_cache`) are used (not Windows bind mounts)
+- See `docs/PROOFS/rc0_pazar_storage_permissions_pass.md` for complete fix documentation
 
 

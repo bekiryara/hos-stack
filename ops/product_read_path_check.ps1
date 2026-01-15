@@ -22,6 +22,9 @@ if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
     . "${scriptDir}\_lib\ops_exit.ps1"
     Initialize-OpsExit
 }
+if (Test-Path "${scriptDir}\_lib\worlds_config.ps1") {
+    . "${scriptDir}\_lib\worlds_config.ps1"
+}
 
 Write-Host "=== PRODUCT READ PATH CHECK ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
@@ -68,16 +71,11 @@ try {
         return
     }
     
-    $configContent = Get-Content $WorldsConfigPath -Raw
-    # Simple regex to extract enabled worlds array
-    if ($configContent -match "'enabled'\s*=>\s*\[(.*?)\]") {
-        $enabledBlock = $matches[1]
-        $enabledWorlds = @()
-        if ($enabledBlock -match "'commerce'") { $enabledWorlds += "commerce" }
-        if ($enabledBlock -match "'food'") { $enabledWorlds += "food" }
-        if ($enabledBlock -match "'rentals'") { $enabledWorlds += "rentals" }
-        
-        if ($enabledWorlds.Count -eq 0) {
+    # Use canonical worlds config parser
+    $worldsConfig = Get-WorldsConfig -WorldsConfigPath $WorldsConfigPath
+    $enabledWorlds = $worldsConfig.Enabled
+    
+    if ($enabledWorlds.Count -eq 0) {
             Add-CheckResult -CheckName "Parse Enabled Worlds" -Status "FAIL" -Notes "No enabled worlds found in config"
             Write-Fail "No enabled worlds found in config"
             Invoke-OpsExit 1

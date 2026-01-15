@@ -14,6 +14,13 @@ param(
 
 $ErrorActionPreference = "Continue"
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+
 Write-Host "=== REQUEST TRACE (Request ID: $RequestId) ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
@@ -23,11 +30,13 @@ try {
     $composeCheck = docker compose version 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "FAIL: docker compose not available" -ForegroundColor Red
-        exit 1
+        Invoke-OpsExit 1
+        return
     }
 } catch {
     Write-Host "FAIL: docker compose not available: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
+    Invoke-OpsExit 1
+    return
 }
 
 # Check if services are running
@@ -193,7 +202,8 @@ if ($foundMatches) {
     }
     Write-Host ""
     Write-Host "OVERALL STATUS: PASS (Request ID found in logs)" -ForegroundColor Green
-    exit 0
+    Invoke-OpsExit 0
+    return
 } else {
     Write-Host "Request ID NOT found in any service logs" -ForegroundColor Yellow
     Write-Host ""
@@ -209,6 +219,7 @@ if ($foundMatches) {
     Write-Host "  - Verify request ID format: Should be UUID (e.g., 550e8400-e29b-41d4-a716-446655440000)" -ForegroundColor Gray
     Write-Host ""
     Write-Host "OVERALL STATUS: WARN (No matches found)" -ForegroundColor Yellow
-    exit 2
+    Invoke-OpsExit 2
+    return
 }
 

@@ -3,18 +3,51 @@
 # Handles multiple Laravel JSON output formats (array, object with headers/rows, data/rows, etc.)
 # PowerShell 5.1 compatible
 
-# Get raw route JSON from Laravel artisan
+# Get raw route JSON from Laravel artisan (generic version)
+function Get-RawRouteListJson {
+    param(
+        [string]$ContainerName = "pazar-app"
+    )
+    
+    $rawOutput = docker compose exec -T ${ContainerName} sh -lc "php artisan route:list --json --no-ansi 2>&1" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to fetch routes from ${ContainerName}: $rawOutput"
+    }
+    
+    # Strip non-JSON pollution (e.g., "Pazar bootstrap ready" banners)
+    # Find first line that starts with "[" or "{" (JSON array/object)
+    $lines = $rawOutput -split "`n"
+    $jsonStartIndex = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $line = $lines[$i].Trim()
+        if ($line -match '^\s*[\[\{]') {
+            $jsonStartIndex = $i
+            break
+        }
+    }
+    
+    if ($jsonStartIndex -eq -1) {
+        # No JSON found, return first 10 lines for debugging
+        $debugLines = $lines | Select-Object -First 10
+        throw "No JSON found in route output. First 10 lines: $($debugLines -join "`n")"
+    }
+    
+    # Extract JSON from first JSON line to end
+    $jsonLines = $lines[$jsonStartIndex..($lines.Count - 1)]
+    $rawJson = $jsonLines -join "`n"
+    
+    # Trim BOM and whitespace
+    $trimmed = $rawJson.TrimStart([char]0xFEFF).Trim()
+    return $trimmed
+}
+
+# Get raw route JSON from Laravel artisan (Pazar-specific alias)
 function Get-RawPazarRouteListJson {
     param(
         [string]$ContainerName = "pazar-app"
     )
     
-    $rawJson = docker compose exec -T $ContainerName sh -lc "php artisan route:list --json" 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to fetch routes from $ContainerName: $rawJson"
-    }
-    
-    return $rawJson
+    return Get-RawRouteListJson -ContainerName $ContainerName
 }
 
 # Convert route JSON to canonical array format
@@ -30,9 +63,9 @@ function Convert-RoutesJsonToCanonicalArray {
         return @()
     }
     
-    # Parse JSON
+    # Parse JSON (ErrorAction Stop for deterministic error handling)
     try {
-        $obj = $trimmed | ConvertFrom-Json
+        $obj = $trimmed | ConvertFrom-Json -ErrorAction Stop
     } catch {
         throw "Failed to parse route JSON: $($_.Exception.Message)"
     }
@@ -177,4 +210,5 @@ function Convert-RouteToCanonicalObject {
     
     return $canonical
 }
+
 

@@ -1,0 +1,199 @@
+name: CI Baseline Governance
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  repo_hygiene:
+    name: Repository Hygiene
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run doctor.ps1
+        shell: pwsh
+        run: |
+          .\ops\doctor.ps1
+      
+      - name: Check git status is clean
+        shell: pwsh
+        run: |
+          $status = git status --porcelain
+          if ($status) {
+            Write-Host "FAIL: Git status is not clean after scripts" -ForegroundColor Red
+            Write-Host "Uncommitted changes:" -ForegroundColor Yellow
+            Write-Host $status
+            exit 1
+          }
+          Write-Host "PASS: Git status is clean" -ForegroundColor Green
+      
+      - name: Check for forbidden artifacts
+        shell: pwsh
+        run: |
+          $forbidden = @("*.zip", "*.rar", "*.bak", "*.tmp", "*.orig", "*.swp", "*~")
+          $found = @()
+          foreach ($pattern in $forbidden) {
+            $files = Get-ChildItem -Path . -Filter $pattern -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\_archive\\" -and $_.FullName -notmatch "\\vendor\\" -and $_.FullName -notmatch "\\.git\\" }
+            if ($files) {
+              $found += $files
+            }
+          }
+          if ($found.Count -gt 0) {
+            Write-Host "FAIL: Forbidden artifacts found:" -ForegroundColor Red
+            $found | ForEach-Object { Write-Host "  $($_.FullName)" }
+            exit 1
+          }
+          Write-Host "PASS: No forbidden artifacts" -ForegroundColor Green
+      
+      - name: Run graveyard check
+        shell: pwsh
+        run: |
+          .\ops\graveyard_check.ps1
+
+  baseline_checks:
+    name: Baseline Checks
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run doctor.ps1
+        shell: pwsh
+        run: |
+          .\ops\doctor.ps1 | Tee-Object -FilePath doctor.txt
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "FAIL: doctor.ps1 returned exit code $LASTEXITCODE" -ForegroundColor Red
+            exit 1
+          }
+        continue-on-error: false
+      
+      - name: Run conformance.ps1
+        shell: pwsh
+        run: |
+          .\ops\conformance.ps1 | Tee-Object -FilePath conformance.txt
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "FAIL: conformance.ps1 returned exit code $LASTEXITCODE" -ForegroundColor Red
+            exit 1
+          }
+        continue-on-error: false
+      
+      - name: Run baseline_status.ps1
+        shell: pwsh
+        run: |
+          .\ops\baseline_status.ps1 | Tee-Object -FilePath baseline_status.txt
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "FAIL: baseline_status.ps1 returned exit code $LASTEXITCODE" -ForegroundColor Red
+            exit 1
+          }
+        continue-on-error: false
+      
+      - name: Upload baseline check artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: baseline-check-outputs
+          path: |
+            doctor.txt
+            conformance.txt
+            baseline_status.txt
+          retention-days: 7
+
+  snapshot_policy:
+    name: Snapshot Policy
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check for proof doc requirement
+        shell: pwsh
+        run: |
+          # Get changed files in PR
+          if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
+            $base = $env:GITHUB_BASE_REF
+            $head = $env:GITHUB_HEAD_REF
+            $changedFiles = git diff --name-only "$base...$head" | Where-Object { $_ -notmatch "^docs/" -and $_ -notmatch "^.github/" -and $_ -notmatch "^CHANGELOG" }
+          } else {
+            $changedFiles = git diff --name-only HEAD~1 HEAD | Where-Object { $_ -notmatch "^docs/" -and $_ -notmatch "^.github/" -and $_ -notmatch "^CHANGELOG" }
+          }
+          
+          if ($changedFiles) {
+            Write-Host "Code changes detected. Checking for proof doc..." -ForegroundColor Yellow
+            $proofFiles = git diff --name-only "$base...$head" 2>$null | Where-Object { $_ -match "^docs/PROOFS/" }
+            if (-not $proofFiles) {
+              Write-Host "WARN: Code changed but no proof doc found in docs/PROOFS/" -ForegroundColor Yellow
+              Write-Host "Consider adding a proof doc under docs/PROOFS/ for this change" -ForegroundColor Yellow
+            } else {
+              Write-Host "PASS: Proof doc found" -ForegroundColor Green
+            }
+          } else {
+            Write-Host "PASS: No code changes (docs-only)" -ForegroundColor Green
+          }
+      
+      - name: Check CHANGELOG for baseline-impacting changes
+        shell: pwsh
+        run: |
+          # Check if docker-compose.yml, ops/verify.ps1, docs/CURRENT.md changed
+          $baselineFiles = @("docker-compose.yml", "ops/verify.ps1", "ops/baseline_status.ps1", "docs/CURRENT.md", "docs/DECISIONS.md")
+          
+          if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
+            $base = $env:GITHUB_BASE_REF
+            $head = $env:GITHUB_HEAD_REF
+            $changedFiles = git diff --name-only "$base...$head"
+          } else {
+            $changedFiles = git diff --name-only HEAD~1 HEAD
+          }
+          
+          $baselineChanged = $false
+          foreach ($file in $baselineFiles) {
+            if ($changedFiles -contains $file) {
+              $baselineChanged = $true
+              break
+            }
+          }
+          
+          if ($baselineChanged) {
+            Write-Host "Baseline-impacting file changed. Checking CHANGELOG..." -ForegroundColor Yellow
+            $changelogEntry = git diff "$base...$head" CHANGELOG.md 2>$null | Select-String -Pattern "^\+\s*\*\*.*BASELINE|baseline|BASELINE" -CaseSensitive:$false
+            if (-not $changelogEntry) {
+              Write-Host "WARN: Baseline-impacting change detected but no CHANGELOG entry found" -ForegroundColor Yellow
+              Write-Host "Consider adding a CHANGELOG entry for baseline-impacting changes" -ForegroundColor Yellow
+            } else {
+              Write-Host "PASS: CHANGELOG entry found" -ForegroundColor Green
+            }
+          } else {
+            Write-Host "PASS: No baseline-impacting changes" -ForegroundColor Green
+          }
+      
+      - name: Check CURRENT.md updated for port/service changes
+        shell: pwsh
+        run: |
+          # Check if docker-compose.yml ports/services changed
+          if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
+            $base = $env:GITHUB_BASE_REF
+            $head = $env:GITHUB_HEAD_REF
+            $composeDiff = git diff "$base...$head" docker-compose.yml 2>$null
+          } else {
+            $composeDiff = git diff HEAD~1 HEAD docker-compose.yml 2>$null
+          }
+          
+          if ($composeDiff -match "ports:|services:") {
+            Write-Host "Docker Compose ports/services changed. Checking docs/CURRENT.md..." -ForegroundColor Yellow
+            $currentDiff = git diff "$base...$head" docs/CURRENT.md 2>$null
+            if (-not $currentDiff -or ($currentDiff -notmatch "port|Port|PORT|service|Service|SERVICE")) {
+              Write-Host "WARN: Port/service changed but docs/CURRENT.md not updated" -ForegroundColor Yellow
+              Write-Host "Consider updating docs/CURRENT.md with new port/service information" -ForegroundColor Yellow
+            } else {
+              Write-Host "PASS: docs/CURRENT.md updated" -ForegroundColor Green
+            }
+          } else {
+            Write-Host "PASS: No port/service changes" -ForegroundColor Green
+          }
+
+

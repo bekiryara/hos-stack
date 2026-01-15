@@ -37,58 +37,42 @@ fi
 # d) Ensure storage/logs directory exists
 mkdir -p /var/www/html/storage/logs
 
-# e) Log-to-stdout hardening: symlink laravel.log to stdout when HOS_LARAVEL_LOG_STDOUT=1
-# This ensures Laravel can always write logs even if file permissions fail
-# Check if stdout logging is enabled
-if [ "${HOS_LARAVEL_LOG_STDOUT:-0}" = "1" ]; then
-    # Remove existing laravel.log file if it exists (to avoid conflicts)
-    rm -f /var/www/html/storage/logs/laravel.log 2>/dev/null || true
-    # Create symlink to stdout (process 1's stdout = container stdout)
-    ln -sf /proc/1/fd/1 /var/www/html/storage/logs/laravel.log 2>/dev/null || true
-    if [ -L /var/www/html/storage/logs/laravel.log ]; then
-        echo "[INFO] laravel.log symlinked to stdout (HOS_LARAVEL_LOG_STDOUT=1)" >&2
-    else
-        echo "[WARN] Failed to symlink laravel.log to stdout; falling back to file" >&2
-    fi
-fi
-
-# f) Fallback: If symlink fails, ensure regular file exists with permissive permissions
-if [ ! -L /var/www/html/storage/logs/laravel.log ]; then
-    touch /var/www/html/storage/logs/laravel.log 2>/dev/null || true
-    if [ "$(id -u)" -eq 0 ]; then
-        chown www-data:www-data /var/www/html/storage/logs/laravel.log 2>/dev/null || true
-        # CRITICAL: chmod 0666 for bulletproof append (worker can write even if ownership weird)
-        chmod 0666 /var/www/html/storage/logs/laravel.log 2>/dev/null || true
-    fi
-fi
-
-# g) Worker perspective write check (only if symlink failed - skip if symlink exists)
-if [ ! -L /var/www/html/storage/logs/laravel.log ]; then
-    # Only check if we're using regular file (not symlink)
-    if command -v su >/dev/null 2>&1; then
-        # Try append as www-data user (worker perspective)
-        if ! su -s /bin/sh www-data -c "echo test >> /var/www/html/storage/logs/laravel.log" 2>/dev/null; then
-            # Fallback: permissive permissions
-            echo "[WARN] Worker write check failed; applying permissive chmod" >&2
-            chmod -R 0777 /var/www/html/storage/logs /var/www/html/bootstrap/cache 2>/dev/null || true
-            chmod 0666 /var/www/html/storage/logs/laravel.log 2>/dev/null || true
-            # Try again
-            if ! su -s /bin/sh www-data -c "echo test >> /var/www/html/storage/logs/laravel.log" 2>/dev/null; then
-                echo "[FAIL] Worker cannot append to laravel.log even after permissive chmod" >&2
-                echo "[HINT] Check named volumes and entrypoint script" >&2
-                exit 1
-            fi
-        fi
-    else
-        # su missing: fallback to permissive chmod and log warning
-        echo "[WARN] su command missing; applying permissive chmod as fallback" >&2
-        chmod -R 0777 /var/www/html/storage/logs /var/www/html/bootstrap/cache 2>/dev/null || true
-        chmod 0666 /var/www/html/storage/logs/laravel.log 2>/dev/null || true
-    fi
+# e) STATELESS LOGGING: If LOG_CHANNEL=stderr, skip laravel.log file creation entirely
+# Laravel will write to php://stderr which is captured by docker logs
+if [ "${LOG_CHANNEL:-}" = "stderr" ]; then
+    echo "[INFO] LOG_CHANNEL=stderr: Laravel logs to stderr, skipping laravel.log file creation" >&2
+    # Ensure directory exists but don't create laravel.log file
+    mkdir -p /var/www/html/storage/logs 2>/dev/null || true
 else
-    # Symlink exists - no need for write check (logs go to stdout/stderr)
-    echo "[INFO] laravel.log is symlinked - no permission check needed" >&2
+    # Fallback: If not stderr, create laravel.log with permissive permissions (legacy support)
+    if [ "${HOS_LARAVEL_LOG_STDOUT:-0}" = "1" ]; then
+        rm -f /var/www/html/storage/logs/laravel.log 2>/dev/null || true
+        ln -sf /proc/1/fd/1 /var/www/html/storage/logs/laravel.log 2>/dev/null || true
+        if [ -L /var/www/html/storage/logs/laravel.log ]; then
+            echo "[INFO] laravel.log symlinked to stdout (HOS_LARAVEL_LOG_STDOUT=1)" >&2
+        fi
+    fi
+    if [ ! -L /var/www/html/storage/logs/laravel.log ]; then
+        touch /var/www/html/storage/logs/laravel.log 2>/dev/null || true
+        if [ "$(id -u)" -eq 0 ]; then
+            chown www-data:www-data /var/www/html/storage/logs/laravel.log 2>/dev/null || true
+            chmod 0666 /var/www/html/storage/logs/laravel.log 2>/dev/null || true
+        fi
+    fi
 fi
+
+# h) DEV MODE: Force storage permissions (brute-force for visibility)
+# This ensures Laravel can always write logs even in dev environments with permission issues
+if [ "${APP_ENV:-production}" = "local" ] || [ "${APP_DEBUG:-false}" = "true" ]; then
+    echo "[INFO] DEV MODE: Applying permissive storage permissions for log visibility" >&2
+    mkdir -p /var/www/html/storage /var/www/html/storage/logs /var/www/html/bootstrap/cache 2>/dev/null || true
+    chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
+    chmod -R 0777 /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
+fi
+
+# i) Clear Laravel caches (ignore failures - may fail if Laravel not fully bootstrapped)
+echo "[INFO] Clearing Laravel caches (optimize:clear)..." >&2
+php /var/www/html/artisan optimize:clear >/dev/null 2>&1 || echo "[WARN] optimize:clear failed (non-fatal, Laravel may not be fully bootstrapped)" >&2
 
 # Execute the original command (supervisord)
 exec "$@"

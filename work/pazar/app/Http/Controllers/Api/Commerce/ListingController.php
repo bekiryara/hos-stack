@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Api\Commerce;
 
 use App\Http\Controllers\Controller;
 use App\Models\Listing;
-use App\Support\Api\Cursor;
-use App\Support\Api\ListingQuery;
 use App\Support\Api\ListingReadDTO;
+use App\Support\ApiSpine\ListingQueryModel;
 use App\Support\ApiSpine\ListingWriteModel;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -48,50 +47,19 @@ final class ListingController extends Controller
 
         // Validate cursor (if provided)
         $cursorStr = $request->input('cursor');
-        if (!empty($cursorStr) && !Cursor::isValid($cursorStr)) {
-            return $this->invalidCursor($request);
+        if (!empty($cursorStr) && !ListingQueryModel::validateCursor($cursorStr, $tenantId, $worldId)) {
+            return ListingQueryModel::invalidCursorResponse($request);
         }
 
-        // Build base query (tenant-scoped, world-scoped)
-        $query = Listing::query()
-            ->forTenant($tenantId)
-            ->forWorld('commerce');
-
-        // Apply filters and ordering via ListingQuery
-        [$query, $limit, $nextCursorFromQuery] = ListingQuery::apply($query, $request);
-
-        // Get items (limit + 1 to check if there's more)
-        $items = $query->limit($limit + 1)->get();
-        $hasMore = $items->count() > $limit;
-        
-        if ($hasMore) {
-            $items = $items->take($limit);
-        }
-
-        // Build next cursor (from last item)
-        $nextCursor = null;
-        if ($hasMore && $items->count() > 0) {
-            $lastItem = $items->last();
-            $afterValue = $lastItem->created_at->toIso8601String() . ':' . $lastItem->id;
-            $nextCursor = Cursor::encode('created_at', 'desc', $afterValue);
-        }
-
-        // Format response using ListingReadDTO
-        $formattedItems = $items->map(function ($item) {
-            return ListingReadDTO::fromModel($item);
-        })->toArray();
+        // Use ListingQueryModel for query execution
+        $result = ListingQueryModel::query($tenantId, $worldId, $request);
 
         $requestId = $request->attributes->get('request_id', '');
 
         $response = response()->json([
             'ok' => true,
-            'items' => $formattedItems,
-            'cursor' => [
-                'next' => $nextCursor,
-            ],
-            'meta' => [
-                'limit' => $limit,
-            ],
+            'items' => $result['items'],
+            'page' => $result['page'],
             'request_id' => $requestId,
         ]);
 

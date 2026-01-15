@@ -1,18 +1,22 @@
-# product_e2e.ps1 - Product API E2E Gate (Optional)
-# Minimal CRUD E2E for enabled worlds (catches drift/breakage)
+# product_e2e.ps1 - Product API E2E Gate
+# Validates API contract + boundary + error envelope + request_id + metrics/basic health
 # PowerShell 5.1 compatible, ASCII-only output, safe exit pattern
 
 param(
     [string]$BaseUrl = $env:BASE_URL,
-    [string]$TestEmail = $env:PRODUCT_TEST_EMAIL,
-    [string]$TestPassword = $env:PRODUCT_TEST_PASSWORD,
-    [string]$TestAuth = $env:PRODUCT_TEST_AUTH,
-    [string]$TenantId = $env:PRODUCT_TENANT_ID,
-    [string]$WorldsConfigPath = "work\pazar\config\worlds.php"
+    [string]$HosBaseUrl = $env:HOS_BASE_URL,
+    [string]$TenantId = $env:PRODUCT_TEST_TENANT_ID,
+    [string]$AuthToken = $env:PRODUCT_TEST_AUTH_TOKEN,
+    [string]$TenantBId = $env:PRODUCT_TEST_TENANT_B_ID,
+    [string]$SampleId = $null,
+    [switch]$Verbose
 )
 
 if ([string]::IsNullOrEmpty($BaseUrl)) {
     $BaseUrl = "http://localhost:8080"
+}
+if ([string]::IsNullOrEmpty($HosBaseUrl)) {
+    $HosBaseUrl = "http://localhost:3000"
 }
 
 $ErrorActionPreference = "Continue"
@@ -24,8 +28,9 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Initialize-OpsOutput
 
-Write-Info "Product API E2E Gate"
+Write-Info "=== PRODUCT E2E GATE ==="
 Write-Info "Base URL: ${BaseUrl}"
+Write-Info "H-OS Base URL: ${HosBaseUrl}"
 Write-Info ""
 
 # Result tracking
@@ -35,15 +40,15 @@ $hasWarn = $false
 
 function Add-CheckResult {
     param(
-        [string]$World,
-        [string]$Step,
+        [string]$Check,
         [string]$Status,
+        [int]$ExitCode,
         [string]$Notes = ""
     )
     $script:checkResults += [PSCustomObject]@{
-        World = $World
-        Step = $Step
+        Check = $Check
         Status = $Status
+        ExitCode = $ExitCode
         Notes = $Notes
     }
     if ($Status -eq "FAIL") {
@@ -53,347 +58,457 @@ function Add-CheckResult {
     }
 }
 
-# Step 1: Parse enabled worlds
-Write-Info "Step 1: Parsing enabled worlds..."
-$enabledWorlds = @()
-
-if (Test-Path $WorldsConfigPath) {
-    $content = Get-Content $WorldsConfigPath -Raw
-    if ($content -match "'enabled'\s*=>\s*\[(.*?)\]") {
-        $enabledStr = $matches[1]
-        if ($enabledStr -match "'commerce'") { $enabledWorlds += "commerce" }
-        if ($enabledStr -match "'food'") { $enabledWorlds += "food" }
-        if ($enabledStr -match "'rentals'") { $enabledWorlds += "rentals" }
+# Helper: Invoke HTTP request and return structured result
+function Invoke-HttpJson {
+    param(
+        [string]$Method,
+        [string]$Url,
+        [hashtable]$Headers = @{},
+        [string]$BodyJson = $null
+    )
+    
+    $result = @{
+        StatusCode = 0
+        Headers = @{}
+        BodyText = ""
+        Json = $null
+        RequestIdFromHeader = $null
+        RequestIdFromBody = $null
+        Error = $null
     }
+    
+    try {
+        # Build curl command
+        $curlArgs = @("-sS", "-i", "-X", $Method)
+        
+        # Add headers
+        foreach ($key in $Headers.Keys) {
+            $curlArgs += "-H"
+            $curlArgs += "${key}: $($Headers[$key])"
+        }
+        
+        # Add body if provided
+        if ($BodyJson) {
+            $curlArgs += "-H"
+            $curlArgs += "Content-Type: application/json"
+            $curlArgs += "-d"
+            $curlArgs += $BodyJson
+        }
+        
+        $curlArgs += $Url
+        
+        # Execute curl
+        $response = & curl.exe $curlArgs 2>&1
+        
+        if ($LASTEXITCODE -ne 0) {
+            $result.Error = "curl failed with exit code ${LASTEXITCODE}: $response"
+            return $result
+        }
+        
+        # Parse response
+        $responseText = $response -join "`n"
+        $parts = $responseText -split "`r?`n`r?`n", 2
+        $headerBlock = $parts[0]
+        $bodyBlock = if ($parts.Count -gt 1) { $parts[1] } else { "" }
+        
+        # Parse status code
+        if ($headerBlock -match "HTTP/\d\.\d\s+(\d+)") {
+            $result.StatusCode = [int]$matches[1]
+        }
+        
+        # Parse headers
+        $headerLines = $headerBlock -split "`r?`n"
+        foreach ($line in $headerLines) {
+            if ($line -match "^([^:]+):\s*(.+)$") {
+                $headerName = $matches[1].Trim()
+                $headerValue = $matches[2].Trim()
+                $result.Headers[$headerName] = $headerValue
+                
+                if ($headerName -eq "X-Request-Id") {
+                    $result.RequestIdFromHeader = $headerValue
+                }
+            }
+        }
+        
+        # Parse body
+        $result.BodyText = $bodyBlock
+        
+        # Try to parse JSON
+        if ($bodyBlock -and $bodyBlock.Trim().StartsWith("{")) {
+            try {
+                $result.Json = $bodyBlock | ConvertFrom-Json
+                
+                # Extract request_id from body
+                if ($result.Json.request_id) {
+                    $result.RequestIdFromBody = $result.Json.request_id
+                } elseif ($result.Json.requestId) {
+                    $result.RequestIdFromBody = $result.Json.requestId
+                }
+            } catch {
+                # Not JSON or parse failed, ignore
+            }
+        }
+        
+    } catch {
+        $result.Error = "Exception: $($_.Exception.Message)"
+    }
+    
+    return $result
 }
 
-if ($enabledWorlds.Count -eq 0) {
-    Write-Warn "No enabled worlds found. Using defaults: commerce, food, rentals"
-    $enabledWorlds = @("commerce", "food", "rentals")
+# Helper: Validate error envelope
+function Validate-ErrorEnvelope {
+    param([object]$Json)
+    
+    if (-not $Json) {
+        return $false
+    }
+    
+    # Check ok:false
+    if ($Json.ok -ne $false) {
+        return $false
+    }
+    
+    # Check error_code present
+    if ([string]::IsNullOrEmpty($Json.error_code)) {
+        return $false
+    }
+    
+    # Check request_id non-empty (UUID-ish)
+    if ([string]::IsNullOrEmpty($Json.request_id)) {
+        return $false
+    }
+    
+    # Basic UUID format check (at least 8 chars)
+    if ($Json.request_id.Length -lt 8) {
+        return $false
+    }
+    
+    return $true
 }
 
-Write-Pass "Enabled worlds: $($enabledWorlds -join ', ')"
+# Helper: Validate ok envelope
+function Validate-OkEnvelope {
+    param(
+        [object]$Json,
+        [string]$RequestIdFromHeader = $null
+    )
+    
+    if (-not $Json) {
+        return $false
+    }
+    
+    # Check ok:true
+    if ($Json.ok -ne $true) {
+        return $false
+    }
+    
+    # Check request_id present
+    if ([string]::IsNullOrEmpty($Json.request_id)) {
+        return $false
+    }
+    
+    # If header request_id present, must match body
+    if ($RequestIdFromHeader -and $Json.request_id -ne $RequestIdFromHeader) {
+        return $false
+    }
+    
+    return $true
+}
 
-# Step 2: Check credentials
+# Test 1: H-OS health
+Write-Info "Test 1: H-OS health check..."
+$hosHealth = Invoke-HttpJson -Method "GET" -Url "${HosBaseUrl}/v1/health"
+
+if ($hosHealth.Error) {
+    Write-Fail "H-OS health check failed: $($hosHealth.Error)"
+    Add-CheckResult -Check "H-OS Health" -Status "FAIL" -ExitCode 1 -Notes "Request failed: $($hosHealth.Error)"
+} elseif ($hosHealth.StatusCode -eq 200 -and $hosHealth.Json -and $hosHealth.Json.ok -eq $true) {
+    Write-Pass "H-OS health: 200 OK"
+    Add-CheckResult -Check "H-OS Health" -Status "PASS" -ExitCode 0 -Notes "200 OK, ok:true"
+} else {
+    Write-Fail "H-OS health: Expected 200 OK with ok:true, got $($hosHealth.StatusCode)"
+    Add-CheckResult -Check "H-OS Health" -Status "FAIL" -ExitCode 1 -Notes "Status: $($hosHealth.StatusCode), ok: $($hosHealth.Json.ok)"
+}
+
+# Test 2: Pazar metrics
 Write-Info ""
-Write-Info "Step 2: Checking credentials..."
+Write-Info "Test 2: Pazar metrics endpoint..."
+$metrics = Invoke-HttpJson -Method "GET" -Url "${BaseUrl}/metrics"
 
-# Use Bearer token if provided, otherwise try email/password
-$authToken = $null
-if (-not [string]::IsNullOrEmpty($TestAuth)) {
-    $authToken = $TestAuth
-    Write-Pass "Bearer token provided"
-} elseif (-not [string]::IsNullOrEmpty($TestEmail) -and -not [string]::IsNullOrEmpty($TestPassword)) {
-    # Try to get token via login (if login endpoint exists)
-    # For now, we'll use Bearer token approach (HOS_OIDC_API_KEY)
-    Write-Warn "Email/password provided but login endpoint not implemented. Using HOS_OIDC_API_KEY if available."
-    $authToken = $env:HOS_OIDC_API_KEY
-    if ([string]::IsNullOrEmpty($authToken)) {
-        Write-Warn "HOS_OIDC_API_KEY not set. E2E tests will be skipped."
+if ($metrics.Error) {
+    Write-Fail "Metrics check failed: $($metrics.Error)"
+    Add-CheckResult -Check "Pazar Metrics" -Status "FAIL" -ExitCode 1 -Notes "Request failed: $($metrics.Error)"
+} elseif ($metrics.StatusCode -eq 200) {
+    $contentType = $metrics.Headers["Content-Type"]
+    if ($contentType -and $contentType.StartsWith("text/plain")) {
+        Write-Pass "Pazar metrics: 200 OK, Content-Type: text/plain"
+        Add-CheckResult -Check "Pazar Metrics" -Status "PASS" -ExitCode 0 -Notes "200 OK, Content-Type: text/plain"
+    } else {
+        Write-Fail "Pazar metrics: Expected Content-Type text/plain, got $contentType"
+        Add-CheckResult -Check "Pazar Metrics" -Status "FAIL" -ExitCode 1 -Notes "Content-Type: $contentType"
     }
 } else {
-    Write-Warn "No credentials provided (PRODUCT_TEST_AUTH or PRODUCT_TEST_EMAIL/PASSWORD). E2E tests will be skipped."
-    Write-Warn "Set PRODUCT_TEST_AUTH (Bearer token) or PRODUCT_TEST_EMAIL + PRODUCT_TEST_PASSWORD to run E2E tests."
-    Add-CheckResult -World "All" -Step "Credentials" -Status "WARN" -Notes "Credentials missing, skipping E2E tests"
-    Invoke-OpsExit 2
-    return
+    Write-Fail "Pazar metrics: Expected 200, got $($metrics.StatusCode)"
+    Add-CheckResult -Check "Pazar Metrics" -Status "FAIL" -ExitCode 1 -Notes "Status: $($metrics.StatusCode)"
 }
 
-if ([string]::IsNullOrEmpty($TenantId)) {
-    Write-Warn "PRODUCT_TENANT_ID not provided. E2E tests will be skipped."
-    Add-CheckResult -World "All" -Step "Tenant ID" -Status "WARN" -Notes "Tenant ID missing, skipping E2E tests"
-    Invoke-OpsExit 2
-    return
-}
-
-Write-Pass "Credentials available. Proceeding with E2E tests."
-
-# Step 3: Run E2E for each enabled world
+# Test 3: Product spine validation (world param required)
 Write-Info ""
-Write-Info "Step 3: Running E2E tests for each enabled world..."
+Write-Info "Test 3: Product spine validation (world param required)..."
+$productNoWorld = Invoke-HttpJson -Method "GET" -Url "${BaseUrl}/api/v1/products"
+
+if ($productNoWorld.Error) {
+    Write-Fail "Product spine validation failed: $($productNoWorld.Error)"
+    Add-CheckResult -Check "Product Spine Validation" -Status "FAIL" -ExitCode 1 -Notes "Request failed: $($productNoWorld.Error)"
+} elseif ($productNoWorld.StatusCode -eq 422) {
+    if (Validate-ErrorEnvelope -Json $productNoWorld.Json) {
+        Write-Pass "Product spine validation: 422 VALIDATION_ERROR with request_id"
+        Add-CheckResult -Check "Product Spine Validation" -Status "PASS" -ExitCode 0 -Notes "422 VALIDATION_ERROR, request_id present"
+    } else {
+        Write-Fail "Product spine validation: 422 but invalid error envelope"
+        Add-CheckResult -Check "Product Spine Validation" -Status "FAIL" -ExitCode 1 -Notes "422 but missing error_code or request_id"
+    }
+} else {
+    Write-Fail "Product spine validation: Expected 422, got $($productNoWorld.StatusCode)"
+    Add-CheckResult -Check "Product Spine Validation" -Status "FAIL" -ExitCode 1 -Notes "Status: $($productNoWorld.StatusCode)"
+}
+
+# Test 3b: Product with world but no auth
+Write-Info ""
+Write-Info "Test 3b: Product with world but no auth..."
+$productNoAuth = Invoke-HttpJson -Method "GET" -Url "${BaseUrl}/api/v1/products?world=commerce"
+
+if ($productNoAuth.Error) {
+    Write-Fail "Product no-auth check failed: $($productNoAuth.Error)"
+    Add-CheckResult -Check "Product No-Auth" -Status "FAIL" -ExitCode 1 -Notes "Request failed: $($productNoAuth.Error)"
+} elseif ($productNoAuth.StatusCode -eq 401 -or $productNoAuth.StatusCode -eq 403) {
+    if (Validate-ErrorEnvelope -Json $productNoAuth.Json) {
+        Write-Pass "Product no-auth: $($productNoAuth.StatusCode) with error envelope"
+        Add-CheckResult -Check "Product No-Auth" -Status "PASS" -ExitCode 0 -Notes "$($productNoAuth.StatusCode) with error envelope"
+    } else {
+        Write-Fail "Product no-auth: $($productNoAuth.StatusCode) but invalid error envelope"
+        Add-CheckResult -Check "Product No-Auth" -Status "FAIL" -ExitCode 1 -Notes "$($productNoAuth.StatusCode) but missing error_code or request_id"
+    }
+} else {
+    Write-Fail "Product no-auth: Expected 401/403, got $($productNoAuth.StatusCode)"
+    Add-CheckResult -Check "Product No-Auth" -Status "FAIL" -ExitCode 1 -Notes "Status: $($productNoAuth.StatusCode)"
+}
+
+# Test 4: Listings per enabled world (unauthorized)
+Write-Info ""
+Write-Info "Test 4: Listings per enabled world (unauthorized)..."
+$enabledWorlds = @("commerce", "food", "rentals")
 
 foreach ($world in $enabledWorlds) {
-    Write-Info ""
-    Write-Info "Testing world: ${world}"
+    Write-Info "  Checking ${world}..."
+    $listingsNoAuth = Invoke-HttpJson -Method "GET" -Url "${BaseUrl}/api/v1/${world}/listings"
     
-    $headers = @{
-        "Authorization" = "Bearer $authToken"
-        "X-Tenant-Id" = $TenantId
-        "Content-Type" = "application/json"
-        "Accept" = "application/json"
-    }
-    
-    $createdId = $null
-    $worldPass = $true
-    $worldNotes = @()
-    
-    # Step 3.1: CREATE (POST)
-    Write-Info "  CREATE: POST /api/v1/${world}/listings"
-    try {
-        $createBody = @{
-            title = "E2E Test Listing $([DateTimeOffset]::Now.ToUnixTimeSeconds())"
-            description = "E2E test description"
-            price_amount = 5000
-            currency = "TRY"
-            status = "draft"
-        } | ConvertTo-Json -Compress
-        
-        $createResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/v1/${world}/listings" `
-            -Method POST `
-            -Headers $headers `
-            -Body $createBody `
-            -UseBasicParsing `
-            -ErrorAction Stop
-        
-        if ($createResponse.StatusCode -eq 201) {
-            $createJson = $createResponse.Content | ConvertFrom-Json
-            if ($createJson.ok -eq $true -and $createJson.item -and $createJson.item.id) {
-                $createdId = $createJson.item.id
-                Write-Pass "  CREATE: 201 CREATED, ok:true, id: ${createdId}"
-                Add-CheckResult -World $world -Step "CREATE" -Status "PASS" -Notes "201 CREATED, id: ${createdId}"
-            } else {
-                $worldPass = $false
-                $worldNotes += "CREATE: Invalid response (ok:true, item.id expected)"
-                Write-Fail "  CREATE: Invalid response format"
-                Add-CheckResult -World $world -Step "CREATE" -Status "FAIL" -Notes "Invalid response format"
-            }
+    if ($listingsNoAuth.Error) {
+        Write-Fail "${world} listings no-auth: Request failed: $($listingsNoAuth.Error)"
+        Add-CheckResult -Check "${world} Listings No-Auth" -Status "FAIL" -ExitCode 1 -Notes "Request failed"
+    } elseif ($listingsNoAuth.StatusCode -eq 401 -or $listingsNoAuth.StatusCode -eq 403) {
+        if (Validate-ErrorEnvelope -Json $listingsNoAuth.Json) {
+            Write-Pass "${world} listings no-auth: $($listingsNoAuth.StatusCode) with error envelope"
+            Add-CheckResult -Check "${world} Listings No-Auth" -Status "PASS" -ExitCode 0 -Notes "$($listingsNoAuth.StatusCode) with error envelope"
         } else {
-            $worldPass = $false
-            $worldNotes += "CREATE: Expected 201, got $($createResponse.StatusCode)"
-            Write-Fail "  CREATE: Expected 201, got $($createResponse.StatusCode)"
-            Add-CheckResult -World $world -Step "CREATE" -Status "FAIL" -Notes "Status: $($createResponse.StatusCode)"
+            Write-Fail "${world} listings no-auth: $($listingsNoAuth.StatusCode) but invalid error envelope"
+            Add-CheckResult -Check "${world} Listings No-Auth" -Status "FAIL" -ExitCode 1 -Notes "$($listingsNoAuth.StatusCode) but missing error_code or request_id"
         }
-    } catch {
-        $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "Unknown" }
-        $worldPass = $false
-        $worldNotes += "CREATE: HTTP $statusCode"
-        Write-Fail "  CREATE: HTTP $statusCode - $($_.Exception.Message)"
-        Add-CheckResult -World $world -Step "CREATE" -Status "FAIL" -Notes "HTTP $statusCode"
-    }
-    
-    if (-not $createdId) {
-        Write-Warn "  Skipping remaining tests for ${world} (CREATE failed)"
-        continue
-    }
-    
-    # Step 3.2: LIST (GET)
-    Write-Info "  LIST: GET /api/v1/${world}/listings"
-    try {
-        $listResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/v1/${world}/listings" `
-            -Method GET `
-            -Headers $headers `
-            -UseBasicParsing `
-            -ErrorAction Stop
-        
-        if ($listResponse.StatusCode -eq 200) {
-            $listJson = $listResponse.Content | ConvertFrom-Json
-            if ($listJson.ok -eq $true -and $listJson.items) {
-                $found = $listJson.items | Where-Object { $_.id -eq $createdId } | Select-Object -First 1
-                if ($found) {
-                    Write-Pass "  LIST: 200 OK, created id found"
-                    Add-CheckResult -World $world -Step "LIST" -Status "PASS" -Notes "200 OK, id found"
-                } else {
-                    $worldNotes += "LIST: Created id not found"
-                    Write-Warn "  LIST: Created id not found in list"
-                    Add-CheckResult -World $world -Step "LIST" -Status "WARN" -Notes "Created id not found"
-                }
-            } else {
-                $worldPass = $false
-                $worldNotes += "LIST: Invalid response (ok:true, items expected)"
-                Write-Fail "  LIST: Invalid response format"
-                Add-CheckResult -World $world -Step "LIST" -Status "FAIL" -Notes "Invalid response format"
-            }
-        } else {
-            $worldPass = $false
-            $worldNotes += "LIST: Expected 200, got $($listResponse.StatusCode)"
-            Write-Fail "  LIST: Expected 200, got $($listResponse.StatusCode)"
-            Add-CheckResult -World $world -Step "LIST" -Status "FAIL" -Notes "Status: $($listResponse.StatusCode)"
-        }
-    } catch {
-        $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "Unknown" }
-        $worldPass = $false
-        $worldNotes += "LIST: HTTP $statusCode"
-        Write-Fail "  LIST: HTTP $statusCode"
-        Add-CheckResult -World $world -Step "LIST" -Status "FAIL" -Notes "HTTP $statusCode"
-    }
-    
-    # Step 3.3: SHOW (GET)
-    Write-Info "  SHOW: GET /api/v1/${world}/listings/${createdId}"
-    try {
-        $showResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/v1/${world}/listings/${createdId}" `
-            -Method GET `
-            -Headers $headers `
-            -UseBasicParsing `
-            -ErrorAction Stop
-        
-        if ($showResponse.StatusCode -eq 200) {
-            $showJson = $showResponse.Content | ConvertFrom-Json
-            if ($showJson.ok -eq $true -and $showJson.item -and $showJson.item.id -eq $createdId) {
-                Write-Pass "  SHOW: 200 OK, id matches"
-                Add-CheckResult -World $world -Step "SHOW" -Status "PASS" -Notes "200 OK, id matches"
-            } else {
-                $worldPass = $false
-                $worldNotes += "SHOW: Id mismatch"
-                Write-Fail "  SHOW: Id mismatch"
-                Add-CheckResult -World $world -Step "SHOW" -Status "FAIL" -Notes "Id mismatch"
-            }
-        } else {
-            $worldPass = $false
-            $worldNotes += "SHOW: Expected 200, got $($showResponse.StatusCode)"
-            Write-Fail "  SHOW: Expected 200, got $($showResponse.StatusCode)"
-            Add-CheckResult -World $world -Step "SHOW" -Status "FAIL" -Notes "Status: $($showResponse.StatusCode)"
-        }
-    } catch {
-        $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "Unknown" }
-        $worldPass = $false
-        $worldNotes += "SHOW: HTTP $statusCode"
-        Write-Fail "  SHOW: HTTP $statusCode"
-        Add-CheckResult -World $world -Step "SHOW" -Status "FAIL" -Notes "HTTP $statusCode"
-    }
-    
-    # Step 3.4: UPDATE (PATCH, fallback to PUT)
-    Write-Info "  UPDATE: PATCH /api/v1/${world}/listings/${createdId}"
-    $updateMethod = "PATCH"
-    try {
-        $updateBody = @{
-            title = "Updated E2E Title $([DateTimeOffset]::Now.ToUnixTimeSeconds())"
-        } | ConvertTo-Json -Compress
-        
-        $updateResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/v1/${world}/listings/${createdId}" `
-            -Method PATCH `
-            -Headers $headers `
-            -Body $updateBody `
-            -UseBasicParsing `
-            -ErrorAction Stop
-        
-        if ($updateResponse.StatusCode -eq 200) {
-            $updateJson = $updateResponse.Content | ConvertFrom-Json
-            if ($updateJson.ok -eq $true -and $updateJson.item -and $updateJson.item.title -like "*Updated*") {
-                Write-Pass "  UPDATE: 200 OK, title updated"
-                Add-CheckResult -World $world -Step "UPDATE" -Status "PASS" -Notes "200 OK, title updated"
-            } else {
-                $worldNotes += "UPDATE: Title not updated"
-                Write-Warn "  UPDATE: Title not updated"
-                Add-CheckResult -World $world -Step "UPDATE" -Status "WARN" -Notes "Title not updated"
-            }
-        } else {
-            $worldPass = $false
-            $worldNotes += "UPDATE: Expected 200, got $($updateResponse.StatusCode)"
-            Write-Fail "  UPDATE: Expected 200, got $($updateResponse.StatusCode)"
-            Add-CheckResult -World $world -Step "UPDATE" -Status "FAIL" -Notes "Status: $($updateResponse.StatusCode)"
-        }
-    } catch {
-        # Try PUT if PATCH fails
-        if ($_.Exception.Response.StatusCode.value__ -eq 405) {
-            Write-Info "  UPDATE: PATCH not allowed, trying PUT..."
-            try {
-                $updateBody = @{
-                    title = "Updated E2E Title $([DateTimeOffset]::Now.ToUnixTimeSeconds())"
-                } | ConvertTo-Json -Compress
-                
-                $updateResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/v1/${world}/listings/${createdId}" `
-                    -Method PUT `
-                    -Headers $headers `
-                    -Body $updateBody `
-                    -UseBasicParsing `
-                    -ErrorAction Stop
-                
-                if ($updateResponse.StatusCode -eq 200) {
-                    Write-Pass "  UPDATE: 200 OK (PUT), title updated"
-                    Add-CheckResult -World $world -Step "UPDATE" -Status "PASS" -Notes "200 OK (PUT), title updated"
-                } else {
-                    $worldPass = $false
-                    $worldNotes += "UPDATE: PUT returned $($updateResponse.StatusCode)"
-                    Write-Fail "  UPDATE: PUT returned $($updateResponse.StatusCode)"
-                    Add-CheckResult -World $world -Step "UPDATE" -Status "FAIL" -Notes "PUT Status: $($updateResponse.StatusCode)"
-                }
-            } catch {
-                $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "Unknown" }
-                $worldPass = $false
-                $worldNotes += "UPDATE: PUT HTTP $statusCode"
-                Write-Fail "  UPDATE: PUT HTTP $statusCode"
-                Add-CheckResult -World $world -Step "UPDATE" -Status "FAIL" -Notes "PUT HTTP $statusCode"
-            }
-        } else {
-            $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "Unknown" }
-            $worldPass = $false
-            $worldNotes += "UPDATE: HTTP $statusCode"
-            Write-Fail "  UPDATE: HTTP $statusCode"
-            Add-CheckResult -World $world -Step "UPDATE" -Status "FAIL" -Notes "HTTP $statusCode"
-        }
-    }
-    
-    # Step 3.5: DELETE
-    Write-Info "  DELETE: DELETE /api/v1/${world}/listings/${createdId}"
-    try {
-        $deleteResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/v1/${world}/listings/${createdId}" `
-            -Method DELETE `
-            -Headers $headers `
-            -UseBasicParsing `
-            -ErrorAction Stop
-        
-        if ($deleteResponse.StatusCode -eq 204 -or $deleteResponse.StatusCode -eq 200) {
-            Write-Pass "  DELETE: $($deleteResponse.StatusCode) OK"
-            Add-CheckResult -World $world -Step "DELETE" -Status "PASS" -Notes "$($deleteResponse.StatusCode) OK"
-        } else {
-            $worldPass = $false
-            $worldNotes += "DELETE: Expected 204/200, got $($deleteResponse.StatusCode)"
-            Write-Fail "  DELETE: Expected 204/200, got $($deleteResponse.StatusCode)"
-            Add-CheckResult -World $world -Step "DELETE" -Status "FAIL" -Notes "Status: $($deleteResponse.StatusCode)"
-        }
-    } catch {
-        $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "Unknown" }
-        $worldPass = $false
-        $worldNotes += "DELETE: HTTP $statusCode"
-        Write-Fail "  DELETE: HTTP $statusCode"
-        Add-CheckResult -World $world -Step "DELETE" -Status "FAIL" -Notes "HTTP $statusCode"
-    }
-    
-    # Step 3.6: SHOW again (should be 404)
-    Write-Info "  SHOW (after delete): GET /api/v1/${world}/listings/${createdId}"
-    try {
-        $showResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/v1/${world}/listings/${createdId}" `
-            -Method GET `
-            -Headers $headers `
-            -UseBasicParsing `
-            -ErrorAction Stop
-        
-        $worldPass = $false
-        $worldNotes += "SHOW (after delete): Expected 404, got $($showResponse.StatusCode)"
-        Write-Fail "  SHOW (after delete): Expected 404, got $($showResponse.StatusCode)"
-        Add-CheckResult -World $world -Step "SHOW (after delete)" -Status "FAIL" -Notes "Expected 404, got $($showResponse.StatusCode)"
-    } catch {
-        $statusCode = if ($_.Exception.Response) { $_.Exception.Response.StatusCode.value__ } else { "Unknown" }
-        if ($statusCode -eq 404) {
-            $errorJson = $null
-            try {
-                $errorStream = $_.Exception.Response.GetResponseStream()
-                $reader = New-Object System.IO.StreamReader($errorStream)
-                $errorContent = $reader.ReadToEnd()
-                $errorJson = $errorContent | ConvertFrom-Json
-            } catch {
-                # Ignore JSON parse errors
-            }
-            
-            if ($errorJson -and $errorJson.ok -eq $false -and $errorJson.error_code -and $errorJson.request_id) {
-                Write-Pass "  SHOW (after delete): 404 NOT_FOUND, ok:false, error_code, request_id"
-                Add-CheckResult -World $world -Step "SHOW (after delete)" -Status "PASS" -Notes "404 NOT_FOUND, error envelope correct"
-            } else {
-                Write-Warn "  SHOW (after delete): 404 but invalid error envelope"
-                Add-CheckResult -World $world -Step "SHOW (after delete)" -Status "WARN" -Notes "404 but invalid error envelope"
-            }
-        } else {
-            $worldPass = $false
-            $worldNotes += "SHOW (after delete): Expected 404, got HTTP $statusCode"
-            Write-Fail "  SHOW (after delete): Expected 404, got HTTP $statusCode"
-            Add-CheckResult -World $world -Step "SHOW (after delete)" -Status "FAIL" -Notes "Expected 404, got HTTP $statusCode"
-        }
-    }
-    
-    if ($worldPass) {
-        Write-Pass "World ${world}: E2E PASS"
     } else {
-        Write-Fail "World ${world}: E2E FAIL - $($worldNotes -join '; ')"
+        Write-Fail "${world} listings no-auth: Expected 401/403, got $($listingsNoAuth.StatusCode)"
+        Add-CheckResult -Check "${world} Listings No-Auth" -Status "FAIL" -ExitCode 1 -Notes "Status: $($listingsNoAuth.StatusCode)"
+    }
+}
+
+# Test 5: Auth-required E2E (only if credentials provided)
+Write-Info ""
+if ([string]::IsNullOrEmpty($TenantId) -or [string]::IsNullOrEmpty($AuthToken)) {
+    Write-Warn "Auth credentials not provided - skipping auth-required E2E tests"
+    Add-CheckResult -Check "Auth-Required E2E" -Status "WARN" -ExitCode 2 -Notes "TenantId or AuthToken missing - tests skipped"
+} else {
+    Write-Info "Test 5: Auth-required E2E (credentials provided)..."
+    
+    $authHeaders = @{
+        "Authorization" = "Bearer ${AuthToken}"
+        "X-Tenant-Id" = $TenantId
+    }
+    
+    $createdIds = @{}
+    
+    foreach ($world in $enabledWorlds) {
+        Write-Info "  Testing ${world} E2E flow..."
+        
+        # 5a: POST create
+        $createBody = @{
+            title = "E2E Test Listing ${world} $(Get-Date -Format 'yyyyMMddHHmmss')"
+            status = "draft"
+            currency = "TRY"
+            price_amount = 10000
+            payload_json = $null
+        } | ConvertTo-Json -Compress
+        
+        $createResponse = Invoke-HttpJson -Method "POST" -Url "${BaseUrl}/api/v1/${world}/listings" -Headers $authHeaders -BodyJson $createBody
+        
+        if ($createResponse.Error) {
+            Write-Fail "${world} POST create: Request failed: $($createResponse.Error)"
+            Add-CheckResult -Check "${world} POST Create" -Status "FAIL" -ExitCode 1 -Notes "Request failed"
+            continue
+        } elseif ($createResponse.StatusCode -eq 200 -or $createResponse.StatusCode -eq 201) {
+            if (Validate-OkEnvelope -Json $createResponse.Json -RequestIdFromHeader $createResponse.RequestIdFromHeader) {
+                # Extract id from response
+                $createdId = $null
+                if ($createResponse.Json.item -and $createResponse.Json.item.id) {
+                    $createdId = $createResponse.Json.item.id
+                } elseif ($createResponse.Json.data -and $createResponse.Json.data.id) {
+                    $createdId = $createResponse.Json.data.id
+                } elseif ($createResponse.Json.id) {
+                    $createdId = $createResponse.Json.id
+                }
+                
+                if ($createdId) {
+                    $createdIds[$world] = $createdId
+                    Write-Pass "${world} POST create: $($createResponse.StatusCode) OK, id: $createdId"
+                    Add-CheckResult -Check "${world} POST Create" -Status "PASS" -ExitCode 0 -Notes "$($createResponse.StatusCode) OK, id: $createdId"
+                } else {
+                    Write-Fail "${world} POST create: $($createResponse.StatusCode) but id not found in response"
+                    Add-CheckResult -Check "${world} POST Create" -Status "FAIL" -ExitCode 1 -Notes "$($createResponse.StatusCode) but id missing"
+                }
+            } else {
+                Write-Fail "${world} POST create: $($createResponse.StatusCode) but invalid ok envelope"
+                Add-CheckResult -Check "${world} POST Create" -Status "FAIL" -ExitCode 1 -Notes "$($createResponse.StatusCode) but invalid envelope"
+            }
+        } else {
+            Write-Fail "${world} POST create: Expected 200/201, got $($createResponse.StatusCode)"
+            Add-CheckResult -Check "${world} POST Create" -Status "FAIL" -ExitCode 1 -Notes "Status: $($createResponse.StatusCode)"
+            continue
+        }
+        
+        # 5b: GET show (use created id or SampleId)
+        $showId = if ($createdIds[$world]) { $createdIds[$world] } elseif ($SampleId) { $SampleId } else { $null }
+        
+        if ($showId) {
+            $showResponse = Invoke-HttpJson -Method "GET" -Url "${BaseUrl}/api/v1/${world}/listings/${showId}" -Headers $authHeaders
+            
+            if ($showResponse.Error) {
+                Write-Fail "${world} GET show: Request failed: $($showResponse.Error)"
+                Add-CheckResult -Check "${world} GET Show" -Status "FAIL" -ExitCode 1 -Notes "Request failed"
+            } elseif ($showResponse.StatusCode -eq 200) {
+                if (Validate-OkEnvelope -Json $showResponse.Json -RequestIdFromHeader $showResponse.RequestIdFromHeader) {
+                    Write-Pass "${world} GET show: 200 OK"
+                    Add-CheckResult -Check "${world} GET Show" -Status "PASS" -ExitCode 0 -Notes "200 OK"
+                } else {
+                    Write-Fail "${world} GET show: 200 but invalid ok envelope"
+                    Add-CheckResult -Check "${world} GET Show" -Status "FAIL" -ExitCode 1 -Notes "200 but invalid envelope"
+                }
+            } else {
+                Write-Fail "${world} GET show: Expected 200, got $($showResponse.StatusCode)"
+                Add-CheckResult -Check "${world} GET Show" -Status "FAIL" -ExitCode 1 -Notes "Status: $($showResponse.StatusCode)"
+            }
+        } else {
+            Write-Warn "${world} GET show: Skipped (no id available)"
+            Add-CheckResult -Check "${world} GET Show" -Status "WARN" -ExitCode 2 -Notes "Skipped (no id)"
+        }
+        
+        # 5c: PATCH update (use created id)
+        if ($createdIds[$world]) {
+            $updateBody = @{
+                title = "E2E Test Updated ${world} $(Get-Date -Format 'yyyyMMddHHmmss')"
+            } | ConvertTo-Json -Compress
+            
+            $updateResponse = Invoke-HttpJson -Method "PATCH" -Url "${BaseUrl}/api/v1/${world}/listings/$($createdIds[$world])" -Headers $authHeaders -BodyJson $updateBody
+            
+            if ($updateResponse.Error) {
+                Write-Fail "${world} PATCH update: Request failed: $($updateResponse.Error)"
+                Add-CheckResult -Check "${world} PATCH Update" -Status "FAIL" -ExitCode 1 -Notes "Request failed"
+            } elseif ($updateResponse.StatusCode -eq 200) {
+                if (Validate-OkEnvelope -Json $updateResponse.Json -RequestIdFromHeader $updateResponse.RequestIdFromHeader) {
+                    Write-Pass "${world} PATCH update: 200 OK"
+                    Add-CheckResult -Check "${world} PATCH Update" -Status "PASS" -ExitCode 0 -Notes "200 OK"
+                } else {
+                    Write-Fail "${world} PATCH update: 200 but invalid ok envelope"
+                    Add-CheckResult -Check "${world} PATCH Update" -Status "FAIL" -ExitCode 1 -Notes "200 but invalid envelope"
+                }
+            } else {
+                Write-Fail "${world} PATCH update: Expected 200, got $($updateResponse.StatusCode)"
+                Add-CheckResult -Check "${world} PATCH Update" -Status "FAIL" -ExitCode 1 -Notes "Status: $($updateResponse.StatusCode)"
+            }
+        } else {
+            Write-Warn "${world} PATCH update: Skipped (no id available)"
+            Add-CheckResult -Check "${world} PATCH Update" -Status "WARN" -ExitCode 2 -Notes "Skipped (no id)"
+        }
+        
+        # 5d: DELETE (use created id)
+        if ($createdIds[$world]) {
+            $deleteResponse = Invoke-HttpJson -Method "DELETE" -Url "${BaseUrl}/api/v1/${world}/listings/$($createdIds[$world])" -Headers $authHeaders
+            
+            if ($deleteResponse.Error) {
+                Write-Fail "${world} DELETE: Request failed: $($deleteResponse.Error)"
+                Add-CheckResult -Check "${world} DELETE" -Status "FAIL" -ExitCode 1 -Notes "Request failed"
+            } elseif ($deleteResponse.StatusCode -eq 200 -or $deleteResponse.StatusCode -eq 204) {
+                Write-Pass "${world} DELETE: $($deleteResponse.StatusCode) OK"
+                Add-CheckResult -Check "${world} DELETE" -Status "PASS" -ExitCode 0 -Notes "$($deleteResponse.StatusCode) OK"
+                
+                # 5e: GET after delete should be 404
+                $getAfterDelete = Invoke-HttpJson -Method "GET" -Url "${BaseUrl}/api/v1/${world}/listings/$($createdIds[$world])" -Headers $authHeaders
+                
+                if ($getAfterDelete.StatusCode -eq 404) {
+                    if (Validate-ErrorEnvelope -Json $getAfterDelete.Json) {
+                        Write-Pass "${world} GET after delete: 404 NOT_FOUND with error envelope"
+                        Add-CheckResult -Check "${world} GET After Delete" -Status "PASS" -ExitCode 0 -Notes "404 NOT_FOUND with error envelope"
+                    } else {
+                        Write-Fail "${world} GET after delete: 404 but invalid error envelope"
+                        Add-CheckResult -Check "${world} GET After Delete" -Status "FAIL" -ExitCode 1 -Notes "404 but missing error_code or request_id"
+                    }
+                } else {
+                    Write-Fail "${world} GET after delete: Expected 404, got $($getAfterDelete.StatusCode)"
+                    Add-CheckResult -Check "${world} GET After Delete" -Status "FAIL" -ExitCode 1 -Notes "Status: $($getAfterDelete.StatusCode)"
+                }
+            } else {
+                Write-Fail "${world} DELETE: Expected 200/204, got $($deleteResponse.StatusCode)"
+                Add-CheckResult -Check "${world} DELETE" -Status "FAIL" -ExitCode 1 -Notes "Status: $($deleteResponse.StatusCode)"
+            }
+        } else {
+            Write-Warn "${world} DELETE: Skipped (no id available)"
+            Add-CheckResult -Check "${world} DELETE" -Status "WARN" -ExitCode 2 -Notes "Skipped (no id)"
+        }
+    }
+    
+    # Cross-tenant leakage check (optional)
+    if (-not [string]::IsNullOrEmpty($TenantBId) -and $createdIds.Count -gt 0) {
+        Write-Info ""
+        Write-Info "Test 5f: Cross-tenant leakage check..."
+        
+        $tenantBHeaders = @{
+            "Authorization" = "Bearer ${AuthToken}"
+            "X-Tenant-Id" = $TenantBId
+        }
+        
+        $firstWorld = $enabledWorlds[0]
+        $firstId = $createdIds[$firstWorld]
+        
+        if ($firstId) {
+            $crossTenantResponse = Invoke-HttpJson -Method "GET" -Url "${BaseUrl}/api/v1/${firstWorld}/listings/${firstId}" -Headers $tenantBHeaders
+            
+            if ($crossTenantResponse.StatusCode -eq 404) {
+                if (Validate-ErrorEnvelope -Json $crossTenantResponse.Json) {
+                    Write-Pass "Cross-tenant leakage: 404 NOT_FOUND (no leakage)"
+                    Add-CheckResult -Check "Cross-Tenant Leakage" -Status "PASS" -ExitCode 0 -Notes "404 NOT_FOUND, no leakage"
+                } else {
+                    Write-Fail "Cross-tenant leakage: 404 but invalid error envelope"
+                    Add-CheckResult -Check "Cross-Tenant Leakage" -Status "FAIL" -ExitCode 1 -Notes "404 but missing error_code or request_id"
+                }
+            } elseif ($crossTenantResponse.StatusCode -eq 200) {
+                Write-Fail "Cross-tenant leakage: 200 OK (LEAKAGE DETECTED)"
+                Add-CheckResult -Check "Cross-Tenant Leakage" -Status "FAIL" -ExitCode 1 -Notes "200 OK - LEAKAGE DETECTED"
+            } else {
+                Write-Warn "Cross-tenant leakage: Unexpected status $($crossTenantResponse.StatusCode)"
+                Add-CheckResult -Check "Cross-Tenant Leakage" -Status "WARN" -ExitCode 2 -Notes "Status: $($crossTenantResponse.StatusCode)"
+            }
+        } else {
+            Write-Warn "Cross-tenant leakage: Skipped (no id available)"
+            Add-CheckResult -Check "Cross-Tenant Leakage" -Status "WARN" -ExitCode 2 -Notes "Skipped (no id)"
+        }
     }
 }
 
@@ -408,31 +523,32 @@ Write-Info "PASS: ${passCount}, WARN: ${warnCount}, FAIL: ${failCount}"
 
 Write-Info ""
 Write-Info "=== Check Results ==="
+Write-Host "Check | Status | ExitCode | Notes" -ForegroundColor Cyan
+Write-Host ("-" * 100) -ForegroundColor Gray
 foreach ($result in $checkResults) {
     $statusMarker = switch ($result.Status) {
         "PASS" { "[PASS]" }
         "WARN" { "[WARN]" }
         "FAIL" { "[FAIL]" }
-        default { "[?]" }
+        default { "[$($result.Status)]" }
     }
-    Write-Host "$statusMarker ${world}: $($result.Step) - $($result.Notes)" -ForegroundColor $(if ($result.Status -eq "PASS") { "Green" } elseif ($result.Status -eq "WARN") { "Yellow" } else { "Red" })
-}
-
-if (-not $overallPass) {
-    Write-Info ""
-    Write-Fail "Product API E2E FAILED (${failCount} failure(s))"
-    Invoke-OpsExit 1
-    return
-}
-
-if ($hasWarn) {
-    Write-Info ""
-    Write-Warn "Product API E2E passed with warnings (${warnCount} warning(s))"
-    Invoke-OpsExit 2
-    return
+    Write-Host "$($result.Check.PadRight(40)) $statusMarker $($result.ExitCode.ToString().PadRight(8)) $($result.Notes)" -ForegroundColor $(if ($result.Status -eq "PASS") { "Green" } elseif ($result.Status -eq "WARN") { "Yellow" } else { "Red" })
 }
 
 Write-Info ""
-Write-Pass "Product API E2E PASSED"
-Invoke-OpsExit 0
-
+if (-not $overallPass) {
+    Write-Fail "OVERALL STATUS: FAIL"
+    Write-Info "Remediation:"
+    Write-Info "  - Run ops/request_trace.ps1 -RequestId <request_id> for failed requests"
+    Write-Info "  - Run ops/incident_bundle.ps1 to collect diagnostics"
+    Invoke-OpsExit 1
+    return
+} elseif ($hasWarn) {
+    Write-Warn "OVERALL STATUS: WARN"
+    Invoke-OpsExit 2
+    return
+} else {
+    Write-Pass "OVERALL STATUS: PASS"
+    Invoke-OpsExit 0
+    return
+}

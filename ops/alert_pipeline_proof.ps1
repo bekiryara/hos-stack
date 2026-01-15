@@ -12,6 +12,10 @@ if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
     . "${scriptDir}\_lib\ops_output.ps1"
     Initialize-OpsOutput
 }
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
 
 $ErrorActionPreference = "Continue"
 
@@ -34,12 +38,8 @@ try {
         } else {
             Write-Host "[WARN] Observability compose file not found: $obsComposeFile (SKIP)" -ForegroundColor Yellow
         }
-        $global:LASTEXITCODE = 2
-        if ($Ci) {
-            exit 2
-        } else {
-            return 2
-        }
+        Invoke-OpsExit 2
+        return
     }
     
     # Check if alertmanager is running
@@ -50,12 +50,8 @@ try {
         } else {
             Write-Host "[WARN] Alertmanager not running (obs profile may not be started) (SKIP)" -ForegroundColor Yellow
         }
-        $global:LASTEXITCODE = 2
-        if ($Ci) {
-            exit 2
-        } else {
-            return 2
-        }
+        Invoke-OpsExit 2
+        return
     }
     
     # Step 2: Check Alertmanager ready
@@ -68,12 +64,8 @@ try {
             } else {
                 Write-Host "[FAIL] Alertmanager not ready (http://localhost:9093/-/ready failed)" -ForegroundColor Red
             }
-            $global:LASTEXITCODE = 1
-            if ($Ci) {
-                exit 1
-            } else {
-                return 1
-            }
+            Invoke-OpsExit 1
+            return
         }
         Write-Host "  Alertmanager is ready" -ForegroundColor Gray
     } catch {
@@ -82,12 +74,8 @@ try {
         } else {
             Write-Host "[FAIL] Alertmanager readiness check failed: $($_.Exception.Message)" -ForegroundColor Red
         }
-        $global:LASTEXITCODE = 1
-        if ($Ci) {
-            exit 1
-        } else {
-            return 1
-        }
+        Invoke-OpsExit 1
+        return
     }
     
     # Step 3: Check webhook reachable (via container exec, no port mapping needed)
@@ -104,12 +92,8 @@ try {
                 } else {
                     Write-Host "[FAIL] alert-webhook container not found" -ForegroundColor Red
                 }
-                $global:LASTEXITCODE = 1
-                if ($Ci) {
-                    exit 1
-                } else {
-                    return 1
-                }
+                Invoke-OpsExit 1
+                return
             }
         }
         $webhookHealth = docker exec $webhookContainerName python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health').read()" 2>&1
@@ -119,12 +103,8 @@ try {
             } else {
                 Write-Host "[FAIL] Webhook not reachable (health check failed)" -ForegroundColor Red
             }
-            $global:LASTEXITCODE = 1
-            if ($Ci) {
-                exit 1
-            } else {
-                return 1
-            }
+            Invoke-OpsExit 1
+            return
         }
         Write-Host "  Webhook is reachable" -ForegroundColor Gray
     } catch {
@@ -133,12 +113,8 @@ try {
         } else {
             Write-Host "[FAIL] Webhook reachability check failed: $($_.Exception.Message)" -ForegroundColor Red
         }
-        $global:LASTEXITCODE = 1
-        if ($Ci) {
-            exit 1
-        } else {
-            return 1
-        }
+        Invoke-OpsExit 1
+        return
     }
     
     # Step 4: POST test alert to Alertmanager
@@ -171,12 +147,8 @@ try {
             } else {
                 Write-Host "[FAIL] Failed to POST alert to Alertmanager: $alertResponse" -ForegroundColor Red
             }
-            $global:LASTEXITCODE = 1
-            if ($Ci) {
-                exit 1
-            } else {
-                return 1
-            }
+            Invoke-OpsExit 1
+            return
         }
         Write-Host "  Alert posted successfully" -ForegroundColor Gray
     } catch {
@@ -185,12 +157,8 @@ try {
         } else {
             Write-Host "[FAIL] Alert POST failed: $($_.Exception.Message)" -ForegroundColor Red
         }
-        $global:LASTEXITCODE = 1
-        if ($Ci) {
-            exit 1
-        } else {
-            return 1
-        }
+        Invoke-OpsExit 1
+        return
     }
     
     # Step 5: Poll webhook /last endpoint for up to 60 seconds (via container exec)
@@ -248,12 +216,8 @@ try {
         } else {
             Write-Host "[PASS] OVERALL STATUS: PASS (Alert pipeline verified: Alertmanager -> Webhook)" -ForegroundColor Green
         }
-        $global:LASTEXITCODE = 0
-        if ($Ci) {
-            exit 0
-        } else {
-            return 0
-        }
+        Invoke-OpsExit 0
+        return
     } else {
         if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
             Write-Fail "OVERALL STATUS: FAIL (Alert not received in webhook within ${TimeoutSeconds}s)"
@@ -264,12 +228,8 @@ try {
         Write-Host "  - Check Alertmanager logs: docker compose -f work/hos/docker-compose.yml logs alertmanager" -ForegroundColor Gray
         Write-Host "  - Check webhook logs: docker compose -f work/hos/docker-compose.yml logs alert-webhook" -ForegroundColor Gray
         Write-Host "  - Check webhook /last manually: docker exec $webhookContainerName python -c \"import urllib.request; print(urllib.request.urlopen('http://localhost:8080/last').read().decode('utf-8'))\"" -ForegroundColor Gray
-        $global:LASTEXITCODE = 1
-        if ($Ci) {
-            exit 1
-        } else {
-            return 1
-        }
+        Invoke-OpsExit 1
+        return
     }
 } finally {
     Pop-Location

@@ -127,3 +127,12 @@ Then re-run the proof:
 - `docs/PROOFS/alert_pipeline_pass.md` - Proof documentation with acceptance tests
 - `work/hos/services/observability/alert-webhook/server.py` - Webhook implementation with `/last` endpoint
 
+
+
+
+
+
+
+
+
+

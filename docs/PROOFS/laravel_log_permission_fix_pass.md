@@ -193,3 +193,12 @@ Pazar Storage Posture    PASS   0        ...
 - **Non-Breaking:** Existing bind mounts for code directories remain unchanged, preserving dev workflow
 - **Rebuild-Safe:** Dockerfile and entrypoint ensure permissions are correct even after `docker compose build --no-cache`
 
+
+
+
+
+
+
+
+
+

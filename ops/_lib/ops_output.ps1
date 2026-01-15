@@ -51,3 +51,44 @@ function Write-Info {
         Write-Host "[INFO] $Message" -ForegroundColor Cyan
     }
 }
+
+# Write-OpsTableRow: Format a single table row for ops_status output (ASCII-only)
+# Ensures consistent table formatting across all ops_status runs
+function Write-OpsTableRow {
+    param(
+        [string]$Check,
+        [string]$Status,
+        [int]$ExitCode,
+        [string]$Notes
+    )
+    
+    # Ensure ASCII-only (no Unicode)
+    $statusMarker = switch ($Status) {
+        "PASS" { "[PASS]" }
+        "WARN" { "[WARN]" }
+        "FAIL" { "[FAIL]" }
+        "SKIP" { "[SKIP]" }
+        default { "[$Status]" }
+    }
+    
+    # Truncate long notes for table readability
+    if ($Notes.Length -gt 80) {
+        $Notes = $Notes.Substring(0, 77) + "..."
+    }
+    
+    # Format: Check (padded to 40 chars) | Status (padded to 8) | ExitCode (padded to 8) | Notes
+    $checkPadded = $Check.PadRight(40)
+    $statusPadded = $statusMarker.PadRight(8)
+    $exitCodePadded = $ExitCode.ToString().PadRight(8)
+    
+    Write-Host "$checkPadded $statusPadded $exitCodePadded $Notes" -NoNewline
+    
+    # Color code based on status
+    switch ($Status) {
+        "PASS" { Write-Host "" -ForegroundColor Green }
+        "WARN" { Write-Host "" -ForegroundColor Yellow }
+        "FAIL" { Write-Host "" -ForegroundColor Red }
+        "SKIP" { Write-Host "" -ForegroundColor Gray }
+        default { Write-Host "" }
+    }
+}

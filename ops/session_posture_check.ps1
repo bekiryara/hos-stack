@@ -3,6 +3,13 @@
 
 $ErrorActionPreference = "Continue"
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+
 Write-Host "=== IDENTITY & SESSION POSTURE CHECK ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
@@ -301,7 +308,8 @@ if ($failCount -gt 0) {
     Write-Host "  - Verify security headers are present on auth endpoints" -ForegroundColor Gray
     Write-Host "  - Verify rate limit headers are present on throttled endpoints" -ForegroundColor Gray
     Write-Host "  - Review docs/runbooks/session_posture.md for examples" -ForegroundColor Gray
-    exit 1
+    Invoke-OpsExit 1
+    return
 } elseif ($warnCount -gt 0) {
     Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
     Write-Host ""
@@ -309,9 +317,11 @@ if ($failCount -gt 0) {
     foreach ($result in ($results | Where-Object { $_.Status -eq "WARN" })) {
         Write-Host "  - $($result.Check): $($result.Notes)" -ForegroundColor Yellow
     }
-    exit 2
+    Invoke-OpsExit 2
+    return
 } else {
     Write-Host "OVERALL STATUS: PASS (All checks passed)" -ForegroundColor Green
-    exit 0
+    Invoke-OpsExit 0
+    return
 }
 

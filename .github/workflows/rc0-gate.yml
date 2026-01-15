@@ -1,0 +1,91 @@
+name: RC0 Gate
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+
+jobs:
+  rc0_gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start core services
+        run: |
+          echo "Starting docker compose services (core stack)..."
+          docker compose up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 15
+
+      - name: Run RC0 Gate
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/rc0_gate.ps1
+
+      - name: Upload incident bundle on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc0-incident-bundle
+          path: |
+            _archive/incidents/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload release bundle (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc0-release-bundle
+          path: |
+            _archive/releases/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: RC0 Gate Summary (on failure)
+        if: failure()
+        run: |
+          echo "[FAIL] RC0 Gate failed"
+          echo ""
+          echo "One or more blocking checks failed. RC0 release cannot proceed."
+          echo ""
+          echo "Blocking checks (must PASS):"
+          echo "  - Repository Doctor"
+          echo "  - Stack Verification"
+          echo "  - Architecture Conformance (world registry drift)"
+          echo "  - Environment Contract"
+          echo "  - Security Audit"
+          echo "  - Auth Security Check"
+          echo "  - Tenant Boundary Check (secrets missing → WARN, non-blocking for RC0)"
+          echo "  - Session Posture Check (local/dev → WARN, non-blocking)"
+          echo "  - Schema Snapshot"
+          echo "  - Error Contract"
+          echo "  - Release Bundle (must generate artifact)"
+          echo ""
+          echo "Non-blocking (WARN if failed):"
+          echo "  - SLO Check (FAIL → WARN automatically)"
+          echo "  - Routes Snapshot (real FAIL stays FAIL)"
+          echo "  - Observability Status (WARN only, optional for RC0)"
+          echo ""
+          echo "Review the output above and check the incident bundle artifact if available."
+
+      - name: RC0 Gate Summary (on success)
+        if: success()
+        run: |
+          echo "[PASS] RC0 Gate passed"
+          echo ""
+          echo "All blocking checks passed. RC0 release is approved."
+          echo "Review any warnings before proceeding with release."
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up services..."
+          docker compose down -v
+

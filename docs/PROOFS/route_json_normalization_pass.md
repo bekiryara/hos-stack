@@ -331,3 +331,4 @@ Found 48 total ops scripts (excluding wrappers/utilities)
 - **Candidate filtering**: ops_drift_guard only considers operational check scripts (`*_check.ps1`, `*_status.ps1`, etc.), not utilities/wrappers
 - **Wildcard patterns**: ops_drift_guard uses `-like` for wildcard patterns, `-eq` for exact matches
 
+

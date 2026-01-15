@@ -1,0 +1,88 @@
+name: Release Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  release_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start core services
+        run: |
+          echo "Starting docker compose services (core stack)..."
+          docker compose up -d --build
+          echo "Waiting for services to be ready..."
+          sleep 15
+
+      - name: Run Release Check
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/release_check.ps1
+
+      - name: Generate Release Bundle on FAIL/WARN
+        if: failure() || (success() && job.status == 'success')
+        shell: pwsh
+        run: |
+          # Generate release bundle for evidence
+          pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/release_bundle.ps1
+
+      - name: Upload release bundle artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle
+          path: |
+            _archive/releases/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Release Check Summary (on failure)
+        if: failure()
+        run: |
+          echo "[FAIL] Release Check failed"
+          echo ""
+          echo "One or more release prerequisites failed. RC0 release cannot proceed."
+          echo ""
+          echo "Blocking checks:"
+          echo "  - Git status clean (no uncommitted changes)"
+          echo "  - RC0 gate PASS/WARN (no blocking failures)"
+          echo "  - Required documentation present"
+          echo "  - Contract snapshots present"
+          echo "  - VERSION file present and valid"
+          echo ""
+          echo "Review the release check output above and download the release bundle artifact for evidence."
+
+      - name: Release Check Summary (on success)
+        if: success()
+        run: |
+          echo "[PASS] Release Check passed"
+          echo ""
+          echo "All release prerequisites met. RC0 release is ready."
+          echo "Next steps:"
+          echo "  1. Review release bundle artifact"
+          echo "  2. Generate release bundle: .\ops\release_bundle.ps1"
+          echo "  3. Create git tag: git tag -a v<VERSION> -m \"Release v<VERSION>\""
+          echo "  4. Push tag: git push origin v<VERSION>"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up services..."
+          docker compose down -v
+
+
+
+
+
+
+
+

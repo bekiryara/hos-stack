@@ -7,11 +7,15 @@ param(
     [switch]$Pause
 )
 
-# Load shared output helper if available
+# Load shared helpers if available
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
     . "${scriptDir}\_lib\ops_output.ps1"
     Initialize-OpsOutput
+}
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
 }
 
 $ErrorActionPreference = "Continue"
@@ -46,11 +50,8 @@ try {
             Write-Host "Press Enter to close..." -ForegroundColor Gray
             Read-Host | Out-Null
         }
-        if ($Ci) {
-            exit 1
-        } else {
-            return 1
-        }
+        Invoke-OpsExit 1
+        return 1
     }
     
     if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
@@ -71,12 +72,15 @@ try {
     
     # Run script in separate process using Start-Process (more reliable for exit code capture)
     try {
-        $process = Start-Process -FilePath $psExe -ArgumentList @(
+        $args = @(
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
-            "-File", "`"$opsStatusPath`"",
-            $(if ($Ci) { "-Ci" })
-        ) -WorkingDirectory $repoRoot -Wait -PassThru -NoNewWindow
+            "-File", "`"$opsStatusPath`""
+        )
+        if ($Ci) {
+            $args += "-Ci"
+        }
+        $process = Start-Process -FilePath $psExe -ArgumentList $args -WorkingDirectory $repoRoot -Wait -PassThru -NoNewWindow
         
         $code = $process.ExitCode
         
@@ -98,12 +102,9 @@ try {
             Read-Host | Out-Null
         }
         
-        # Local: return (terminal stays open), CI: exit (job fails)
-        if ($Ci) {
-            exit $code
-        } else {
-            return $code
-        }
+        # Use safe exit (terminal stays open in interactive, exits in CI)
+        Invoke-OpsExit $code
+        return $code
     } catch {
         if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
             Write-Fail "run_ops_status runner failed: $($_.Exception.Message)"
@@ -116,11 +117,8 @@ try {
             Write-Host "Press Enter to close..." -ForegroundColor Gray
             Read-Host | Out-Null
         }
-        if ($Ci) {
-            exit 1
-        } else {
-            return 1
-        }
+        Invoke-OpsExit 1
+        return 1
     }
 } finally {
     Pop-Location

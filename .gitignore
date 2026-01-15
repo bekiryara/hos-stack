@@ -1,12 +1,22 @@
 ﻿# Secrets / private
 work/hos/secrets/*.txt
 .env
+.env.*
 oidc_token*.json
 cookies.txt
 headers.txt
 
+# Graveyard (quarantined code - preserve but don't track)
+_graveyard/
+
 # Archive / diagnostics / backups (never track)
 _archive/
+# Release bundles (never track)
+_archive/releases/
+# Self-audit records (never track)
+_archive/audits/
+# Daily snapshots (never track)
+_archive/daily/
 _diag_*.txt
 _diagnosis_*.txt
 _evidence_*.txt

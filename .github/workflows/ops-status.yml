@@ -23,6 +23,11 @@ jobs:
           echo "Waiting for services to be ready..."
           sleep 15
 
+      - name: Run ops drift guard
+        shell: pwsh
+        run: |
+          pwsh ./ops/ops_drift_guard.ps1 -Ci
+
       - name: Run ops status dashboard
         shell: pwsh
         run: |
@@ -34,8 +39,10 @@ jobs:
         with:
           name: incident-bundle
           path: |
+            _archive/incidents/
             incident_bundles/
           if-no-files-found: ignore
+        continue-on-error: true
 
       - name: Cleanup
         if: always()

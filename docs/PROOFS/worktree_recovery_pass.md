@@ -132,3 +132,12 @@ git stash list
 - **Deterministic:** Recovery process is repeatable and produces the same clean state
 
 
+
+
+
+
+
+
+
+
+

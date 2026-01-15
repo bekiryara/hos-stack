@@ -145,3 +145,12 @@ curl.exe -sS -i http://localhost:3000/v1/health && curl.exe -sS -i http://localh
 - Canonical compose: root'taki `docker-compose.yml` (hos + pazar birlikte)
 
 
+
+
+
+
+
+
+
+
+

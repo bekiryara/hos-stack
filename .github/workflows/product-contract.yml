@@ -7,6 +7,7 @@ on:
       - 'work/pazar/routes/api.php'
       - 'work/pazar/config/worlds.php'
       - 'ops/product_contract.ps1'
+      - 'ops/product_contract_check.ps1'
       - '.github/workflows/product-contract.yml'
   pull_request:
     branches: [main, develop]
@@ -14,11 +15,18 @@ on:
       - 'work/pazar/routes/api.php'
       - 'work/pazar/config/worlds.php'
       - 'ops/product_contract.ps1'
+      - 'ops/product_contract_check.ps1'
       - '.github/workflows/product-contract.yml'
 
 jobs:
   product-contract:
     runs-on: ubuntu-latest
+    env:
+      PRODUCT_TEST_BEARER: ${{ secrets.PRODUCT_TEST_BEARER }}
+      TENANT_A_ID: ${{ secrets.TENANT_A_ID }}
+      TENANT_B_ID: ${{ secrets.TENANT_B_ID }}
+      TENANT_A_SLUG: ${{ secrets.TENANT_A_SLUG }}
+      BASE_URL: "http://localhost:8080"
     
     steps:
       - name: Checkout code
@@ -29,10 +37,17 @@ jobs:
         with:
           pwsh-version: '7.4'
       
-      - name: Run Product Contract Gate
+      - name: Bring up core stack
+        run: |
+          docker compose up -d --build
+          # Wait for services to be ready
+          timeout 120 bash -c 'until curl -f http://localhost:8080/up; do sleep 5; done' || true
+      
+      - name: Run Product Contract Gate (spine validation)
         shell: pwsh
         run: |
           pwsh ./ops/product_contract.ps1
+        continue-on-error: false
       
       - name: Upload logs on failure
         if: failure()
@@ -43,4 +58,10 @@ jobs:
             _archive/audits/*
             _archive/incidents/*
           retention-days: 7
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down
+
 

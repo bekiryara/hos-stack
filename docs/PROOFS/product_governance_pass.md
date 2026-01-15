@@ -228,3 +228,4 @@
 - **E2E optional**: Product E2E is non-blocking in ops_status (WARN if credentials missing, not FAIL). Can be made blocking via Rules if needed.
 - **CI secrets**: Product E2E CI workflow requires GitHub Secrets: PRODUCT_TEST_AUTH, PRODUCT_TEST_EMAIL, PRODUCT_TEST_PASSWORD, PRODUCT_TENANT_ID.
 
+

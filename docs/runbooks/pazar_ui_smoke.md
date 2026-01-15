@@ -167,3 +167,20 @@ The gate runs automatically in CI via `.github/workflows/pazar-ui-smoke.yml`:
 - `work/pazar/docker/docker-entrypoint.sh`: Logging symlink logic
 - `docker-compose.yml`: HOS_LARAVEL_LOG_STDOUT environment variable
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

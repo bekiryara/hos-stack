@@ -5,11 +5,15 @@ param(
     [switch]$Ci
 )
 
-# Load shared output helper
+# Load shared helpers if available
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
     . "${scriptDir}\_lib\ops_output.ps1"
     Initialize-OpsOutput
+}
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
 }
 
 $ErrorActionPreference = "Continue"
@@ -41,17 +45,12 @@ try {
         } else {
             Write-Host "[WARN] pazar-app container not found or not running (SKIP)" -ForegroundColor Yellow
         }
-        $global:LASTEXITCODE = 2
-        if ($Ci) {
-            exit 2
-        } else {
-            return 2
-        }
+        Invoke-OpsExit 2
+        return 2
     }
     
     $checks = @()
     $failCount = 0
-    $warnCount = 0
     
     # Check 1: storage/logs exists
     Write-Host "Checking storage/logs directory..." -ForegroundColor Gray
@@ -77,7 +76,7 @@ try {
     
     # Check 3: laravel.log writable by www-data
     Write-Host "Checking laravel.log writability..." -ForegroundColor Gray
-    $cmd = "su -s /bin/sh www-data -c 'test -w /var/www/html/storage/logs/laravel.log && echo \"WRITABLE\" || echo \"NOT_WRITABLE\"'"
+    $cmd = "su -s /bin/sh www-data -c 'test -w /var/www/html/storage/logs/laravel.log && echo WRITABLE || echo NOT_WRITABLE'"
     $laravelLogWritableCheck = docker exec $containerName sh -lc $cmd 2>&1
     if ($laravelLogWritableCheck -match "WRITABLE") {
         $checks += [PSCustomObject]@{ Check = "laravel.log writable by www-data"; Status = "PASS"; Notes = "File is writable" }
@@ -88,7 +87,7 @@ try {
 
     # Check 4: Write test to laravel.log
     Write-Host "Testing write operation to laravel.log..." -ForegroundColor Gray
-    $cmd = "su -s /bin/sh www-data -c 'php -r \"file_put_contents(\\\"/var/www/html/storage/logs/laravel.log\\\",\\\"probe\\n\\\",FILE_APPEND); echo \\\"OK\\n\\\";\"'"
+    $cmd = "su -s /bin/sh www-data -c 'echo probe >> /var/www/html/storage/logs/laravel.log && echo OK'"
     $writeTest = docker exec $containerName sh -lc $cmd 2>&1
     if ($writeTest -match "OK") {
         $checks += [PSCustomObject]@{ Check = "Write test to laravel.log"; Status = "PASS"; Notes = "Write operation succeeded" }
@@ -130,24 +129,16 @@ try {
         Write-Host "  - Verify docker-entrypoint.sh is correctly setting permissions on container start" -ForegroundColor Gray
         Write-Host "  - Manually check permissions inside the container: docker compose exec -T pazar-app sh -lc 'ls -ld storage storage/logs bootstrap/cache; ls -l storage/logs/laravel.log'" -ForegroundColor Gray
         Write-Host "  - Try restarting the container: docker compose up -d --no-build pazar-app" -ForegroundColor Gray
-        $global:LASTEXITCODE = 1
-        if ($Ci) {
-            exit 1
-        } else {
-            return 1
-        }
+        Invoke-OpsExit 1
+        return 1
     } else {
         if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
             Write-Pass "OVERALL STATUS: PASS (All storage checks passed)"
         } else {
             Write-Host "[PASS] OVERALL STATUS: PASS (All storage checks passed)" -ForegroundColor Green
         }
-        $global:LASTEXITCODE = 0
-        if ($Ci) {
-            exit 0
-        } else {
-            return 0
-        }
+        Invoke-OpsExit 0
+        return 0
     }
 } finally {
     Pop-Location

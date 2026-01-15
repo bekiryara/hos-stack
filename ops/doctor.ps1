@@ -4,6 +4,13 @@
 
 $ErrorActionPreference = "Continue"
 
+# Load safe exit helper
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+
 Write-Host "=== REPOSITORY DOCTOR ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
@@ -378,14 +385,17 @@ if ($failCount -gt 0) {
     Write-Host "  1. Review failures above" -ForegroundColor Gray
     Write-Host "  2. Run .\ops\triage.ps1 for detailed diagnostics" -ForegroundColor Gray
     Write-Host "  3. Fix issues before committing" -ForegroundColor Gray
-    exit 1
+    Invoke-OpsExit 1
+    return
 } elseif ($warnCount -gt 0) {
     Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Note: Some checks returned warnings (services may be down)" -ForegroundColor Gray
-    exit 0
+    Invoke-OpsExit 0
+    return
 } else {
     Write-Host "OVERALL STATUS: PASS (All checks passed)" -ForegroundColor Green
-    exit 0
+    Invoke-OpsExit 0
+    return
 }
 

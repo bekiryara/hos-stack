@@ -122,3 +122,12 @@ docker compose -f work/hos/docker-compose.yml --profile obs logs alert-webhook
 **Important:** These manual commands are for debugging only. Use `ops/stack_up.ps1` for normal operations.
 
 
+
+
+
+
+
+
+
+
+

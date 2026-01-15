@@ -196,3 +196,12 @@ docker compose -f work/hos/docker-compose.yml logs alert-webhook | Select-String
 - `docs/runbooks/alerts_pipeline.md` - NEW - Alert pipeline runbook
 - `docs/PROOFS/alert_pipeline_pass.md` - This proof documentation
 
+
+
+
+
+
+
+
+
+

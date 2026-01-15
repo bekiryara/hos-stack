@@ -192,3 +192,12 @@ hos-alert-webhook-1  | <log output>
 - **Deterministic:** Explicit service list ensures consistent behavior regardless of compose file configuration
 
 
+
+
+
+
+
+
+
+
+

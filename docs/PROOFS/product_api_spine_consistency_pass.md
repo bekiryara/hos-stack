@@ -206,3 +206,5 @@ GET|HEAD  api/v1/rentals/listings/{id}  ...  Api\Rentals\ListingController@show
 - Product spine check validates all enabled worlds
 - No 500 errors (storage self-heal prevents Monolog permission errors)
 
+
+

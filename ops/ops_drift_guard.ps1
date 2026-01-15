@@ -52,7 +52,8 @@ $allOpsScripts = Get-ChildItem -Path $scriptDir -Filter "*.ps1" -File | Where-Ob
         "request_trace.ps1",
         "triage.ps1",
         "STACK_E2E_CRITICAL_TESTS_v*.ps1",
-        "perf_baseline.ps1"
+        "perf_baseline.ps1",
+        "self_audit.ps1"
     )
     
     $shouldExclude = $false

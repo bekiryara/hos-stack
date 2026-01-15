@@ -5,11 +5,15 @@ param(
     [switch]$Ci
 )
 
-# Load shared output helper
+# Load shared helpers if available
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
     . "${scriptDir}\_lib\ops_output.ps1"
     Initialize-OpsOutput
+}
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
 }
 
 $ErrorActionPreference = "Continue"
@@ -36,17 +40,14 @@ try {
     }
     
     if (-not $containerExists) {
-        if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
-            Write-Warn "pazar-app container not found or not running (SKIP)"
-        } else {
-            Write-Host "[WARN] pazar-app container not found or not running (SKIP)" -ForegroundColor Yellow
-        }
-        $global:LASTEXITCODE = 2
-        if ($Ci) {
-            exit 2
-        } else {
-            return 2
-        }
+        Write-Host "[WARN] pazar-app container not found or not running (SKIP)" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "Check                                    Status Notes" -ForegroundColor Gray
+        Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Gray
+        Write-Host "Storage Posture Check                     WARN   pazar-app container not running" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "OVERALL STATUS: WARN" -ForegroundColor Yellow
+        Invoke-OpsExit 2
     }
     
     $checks = @()
@@ -76,7 +77,7 @@ try {
     
     # Check 3: laravel.log can be created
     Write-Host "Checking laravel.log can be created..." -ForegroundColor Gray
-    $cmd = "su -s /bin/sh www-data -c 'touch /var/www/html/storage/logs/laravel.log.test && rm -f /var/www/html/storage/logs/laravel.log.test && echo \"CREATED\" || echo \"NOT_CREATED\"'"
+    $cmd = "su -s /bin/sh www-data -c 'touch /var/www/html/storage/logs/laravel.log.test && rm -f /var/www/html/storage/logs/laravel.log.test && echo CREATED || echo NOT_CREATED'"
     $createCheck = docker exec $containerName sh -lc $cmd 2>&1
     if ($createCheck -match "CREATED") {
         $checks += [PSCustomObject]@{ Check = "laravel.log can be created"; Status = "PASS"; Notes = "File can be created by www-data" }
@@ -85,46 +86,56 @@ try {
         $failCount++
     }
     
-    # Summary
-    if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
-        Write-Info "=== Storage Posture Results ==="
-    } else {
-        Write-Host "=== Storage Posture Results ===" -ForegroundColor Cyan
-    }
+    # Print results table
     Write-Host ""
-    $checks | Format-Table -Property Check, Status, Notes -AutoSize
+    Write-Host "=== STORAGE POSTURE CHECK RESULTS ===" -ForegroundColor Cyan
+    Write-Host ""
+    
+    Write-Host "Check                                    Status Notes" -ForegroundColor Gray
+    Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Gray
+    
+    foreach ($check in $checks) {
+        $statusMarker = switch ($check.Status) {
+            "PASS" { "[PASS]" }
+            "WARN" { "[WARN]" }
+            "FAIL" { "[FAIL]" }
+            default { "[$($check.Status)]" }
+        }
+        
+        $checkPadded = $check.Check.PadRight(40)
+        $statusPadded = $statusMarker.PadRight(8)
+        
+        $color = switch ($check.Status) {
+            "PASS" { "Green" }
+            "WARN" { "Yellow" }
+            "FAIL" { "Red" }
+            default { "White" }
+        }
+        
+        Write-Host "$checkPadded $statusPadded $($check.Notes)" -ForegroundColor $color
+    }
+    
+    Write-Host ""
     
     # Determine overall status
-    Write-Host ""
     if ($failCount -gt 0) {
-        if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
-            Write-Fail "OVERALL STATUS: FAIL ($failCount failures)"
-        } else {
-            Write-Host "[FAIL] OVERALL STATUS: FAIL ($failCount failures)" -ForegroundColor Red
-        }
-        Write-Host "Remediation hints:" -ForegroundColor Yellow
-        Write-Host "  - Recreate container: docker compose down pazar-app && docker compose up -d --force-recreate pazar-app" -ForegroundColor Gray
-        Write-Host "  - Check container logs: docker compose logs pazar-app | Select-String 'storage not writable'" -ForegroundColor Gray
-        $global:LASTEXITCODE = 1
-        if ($Ci) {
-            exit 1
-        } else {
-            return 1
-        }
+        Write-Host "OVERALL STATUS: FAIL" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Remediation:" -ForegroundColor Yellow
+        Write-Host "1. Recreate container: docker compose down pazar-app && docker compose up -d --force-recreate pazar-app" -ForegroundColor Gray
+        Write-Host "2. Check container logs: docker compose logs pazar-app | Select-String 'storage not writable'" -ForegroundColor Gray
+        Write-Host "3. Check entrypoint script: docker compose exec -T pazar-app cat /usr/local/bin/docker-entrypoint.sh" -ForegroundColor Gray
+        Invoke-OpsExit 1
     } else {
-        if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
-            Write-Pass "OVERALL STATUS: PASS (All storage checks passed)"
-        } else {
-            Write-Host "[PASS] OVERALL STATUS: PASS (All storage checks passed)" -ForegroundColor Green
-        }
-        $global:LASTEXITCODE = 0
-        if ($Ci) {
-            exit 0
-        } else {
-            return 0
-        }
+        Write-Host "OVERALL STATUS: PASS" -ForegroundColor Green
+        Invoke-OpsExit 0
     }
 } finally {
     Pop-Location
 }
+
+
+
+
+
 
