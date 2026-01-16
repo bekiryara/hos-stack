@@ -3,6 +3,13 @@
 
 $ErrorActionPreference = "Continue"
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+
 Write-Host "=== ENVIRONMENT & SECRETS CONTRACT CHECK ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
@@ -21,6 +28,16 @@ Write-Host "APP_ENV: $appEnv" -ForegroundColor Gray
 $isProduction = $appEnv -eq "production" -or $appEnv -eq "prod"
 Write-Host ""
 
+# Helper: Get environment variable value (PS5.1-safe)
+function Get-EnvValue {
+    param([string]$Name)
+    $item = Get-Item -Path ("Env:" + $Name) -ErrorAction SilentlyContinue
+    if ($item) {
+        return $item.Value
+    }
+    return ""
+}
+
 # Helper: Check if env var exists
 function Test-EnvVar {
     param(
@@ -29,7 +46,7 @@ function Test-EnvVar {
         [string[]]$WeakValues = @()
     )
     
-    $value = $env:$VarName
+    $value = Get-EnvValue -Name $VarName
     $exists = -not [string]::IsNullOrEmpty($value)
     
     $status = "PASS"
@@ -89,7 +106,7 @@ function Test-EnvVarValue {
         [bool]$CaseSensitive = $false
     )
     
-    $value = $env:$VarName
+    $value = Get-EnvValue -Name $VarName
     $exists = -not [string]::IsNullOrEmpty($value)
     
     $status = "PASS"
@@ -273,7 +290,8 @@ if ($failCount -gt 0) {
     }
     Write-Host "  - Replace weak/default secrets with strong values" -ForegroundColor Gray
     Write-Host "  - Review docs/runbooks/env_contract.md for examples" -ForegroundColor Gray
-    exit 1
+    Invoke-OpsExit 1
+    return
 } elseif ($warnCount -gt 0) {
     Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
     Write-Host ""
@@ -281,9 +299,11 @@ if ($failCount -gt 0) {
     foreach ($result in ($results | Where-Object { $_.Status -eq "WARN" })) {
         Write-Host "  - $($result.Check): $($result.Notes)" -ForegroundColor Yellow
     }
-    exit 2
+    Invoke-OpsExit 2
+    return
 } else {
     Write-Host "OVERALL STATUS: PASS (All checks passed)" -ForegroundColor Green
-    exit 0
+    Invoke-OpsExit 0
+    return
 }
 

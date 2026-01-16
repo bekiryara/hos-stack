@@ -4,6 +4,16 @@
 $ErrorActionPreference = "Stop"
 $failed = $false
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+if (Test-Path "${scriptDir}\_lib\routes_json.ps1") {
+    . "${scriptDir}\_lib\routes_json.ps1"
+}
+
 Write-Host "=== Contract Gate (Route Snapshot) ===" -ForegroundColor Cyan
 Write-Host ""
 
@@ -14,10 +24,11 @@ $tempPath = "ops\diffs\routes.current.json"
 
 # Ensure directories exist
 if (-not (Test-Path "ops\snapshots")) {
-    Write-Host "❌ FAIL: ops\snapshots directory not found" -ForegroundColor Red
+    Write-Host "[FAIL] FAIL: ops\snapshots directory not found" -ForegroundColor Red
     Write-Host "Run this locally to create initial snapshot:" -ForegroundColor Yellow
     Write-Host "  docker compose exec -T pazar-app php artisan route:list --json | Out-File -FilePath ops\snapshots\routes.pazar.json -Encoding UTF8" -ForegroundColor Gray
-    exit 1
+    Invoke-OpsExit 1
+    return
 }
 
 if (-not (Test-Path "ops\diffs")) {
@@ -26,18 +37,20 @@ if (-not (Test-Path "ops\diffs")) {
 
 # Check if snapshot exists
 if (-not (Test-Path $snapshotPath)) {
-    Write-Host "❌ FAIL: Route snapshot not found: $snapshotPath" -ForegroundColor Red
+    Write-Host "[FAIL] FAIL: Route snapshot not found: $snapshotPath" -ForegroundColor Red
     Write-Host "Run this locally to create initial snapshot:" -ForegroundColor Yellow
     Write-Host "  docker compose exec -T pazar-app php artisan route:list --json | Out-File -FilePath $snapshotPath -Encoding UTF8" -ForegroundColor Gray
-    exit 1
+    Invoke-OpsExit 1
+    return
 }
 
 Write-Host "[1] Checking Docker Compose status..." -ForegroundColor Yellow
 $psOutput = docker compose ps 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ FAIL: docker compose ps failed" -ForegroundColor Red
+    Write-Host "[FAIL] FAIL: docker compose ps failed" -ForegroundColor Red
     Write-Host $psOutput
-    exit 1
+    Invoke-OpsExit 1
+    return
 }
 
 # Check if pazar-app is running
@@ -46,52 +59,65 @@ if (-not $pazarAppRunning) {
     Write-Host "  Pazar-app not running, starting services..." -ForegroundColor Yellow
     docker compose up -d 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ FAIL: docker compose up failed" -ForegroundColor Red
-        exit 1
+        Write-Host "[FAIL] FAIL: docker compose up failed" -ForegroundColor Red
+        Invoke-OpsExit 1
+    return
     }
     Start-Sleep -Seconds 5
-    Write-Host "  ✓ Services started" -ForegroundColor Green
+    Write-Host "  [OK] Services started" -ForegroundColor Green
 } else {
-    Write-Host "  ✓ Pazar-app is running" -ForegroundColor Green
+    Write-Host "  [OK] Pazar-app is running" -ForegroundColor Green
 }
 
 Write-Host "`n[2] Generating current route snapshot..." -ForegroundColor Yellow
 try {
-    $currentRoutes = docker compose exec -T pazar-app php artisan route:list --json 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ FAIL: php artisan route:list failed" -ForegroundColor Red
-        Write-Host $currentRoutes
-        exit 1
+    # Use canonical route JSON helper
+    $rawJson = Get-RawPazarRouteListJson -ContainerName "pazar-app"
+    $canonicalRoutes = Convert-RoutesJsonToCanonicalArray -RawJsonText $rawJson
+    
+    # Sanity check: route count should be reasonable (> 20)
+    if ($canonicalRoutes.Count -lt 20) {
+        Write-Host "[FAIL] FAIL: Route count too low ($($canonicalRoutes.Count)). Route JSON parse mismatch or artisan output changed." -ForegroundColor Red
+        Invoke-OpsExit 1
+        return
     }
     
-    # Save current routes to temp file
-    $currentRoutes | Out-File -FilePath $tempPath -Encoding UTF8
-    Write-Host "  ✓ Current routes generated" -ForegroundColor Green
+    # Convert canonical routes back to JSON for comparison
+    $currentRoutesJson = $canonicalRoutes | ConvertTo-Json -Depth 10
+    $currentRoutesJson | Out-File -FilePath $tempPath -Encoding UTF8 -NoNewline
+    
+    Write-Host "  [OK] Current routes generated ($($canonicalRoutes.Count) routes)" -ForegroundColor Green
 } catch {
-    Write-Host "❌ FAIL: Error generating current routes: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
+    Write-Host "[FAIL] FAIL: Error generating current routes: $($_.Exception.Message)" -ForegroundColor Red
+    Invoke-OpsExit 1
+    return
 }
 
 Write-Host "`n[3] Comparing routes..." -ForegroundColor Yellow
 try {
-    # Load and parse JSON
+    # Load and parse JSON (normalize both snapshot and current)
     $snapshotContent = Get-Content $snapshotPath -Raw -Encoding UTF8
     $currentContent = Get-Content $tempPath -Raw -Encoding UTF8
     
-    # Parse JSON
-    $snapshotRoutes = $snapshotContent | ConvertFrom-Json
-    $currentRoutes = $currentContent | ConvertFrom-Json
+    # Normalize snapshot (handle legacy formats)
+    $snapshotRoutes = Convert-RoutesJsonToCanonicalArray -RawJsonText $snapshotContent
     
-    # Create route signature sets (method + uri + name)
+    # Current routes are already canonical
+    $currentRoutes = $canonicalRoutes
+    
+    # Create route signature sets (method_primary + uri + name + action)
+    # Note: middleware excluded from signature to avoid noisy diffs
     $snapshotSigs = @{}
     foreach ($route in $snapshotRoutes) {
-        $sig = "$($route.method)::$($route.uri)::$($route.name)"
+        $methodPrimary = if ($route.method_primary) { $route.method_primary } else { $route.method }
+        $sig = "$methodPrimary::$($route.uri)::$($route.name)::$($route.action)"
         $snapshotSigs[$sig] = $route
     }
     
     $currentSigs = @{}
     foreach ($route in $currentRoutes) {
-        $sig = "$($route.method)::$($route.uri)::$($route.name)"
+        $methodPrimary = if ($route.method_primary) { $route.method_primary } else { $route.method }
+        $sig = "$methodPrimary::$($route.uri)::$($route.name)::$($route.action)"
         $currentSigs[$sig] = $route
     }
     
@@ -112,9 +138,13 @@ try {
     }
     
     # Report results
+    Write-Host "  Snapshot routes: $($snapshotRoutes.Count)" -ForegroundColor Gray
+    Write-Host "  Current routes: $($currentRoutes.Count)" -ForegroundColor Gray
+    Write-Host "  Added: $($added.Count)" -ForegroundColor $(if ($added.Count -eq 0) { "Gray" } else { "Green" })
+    Write-Host "  Removed: $($removed.Count)" -ForegroundColor $(if ($removed.Count -eq 0) { "Gray" } else { "Red" })
+    
     if ($added.Count -eq 0 -and $removed.Count -eq 0) {
-        Write-Host "  ✓ No route changes detected" -ForegroundColor Green
-        Write-Host "  Total routes: $($snapshotRoutes.Count)" -ForegroundColor Gray
+        Write-Host "  [OK] No route changes detected" -ForegroundColor Green
         
         # Clean up temp file
         if (Test-Path $tempPath) {
@@ -124,10 +154,11 @@ try {
             Remove-Item $diffPath -Force
         }
         
-        Write-Host "`n✅ CONTRACT PASSED" -ForegroundColor Green
-        exit 0
+        Write-Host "`n[PASS] CONTRACT PASSED" -ForegroundColor Green
+        Invoke-OpsExit 0
+        return
     } else {
-        Write-Host "  ❌ Route changes detected" -ForegroundColor Red
+        Write-Host "  [FAIL] Route changes detected" -ForegroundColor Red
         
         # Generate diff report
         $diff = @()
@@ -145,7 +176,7 @@ try {
             $diff += "## Added Routes ($($added.Count))"
             $diff += ""
             foreach ($route in $added) {
-                $diff += "➕ $($route.method) $($route.uri) → $($route.name)"
+                $diff += "[+] $($route.method) $($route.uri) → $($route.name)"
                 $diff += "   Action: $($route.action)"
                 $diff += ""
             }
@@ -155,7 +186,7 @@ try {
             $diff += "## Removed Routes ($($removed.Count))"
             $diff += ""
             foreach ($route in $removed) {
-                $diff += "➖ $($route.method) $($route.uri) → $($route.name)"
+                $diff += "[-] $($route.method) $($route.uri) → $($route.name)"
                 $diff += "   Action: $($route.action)"
                 $diff += ""
             }
@@ -164,11 +195,11 @@ try {
         # Save diff
         $diff | Out-File -FilePath $diffPath -Encoding UTF8
         
-        Write-Host "`n❌ CONTRACT FAILED" -ForegroundColor Red
+        Write-Host "`n[FAIL] CONTRACT FAILED" -ForegroundColor Red
         Write-Host ""
         Write-Host "Route changes detected:" -ForegroundColor Yellow
         if ($added.Count -gt 0) {
-            Write-Host "  ➕ Added: $($added.Count) routes" -ForegroundColor Green
+            Write-Host "  [+] Added: $($added.Count) routes" -ForegroundColor Green
             foreach ($route in $added | Select-Object -First 5) {
                 Write-Host "     - $($route.method) $($route.uri)" -ForegroundColor Gray
             }
@@ -177,7 +208,7 @@ try {
             }
         }
         if ($removed.Count -gt 0) {
-            Write-Host "  ➖ Removed: $($removed.Count) routes" -ForegroundColor Red
+            Write-Host "  [-] Removed: $($removed.Count) routes" -ForegroundColor Red
             foreach ($route in $removed | Select-Object -First 5) {
                 Write-Host "     - $($route.method) $($route.uri)" -ForegroundColor Gray
             }
@@ -193,10 +224,12 @@ try {
         Write-Host "  2. Update snapshot: docker compose exec -T pazar-app php artisan route:list --json | Out-File -FilePath $snapshotPath -Encoding UTF8" -ForegroundColor Gray
         Write-Host "  3. Commit the updated snapshot" -ForegroundColor Gray
         
-        exit 1
+        Invoke-OpsExit 1
+    return
     }
 } catch {
-    Write-Host "❌ FAIL: Error comparing routes: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
+    Write-Host "[FAIL] FAIL: Error comparing routes: $($_.Exception.Message)" -ForegroundColor Red
+    Invoke-OpsExit 1
+    return
 }
 

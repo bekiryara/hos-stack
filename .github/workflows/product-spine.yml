@@ -1,0 +1,50 @@
+name: Product Spine E2E Check
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  product-spine-e2e:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Set up PowerShell
+        uses: actions/setup-powershell@v1
+        with:
+          pwsh-version: '7.2'
+      
+      - name: Start Core Services
+        run: |
+          docker compose up -d core
+          sleep 10
+      
+      - name: Run Product Spine E2E Check
+        env:
+          PRODUCT_TEST_EMAIL: ${{ secrets.PRODUCT_TEST_EMAIL }}
+          PRODUCT_TEST_PASSWORD: ${{ secrets.PRODUCT_TEST_PASSWORD }}
+          TENANT_A_SLUG: ${{ secrets.TENANT_A_SLUG }}
+          TENANT_B_SLUG: ${{ secrets.TENANT_B_SLUG }}
+          WORLD: commerce
+          CI: true
+        run: |
+          pwsh -File ./ops/product_spine_e2e_check.ps1
+      
+      - name: Upload Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: product-spine-e2e-logs
+          path: |
+            _archive/audits/*
+            _archive/incidents/*
+          retention-days: 7

@@ -1,89 +1,140 @@
 # Stack (H-OS + Pazar)
 
-Bu repo, H-OS (evren hukuku) ve Pazar (ilk ticaret dünyası) servislerini birlikte çalıştırmak için standartlaştırılmış bir workspace'tir.
+This repository runs **H-OS** (universe governance) and **Pazar** (first commerce world) services together in a standardized workspace.
 
-## 🚀 START HERE
+## 🚀 Quick Start (2 Commands)
 
-**Yeni başlayanlar için:** [`docs/START_HERE.md`](docs/START_HERE.md) (7 kural seti)
-
-**Kurallar:** [`docs/RULES.md`](docs/RULES.md) (10 temel kural)
-
-**Doğrulama:** `.\ops\verify.ps1` (stack health check)
-
-## Hızlı Başlangıç
-
-### Canonical Compose (H-OS + Pazar)
+**New to this repo?** Start here: [`docs/ONBOARDING.md`](docs/ONBOARDING.md)
 
 ```powershell
+# 1. Start the stack
 docker compose up -d --build
+
+# 2. Verify everything works
+.\ops\verify.ps1
 ```
 
-Bu komut root'taki `docker-compose.yml` dosyasını kullanır ve her iki servisi de başlatır:
-- H-OS API: `http://localhost:3000`
-- H-OS Web: `http://localhost:3002`
-- Pazar App: `http://localhost:8080`
+That's it! The stack should be running.
 
-### Sadece H-OS (Standalone)
+## What is This Repo?
 
-```powershell
-cd work/hos
-docker compose -f docker-compose.yml -f docker-compose.ports.yml up -d --build
-```
+This is a **RELEASE-GRADE BASELINE CORE v1** repository that combines:
+- **H-OS**: Universe governance system (API + Web UI)
+- **Pazar**: First commerce world (Laravel application)
 
-Detaylar: `work/hos/ops/README.md`
+**Baseline is FROZEN** - see [`docs/DECISIONS.md`](docs/DECISIONS.md) for what can and cannot be changed.
 
-## Dokümantasyon Giriş Noktaları
+## Health Checks
 
-### Günlük Çalışma
-- **Pazar**: `work/pazar/docs/CURRENT.md` (açılacak ilk dosya)
-- **H-OS**: `work/hos/docs/pazar/START_HERE.md` (ajan onboarding)
+Run these commands to verify the stack is healthy:
 
-### Canonical Kaynaklar
-- **World Registry**: `work/pazar/WORLD_REGISTRY.md` (dünya tanımları)
-- **Pazar Docs**: `work/pazar/docs/README.md` (dokümantasyon navigasyonu)
-- **H-OS Docs**: `work/hos/docs/` (H-OS dokümantasyonu)
+- **Full verification**: `.\ops\verify.ps1` (container status, health endpoints, filesystem)
+- **Baseline status**: `.\ops\baseline_status.ps1` (minimum working state)
+- **Conformance**: `.\ops\conformance.ps1` (repository conformance checks)
+- **Daily snapshot**: `.\ops\daily_snapshot.ps1` (capture evidence for troubleshooting)
 
-### Operasyon
-- **H-OS Ops**: `work/hos/ops/` (bootstrap, check, smoke, vb.)
-- **Pazar Runbooks**: `work/pazar/docs/runbooks/` (operasyon runbook'ları)
+All commands return exit code `0` on success, `1` on failure.
 
-## Repo Yapısı
+## Baseline is Frozen
+
+**⚠️ IMPORTANT:** The baseline is frozen. These items **CANNOT** be changed without explicit decision:
+
+- Docker Compose topology (service names, ports: 3000, 3002, 8080)
+- Health endpoints (`/v1/health`, `/up`)
+- Verification script exit codes
+
+**What CAN change:**
+- Business logic (application code, routes, controllers)
+- Database schema (with proper migrations)
+- Optional services (observability stack)
+- Documentation (always welcome!)
+
+See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the complete frozen baseline definition.
+
+## Documentation
+
+### Entry Points
+- **Onboarding**: [`docs/ONBOARDING.md`](docs/ONBOARDING.md) - Quick start for newcomers
+- **Current State**: [`docs/CURRENT.md`](docs/CURRENT.md) - Single source of truth (stack, ports, services)
+- **Decisions**: [`docs/DECISIONS.md`](docs/DECISIONS.md) - Baseline definition + frozen items
+- **What We Did**: [`docs/NE_YAPTIK.md`](docs/NE_YAPTIK.md) - Summary of repository hardening
+
+### Daily Operations
+- **Daily Ops**: [`docs/runbooks/daily_ops.md`](docs/runbooks/daily_ops.md) - Daily snapshot runbook
+- **Repo Hygiene**: [`docs/runbooks/repo_hygiene.md`](docs/runbooks/repo_hygiene.md) - File management rules
+
+### Contributing
+- **Contributing**: [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) - Commit rules, PR conventions, CHANGELOG discipline
+- **Commit Rules**: [`docs/COMMIT_RULES.md`](docs/COMMIT_RULES.md) - Commit message format
+
+## Repository Structure
 
 ```
 .
 ├── docker-compose.yml          # CANONICAL compose (hos + pazar)
+├── ops/                        # Operations scripts
+│   ├── verify.ps1             # Full health check
+│   ├── baseline_status.ps1    # Baseline status check
+│   ├── conformance.ps1        # Conformance checks
+│   ├── daily_snapshot.ps1     # Daily evidence capture
+│   └── ci_guard.ps1          # CI drift guard
+├── docs/                       # Documentation
+│   ├── CURRENT.md             # Single source of truth
+│   ├── ONBOARDING.md          # Quick start guide
+│   ├── DECISIONS.md           # Baseline decisions
+│   └── PROOFS/                # Proof documents
 ├── work/
-│   ├── hos/                    # H-OS servisi
-│   │   ├── docker-compose.yml  # H-OS standalone compose
-│   │   ├── ops/                # Operasyon scriptleri
-│   │   └── docs/               # H-OS dokümantasyonu
-│   └── pazar/                  # Pazar servisi
-│       ├── docs/               # Pazar dokümantasyonu
-│       └── WORLD_REGISTRY.md   # Canonical world registry
-└── docs/
-    └── REPO_INVENTORY.md       # Repo envanter raporu
+│   ├── hos/                   # H-OS service
+│   └── pazar/                 # Pazar service
+├── _graveyard/                # Quarantined code (not deleted)
+└── _archive/                  # Archives (daily snapshots, releases)
 ```
 
-## Secrets ve Config
+## Services & Ports
+
+- **H-OS API**: `http://localhost:3000` (health: `/v1/health`)
+- **H-OS Web**: `http://localhost:3002`
+- **Pazar App**: `http://localhost:8080` (health: `/up`)
+
+See [`docs/CURRENT.md`](docs/CURRENT.md) for complete service details.
+
+## Secrets & Configuration
 
 ### H-OS Secrets
-- Konum: `work/hos/secrets/`
-- Detaylar: `work/hos/secrets/README.md`
-- **ÖNEMLİ**: Gerçek secret değerleri repo'da tutulmamalı (local kullanım)
+- Location: `work/hos/secrets/`
+- **IMPORTANT**: Real secret values should NOT be tracked in git (local use only)
 
 ### Pazar .env
 - Example: `work/pazar/docs/env.example`
-- **ÖNEMLİ**: `.env` dosyası repo'da tutulmamalı (local kullanım)
+- **IMPORTANT**: `.env` file should NOT be tracked in git (local use only)
+
+See [`SECURITY.md`](SECURITY.md) for security policy.
+
+## Development Rules
+
+**Before starting new work:**
+1. Run `.\ops\verify.ps1` → Must PASS
+2. Run `.\ops\conformance.ps1` → Must PASS
+3. If either fails, fix issues before proceeding
+
+**No PASS, No Next Step** - This ensures baseline remains stable.
 
 ## Releases
 
-- **Version**: [`VERSION`](VERSION) (current: 0.1.0)
+- **Version**: See `VERSION` file
 - **Changelog**: [`CHANGELOG.md`](CHANGELOG.md) (Keep a Changelog format)
-- **Release Checklist**: [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md) (pre-release verification)
+- **Baseline Releases**: [`docs/RELEASES/BASELINE.md`](docs/RELEASES/BASELINE.md)
 
-## Daha Fazla Bilgi
+## Getting Help
 
-- **Repo Envanter**: `docs/REPO_INVENTORY.md` (temizleme ve standartlaştırma detayları)
-- **Pazar Runbooks**: `work/pazar/docs/runbooks/CURRENT.md`
-- **H-OS Ops**: `work/hos/ops/README.md`
+- **Stack issues**: Run `.\ops\triage.ps1`
+- **Full status**: Run `.\ops\baseline_status.ps1` (faster) or `.\ops\doctor.ps1` (comprehensive)
+- **Documentation**: Start with [`docs/CURRENT.md`](docs/CURRENT.md)
 
+## License
+
+See [`LICENSE`](LICENSE) file for license information.
+
+## Security
+
+See [`SECURITY.md`](SECURITY.md) for security policy and vulnerability disclosure.

@@ -8,6 +8,13 @@ param(
 
 $ErrorActionPreference = "Continue"
 
+# Load safe exit helper
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+
 Write-Host "=== INCIDENT TRIAGE ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
@@ -202,4 +209,5 @@ if (-not [string]::IsNullOrEmpty($RequestId)) {
     }
 }
 
-exit $overallExitCode
+Invoke-OpsExit $overallExitCode
+return

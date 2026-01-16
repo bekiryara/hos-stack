@@ -15,6 +15,7 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -39,8 +40,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Force JSON for API/auth routes (early) - global middleware
         $middleware->prepend(\App\Http\Middleware\ForceJsonForApi::class);
 
-        // Request ID and error envelope - global middleware
+        // Request ID and error envelope - global middleware (web and API)
         $middleware->web(append: [
+            \App\Http\Middleware\RequestId::class,
+        ]);
+        $middleware->api(append: [
             \App\Http\Middleware\RequestId::class,
         ]);
         
@@ -68,6 +72,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // UI (session-based) helpers
             'ui.super_admin' => \App\Http\Middleware\EnsureUiSuperAdmin::class,
             'ui.tenant' => \App\Http\Middleware\ResolveUiTenant::class,
+            // World resolver
+            'world.resolve' => \App\Http\Middleware\WorldResolver::class,
+            'world.lock' => \App\Http\Middleware\WorldLock::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -75,6 +82,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return $request->expectsJson()
                 || $request->is('admin/*')
                 || $request->is('panel/*')
+                || $request->is('api/*')
                 || $request->is('auth/*')
                 || $request->is('products')
                 || $request->is('orders*')

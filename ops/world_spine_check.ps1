@@ -9,6 +9,23 @@ param(
 
 $ErrorActionPreference = "Continue"
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
+    . "${scriptDir}\_lib\ops_output.ps1"
+    Initialize-OpsOutput
+}
+if (Test-Path "${scriptDir}\_lib\worlds_config.ps1") {
+    . "${scriptDir}\_lib\worlds_config.ps1"
+}
+if (Test-Path "${scriptDir}\_lib\routes_json.ps1") {
+    . "${scriptDir}\_lib\routes_json.ps1"
+}
+
 # Set defaults
 if ($WORLD_REGISTRY_PATH -eq "") {
     if (Test-Path "work/pazar/WORLD_REGISTRY.md") {
@@ -42,38 +59,31 @@ $results = @()
 # Parse worlds config
 if (-not (Test-Path $WORLDS_CONFIG_PATH)) {
     Write-Host "FAIL: Worlds config not found: $WORLDS_CONFIG_PATH" -ForegroundColor Red
-    exit 1
+    Invoke-OpsExit 1
+    return
 }
 
-Write-Host "Parsing worlds config..." -ForegroundColor Yellow
-$configContent = Get-Content $WORLDS_CONFIG_PATH -Raw
+Write-Info "Parsing worlds config..."
+$worldsConfig = Get-WorldsConfig -WorldsConfigPath $WORLDS_CONFIG_PATH
+$enabledWorlds = $worldsConfig.Enabled
+$disabledWorlds = $worldsConfig.Disabled
 
-# Extract enabled/disabled worlds (simple regex parsing)
-$enabledWorlds = @()
-$disabledWorlds = @()
-
-# Match patterns like 'world_id' => ['enabled' => true/false]
-$worldMatches = [regex]::Matches($configContent, "'(\w+)'\s*=>\s*\[[^\]]*'enabled'\s*=>\s*(true|false)")
-foreach ($match in $worldMatches) {
-    $worldId = $match.Groups[1].Value
-    $enabled = $match.Groups[2].Value -eq "true"
-    
-    if ($enabled) {
-        $enabledWorlds += $worldId
-    } else {
-        $disabledWorlds += $worldId
-    }
-}
-
-Write-Host "Enabled worlds: $($enabledWorlds -join ', ')" -ForegroundColor Gray
-Write-Host "Disabled worlds: $($disabledWorlds -join ', ')" -ForegroundColor Gray
-Write-Host ""
+Write-Info "Enabled worlds: $($enabledWorlds -join ', ')"
+Write-Info "Disabled worlds: $($disabledWorlds -join ', ')"
+Write-Info ""
 
 # Read routes snapshot
 $routes = @()
 if (Test-Path $ROUTES_SNAPSHOT) {
     Write-Host "Reading routes snapshot..." -ForegroundColor Yellow
-    $routes = Get-Content $ROUTES_SNAPSHOT | ConvertFrom-Json
+    try {
+        $snapshotContent = Get-Content $ROUTES_SNAPSHOT -Raw -Encoding UTF8
+        $routes = Convert-RoutesJsonToCanonicalArray -RawJsonText $snapshotContent
+    } catch {
+        Write-Host "WARN: Failed to parse routes snapshot: $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host "Falling back to filesystem check..." -ForegroundColor Gray
+        $routes = @()
+    }
 } else {
     Write-Host "WARN: Routes snapshot not found: $ROUTES_SNAPSHOT" -ForegroundColor Yellow
     Write-Host "Falling back to filesystem check..." -ForegroundColor Gray
@@ -280,7 +290,8 @@ if ($failCount -gt 0) {
     foreach ($result in ($results | Where-Object { $_.Status -eq "FAIL" })) {
         Write-Host "  - $($result.World): $($result.Notes)" -ForegroundColor Red
     }
-    exit 1
+    Invoke-OpsExit 1
+    return
 } elseif ($warnCount -gt 0) {
     Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
     Write-Host ""
@@ -288,9 +299,11 @@ if ($failCount -gt 0) {
     foreach ($result in ($results | Where-Object { $_.Status -eq "WARN" })) {
         Write-Host "  - $($result.World): $($result.Notes)" -ForegroundColor Yellow
     }
-    exit 2
+    Invoke-OpsExit 2
+    return
 } else {
     Write-Host "OVERALL STATUS: PASS (All checks passed)" -ForegroundColor Green
-    exit 0
+    Invoke-OpsExit 0
+    return
 }
 

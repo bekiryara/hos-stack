@@ -6,11 +6,39 @@ The Unified Ops Status Dashboard (`ops/ops_status.ps1`) aggregates all operation
 
 ## Running Locally
 
-### Basic Usage
+### Recommended Usage (Terminal-Safe)
+
+```powershell
+.\ops\run_ops_status.ps1
+```
+
+This wrapper prevents the terminal from closing and preserves exit codes. It's the recommended way to run ops_status locally.
+
+### Direct Usage (Alternative)
 
 ```powershell
 .\ops\ops_status.ps1
 ```
+
+**Note:** Ops scripts now use safe exit behavior: in interactive PowerShell sessions, the terminal will not close (exit codes are set via `$global:LASTEXITCODE`). In CI environments (GitHub Actions), exit codes are properly propagated. This applies to all ops scripts (ops_status.ps1, doctor.ps1, verify.ps1, triage.ps1, conformance.ps1, schema_snapshot.ps1, pazar_storage_posture.ps1).
+
+**Safe Exit Behavior:**
+- **Interactive Mode**: Scripts set `$global:LASTEXITCODE` and return (terminal stays open)
+- **CI Mode**: Scripts call `exit $Code` (proper exit code propagation for CI/CD pipelines)
+- **Detection**: Automatically detects CI environment via `$env:CI` or `$env:GITHUB_ACTIONS`
+
+**ASCII-Only Output:**
+- All ops scripts use ASCII-only output markers: `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]`
+- No Unicode glyphs (✅ ❌ ⚠️ ✓ ✗ → ➕ ➖) in output
+- Ensures consistent rendering across all terminals and CI environments
+
+### CI Usage
+
+```powershell
+.\ops\run_ops_status.ps1 -Ci
+```
+
+The `-Ci` switch ensures proper exit code propagation for CI/CD pipelines.
 
 ### Prerequisites
 
@@ -25,14 +53,36 @@ The Unified Ops Status Dashboard (`ops/ops_status.ps1`) aggregates all operation
 - **PASS**: Check completed successfully
 - **WARN**: Check completed with warnings (non-blocking)
 - **FAIL**: Check failed (blocking)
+- **SKIP**: Check not executed (script not found or intentionally skipped)
+
+### Decision Matrix
+
+The dashboard determines overall status based on individual check results and blocking semantics:
+
+- **PASS**: Release allowed
+  - All blocking checks PASS
+  - Non-blocking checks may PASS, WARN, or SKIP
+
+- **WARN**: Release allowed (with review)
+  - All blocking checks PASS
+  - One or more non-blocking checks WARN
+  - Non-blocking checks that can WARN:
+    - SLO Check (p50-only latency warnings)
+    - Observability Status (WARN when Prometheus/Alertmanager absent but not blocking)
+    - Storage Posture (legacy/non-critical warnings)
+
+- **FAIL**: Blocks release + auto incident bundle
+  - Any blocking check FAIL
+  - Blocking checks: doctor, verify, conformance, env-contract, auth-security, tenant-boundary, session-posture, error-contract, routes-snapshot, schema-snapshot, product_spine_check, ops_drift_guard
+  - Incident bundle is automatically generated and path is printed
 
 ### Overall Status
 
-The dashboard determines overall status based on individual check results:
+The dashboard determines overall status based on blocking semantics:
 
-- **FAIL**: Any check has status FAIL
-- **WARN**: No FAIL, but at least one WARN
-- **PASS**: All checks PASS
+- **FAIL**: Any blocking check has status FAIL
+- **WARN**: No blocking FAIL, but at least one non-blocking check WARN
+- **PASS**: All blocking checks PASS (non-blocking checks may WARN)
 
 ### Exit Codes
 
@@ -72,17 +122,27 @@ The dashboard runs the following checks in order:
    - World registry validation
    - Documentation compliance
 
-7. **Routes Snapshot** (`ops/routes_snapshot.ps1`)
+7. **World Spine Governance** (`ops/world_spine_check.ps1`)
+   - World spine route validation
+   - Enabled/disabled world policy enforcement
+
+8. **Routes Snapshot** (`ops/routes_snapshot.ps1`)
    - API route contract validation
    - Route changes detection
 
-8. **Schema Snapshot** (`ops/schema_snapshot.ps1`)
+9. **Schema Snapshot** (`ops/schema_snapshot.ps1`)
    - Database schema contract validation
    - Schema changes detection
 
-9. **Error Contract** (inline check)
+10. **Error Contract** (inline check)
    - Error envelope validation (422, 404)
    - Standard error format compliance
+
+11. **Product Contract** (`ops/product_contract.ps1`)
+   - Product API spine documentation validation
+   - Spine endpoints vs routes snapshot alignment
+   - Middleware posture validation
+   - Error-contract posture smoke
 
 ## Incident Bundle on FAIL
 

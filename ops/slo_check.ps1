@@ -9,6 +9,13 @@ param(
 
 $ErrorActionPreference = "Continue"
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+
 Write-Host "=== SLO CHECK ===" -ForegroundColor Cyan
 Write-Host "Sample size: $N requests per endpoint" -ForegroundColor Gray
 Write-Host "Concurrency: $Concurrency (sequential)" -ForegroundColor Gray
@@ -261,7 +268,8 @@ if ($blockingFailCount -gt 0) {
     Write-Host "  1. Review docs/runbooks/slo_breach.md" -ForegroundColor Gray
     Write-Host "  2. Run .\ops\triage.ps1 and .\ops\incident_bundle.ps1" -ForegroundColor Gray
     Write-Host "  3. Investigate root cause (blocking metric failure)" -ForegroundColor Gray
-    exit 1
+    Invoke-OpsExit 1
+    return
 } elseif ($blockingWarnCount -gt 0 -or $p50FailCount -gt 0) {
     $statusMsg = "OVERALL STATUS: WARN"
     if ($p50FailCount -gt 0) {
@@ -281,9 +289,11 @@ if ($blockingFailCount -gt 0) {
     } else {
         Write-Host "Note: SLOs approaching limits - monitor closely" -ForegroundColor Gray
     }
-    exit 2
+    Invoke-OpsExit 2
+    return
 } else {
     Write-Host "OVERALL STATUS: PASS (All blocking SLOs met)" -ForegroundColor Green
-    exit 0
+    Invoke-OpsExit 0
+    return
 }
 

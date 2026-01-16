@@ -4,6 +4,13 @@
 
 $ErrorActionPreference = "Continue"
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+
 # Generate timestamp
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $bundleDir = "_archive/incidents/incident-$timestamp"
@@ -17,7 +24,8 @@ try {
     Write-Host "OK: Directory created" -ForegroundColor Green
 } catch {
     Write-Host "FAILED: Failed to create directory: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
+    Invoke-OpsExit 1
+    return
 }
 
 $filesCreated = @()
@@ -209,4 +217,5 @@ Write-Host "  1. Review incident_note.md and fill in details" -ForegroundColor G
 Write-Host "  2. Attach bundle folder to issue/PR (zip if needed)" -ForegroundColor Gray
 Write-Host "  3. Reference bundle path in incident documentation" -ForegroundColor Gray
 
-exit 0
+Invoke-OpsExit 0
+return

@@ -1,5 +1,10 @@
-﻿services:
+﻿# WP-4.1: Container/Local Code Visibility Rule
+# Read-only mounts ensure migrations/seeders/config changes are visible without rebuild.
+services:
   pazar-app:
     environment:
       HOS_OIDC_ISSUER: http://localhost:3000
       HOS_OIDC_WORLD: pazar
+    volumes:
+      - ./work/pazar/database:/var/www/html/database:ro
+      - ./work/pazar/config:/var/www/html/config:ro

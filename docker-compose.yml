@@ -31,6 +31,8 @@ services:
       HOS_DEBUG_OIDC: "true"
       HOS_API_KEY: "dev-api-key"
       OTEL_ENABLED: "false"
+      PAZAR_STATUS_URL: "http://pazar-app:80"
+      MESSAGING_PING_URL: "http://messaging-api:3000"
       DATABASE_URL_FILE: /run/secrets/database_url
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       GOOGLE_CLIENT_ID_FILE: /run/secrets/google_client_id
@@ -77,21 +79,37 @@ services:
       retries: 20
     restart: unless-stopped
 
+  pazar-perms-init:
+    build:
+      context: ./work/pazar
+      dockerfile: docker/Dockerfile
+    user: "0:0"
+    command: sh -lc "mkdir -p /var/www/html/storage/logs /var/www/html/bootstrap/cache && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache && touch /var/www/html/storage/logs/laravel.log && chmod 0666 /var/www/html/storage/logs/laravel.log && echo '[PASS] Permissions initialized'"
+    volumes:
+      - pazar_storage:/var/www/html/storage
+      - pazar_cache:/var/www/html/bootstrap/cache
+    restart: "no"
+
   pazar-app:
     build:
       context: ./work/pazar
       dockerfile: docker/Dockerfile
+    user: "0:0"
     ports:
       - "127.0.0.1:8080:80"
+    command: sh -lc "cd /var/www/html && exec supervisord -c /etc/supervisord.conf"
     depends_on:
       pazar-db:
         condition: service_healthy
       hos-api:
         condition: service_started
+      pazar-perms-init:
+        condition: service_completed_successfully
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
       APP_URL: http://localhost:8080
+      # APP_KEY: base64:... (generate via proof commands, paste here)
       DB_CONNECTION: pgsql
       DB_HOST: pazar-db
       DB_PORT: 5432
@@ -103,14 +121,58 @@ services:
       HOS_OIDC_JWKS_URL: http://hos-api:3000/jwks.json
       HOS_OIDC_ISSUER: http://localhost:3000
       HOS_OIDC_WORLD: "pazar"
+      HOS_LARAVEL_LOG_STDOUT: "1"
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: debug
       SESSION_DRIVER: database
       SESSION_DOMAIN: localhost
+      MESSAGING_BASE_URL: http://messaging-api:3000
+      MESSAGING_API_KEY: dev-messaging-key
     volumes:
-      - ./work/pazar/.env:/var/www/html/.env:ro
+      # .env mount removed: stateless runtime, all config from ENV
       - ./work/pazar/resources/views:/var/www/html/resources/views
       - ./work/pazar/app:/var/www/html/app
       - ./work/pazar/routes:/var/www/html/routes
+      # Named volumes for runtime-writable directories (Windows bind mount permission fix)
+      - pazar_storage:/var/www/html/storage
+      - pazar_cache:/var/www/html/bootstrap/cache
     restart: unless-stopped
+
+  messaging-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: messaging
+      POSTGRES_DB: messaging
+      POSTGRES_PASSWORD: messaging_password
+    volumes:
+      - messaging_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  messaging-api:
+    build:
+      context: ./work/messaging
+      dockerfile: services/api/Dockerfile
+    ports:
+      - "127.0.0.1:8090:3000"
+    depends_on:
+      messaging-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://messaging:messaging_password@messaging-db:5432/messaging
+      MESSAGING_API_KEY: dev-messaging-key
+      MESSAGING_VERSION: 1.4.0
+    restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - messaging-api
 
 secrets:
   db_password:
@@ -132,5 +194,11 @@ volumes:
     name: hos_db_data
   pazar_db_data:
     name: pazar_db_data
+  pazar_storage:
+    name: pazar_storage
+  pazar_cache:
+    name: pazar_cache
+  messaging_db_data:
+    name: messaging_db_data
 
 

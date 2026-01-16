@@ -9,6 +9,13 @@ param(
 
 $ErrorActionPreference = "Continue"
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+
 Write-Host "=== PERFORMANCE BASELINE ===" -ForegroundColor Cyan
 Write-Host "Warm-up requests: $WarmUp per endpoint" -ForegroundColor Gray
 Write-Host "Measured requests: $N per endpoint" -ForegroundColor Gray
@@ -264,15 +271,18 @@ if ($failCount -gt 0) {
     Write-Host "  1. Review docs/runbooks/slo_breach.md" -ForegroundColor Gray
     Write-Host "  2. Run .\ops\triage.ps1 and .\ops\incident_bundle.ps1" -ForegroundColor Gray
     Write-Host "  3. Investigate root cause (sustained p95 failure)" -ForegroundColor Gray
-    exit 1
+    Invoke-OpsExit 1
+    return
 } elseif ($warnCount -gt 0) {
     Write-Host "OVERALL STATUS: WARN ($warnCount warnings - cold-start spikes only)" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Note: Latency spikes are limited to first 1-2 requests (cold-start). Remaining requests stable." -ForegroundColor Gray
     Write-Host "This does not block release per Rule 23 (cold-start spikes alone do not block release)." -ForegroundColor Gray
-    exit 2
+    Invoke-OpsExit 2
+    return
 } else {
     Write-Host "OVERALL STATUS: PASS (All latency SLOs met with warm-up)" -ForegroundColor Green
-    exit 0
+    Invoke-OpsExit 0
+    return
 }
 

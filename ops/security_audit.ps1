@@ -2,6 +2,16 @@
 
 $ErrorActionPreference = "Stop"
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+if (Test-Path "${scriptDir}\_lib\routes_json.ps1") {
+    . "${scriptDir}\_lib\routes_json.ps1"
+}
+
 Write-Host "=== Security Audit (Route/Middleware) ===" -ForegroundColor Cyan
 
 # Allowlist for state-changing routes that don't require auth
@@ -64,17 +74,27 @@ function Test-Allowlisted {
 # Get routes from Laravel
 Write-Host "`n[1] Fetching routes from pazar-app..." -ForegroundColor Yellow
 
-$routesJson = docker compose exec -T pazar-app php artisan route:list --json 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "FAIL: Failed to fetch routes" -ForegroundColor Red
-    Write-Host $routesJson
-    exit 1
+try {
+    $rawJson = Get-RawPazarRouteListJson -ContainerName "pazar-app"
+    $routes = Convert-RoutesJsonToCanonicalArray -RawJsonText $rawJson
+    
+    # Sanity check: route count should be reasonable (> 20)
+    if ($routes.Count -lt 20) {
+        Write-Host "[FAIL] FAIL: Route count too low ($($routes.Count)). Route JSON parse mismatch or artisan output changed." -ForegroundColor Red
+        Invoke-OpsExit 1
+        return
+    }
+    
+    Write-Host "  [OK] Fetched $($routes.Count) routes" -ForegroundColor Green
+} catch {
+    Write-Host "[FAIL] FAIL: Failed to fetch routes: $($_.Exception.Message)" -ForegroundColor Red
+    Invoke-OpsExit 1
+    return
 }
-
-$routes = $routesJson | ConvertFrom-Json
 if ($null -eq $routes -or $routes.Count -eq 0) {
     Write-Host "FAIL: No routes found" -ForegroundColor Red
-    exit 1
+    Invoke-OpsExit 1
+    return
 }
 
 Write-Host "Found $($routes.Count) routes" -ForegroundColor Gray
@@ -144,11 +164,12 @@ foreach ($route in $routes) {
 Write-Host "`n[3] Security Audit Results" -ForegroundColor Yellow
 
 if ($violations.Count -eq 0) {
-    Write-Host "`n✓ PASS: 0 violations found" -ForegroundColor Green
+    Write-Host "`n[OK] PASS: 0 violations found" -ForegroundColor Green
     Write-Host "All routes comply with security policy." -ForegroundColor Gray
-    exit 0
+    Invoke-OpsExit 0
+    return
 } else {
-    Write-Host "`n✗ FAIL: $($violations.Count) violation(s) found" -ForegroundColor Red
+    Write-Host "`n[FAIL] FAIL: $($violations.Count) violation(s) found" -ForegroundColor Red
     Write-Host ""
     
     # Print violations table
@@ -166,6 +187,7 @@ if ($violations.Count -eq 0) {
     Write-Host "  3. /panel/* routes with {tenant} must have: tenant.resolve AND tenant.user" -ForegroundColor Gray
     Write-Host "  4. POST/PUT/PATCH/DELETE routes must have: auth.any (or be allowlisted)" -ForegroundColor Gray
     
-    exit 1
+    Invoke-OpsExit 1
+    return
 }
 

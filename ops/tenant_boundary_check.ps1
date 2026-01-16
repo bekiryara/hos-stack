@@ -3,6 +3,16 @@
 
 $ErrorActionPreference = "Continue"
 
+# Load shared helpers
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+    . "${scriptDir}\_lib\ops_exit.ps1"
+    Initialize-OpsExit
+}
+if (Test-Path "${scriptDir}\_lib\routes_json.ps1") {
+    . "${scriptDir}\_lib\routes_json.ps1"
+}
+
 Write-Host "=== TENANT BOUNDARY CHECK ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
@@ -15,11 +25,13 @@ $snapshotPath = "ops\snapshots\routes.pazar.json"
 if (-not (Test-Path $snapshotPath)) {
     Write-Host "FAIL: Routes snapshot not found: $snapshotPath" -ForegroundColor Red
     Write-Host "Run routes_snapshot.ps1 first to create snapshot." -ForegroundColor Yellow
-    exit 1
+    Invoke-OpsExit 1
+    return
 }
 
 Write-Host "Reading routes snapshot..." -ForegroundColor Yellow
-$routes = Get-Content $snapshotPath | ConvertFrom-Json
+$snapshotContent = Get-Content $snapshotPath -Raw -Encoding UTF8
+$routes = Convert-RoutesJsonToCanonicalArray -RawJsonText $snapshotContent
 
 # Auto-select routes
 $adminRoute = $routes | Where-Object { 
@@ -183,8 +195,8 @@ $tenantBoundaryExitCode = 0
 # Get test credentials from environment
 $testEmail = $env:TENANT_TEST_EMAIL
 $testPassword = $env:TENANT_TEST_PASSWORD
-$tenantA = $env:TENANT_A_SLUG ?? "tenant-a"
-$tenantB = $env:TENANT_B_SLUG ?? "tenant-b"
+$tenantA = if ($null -ne $env:TENANT_A_SLUG) { $env:TENANT_A_SLUG } else { "tenant-a" }
+$tenantB = if ($null -ne $env:TENANT_B_SLUG) { $env:TENANT_B_SLUG } else { "tenant-b" }
 
 if (-not $testEmail -or -not $testPassword) {
     $tenantBoundaryStatus = "WARN"
@@ -338,12 +350,15 @@ $warnCount = ($results | Where-Object { $_.Status -eq "WARN" }).Count
 Write-Host ""
 if ($failCount -gt 0) {
     Write-Host "OVERALL STATUS: FAIL ($failCount failures, $warnCount warnings)" -ForegroundColor Red
-    exit 1
+    Invoke-OpsExit 1
+    return
 } elseif ($warnCount -gt 0) {
     Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
-    exit 2
+    Invoke-OpsExit 2
+    return
 } else {
     Write-Host "OVERALL STATUS: PASS (All checks passed)" -ForegroundColor Green
-    exit 0
+    Invoke-OpsExit 0
+    return
 }
 

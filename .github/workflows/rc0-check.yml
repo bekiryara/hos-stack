@@ -1,0 +1,95 @@
+name: RC0 Release Readiness Gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  rc0-check:
+    runs-on: ubuntu-latest
+    env:
+      TENANT_TEST_EMAIL: ${{ secrets.TENANT_TEST_EMAIL }}
+      TENANT_TEST_PASSWORD: ${{ secrets.TENANT_TEST_PASSWORD }}
+      TENANT_A_SLUG: ${{ secrets.TENANT_A_SLUG }}
+      TENANT_B_SLUG: ${{ secrets.TENANT_B_SLUG }}
+      PRODUCT_TEST_TENANT_ID: ${{ secrets.PRODUCT_TEST_TENANT_ID }}
+      PRODUCT_TEST_AUTH_TOKEN: ${{ secrets.PRODUCT_TEST_AUTH_TOKEN }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PowerShell
+        uses: microsoft/setup-powershell@v1
+        with:
+          pwsh-version: '7.4'
+      
+      - name: Bring up core stack
+        run: |
+          docker compose up -d --build
+          # Wait for services to be ready
+          timeout 120 bash -c 'until curl -f http://localhost:8080/up && curl -f http://localhost:3000/v1/health; do sleep 5; done' || true
+      
+      - name: Run RC0 Check Gate
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/rc0_check.ps1
+        continue-on-error: false
+      
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc0-check-logs
+          path: |
+            _archive/audits/*
+            _archive/incidents/*
+          retention-days: 7
+      
+      - name: Generate incident bundle on failure
+        if: failure()
+        shell: pwsh
+        run: |
+          if (Test-Path ./ops/incident_bundle.ps1) {
+            pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/incident_bundle.ps1
+          }
+        continue-on-error: true
+      
+      - name: Upload incident bundle on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc0-check-incident-bundle
+          path: |
+            _archive/incidents/*
+          retention-days: 7
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

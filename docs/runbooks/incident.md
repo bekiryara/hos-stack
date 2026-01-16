@@ -199,4 +199,53 @@ git push --force-with-lease origin main
 - [Observability Runbook](./observability.md) - Using request_id for tracing
 - [Errors Runbook](./errors.md) - Error code reference and handling
 
+## UI 500: laravel.log Permission Denied Troubleshooting
+
+### Symptoms
+- UI routes (e.g., `/ui/admin/control-center`) return HTTP 500 errors
+- Container logs show: `UnexpectedValueException (Monolog StreamHandler) cannot open /var/www/html/storage/logs/laravel.log: Permission denied.`
+- Error pages show "Permission denied" for `laravel.log`
+
+### Root Cause
+Named volumes (`pazar_storage`, `pazar_cache`) may be created with incorrect ownership (root-owned) when first initialized. The `pazar-perms-init` one-shot service (in `docker-compose.yml`) fixes this, but if it hasn't run or failed, permissions remain incorrect, causing `php-fpm` (running as `www-data`) to be unable to write to `laravel.log`.
+
+### Quick Fix
+
+1. **Check if pazar-perms-init completed:**
+   ```powershell
+   docker compose ps pazar-perms-init
+   ```
+   - **Expected:** Status should be "Exited (0)" (completed successfully)
+   - **If not found or failed:** Proceed to step 2
+
+2. **Run permissions init manually:**
+   ```powershell
+   docker compose run --rm pazar-perms-init
+   ```
+   - **Expected:** Prints `[PASS] Permissions initialized` and exits with code 0
+   - **If fails:** Check docker compose logs for errors
+
+3. **Restart pazar-app to ensure permissions are correct:**
+   ```powershell
+   docker compose restart pazar-app
+   ```
+
+4. **Verify permissions:**
+   ```powershell
+   docker compose exec -T pazar-app sh -lc "test -d storage/logs && touch storage/logs/laravel.log && test -w storage/logs/laravel.log && echo 'PASS' || echo 'FAIL'"
+   ```
+   - **Expected:** Prints "PASS" with exit code 0
+
+5. **Run verify.ps1 FS posture check:**
+   ```powershell
+   .\ops\verify.ps1
+   ```
+   - **Expected:** Step 4 "Pazar FS posture (storage/logs writability)" shows PASS
+
+### Prevention (docker-compose.yml Configuration)
+- `pazar-perms-init` service (one-shot, restart: "no") runs before `pazar-app` starts
+- `pazar-app` has `depends_on: pazar-perms-init: condition: service_completed_successfully`
+- Named volumes (`pazar_storage`, `pazar_cache`) are used (not Windows bind mounts)
+- See `docs/PROOFS/rc0_pazar_storage_permissions_pass.md` for complete fix documentation
+
 
