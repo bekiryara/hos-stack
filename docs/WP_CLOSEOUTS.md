@@ -309,7 +309,7 @@ docker compose up -d --build
 
 ---
 
-**Last Updated:** 2026-01-16  
+**Last Updated:** 2026-01-17  
 **Next WP:** TBD
 
 ## WP-5  Messaging Integration (Context-Only)  DONE
@@ -317,4 +317,35 @@ docker compose up -d --build
 - Proof: docs\PROOFS\wp5_messaging_integration_pass.md
 - Verification: .\ops\pazar_spine_check.ps1
 - Acceptance: transaction -> thread exists -> message send (context-only), no cross-db, no duplication
+
+---
+
+## WP-6: Orders Thin Slice
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** §§ 6.3, 6.7, 17.4
+
+### Purpose
+Complete Marketplace Transactions spine with Orders (sales). Orders can be created with idempotency support, validated against published listings, and automatically create messaging threads for order context.
+
+### Deliverables
+- `work/pazar/database/migrations/2026_01_17_100005_create_orders_table.php` - Orders table migration
+- `work/pazar/routes/api.php` - POST /api/v1/orders endpoint
+- `ops/order_contract_check.ps1` - Order API contract validation
+- `docs/PROOFS/wp6_orders_spine_pass.md` - Proof document
+
+### Commands
+```powershell
+# Apply migration
+docker compose exec pazar-app php artisan migrate
+
+# Verify order API endpoints
+.\ops\order_contract_check.ps1
+
+# Verify no regression in Pazar spine
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp6_orders_spine_pass.md`
 
