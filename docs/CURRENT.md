@@ -29,6 +29,22 @@ This repository runs **H-OS** (universe governance) and **Pazar** (first commerc
 - **3002**: H-OS Web (`http://localhost:3002`)
 - **8080**: Pazar App (`http://localhost:8080`)
 
+## API Endpoints
+
+### H-OS API (Port 3000)
+
+- `GET /v1/health` - Health check
+- `GET /v1/worlds` - World directory (returns array of worlds: core, marketplace, etc.)
+
+### Pazar API (Port 8080)
+
+- `GET /up` - Health check (nginx-level, no Laravel)
+- `GET /api/world/status` - Marketplace world status (SPEC §24.4)
+- `GET /api/v1/categories` - Category tree (WP-2, may return empty array if not seeded)
+- `GET /api/v1/categories/{id}/filter-schema` - Filter schema for category (WP-2)
+
+**Note:** Laravel routes in `routes/api.php` are automatically prefixed with `/api` by default.
+
 ## Green Checks (Working Definition)
 
 Baseline is "working" when:
@@ -54,6 +70,12 @@ This command checks:
 - `0` = PASS (all checks pass)
 - `1` = FAIL (required check failed)
 - Optional services that are down are marked SKIP, not FAIL
+
+## Compose Profiles
+
+**No profiles defined** in the main `docker-compose.yml`. All services run by default.
+
+**Note:** The `work/hos/docker-compose.yml` file defines profiles (`default`, `obs`, `mail`) for H-OS observability services, but these are not used by the main stack compose file.
 
 ## Canonical Boot Command
 

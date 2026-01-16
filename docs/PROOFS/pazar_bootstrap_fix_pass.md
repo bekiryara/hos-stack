@@ -72,3 +72,7 @@ docker compose logs --tail 200 pazar-app
 
 
 
+
+
+
+

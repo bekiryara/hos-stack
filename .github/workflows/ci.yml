@@ -7,17 +7,38 @@ on:
     branches: [main, develop]
 
 jobs:
-  repo_hygiene:
-    name: Repository Hygiene
+  repo_integrity:
+    name: Repository Integrity
     runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Run doctor.ps1
+      - name: Run repo integrity check
         shell: pwsh
         run: |
-          .\ops\doctor.ps1
+          if (Test-Path "ops\repo_integrity.ps1") {
+            .\ops\repo_integrity.ps1
+          } else {
+            # Fallback to doctor.ps1 repo integrity section
+            .\ops\doctor.ps1
+          }
+      
+      - name: Run CI Guard
+        shell: pwsh
+        run: |
+          .\ops\ci_guard.ps1
+          $exitCode = $LASTEXITCODE
+          if ($exitCode -eq 1) {
+            Write-Host "FAIL: CI Guard detected drift" -ForegroundColor Red
+            exit 1
+          } elseif ($exitCode -eq 2) {
+            Write-Host "WARN: CI Guard detected warnings (non-blocking)" -ForegroundColor Yellow
+            exit 0
+          } else {
+            Write-Host "PASS: CI Guard passed" -ForegroundColor Green
+            exit 0
+          }
       
       - name: Check git status is clean
         shell: pwsh
@@ -31,45 +52,56 @@ jobs:
           }
           Write-Host "PASS: Git status is clean" -ForegroundColor Green
       
-      - name: Check for forbidden artifacts
-        shell: pwsh
-        run: |
-          $forbidden = @("*.zip", "*.rar", "*.bak", "*.tmp", "*.orig", "*.swp", "*~")
-          $found = @()
-          foreach ($pattern in $forbidden) {
-            $files = Get-ChildItem -Path . -Filter $pattern -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\_archive\\" -and $_.FullName -notmatch "\\vendor\\" -and $_.FullName -notmatch "\\.git\\" }
-            if ($files) {
-              $found += $files
-            }
-          }
-          if ($found.Count -gt 0) {
-            Write-Host "FAIL: Forbidden artifacts found:" -ForegroundColor Red
-            $found | ForEach-Object { Write-Host "  $($_.FullName)" }
-            exit 1
-          }
-          Write-Host "PASS: No forbidden artifacts" -ForegroundColor Green
-      
       - name: Run graveyard check
         shell: pwsh
         run: |
           .\ops\graveyard_check.ps1
 
-  baseline_checks:
-    name: Baseline Checks
+  verify:
+    name: Verify
     runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Run doctor.ps1
+      - name: Check Docker availability
         shell: pwsh
         run: |
-          .\ops\doctor.ps1 | Tee-Object -FilePath doctor.txt
+          $dockerAvailable = $false
+          try {
+            docker --version | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+              $dockerAvailable = $true
+            }
+          } catch {
+            $dockerAvailable = $false
+          }
+          
+          if (-not $dockerAvailable) {
+            Write-Host "DOCKER_NOT_AVAILABLE: Docker is not available in this runner" -ForegroundColor Yellow
+            Write-Host "Skipping verify.ps1 (requires Docker)" -ForegroundColor Yellow
+            exit 0
+          }
+          Write-Host "Docker is available" -ForegroundColor Green
+          $env:DOCKER_AVAILABLE = "true"
+      
+      - name: Run verify.ps1
+        shell: pwsh
+        if: env.DOCKER_AVAILABLE == 'true'
+        run: |
+          .\ops\verify.ps1 | Tee-Object -FilePath verify.txt
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "FAIL: doctor.ps1 returned exit code $LASTEXITCODE" -ForegroundColor Red
+            Write-Host "FAIL: verify.ps1 returned exit code $LASTEXITCODE" -ForegroundColor Red
             exit 1
           }
         continue-on-error: false
+
+  conformance:
+    name: Conformance
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       
       - name: Run conformance.ps1
         shell: pwsh
@@ -84,6 +116,22 @@ jobs:
       - name: Run baseline_status.ps1
         shell: pwsh
         run: |
+          # baseline_status.ps1 checks Docker, so handle gracefully
+          $dockerAvailable = $false
+          try {
+            docker --version | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+              $dockerAvailable = $true
+            }
+          } catch {
+            $dockerAvailable = $false
+          }
+          
+          if (-not $dockerAvailable) {
+            Write-Host "DOCKER_NOT_AVAILABLE: Skipping baseline_status.ps1 (requires Docker)" -ForegroundColor Yellow
+            exit 0
+          }
+          
           .\ops\baseline_status.ps1 | Tee-Object -FilePath baseline_status.txt
           if ($LASTEXITCODE -ne 0) {
             Write-Host "FAIL: baseline_status.ps1 returned exit code $LASTEXITCODE" -ForegroundColor Red
@@ -91,13 +139,13 @@ jobs:
           }
         continue-on-error: false
       
-      - name: Upload baseline check artifacts
+      - name: Upload check artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: baseline-check-outputs
+          name: check-outputs
           path: |
-            doctor.txt
+            verify.txt
             conformance.txt
             baseline_status.txt
           retention-days: 7

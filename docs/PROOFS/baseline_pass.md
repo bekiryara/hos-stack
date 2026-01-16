@@ -84,13 +84,23 @@ ok
 [3] Pazar Health (http://localhost:8080/up)
   [PASS] HTTP 200 ok
 
+[4] Repo Integrity
+  [PASS] Git working directory clean
+
+[5] Forbidden Files Check
+  [PASS] No forbidden files in tracked locations
+
+[6] Snapshot Integrity
+  [PASS] Recent snapshot found: 20260115-105303 (0.1 days old)
+
 === BASELINE STATUS: PASS ===
 ```
 
 **Key Validation:**
 - Exit code: 0
 - All checks show [PASS]
-- No [FAIL] or [WARN] messages
+- No [FAIL] messages
+- WARN messages are acceptable for repo integrity and snapshot age
 
 ### 5. Run Full Verification
 

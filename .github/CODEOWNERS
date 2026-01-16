@@ -1,7 +1,19 @@
-/docker-compose.yml     @bekiryara
-/WORLD_REGISTRY.md      @bekiryara
-/config/worlds.php     @bekiryara
-/docs/*                @bekiryara
+# CODEOWNERS - File ownership for code review
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Operations scripts
 /ops/*                 @bekiryara
+
+# Documentation
+/docs/*                @bekiryara
+
+# H-OS API service
+/work/hos/services/api/* @bekiryara
+
+# Pazar service
+/work/pazar/*          @bekiryara
+
+# Root configuration
+/docker-compose.yml     @bekiryara
 /.github/workflows/*   @bekiryara
 

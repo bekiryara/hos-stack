@@ -86,3 +86,7 @@ docker compose exec -T pazar-app sh -c "php artisan tinker --execute='echo confi
 
 
 
+
+
+
+

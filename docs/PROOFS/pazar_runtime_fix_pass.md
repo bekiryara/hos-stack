@@ -105,3 +105,7 @@ docker compose logs --tail 120 pazar-app
 
 
 
+
+
+
+

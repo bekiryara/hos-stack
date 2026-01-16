@@ -31,6 +31,8 @@ services:
       HOS_DEBUG_OIDC: "true"
       HOS_API_KEY: "dev-api-key"
       OTEL_ENABLED: "false"
+      PAZAR_STATUS_URL: "http://pazar-app:80"
+      MESSAGING_PING_URL: "http://messaging-api:3000"
       DATABASE_URL_FILE: /run/secrets/database_url
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       GOOGLE_CLIENT_ID_FILE: /run/secrets/google_client_id
@@ -124,6 +126,8 @@ services:
       LOG_LEVEL: debug
       SESSION_DRIVER: database
       SESSION_DOMAIN: localhost
+      MESSAGING_BASE_URL: http://messaging-api:3000
+      MESSAGING_API_KEY: dev-messaging-key
     volumes:
       # .env mount removed: stateless runtime, all config from ENV
       - ./work/pazar/resources/views:/var/www/html/resources/views
@@ -133,6 +137,42 @@ services:
       - pazar_storage:/var/www/html/storage
       - pazar_cache:/var/www/html/bootstrap/cache
     restart: unless-stopped
+
+  messaging-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: messaging
+      POSTGRES_DB: messaging
+      POSTGRES_PASSWORD: messaging_password
+    volumes:
+      - messaging_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  messaging-api:
+    build:
+      context: ./work/messaging
+      dockerfile: services/api/Dockerfile
+    ports:
+      - "127.0.0.1:8090:3000"
+    depends_on:
+      messaging-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://messaging:messaging_password@messaging-db:5432/messaging
+      MESSAGING_API_KEY: dev-messaging-key
+      MESSAGING_VERSION: 1.4.0
+    restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - messaging-api
 
 secrets:
   db_password:
@@ -158,5 +198,7 @@ volumes:
     name: pazar_storage
   pazar_cache:
     name: pazar_cache
+  messaging_db_data:
+    name: messaging_db_data
 
 
