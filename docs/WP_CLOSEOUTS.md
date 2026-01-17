@@ -690,6 +690,109 @@ git status --porcelain
 
 ---
 
+## WP-11 Account Portal Read Aggregation (Safe)
+
+**Status:** COMPLETE (Frontend) / PARTIAL (Backend Endpoints Missing)  
+**Date:** 2026-01-17
+
+### Purpose
+
+Read-only Account Portal for users and stores to view their data (orders, rentals, reservations, listings). Personal view for user's own data, Store view for provider data (with X-Active-Tenant-Id).
+
+### Deliverables
+
+1. **Account Portal Page:**
+   - Created `work/marketplace-web/src/pages/AccountPortalPage.vue`
+   - Personal view: My Orders, My Rentals, My Reservations
+   - Store view: My Listings, My Orders (as provider), My Rentals (as provider), My Reservations (as provider)
+   - Mode toggle: Personal vs Store
+   - Tenant ID input for Store mode
+
+2. **Navigation:**
+   - Added `/account` route to `work/marketplace-web/src/router.js`
+   - Added "Account" link to `work/marketplace-web/src/App.vue` navigation
+
+3. **Missing Endpoints Report:**
+   - Created `docs/PROOFS/wp11_missing_endpoints.md`
+   - Documents 7 missing list GET endpoints required for full functionality
+   - Current UI displays "Endpoint not available" messages
+
+### Known Limitations
+
+**Backend endpoints missing (documented):**
+- GET /v1/orders?buyer_user_id=... (Personal orders)
+- GET /v1/orders?seller_tenant_id=... (Store orders)
+- GET /v1/rentals?renter_user_id=... (Personal rentals)
+- GET /v1/rentals?provider_tenant_id=... (Store rentals)
+- GET /v1/reservations?requester_user_id=... (Personal reservations)
+- GET /v1/reservations?provider_tenant_id=... (Store reservations)
+- GET /v1/listings?tenant_id=... (Partial: endpoint exists but no tenant_id filter)
+
+### Commands
+
+```powershell
+# Build frontend
+cd work/marketplace-web
+npm run build
+
+# Verify no backend changes
+git status --porcelain work/pazar/
+# Should be empty
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp11_account_portal_read_pass.md`
+- `docs/PROOFS/wp11_missing_endpoints.md`
+
+---
+
+## WP-12 Backend Account Portal Read Endpoints (Safe)
+
+**Status:** COMPLETE  
+**Date:** 2026-01-17
+
+### Purpose
+
+Add read-only backend GET endpoints for Account Portal (WP-11 frontend). Personal scope endpoints for user's own data, Store scope endpoints for provider data (with X-Active-Tenant-Id).
+
+### Deliverables
+
+1. **List Endpoints:**
+   - GET /api/v1/orders?buyer_user_id=... (Personal)
+   - GET /api/v1/orders?seller_tenant_id=... (Store, requires X-Active-Tenant-Id)
+   - GET /api/v1/rentals?renter_user_id=... (Personal)
+   - GET /api/v1/rentals?provider_tenant_id=... (Store, requires X-Active-Tenant-Id)
+   - GET /api/v1/reservations?requester_user_id=... (Personal)
+   - GET /api/v1/reservations?provider_tenant_id=... (Store, requires X-Active-Tenant-Id)
+   - GET /api/v1/listings?tenant_id=... (Store, filter added to existing endpoint)
+
+2. **Validation:**
+   - Personal scope: Require buyer_user_id OR renter_user_id OR requester_user_id
+   - Store scope: Require seller_tenant_id OR provider_tenant_id OR tenant_id
+   - Store scope: Verify X-Active-Tenant-Id header matches parameter (FORBIDDEN_SCOPE if mismatch)
+
+3. **Pagination:**
+   - Query parameters: `page` (default: 1), `page_size` (default: 20, max: 100)
+   - Sort: `created_at DESC`
+   - Empty array response (200 OK) if no results
+
+4. **Ops Script:**
+   - Created `ops/account_portal_read_check.ps1` - Tests all 7 endpoints
+
+### Commands
+
+```powershell
+# Test all endpoints
+.\ops\account_portal_read_check.ps1
+
+# Should output: "=== ACCOUNT PORTAL READ CHECK: PASS ==="
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp12_account_portal_backend_pass.md`
+
+---
+
 ## WP-10 Repo Hygiene Lock: Vendor Policy + Normalize work/hos
 
 **Status:** COMPLETE  

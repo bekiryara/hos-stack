@@ -202,15 +202,28 @@ Route::post('/v1/listings', function (\Illuminate\Http\Request $request) {
         ], 400);
     }
     
-    // Validate tenant_id is valid UUID format (since listings.tenant_id is UUID type)
-    // For testing: generate deterministic UUID from tenant string if not valid UUID
-    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $tenantIdHeader)) {
-        // Generate deterministic UUID from tenant string
-        $tenantId = generate_tenant_uuid($tenantIdHeader);
-        // TODO: In production, enforce UUID format or change tenant_id column to string/varchar
-    } else {
-        $tenantId = $tenantIdHeader;
+    // Membership enforcement (WP-8): Validate tenant_id format and membership
+    $membershipClient = new \App\Core\MembershipClient();
+    $userId = $request->header('X-Requester-User-Id') ?? 'genesis-default';
+    $authToken = $request->header('Authorization'); // Forward Authorization header for strict mode
+    
+    // Validate tenant_id format (WP-8: store-scope endpoints require valid UUID format)
+    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
+        ], 403);
     }
+    
+    // Validate membership (WP-8: strict mode checks via HOS API if enabled)
+    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Invalid membership or tenant access denied'
+        ], 403);
+    }
+    
+    $tenantId = $tenantIdHeader;
     
     // Validate required fields
     $validated = $request->validate([
@@ -331,15 +344,28 @@ Route::post('/v1/listings/{id}/publish', function ($id, \Illuminate\Http\Request
         ], 400);
     }
     
-    // Validate tenant_id is valid UUID format (since listings.tenant_id is UUID type)
-    // For testing: generate deterministic UUID from tenant string if not valid UUID
-    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $tenantIdHeader)) {
-        // Generate deterministic UUID from tenant string
-        $tenantId = generate_tenant_uuid($tenantIdHeader);
-        // TODO: In production, enforce UUID format or change tenant_id column to string/varchar
-    } else {
-        $tenantId = $tenantIdHeader;
+    // Membership enforcement (WP-8): Validate tenant_id format and membership
+    $membershipClient = new \App\Core\MembershipClient();
+    $userId = $request->header('X-Requester-User-Id') ?? 'genesis-default';
+    $authToken = $request->header('Authorization'); // Forward Authorization header for strict mode
+    
+    // Validate tenant_id format (WP-8: store-scope endpoints require valid UUID format)
+    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
+        ], 403);
     }
+    
+    // Validate membership (WP-8: strict mode checks via HOS API if enabled)
+    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Invalid membership or tenant access denied'
+        ], 403);
+    }
+    
+    $tenantId = $tenantIdHeader;
     
     // Find listing
     $listing = DB::table('listings')->where('id', $id)->first();
@@ -399,6 +425,11 @@ Route::get('/v1/listings', function (\Illuminate\Http\Request $request) {
     $status = $request->input('status', 'published');
     $query->where('status', $status);
     
+    // Filter by tenant_id if provided (WP-12: Account Portal Store view)
+    if ($request->has('tenant_id')) {
+        $query->where('tenant_id', $request->input('tenant_id'));
+    }
+    
     // Filter by attributes (simple key-value matching)
     if ($request->has('attrs')) {
         $attrs = $request->input('attrs');
@@ -457,6 +488,15 @@ Route::get('/v1/listings/{id}', function ($id) {
 // Reservation Spine Endpoints (WP-4)
 // POST /v1/reservations - Create reservation
 Route::post('/v1/reservations', function (\Illuminate\Http\Request $request) {
+    // Authorization enforcement (WP-8): PERSONAL write requires Authorization header
+    $authHeader = $request->header('Authorization');
+    if (!$authHeader || !preg_match('/^Bearer\s+/i', $authHeader)) {
+        return response()->json([
+            'error' => 'AUTH_REQUIRED',
+            'message' => 'Authorization: Bearer token is required for personal operations'
+        ], 401);
+    }
+    
     // Require Idempotency-Key header
     $idempotencyKey = $request->header('Idempotency-Key');
     if (!$idempotencyKey) {
@@ -634,12 +674,28 @@ Route::post('/v1/reservations/{id}/accept', function ($id, \Illuminate\Http\Requ
         ], 400);
     }
     
-    // Convert tenant header to UUID if needed
-    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $tenantIdHeader)) {
-        $tenantId = generate_tenant_uuid($tenantIdHeader);
-    } else {
-        $tenantId = $tenantIdHeader;
+    // Membership enforcement (WP-8): Validate tenant_id format and membership
+    $membershipClient = new \App\Core\MembershipClient();
+    $userId = $request->header('X-Requester-User-Id') ?? 'genesis-default';
+    $authToken = $request->header('Authorization'); // Forward Authorization header for strict mode
+    
+    // Validate tenant_id format (WP-8: store-scope endpoints require valid UUID format)
+    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
+        ], 403);
     }
+    
+    // Validate membership (WP-8: strict mode checks via HOS API if enabled)
+    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Invalid membership or tenant access denied'
+        ], 403);
+    }
+    
+    $tenantId = $tenantIdHeader;
     
     // Find reservation
     $reservation = DB::table('reservations')->where('id', $id)->first();
@@ -708,9 +764,201 @@ Route::post('/v1/reservations/{id}/accept', function ($id, \Illuminate\Http\Requ
     ]);
 });
 
+// WP-12: Account Portal Read Endpoints (Read-Only)
+
+// GET /v1/orders - List orders (Personal or Store scope)
+Route::get('/v1/orders', function (\Illuminate\Http\Request $request) {
+    // Require at least one filter (buyer_user_id or seller_tenant_id)
+    if (!$request->has('buyer_user_id') && !$request->has('seller_tenant_id')) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'Either buyer_user_id or seller_tenant_id parameter is required'
+        ], 422);
+    }
+    
+    $query = DB::table('orders');
+    
+    // Personal scope: Filter by buyer_user_id
+    if ($request->has('buyer_user_id')) {
+        $buyerUserId = $request->input('buyer_user_id');
+        $query->where('buyer_user_id', $buyerUserId);
+    }
+    
+    // Store scope: Filter by seller_tenant_id (requires X-Active-Tenant-Id)
+    if ($request->has('seller_tenant_id')) {
+        $sellerTenantId = $request->input('seller_tenant_id');
+        $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+        
+        // Verify X-Active-Tenant-Id matches seller_tenant_id for security
+        if ($tenantIdHeader !== $sellerTenantId) {
+            return response()->json([
+                'error' => 'FORBIDDEN_SCOPE',
+                'message' => 'X-Active-Tenant-Id header must match seller_tenant_id parameter'
+            ], 403);
+        }
+        
+        $query->where('seller_tenant_id', $sellerTenantId);
+    }
+    
+    // Pagination
+    $page = max(1, (int)$request->input('page', 1));
+    $pageSize = min(100, max(1, (int)$request->input('page_size', 20)));
+    $offset = ($page - 1) * $pageSize;
+    
+    $orders = $query->orderBy('created_at', 'desc')
+        ->offset($offset)
+        ->limit($pageSize)
+        ->get()
+        ->map(function ($order) {
+            return [
+                'id' => $order->id,
+                'listing_id' => $order->listing_id,
+                'buyer_user_id' => $order->buyer_user_id,
+                'seller_tenant_id' => $order->seller_tenant_id,
+                'quantity' => $order->quantity,
+                'status' => $order->status,
+                'totals' => $order->totals_json ? json_decode($order->totals_json, true) : null,
+                'created_at' => $order->created_at,
+                'updated_at' => $order->updated_at
+            ];
+        });
+    
+    return response()->json($orders);
+});
+
+// GET /v1/rentals - List rentals (Personal or Store scope)
+Route::get('/v1/rentals', function (\Illuminate\Http\Request $request) {
+    // Require at least one filter (renter_user_id or provider_tenant_id)
+    if (!$request->has('renter_user_id') && !$request->has('provider_tenant_id')) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'Either renter_user_id or provider_tenant_id parameter is required'
+        ], 422);
+    }
+    
+    $query = DB::table('rentals');
+    
+    // Personal scope: Filter by renter_user_id
+    if ($request->has('renter_user_id')) {
+        $renterUserId = $request->input('renter_user_id');
+        $query->where('renter_user_id', $renterUserId);
+    }
+    
+    // Store scope: Filter by provider_tenant_id (requires X-Active-Tenant-Id)
+    if ($request->has('provider_tenant_id')) {
+        $providerTenantId = $request->input('provider_tenant_id');
+        $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+        
+        // Verify X-Active-Tenant-Id matches provider_tenant_id for security
+        if ($tenantIdHeader !== $providerTenantId) {
+            return response()->json([
+                'error' => 'FORBIDDEN_SCOPE',
+                'message' => 'X-Active-Tenant-Id header must match provider_tenant_id parameter'
+            ], 403);
+        }
+        
+        $query->where('provider_tenant_id', $providerTenantId);
+    }
+    
+    // Pagination
+    $page = max(1, (int)$request->input('page', 1));
+    $pageSize = min(100, max(1, (int)$request->input('page_size', 20)));
+    $offset = ($page - 1) * $pageSize;
+    
+    $rentals = $query->orderBy('created_at', 'desc')
+        ->offset($offset)
+        ->limit($pageSize)
+        ->get()
+        ->map(function ($rental) {
+            return [
+                'id' => $rental->id,
+                'listing_id' => $rental->listing_id,
+                'renter_user_id' => $rental->renter_user_id,
+                'provider_tenant_id' => $rental->provider_tenant_id,
+                'start_at' => $rental->start_at,
+                'end_at' => $rental->end_at,
+                'status' => $rental->status,
+                'created_at' => $rental->created_at,
+                'updated_at' => $rental->updated_at
+            ];
+        });
+    
+    return response()->json($rentals);
+});
+
+// GET /v1/reservations - List reservations (Personal or Store scope)
+Route::get('/v1/reservations', function (\Illuminate\Http\Request $request) {
+    // Require at least one filter (requester_user_id or provider_tenant_id)
+    if (!$request->has('requester_user_id') && !$request->has('provider_tenant_id')) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'Either requester_user_id or provider_tenant_id parameter is required'
+        ], 422);
+    }
+    
+    $query = DB::table('reservations');
+    
+    // Personal scope: Filter by requester_user_id
+    if ($request->has('requester_user_id')) {
+        $requesterUserId = $request->input('requester_user_id');
+        $query->where('requester_user_id', $requesterUserId);
+    }
+    
+    // Store scope: Filter by provider_tenant_id (requires X-Active-Tenant-Id)
+    if ($request->has('provider_tenant_id')) {
+        $providerTenantId = $request->input('provider_tenant_id');
+        $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+        
+        // Verify X-Active-Tenant-Id matches provider_tenant_id for security
+        if ($tenantIdHeader !== $providerTenantId) {
+            return response()->json([
+                'error' => 'FORBIDDEN_SCOPE',
+                'message' => 'X-Active-Tenant-Id header must match provider_tenant_id parameter'
+            ], 403);
+        }
+        
+        $query->where('provider_tenant_id', $providerTenantId);
+    }
+    
+    // Pagination
+    $page = max(1, (int)$request->input('page', 1));
+    $pageSize = min(100, max(1, (int)$request->input('page_size', 20)));
+    $offset = ($page - 1) * $pageSize;
+    
+    $reservations = $query->orderBy('created_at', 'desc')
+        ->offset($offset)
+        ->limit($pageSize)
+        ->get()
+        ->map(function ($reservation) {
+            return [
+                'id' => $reservation->id,
+                'listing_id' => $reservation->listing_id,
+                'provider_tenant_id' => $reservation->provider_tenant_id,
+                'requester_user_id' => $reservation->requester_user_id,
+                'slot_start' => $reservation->slot_start,
+                'slot_end' => $reservation->slot_end,
+                'party_size' => $reservation->party_size,
+                'status' => $reservation->status,
+                'created_at' => $reservation->created_at,
+                'updated_at' => $reservation->updated_at
+            ];
+        });
+    
+    return response()->json($reservations);
+});
+
 // Order Spine Endpoints (WP-6)
 // POST /v1/orders - Create order
 Route::post('/v1/orders', function (\Illuminate\Http\Request $request) {
+    // Authorization enforcement (WP-8): PERSONAL write requires Authorization header
+    $authHeader = $request->header('Authorization');
+    if (!$authHeader || !preg_match('/^Bearer\s+/i', $authHeader)) {
+        return response()->json([
+            'error' => 'AUTH_REQUIRED',
+            'message' => 'Authorization: Bearer token is required for personal operations'
+        ], 401);
+    }
+    
     // Require Idempotency-Key header
     $idempotencyKey = $request->header('Idempotency-Key');
     if (!$idempotencyKey) {
@@ -859,6 +1107,15 @@ Route::get('/v1/reservations/{id}', function ($id) {
 // Rental Spine Endpoints (WP-7)
 // POST /v1/rentals - Create rental request
 Route::post('/v1/rentals', function (\Illuminate\Http\Request $request) {
+    // Authorization enforcement (WP-8): PERSONAL write requires Authorization header
+    $authHeader = $request->header('Authorization');
+    if (!$authHeader || !preg_match('/^Bearer\s+/i', $authHeader)) {
+        return response()->json([
+            'error' => 'AUTH_REQUIRED',
+            'message' => 'Authorization: Bearer token is required for personal operations'
+        ], 401);
+    }
+    
     // Require Idempotency-Key header
     $idempotencyKey = $request->header('Idempotency-Key');
     if (!$idempotencyKey) {
@@ -995,12 +1252,28 @@ Route::post('/v1/rentals/{id}/accept', function ($id, \Illuminate\Http\Request $
         ], 400);
     }
     
-    // Convert tenant header to UUID if needed
-    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $tenantIdHeader)) {
-        $tenantId = generate_tenant_uuid($tenantIdHeader);
-    } else {
-        $tenantId = $tenantIdHeader;
+    // Membership enforcement (WP-8): Validate tenant_id format and membership
+    $membershipClient = new \App\Core\MembershipClient();
+    $userId = $request->header('X-Requester-User-Id') ?? 'genesis-default';
+    $authToken = $request->header('Authorization'); // Forward Authorization header for strict mode
+    
+    // Validate tenant_id format (WP-8: store-scope endpoints require valid UUID format)
+    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
+        ], 403);
     }
+    
+    // Validate membership (WP-8: strict mode checks via HOS API if enabled)
+    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Invalid membership or tenant access denied'
+        ], 403);
+    }
+    
+    $tenantId = $tenantIdHeader;
     
     // Find rental
     $rental = DB::table('rentals')->where('id', $id)->first();
