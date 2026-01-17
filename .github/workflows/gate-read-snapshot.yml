@@ -1,0 +1,30 @@
+name: Gate Read Snapshot (WP-13)
+
+on:
+  pull_request:
+    paths:
+      - 'work/pazar/routes/api.php'
+      - 'work/hos/**/*.js'
+      - 'contracts/api/*.json'
+      - 'ops/read_snapshot_check.ps1'
+
+jobs:
+  read-snapshot-check:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run Read Snapshot Check
+        shell: pwsh
+        run: |
+          .\ops\read_snapshot_check.ps1
+      
+      - name: Check exit code
+        if: failure()
+        run: |
+          Write-Host "FAIL: Read snapshot check failed. READ endpoints must match snapshot files." -ForegroundColor Red
+          Write-Host "Update contracts/api/*.read.snapshot.json or fix routes/api.php" -ForegroundColor Yellow
+          exit 1
+
