@@ -18,6 +18,15 @@ Write-Host ""
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
 $tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo
+# WP-13: Get test auth token from env or use default test token
+$authToken = $env:PRODUCT_TEST_AUTH
+if (-not $authToken) {
+    $authToken = $env:HOS_TEST_AUTH
+}
+if (-not $authToken) {
+    # Default test token (dummy JWT for testing - must have valid sub claim)
+    $authToken = "Bearer test-token-genesis-wp13"
+}
 $listingId = $null
 $reservationId = $null
 
@@ -187,6 +196,7 @@ try {
     $headers = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $idempotencyKey
+        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     $createResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $reservationBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     
@@ -259,6 +269,7 @@ if ($reservationId) {
         $headers = @{
             "Content-Type" = "application/json"
             "Idempotency-Key" = $idempotencyKey
+            "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
         }
         $replayResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $reservationBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
         
@@ -297,6 +308,7 @@ try {
     $headers = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $conflictIdempotencyKey
+        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     $conflictResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $conflictBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     Write-Host "FAIL: Conflict reservation should have failed but succeeded" -ForegroundColor Red
@@ -341,6 +353,7 @@ try {
     $headers = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $invalidIdempotencyKey
+        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     $invalidResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $invalidBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     Write-Host "FAIL: Invalid reservation should have failed but succeeded" -ForegroundColor Red
@@ -400,6 +413,7 @@ if ($listingId) {
         $acceptTestHeaders = @{
             "Content-Type" = "application/json"
             "Idempotency-Key" = $acceptTestIdempotencyKey
+            "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
         }
         $acceptTestCreateResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $acceptTestReservationBody -Headers $acceptTestHeaders -TimeoutSec 10 -ErrorAction Stop
         $acceptTestReservationId = $acceptTestCreateResponse.id
@@ -472,6 +486,7 @@ if ($listingId) {
         $rejectTestHeaders = @{
             "Content-Type" = "application/json"
             "Idempotency-Key" = $rejectTestIdempotencyKey
+            "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
         }
         $rejectTestCreateResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $rejectTestReservationBody -Headers $rejectTestHeaders -TimeoutSec 10 -ErrorAction Stop
         $rejectTestReservationId = $rejectTestCreateResponse.id

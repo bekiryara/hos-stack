@@ -18,6 +18,15 @@ Write-Host ""
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
 $tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo
+# WP-13: Get test auth token from env or use default test token
+$authToken = $env:PRODUCT_TEST_AUTH
+if (-not $authToken) {
+    $authToken = $env:HOS_TEST_AUTH
+}
+if (-not $authToken) {
+    # Default test token (dummy JWT for testing - must have valid sub claim)
+    $authToken = "Bearer test-token-genesis-wp13"
+}
 $listingId = $null
 $rentalId = $null
 
@@ -107,10 +116,20 @@ if ($listingId) {
         end_at = $endAt
     } | ConvertTo-Json
     
+    # WP-13: Get test auth token from env or use default test token
+    $testAuthToken = $env:PRODUCT_TEST_AUTH
+    if (-not $testAuthToken) {
+        $testAuthToken = $env:HOS_TEST_AUTH
+    }
+    if (-not $testAuthToken) {
+        # Default test token (dummy JWT for testing - must have valid sub claim)
+        $testAuthToken = "Bearer test-token-genesis-wp13"
+    }
+    
     $rentalHeaders = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $idempotencyKey
-        "X-Requester-User-Id" = "test-user-rental"
+        "Authorization" = $testAuthToken  # WP-13: Authorization Bearer token required (JWT sub=userId)
     }
     
     try {
@@ -169,7 +188,7 @@ if ($rentalId -and -not $hasFailures) {
     $rentalHeaders = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $idempotencyKey # Same key
-        "X-Requester-User-Id" = "test-user-rental"
+        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     
     try {
@@ -227,7 +246,7 @@ if ($listingId -and -not $hasFailures) {
     $rentalHeaders = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $newIdempotencyKey # Different key
-        "X-Requester-User-Id" = "test-user-rental-2"
+        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     
     try {
@@ -346,7 +365,7 @@ if ($rentalId -and -not $hasFailures) {
     $rentalHeaders = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $newRentalIdempotencyKey
-        "X-Requester-User-Id" = "test-user-rental-3"
+        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     
     $testRentalId = $null

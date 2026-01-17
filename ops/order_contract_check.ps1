@@ -18,6 +18,15 @@ Write-Host ""
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
 $tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo
+# WP-13: Get test auth token from env or use default test token
+$authToken = $env:PRODUCT_TEST_AUTH
+if (-not $authToken) {
+    $authToken = $env:HOS_TEST_AUTH
+}
+if (-not $authToken) {
+    # Default test token (dummy JWT for testing - must have valid sub claim)
+    $authToken = "Bearer test-token-genesis-wp13"
+}
 $listingId = $null
 $orderId = $null
 
@@ -98,6 +107,7 @@ if ($listingId) {
     $orderHeaders = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $idempotencyKey
+        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     
     try {
@@ -295,6 +305,7 @@ if ($hasFailures) {
         exit 0
     }
 }
+
 
 
 

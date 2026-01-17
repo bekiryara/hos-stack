@@ -68,6 +68,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.user' => \App\Http\Middleware\EnsureTenantUser::class,
             'tenant.role' => \App\Http\Middleware\EnsureTenantRole::class,
             'auth.any' => \App\Http\Middleware\AuthAny::class,
+            'auth.ctx' => \App\Http\Middleware\AuthContext::class, // WP-13: JWT auth context
             'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
             // UI (session-based) helpers
             'ui.super_admin' => \App\Http\Middleware\EnsureUiSuperAdmin::class,

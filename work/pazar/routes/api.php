@@ -203,8 +203,9 @@ Route::post('/v1/listings', function (\Illuminate\Http\Request $request) {
     }
     
     // Membership enforcement (WP-8): Validate tenant_id format and membership
+    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
     $membershipClient = new \App\Core\MembershipClient();
-    $userId = $request->header('X-Requester-User-Id') ?? 'genesis-default';
+    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
     $authToken = $request->header('Authorization'); // Forward Authorization header for strict mode
     
     // Validate tenant_id format (WP-8: store-scope endpoints require valid UUID format)
@@ -345,8 +346,9 @@ Route::post('/v1/listings/{id}/publish', function ($id, \Illuminate\Http\Request
     }
     
     // Membership enforcement (WP-8): Validate tenant_id format and membership
+    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
     $membershipClient = new \App\Core\MembershipClient();
-    $userId = $request->header('X-Requester-User-Id') ?? 'genesis-default';
+    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
     $authToken = $request->header('Authorization'); // Forward Authorization header for strict mode
     
     // Validate tenant_id format (WP-8: store-scope endpoints require valid UUID format)
@@ -407,6 +409,371 @@ Route::post('/v1/listings/{id}/publish', function ($id, \Illuminate\Http\Request
         'tenant_id' => $updated->tenant_id,
         'category_id' => $updated->category_id,
         'title' => $updated->title,
+        'status' => $updated->status,
+        'updated_at' => $updated->updated_at
+    ]);
+});
+
+// WP-9: Offers/Pricing Spine Endpoints
+
+// POST /v1/listings/{id}/offers - Create offer
+Route::post('/v1/listings/{id}/offers', function ($id, \Illuminate\Http\Request $request) {
+    // Require X-Active-Tenant-Id header
+    $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+    if (!$tenantIdHeader) {
+        return response()->json([
+            'error' => 'missing_header',
+            'message' => 'X-Active-Tenant-Id header is required'
+        ], 400);
+    }
+    
+    // Membership enforcement (WP-8): Validate tenant_id format and membership
+    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
+    $membershipClient = new \App\Core\MembershipClient();
+    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
+    $authToken = $request->header('Authorization');
+    
+    // Validate tenant_id format
+    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
+        ], 403);
+    }
+    
+    // Validate membership
+    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Invalid membership or tenant access denied'
+        ], 403);
+    }
+    
+    $tenantId = $tenantIdHeader;
+    
+    // Require Idempotency-Key header
+    $idempotencyKey = $request->header('Idempotency-Key');
+    if (!$idempotencyKey) {
+        return response()->json([
+            'error' => 'missing_header',
+            'message' => 'Idempotency-Key header is required'
+        ], 400);
+    }
+    
+    // Find listing
+    $listing = DB::table('listings')->where('id', $id)->first();
+    if (!$listing) {
+        return response()->json([
+            'error' => 'listing_not_found',
+            'message' => "Listing with id {$id} not found"
+        ], 404);
+    }
+    
+    // Check tenant ownership (FORBIDDEN_SCOPE)
+    if ($listing->tenant_id !== $tenantId) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'X-Active-Tenant-Id header must match listing tenant_id'
+        ], 403);
+    }
+    
+    // Validate required fields
+    $validated = $request->validate([
+        'code' => 'required|string|max:100',
+        'name' => 'required|string|max:255',
+        'price_amount' => 'required|integer|min:0',
+        'price_currency' => 'nullable|string|size:3',
+        'billing_model' => 'required|string|in:one_time,per_hour,per_day,per_person',
+        'attributes' => 'nullable|array'
+    ]);
+    
+    // Idempotency check (MUST be before offer creation and code uniqueness check)
+    $scopeType = 'tenant'; // Store scope
+    $scopeId = $tenantId;
+    // Include listing_id in request hash for idempotency (same code can exist in different listings)
+    $requestData = array_merge($validated, ['listing_id' => $id]);
+    $requestHash = hash('sha256', json_encode($requestData));
+    
+    $existingIdempotency = DB::table('idempotency_keys')
+        ->where('scope_type', $scopeType)
+        ->where('scope_id', $scopeId)
+        ->where('key', $idempotencyKey)
+        ->where('request_hash', $requestHash)
+        ->where('expires_at', '>', now())
+        ->first();
+    
+    if ($existingIdempotency) {
+        // Return cached response (idempotency replay)
+        $cachedResponse = json_decode($existingIdempotency->response_json, true);
+        return response()->json($cachedResponse, 200);
+    }
+    
+    // Check code uniqueness within listing (AFTER idempotency check)
+    $existingOffer = DB::table('listing_offers')
+        ->where('listing_id', $id)
+        ->where('code', $validated['code'])
+        ->first();
+    
+    if ($existingOffer) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => "Offer code '{$validated['code']}' already exists for this listing"
+        ], 422);
+    }
+    
+    // Create offer
+    $offerId = \Illuminate\Support\Str::uuid()->toString();
+    $providerTenantId = $listing->tenant_id;
+    $priceCurrency = $validated['price_currency'] ?? 'TRY';
+    $attributes = $validated['attributes'] ?? null;
+    
+    DB::table('listing_offers')->insert([
+        'id' => $offerId,
+        'listing_id' => $id,
+        'provider_tenant_id' => $providerTenantId,
+        'code' => $validated['code'],
+        'name' => $validated['name'],
+        'price_amount' => $validated['price_amount'],
+        'price_currency' => $priceCurrency,
+        'billing_model' => $validated['billing_model'],
+        'attributes_json' => $attributes ? json_encode($attributes) : null,
+        'status' => 'active',
+        'created_at' => now(),
+        'updated_at' => now()
+    ]);
+    
+    $response = [
+        'id' => $offerId,
+        'listing_id' => $id,
+        'provider_tenant_id' => $providerTenantId,
+        'code' => $validated['code'],
+        'name' => $validated['name'],
+        'price_amount' => $validated['price_amount'],
+        'price_currency' => $priceCurrency,
+        'billing_model' => $validated['billing_model'],
+        'attributes' => $attributes,
+        'status' => 'active',
+        'created_at' => now()->toISOString(),
+        'updated_at' => now()->toISOString()
+    ];
+    
+    // Store idempotency key (expires in 24 hours)
+    DB::table('idempotency_keys')->insert([
+        'scope_type' => $scopeType,
+        'scope_id' => $scopeId,
+        'key' => $idempotencyKey,
+        'request_hash' => $requestHash,
+        'response_json' => json_encode($response),
+        'created_at' => now(),
+        'expires_at' => now()->addHours(24)
+    ]);
+    
+    return response()->json($response, 201);
+});
+
+// GET /v1/listings/{id}/offers - List offers for listing
+Route::get('/v1/listings/{id}/offers', function ($id) {
+    $offers = DB::table('listing_offers')
+        ->where('listing_id', $id)
+        ->where('status', 'active')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($offer) {
+            return [
+                'id' => $offer->id,
+                'listing_id' => $offer->listing_id,
+                'provider_tenant_id' => $offer->provider_tenant_id,
+                'code' => $offer->code,
+                'name' => $offer->name,
+                'price_amount' => $offer->price_amount,
+                'price_currency' => $offer->price_currency,
+                'billing_model' => $offer->billing_model,
+                'attributes' => $offer->attributes_json ? json_decode($offer->attributes_json, true) : null,
+                'status' => $offer->status,
+                'created_at' => $offer->created_at,
+                'updated_at' => $offer->updated_at
+            ];
+        });
+    
+    return response()->json($offers);
+});
+
+// GET /v1/offers/{id} - Get single offer
+Route::get('/v1/offers/{id}', function ($id) {
+    $offer = DB::table('listing_offers')->where('id', $id)->first();
+    
+    if (!$offer) {
+        return response()->json([
+            'error' => 'offer_not_found',
+            'message' => "Offer with id {$id} not found"
+        ], 404);
+    }
+    
+    return response()->json([
+        'id' => $offer->id,
+        'listing_id' => $offer->listing_id,
+        'provider_tenant_id' => $offer->provider_tenant_id,
+        'code' => $offer->code,
+        'name' => $offer->name,
+        'price_amount' => $offer->price_amount,
+        'price_currency' => $offer->price_currency,
+        'billing_model' => $offer->billing_model,
+        'attributes' => $offer->attributes_json ? json_decode($offer->attributes_json, true) : null,
+        'status' => $offer->status,
+        'created_at' => $offer->created_at,
+        'updated_at' => $offer->updated_at
+    ]);
+});
+
+// POST /v1/offers/{id}/activate - Activate offer
+Route::post('/v1/offers/{id}/activate', function ($id, \Illuminate\Http\Request $request) {
+    // Require X-Active-Tenant-Id header
+    $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+    if (!$tenantIdHeader) {
+        return response()->json([
+            'error' => 'missing_header',
+            'message' => 'X-Active-Tenant-Id header is required'
+        ], 400);
+    }
+    
+    // Membership enforcement (WP-8): Validate tenant_id format and membership
+    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
+    $membershipClient = new \App\Core\MembershipClient();
+    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
+    $authToken = $request->header('Authorization');
+    
+    // Validate tenant_id format
+    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
+        ], 403);
+    }
+    
+    // Validate membership
+    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Invalid membership or tenant access denied'
+        ], 403);
+    }
+    
+    $tenantId = $tenantIdHeader;
+    
+    // Find offer
+    $offer = DB::table('listing_offers')->where('id', $id)->first();
+    if (!$offer) {
+        return response()->json([
+            'error' => 'offer_not_found',
+            'message' => "Offer with id {$id} not found"
+        ], 404);
+    }
+    
+    // Check tenant ownership (FORBIDDEN_SCOPE)
+    if ($offer->provider_tenant_id !== $tenantId) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Only the offer owner can activate this offer'
+        ], 403);
+    }
+    
+    // Update status to active
+    DB::table('listing_offers')
+        ->where('id', $id)
+        ->update([
+            'status' => 'active',
+            'updated_at' => now()
+        ]);
+    
+    $updated = DB::table('listing_offers')->where('id', $id)->first();
+    
+    return response()->json([
+        'id' => $updated->id,
+        'listing_id' => $updated->listing_id,
+        'provider_tenant_id' => $updated->provider_tenant_id,
+        'code' => $updated->code,
+        'name' => $updated->name,
+        'price_amount' => $updated->price_amount,
+        'price_currency' => $updated->price_currency,
+        'billing_model' => $updated->billing_model,
+        'attributes' => $updated->attributes_json ? json_decode($updated->attributes_json, true) : null,
+        'status' => $updated->status,
+        'updated_at' => $updated->updated_at
+    ]);
+});
+
+// POST /v1/offers/{id}/deactivate - Deactivate offer
+Route::post('/v1/offers/{id}/deactivate', function ($id, \Illuminate\Http\Request $request) {
+    // Require X-Active-Tenant-Id header
+    $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+    if (!$tenantIdHeader) {
+        return response()->json([
+            'error' => 'missing_header',
+            'message' => 'X-Active-Tenant-Id header is required'
+        ], 400);
+    }
+    
+    // Membership enforcement (WP-8): Validate tenant_id format and membership
+    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
+    $membershipClient = new \App\Core\MembershipClient();
+    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
+    $authToken = $request->header('Authorization');
+    
+    // Validate tenant_id format
+    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
+        ], 403);
+    }
+    
+    // Validate membership
+    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Invalid membership or tenant access denied'
+        ], 403);
+    }
+    
+    $tenantId = $tenantIdHeader;
+    
+    // Find offer
+    $offer = DB::table('listing_offers')->where('id', $id)->first();
+    if (!$offer) {
+        return response()->json([
+            'error' => 'offer_not_found',
+            'message' => "Offer with id {$id} not found"
+        ], 404);
+    }
+    
+    // Check tenant ownership (FORBIDDEN_SCOPE)
+    if ($offer->provider_tenant_id !== $tenantId) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Only the offer owner can deactivate this offer'
+        ], 403);
+    }
+    
+    // Update status to inactive
+    DB::table('listing_offers')
+        ->where('id', $id)
+        ->update([
+            'status' => 'inactive',
+            'updated_at' => now()
+        ]);
+    
+    $updated = DB::table('listing_offers')->where('id', $id)->first();
+    
+    return response()->json([
+        'id' => $updated->id,
+        'listing_id' => $updated->listing_id,
+        'provider_tenant_id' => $updated->provider_tenant_id,
+        'code' => $updated->code,
+        'name' => $updated->name,
+        'price_amount' => $updated->price_amount,
+        'price_currency' => $updated->price_currency,
+        'billing_model' => $updated->billing_model,
+        'attributes' => $updated->attributes_json ? json_decode($updated->attributes_json, true) : null,
         'status' => $updated->status,
         'updated_at' => $updated->updated_at
     ]);
@@ -487,15 +854,8 @@ Route::get('/v1/listings/{id}', function ($id) {
 
 // Reservation Spine Endpoints (WP-4)
 // POST /v1/reservations - Create reservation
-Route::post('/v1/reservations', function (\Illuminate\Http\Request $request) {
-    // Authorization enforcement (WP-8): PERSONAL write requires Authorization header
-    $authHeader = $request->header('Authorization');
-    if (!$authHeader || !preg_match('/^Bearer\s+/i', $authHeader)) {
-        return response()->json([
-            'error' => 'AUTH_REQUIRED',
-            'message' => 'Authorization: Bearer token is required for personal operations'
-        ], 401);
-    }
+Route::post('/v1/reservations', ['middleware' => 'auth.ctx'], function (\Illuminate\Http\Request $request) {
+    // WP-13: AuthContext middleware handles JWT verification and sets requester_user_id
     
     // Require Idempotency-Key header
     $idempotencyKey = $request->header('Idempotency-Key');
@@ -532,9 +892,9 @@ Route::post('/v1/reservations', function (\Illuminate\Http\Request $request) {
     }
     
     // Idempotency check (MUST be before overlap check to avoid false conflicts)
-    // For GENESIS: use requester_user_id if available, else use a default scope
-    $scopeType = 'user'; // Default for GENESIS
-    $scopeId = $request->header('X-Requester-User-Id') ?? 'genesis-default';
+    // WP-13: Get requester_user_id from request attributes (set by AuthContext middleware)
+    $scopeType = 'user';
+    $scopeId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
     $requestHash = hash('sha256', json_encode($validated));
     
     $existingIdempotency = DB::table('idempotency_keys')
@@ -596,9 +956,10 @@ Route::post('/v1/reservations', function (\Illuminate\Http\Request $request) {
     }
     
     // Create reservation
+    // WP-13: Get requester_user_id from request attributes (set by AuthContext middleware)
     $reservationId = \Illuminate\Support\Str::uuid()->toString();
     $providerTenantId = $listing->tenant_id;
-    $requesterUserId = $request->header('X-Requester-User-Id') ? generate_tenant_uuid($request->header('X-Requester-User-Id')) : null;
+    $requesterUserId = $request->attributes->get('requester_user_id');
     
     DB::table('reservations')->insert([
         'id' => $reservationId,
@@ -675,8 +1036,9 @@ Route::post('/v1/reservations/{id}/accept', function ($id, \Illuminate\Http\Requ
     }
     
     // Membership enforcement (WP-8): Validate tenant_id format and membership
+    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
     $membershipClient = new \App\Core\MembershipClient();
-    $userId = $request->header('X-Requester-User-Id') ?? 'genesis-default';
+    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
     $authToken = $request->header('Authorization'); // Forward Authorization header for strict mode
     
     // Validate tenant_id format (WP-8: store-scope endpoints require valid UUID format)
@@ -949,15 +1311,8 @@ Route::get('/v1/reservations', function (\Illuminate\Http\Request $request) {
 
 // Order Spine Endpoints (WP-6)
 // POST /v1/orders - Create order
-Route::post('/v1/orders', function (\Illuminate\Http\Request $request) {
-    // Authorization enforcement (WP-8): PERSONAL write requires Authorization header
-    $authHeader = $request->header('Authorization');
-    if (!$authHeader || !preg_match('/^Bearer\s+/i', $authHeader)) {
-        return response()->json([
-            'error' => 'AUTH_REQUIRED',
-            'message' => 'Authorization: Bearer token is required for personal operations'
-        ], 401);
-    }
+Route::post('/v1/orders', ['middleware' => 'auth.ctx'], function (\Illuminate\Http\Request $request) {
+    // WP-13: AuthContext middleware handles JWT verification and sets requester_user_id
     
     // Require Idempotency-Key header
     $idempotencyKey = $request->header('Idempotency-Key');
@@ -995,8 +1350,9 @@ Route::post('/v1/orders', function (\Illuminate\Http\Request $request) {
     }
     
     // Idempotency check (MUST be before order creation)
+    // WP-13: Get requester_user_id from request attributes (set by AuthContext middleware)
     $scopeType = 'user'; // Personal scope for buyer
-    $scopeId = $request->header('X-Requester-User-Id') ? generate_tenant_uuid($request->header('X-Requester-User-Id')) : 'genesis-default';
+    $scopeId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
     $requestHash = hash('sha256', json_encode($validated));
     
     $existingIdempotency = DB::table('idempotency_keys')
@@ -1014,9 +1370,10 @@ Route::post('/v1/orders', function (\Illuminate\Http\Request $request) {
     }
     
     // Create order
+    // WP-13: Get requester_user_id from request attributes (set by AuthContext middleware)
     $orderId = \Illuminate\Support\Str::uuid()->toString();
     $sellerTenantId = $listing->tenant_id;
-    $buyerUserId = $request->header('X-Requester-User-Id') ? generate_tenant_uuid($request->header('X-Requester-User-Id')) : null;
+    $buyerUserId = $request->attributes->get('requester_user_id');
     
     DB::table('orders')->insert([
         'id' => $orderId,
@@ -1106,15 +1463,8 @@ Route::get('/v1/reservations/{id}', function ($id) {
 
 // Rental Spine Endpoints (WP-7)
 // POST /v1/rentals - Create rental request
-Route::post('/v1/rentals', function (\Illuminate\Http\Request $request) {
-    // Authorization enforcement (WP-8): PERSONAL write requires Authorization header
-    $authHeader = $request->header('Authorization');
-    if (!$authHeader || !preg_match('/^Bearer\s+/i', $authHeader)) {
-        return response()->json([
-            'error' => 'AUTH_REQUIRED',
-            'message' => 'Authorization: Bearer token is required for personal operations'
-        ], 401);
-    }
+Route::post('/v1/rentals', ['middleware' => 'auth.ctx'], function (\Illuminate\Http\Request $request) {
+    // WP-13: AuthContext middleware handles JWT verification and sets requester_user_id
     
     // Require Idempotency-Key header
     $idempotencyKey = $request->header('Idempotency-Key');
@@ -1150,8 +1500,9 @@ Route::post('/v1/rentals', function (\Illuminate\Http\Request $request) {
     }
     
     // Idempotency check (MUST be before overlap check to avoid false conflicts)
-    $scopeType = 'user'; // Default for GENESIS
-    $scopeId = $request->header('X-Requester-User-Id') ? generate_tenant_uuid($request->header('X-Requester-User-Id')) : 'genesis-default';
+    // WP-13: Get requester_user_id from request attributes (set by AuthContext middleware)
+    $scopeType = 'user';
+    $scopeId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
     $requestHash = hash('sha256', json_encode($validated));
     
     $existingIdempotency = DB::table('idempotency_keys')
@@ -1193,14 +1544,15 @@ Route::post('/v1/rentals', function (\Illuminate\Http\Request $request) {
     }
     
     // Create rental
+    // WP-13: Get requester_user_id from request attributes (set by AuthContext middleware)
     $rentalId = \Illuminate\Support\Str::uuid()->toString();
     $providerTenantId = $listing->tenant_id;
-    $renterUserId = $request->header('X-Requester-User-Id') ? generate_tenant_uuid($request->header('X-Requester-User-Id')) : null;
+    $renterUserId = $request->attributes->get('requester_user_id');
     
     if (!$renterUserId) {
         return response()->json([
             'error' => 'VALIDATION_ERROR',
-            'message' => 'X-Requester-User-Id header is required'
+            'message' => 'Authorization token required (requester_user_id missing)'
         ], 422);
     }
     
@@ -1253,8 +1605,9 @@ Route::post('/v1/rentals/{id}/accept', function ($id, \Illuminate\Http\Request $
     }
     
     // Membership enforcement (WP-8): Validate tenant_id format and membership
+    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
     $membershipClient = new \App\Core\MembershipClient();
-    $userId = $request->header('X-Requester-User-Id') ?? 'genesis-default';
+    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
     $authToken = $request->header('Authorization'); // Forward Authorization header for strict mode
     
     // Validate tenant_id format (WP-8: store-scope endpoints require valid UUID format)

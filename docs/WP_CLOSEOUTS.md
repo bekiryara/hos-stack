@@ -690,6 +690,62 @@ git status --porcelain
 
 ---
 
+## WP-9: Offers/Pricing Spine (Marketplace)
+
+**Status:** COMPLETE  
+**Date:** 2026-01-17
+
+### Purpose
+
+Implement Offers/Pricing Spine for Marketplace with listing_offers table and pricing endpoints. Supports pricing packages/offers with billing models (one_time|per_hour|per_day|per_person).
+
+### Deliverables
+
+1. **Database Migration:**
+   - Created `listing_offers` table with fields: id, listing_id, provider_tenant_id, code, name, price_amount, price_currency, billing_model, attributes_json, status, created_at, updated_at
+   - Indexes: (listing_id, status), (provider_tenant_id, status), UNIQUE (listing_id, code)
+   - Foreign key: listing_id -> listings.id (on delete cascade)
+
+2. **API Endpoints:**
+   - `POST /api/v1/listings/{id}/offers` - Create offer (requires X-Active-Tenant-Id, Idempotency-Key)
+   - `GET /api/v1/listings/{id}/offers` - List offers for listing (active only)
+   - `GET /api/v1/offers/{id}` - Get single offer
+   - `POST /api/v1/offers/{id}/activate` - Activate offer (requires X-Active-Tenant-Id)
+   - `POST /api/v1/offers/{id}/deactivate` - Deactivate offer (requires X-Active-Tenant-Id)
+
+3. **Validation & Security:**
+   - Code unique within listing (VALIDATION_ERROR if duplicate)
+   - Billing model enum validation (one_time|per_hour|per_day|per_person)
+   - Price amount >= 0 (VALIDATION_ERROR if negative)
+   - Currency 3 chars (VALIDATION_ERROR if invalid)
+   - Tenant ownership enforced (FORBIDDEN_SCOPE if wrong tenant)
+   - Idempotency enforced via idempotency_keys table (tenant scope)
+
+4. **Ops Contract Check:**
+   - Created `ops/offer_contract_check.ps1` testing all 8 scenarios
+   - All 8/8 tests PASS
+
+5. **Spine Check Integration:**
+   - Updated `ops/pazar_spine_check.ps1` with WP-9 Offer Contract Check (step 9)
+
+### Commands
+
+```powershell
+# Run migration
+docker compose exec pazar-app php artisan migrate
+
+# Run contract check
+.\ops\offer_contract_check.ps1
+
+# Run spine check (all WP checks)
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp9_offers_spine_pass.md`
+
+---
+
 ## WP-11 Account Portal Read Aggregation (Safe)
 
 **Status:** COMPLETE (Frontend) / PARTIAL (Backend Endpoints Missing)  
@@ -790,6 +846,63 @@ Add read-only backend GET endpoints for Account Portal (WP-11 frontend). Persona
 
 ### PASS Evidence
 - `docs/PROOFS/wp12_account_portal_backend_pass.md`
+
+---
+
+## WP-13: Auth Context Hardening (Remove X-Requester Header)
+
+**Status:** COMPLETE  
+**Date:** 2026-01-17
+
+### Purpose
+
+Remove X-Requester-User-Id header dependency from Pazar API. Requester user identity is now extracted from Authorization Bearer JWT token (sub claim) via AuthContext middleware. Personal scope endpoints require JWT authentication. Store scope endpoints continue to use X-Active-Tenant-Id header.
+
+### Deliverables
+
+1. **AuthContext Middleware:**
+   - Created `work/pazar/app/Http/Middleware/AuthContext.php`
+   - Requires `Authorization: Bearer <token>` header (401 AUTH_REQUIRED if missing)
+   - Verifies JWT token using HS256 algorithm (same secret as HOS)
+   - Extracts user ID from token payload (sub claim preferred, fallback to user_id)
+   - Sets `requester_user_id` as request attribute
+   - Registered in `bootstrap/app.php` as route middleware alias `auth.ctx`
+
+2. **Routes Updated:**
+   - All `X-Requester-User-Id` header usage removed (14 occurrences)
+   - Replaced with `$request->attributes->get('requester_user_id')`
+   - Personal scope endpoints use `auth.ctx` middleware:
+     - `POST /api/v1/reservations`
+     - `POST /api/v1/orders`
+     - `POST /api/v1/rentals`
+   - Store scope endpoints continue to use `X-Active-Tenant-Id` header
+
+3. **Ops Scripts Updated:**
+   - All `X-Requester-User-Id` header usage removed
+   - Authorization header now required for personal scope endpoints
+   - Test token from `$env:PRODUCT_TEST_AUTH` or `$env:HOS_TEST_AUTH`
+
+4. **Docker Compose Configuration:**
+   - Added `HOS_JWT_SECRET` and `JWT_SECRET` to `pazar-app` service
+
+### Commands
+
+```powershell
+# Run contract checks
+.\ops\reservation_contract_check.ps1
+.\ops\order_contract_check.ps1
+.\ops\rental_contract_check.ps1
+
+# Run spine check
+.\ops\pazar_spine_check.ps1
+
+# Verify no X-Requester-User-Id usage
+Select-String -Path "work/pazar/routes/api.php" -Pattern "X-Requester-User-Id"
+# Should return: No matches found
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp13_auth_context_pass.md`
 
 ---
 
