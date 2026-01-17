@@ -10,3 +10,5 @@ create table if not exists messages (
 
 create index if not exists idx_messages_thread on messages (thread_id, created_at desc);
 
+
+

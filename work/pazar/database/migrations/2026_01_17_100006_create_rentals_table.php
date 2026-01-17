@@ -9,27 +9,26 @@ return new class extends Migration
     /**
      * Run the migrations.
      * 
-     * WP-4 Reservation Thin Slice: Transactions Spine.
-     * Creates reservations table for marketplace transactions.
+     * WP-7 Rentals Thin Slice: Transactions Spine.
+     * Creates rentals table for marketplace rental transactions.
      */
     public function up(): void
     {
-        Schema::create('reservations', function (Blueprint $table) {
+        Schema::create('rentals', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('listing_id');
+            $table->uuid('renter_user_id'); // User renting the listing
             $table->uuid('provider_tenant_id'); // Listing owner tenant
-            $table->uuid('requester_user_id')->nullable(); // Optional for GENESIS phase
-            $table->timestamp('slot_start');
-            $table->timestamp('slot_end');
-            $table->integer('party_size'); // Number of people
-            $table->string('status', 20)->default('requested'); // requested|accepted|cancelled|completed
+            $table->timestamp('start_at');
+            $table->timestamp('end_at');
+            $table->string('status', 20)->default('requested'); // requested|accepted|active|completed|cancelled
             $table->timestamps();
 
             // Indexes
             $table->index('listing_id');
-            $table->index('provider_tenant_id');
-            $table->index(['listing_id', 'status']);
-            $table->index(['listing_id', 'slot_start', 'slot_end']); // For overlap checks
+            $table->index(['renter_user_id', 'status']);
+            $table->index(['provider_tenant_id', 'status']);
+            $table->index(['listing_id', 'start_at', 'end_at']); // For overlap checks
             
             // Foreign key to listings
             $table->foreign('listing_id')->references('id')->on('listings')->onDelete('cascade');
@@ -41,11 +40,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('reservations');
+        Schema::dropIfExists('rentals');
     }
 };
-
-
-
-
 

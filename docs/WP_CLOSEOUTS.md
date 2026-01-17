@@ -349,3 +349,36 @@ docker compose exec pazar-app php artisan migrate
 ### PASS Evidence
 - `docs/PROOFS/wp6_orders_spine_pass.md`
 
+---
+
+## WP-7: Rentals Thin Slice
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** §§ 6.3, 6.7, 17.4
+
+### Purpose
+Complete Marketplace Transactions spine with Rentals (date-range rentals). Rentals can be created with idempotency support, validated against published listings, checked for date overlaps, and accepted by provider tenants.
+
+### Deliverables
+- `work/pazar/database/migrations/2026_01_17_100006_create_rentals_table.php` - Rentals table migration
+- `work/pazar/routes/api.php` - POST /api/v1/rentals, POST /api/v1/rentals/{id}/accept, GET /api/v1/rentals/{id} endpoints
+- `ops/rental_contract_check.ps1` - Rental API contract validation
+- `ops/pazar_spine_check.ps1` - Updated to include WP-7 check as step 5
+- `docs/PROOFS/wp7_rentals_spine_pass.md` - Proof document
+
+### Commands
+```powershell
+# Apply migration
+docker compose exec pazar-app php artisan migrate
+
+# Verify rental API endpoints
+.\ops\rental_contract_check.ps1
+
+# Verify full Pazar spine (includes WP-7)
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp7_rentals_spine_pass.md`
+
+---
