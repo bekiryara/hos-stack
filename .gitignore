@@ -32,3 +32,11 @@ ops/diffs/
 
 # Temp files
 _temp_*.txt
+
+# Vendor / dependencies (NO TRACK policy)
+work/pazar/vendor/
+work/pazar/node_modules/
+**/node_modules/
+**/dist/
+_tmp*
+.DS_Store
