@@ -186,7 +186,7 @@ Route::middleware('auth.ctx')->post('/v1/reservations', function (\Illuminate\Ht
 });
 
 // POST /v1/reservations/{id}/accept - Accept reservation
-Route::post('/v1/reservations/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
+Route::middleware('auth.ctx')->post('/v1/reservations/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
     // WP-4.1: Error normalization - wrap entire handler in try-catch
     try {
     // Require X-Active-Tenant-Id header

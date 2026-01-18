@@ -18,14 +18,30 @@ Write-Host ""
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
 $tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo
-# WP-13: Get test auth token from env or use default test token
+
+# WP-20: Token preflight - require real JWT token
 $authToken = $env:PRODUCT_TEST_AUTH
 if (-not $authToken) {
-    $authToken = $env:HOS_TEST_AUTH
+    Write-Host "FAIL: PRODUCT_TEST_AUTH environment variable is required" -ForegroundColor Red
+    Write-Host "  Set it to a valid Bearer JWT token: `$env:PRODUCT_TEST_AUTH='Bearer <jwt-token>'" -ForegroundColor Yellow
+    Write-Host "  JWT format: header.payload.signature (must contain two dots)" -ForegroundColor Yellow
+    exit 1
 }
-if (-not $authToken) {
-    # Default test token (dummy JWT for testing - must have valid sub claim)
-    $authToken = "Bearer test-token-genesis-wp13"
+
+# Validate JWT format (must contain two dots: header.payload.signature)
+$tokenParts = $authToken -split '\.'
+if ($tokenParts.Count -lt 3 -or -not $authToken.StartsWith("Bearer ")) {
+    Write-Host "FAIL: PRODUCT_TEST_AUTH must be a valid Bearer JWT token" -ForegroundColor Red
+    Write-Host "  Format: Bearer <header>.<payload>.<signature>" -ForegroundColor Yellow
+    Write-Host "  Current value: $($authToken.Substring(0, [Math]::Min(50, $authToken.Length)))..." -ForegroundColor Yellow
+    exit 1
+}
+
+# Optional provider token (for accept tests)
+$providerAuth = $env:PROVIDER_TEST_AUTH
+if (-not $providerAuth) {
+    $providerAuth = $authToken
+    Write-Host "[WARN] PROVIDER_TEST_AUTH not set, using PRODUCT_TEST_AUTH for provider operations" -ForegroundColor Yellow
 }
 $listingId = $null
 $reservationId = $null
@@ -215,15 +231,25 @@ try {
     }
 } catch {
     $statusCode = $null
+    $responseBody = $null
     if ($_.Exception.Response) {
         try {
             $statusCode = $_.Exception.Response.StatusCode.value__
+            $stream = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($stream)
+            $responseBody = $reader.ReadToEnd()
+            $reader.Close()
+            $stream.Close()
         } catch {
         }
     }
     Write-Host "FAIL: Create reservation request failed: $($_.Exception.Message)" -ForegroundColor Red
     if ($statusCode) {
         Write-Host "  Status Code: $statusCode" -ForegroundColor Yellow
+    }
+    if ($responseBody) {
+        $bodySnippet = $responseBody.Substring(0, [Math]::Min(200, $responseBody.Length))
+        Write-Host "  Response: $bodySnippet" -ForegroundColor Gray
     }
     $hasFailures = $true
 }
@@ -427,6 +453,7 @@ if ($listingId) {
         
         $acceptHeaders = @{
             "X-Active-Tenant-Id" = $providerTenantId
+            "Authorization" = $providerAuth  # WP-20: Accept endpoint requires auth.ctx middleware
         }
         $acceptResponse = Invoke-RestMethod -Uri $acceptUrl -Method Post -Headers $acceptHeaders -TimeoutSec 10 -ErrorAction Stop
         
@@ -439,15 +466,25 @@ if ($listingId) {
         }
     } catch {
         $statusCode = $null
+        $responseBody = $null
         if ($_.Exception.Response) {
             try {
                 $statusCode = $_.Exception.Response.StatusCode.value__
+                $stream = $_.Exception.Response.GetResponseStream()
+                $reader = New-Object System.IO.StreamReader($stream)
+                $responseBody = $reader.ReadToEnd()
+                $reader.Close()
+                $stream.Close()
             } catch {
             }
         }
         Write-Host "FAIL: Accept reservation request failed: $($_.Exception.Message)" -ForegroundColor Red
         if ($statusCode) {
             Write-Host "  Status Code: $statusCode" -ForegroundColor Yellow
+        }
+        if ($responseBody) {
+            $bodySnippet = $responseBody.Substring(0, [Math]::Min(200, $responseBody.Length))
+            Write-Host "  Response: $bodySnippet" -ForegroundColor Gray
         }
         $hasFailures = $true
     }
@@ -491,12 +528,12 @@ if ($listingId) {
         $rejectTestCreateResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $rejectTestReservationBody -Headers $rejectTestHeaders -TimeoutSec 10 -ErrorAction Stop
         $rejectTestReservationId = $rejectTestCreateResponse.id
         
-        # Now test reject (missing header)
+        # Now test reject (missing X-Active-Tenant-Id header, but keep Authorization)
         $acceptUrl = "${pazarBaseUrl}/api/v1/reservations/${rejectTestReservationId}/accept"
         
         try {
             $headers = @{
-                # No X-Active-Tenant-Id header
+                "Authorization" = $providerAuth  # WP-20: Keep Authorization, omit X-Active-Tenant-Id
             }
             $rejectResponse = Invoke-RestMethod -Uri $acceptUrl -Method Post -Headers $headers -TimeoutSec 10 -ErrorAction Stop
             Write-Host "FAIL: Request without header should have failed but succeeded" -ForegroundColor Red

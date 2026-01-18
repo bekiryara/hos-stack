@@ -136,7 +136,7 @@ Route::middleware('auth.ctx')->post('/v1/rentals', function (\Illuminate\Http\Re
 });
 
 // POST /v1/rentals/{id}/accept - Accept rental
-Route::post('/v1/rentals/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
+Route::middleware('auth.ctx')->post('/v1/rentals/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
     // Require X-Active-Tenant-Id header
     $tenantIdHeader = $request->header('X-Active-Tenant-Id');
     if (!$tenantIdHeader) {
