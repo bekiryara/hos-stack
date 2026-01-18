@@ -16,6 +16,53 @@
 
 ---
 
+## WP-28: Listing 500 Elimination + Store-Scope Header Hardening
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-28
+
+### Purpose
+Make Listing Contract Check PASS again; eliminate HTTP 500 on POST /api/v1/listings endpoints. Ensure missing X-Active-Tenant-Id returns 400 (not 500).
+
+### Deliverables
+- `work/pazar/routes/api/03a_listings_write.php` (MOD): Added null guards and schema table checks
+- `docs/PROOFS/wp28_listing_contract_500_fix_pass.md` - Proof document
+
+### Changes
+1. **Schema::hasTable Guard:**
+   - Added `Schema::hasTable('category_filter_schema')` check before `hasColumn`
+   - Prevents exception if table doesn't exist (500 → no error)
+
+2. **tenant_id Null Guard:**
+   - Added null check in POST /v1/listings handler (lines 13-19)
+   - Added null check in POST /v1/listings/{id}/publish handler (lines 128-134)
+   - Returns 400 missing_header if tenant_id is null (500 → 400)
+
+### Commands
+```powershell
+# Test listing endpoints
+.\ops\listing_contract_check.ps1
+
+# Verify boundary checks still PASS
+.\ops\boundary_contract_check.ps1
+
+# Full spine check
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp28_listing_contract_500_fix_pass.md` - Proof document with root cause analysis and fixes
+- POST /api/v1/listings without header → 400 (was 500)
+- POST /api/v1/listings/{id}/publish without header → 400 (was 500)
+- Schema::hasColumn guarded with hasTable check
+
+### Notes
+- Zero behavior change (only error handling improved)
+- Minimal diff (only 3 defensive checks added)
+- Defensive programming (null guards ensure 400 instead of 500)
+
+---
+
 ## WP-27: Repo Hygiene + Closeout Alignment
 
 **Status:** ✅ COMPLETE  

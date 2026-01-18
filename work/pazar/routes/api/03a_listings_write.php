@@ -9,7 +9,14 @@ use Illuminate\Support\Facades\Schema;
 // WP-26: Tenant scope enforced via tenant.scope middleware
 Route::middleware('tenant.scope')->post('/v1/listings', function (\Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
+    // WP-28: Guard against null tenant_id (fail-fast if middleware didn't run)
     $tenantId = $request->attributes->get('tenant_id');
+    if (!$tenantId) {
+        return response()->json([
+            'error' => 'missing_header',
+            'message' => 'X-Active-Tenant-Id header is required'
+        ], 400);
+    }
     
     // Validate required fields
     $validated = $request->validate([
@@ -24,7 +31,8 @@ Route::middleware('tenant.scope')->post('/v1/listings', function (\Illuminate\Ht
     
     // Get category filter schema to validate required attributes
     $categoryId = $validated['category_id'];
-    $hasNewFields = Schema::hasColumn('category_filter_schema', 'required');
+    // WP-28: Guard schema/table checks (hasTable before hasColumn)
+    $hasNewFields = Schema::hasTable('category_filter_schema') && Schema::hasColumn('category_filter_schema', 'required');
     
     $requiredAttributes = [];
     if ($hasNewFields) {
@@ -123,7 +131,14 @@ Route::middleware('tenant.scope')->post('/v1/listings', function (\Illuminate\Ht
 // WP-26: Tenant scope enforced via tenant.scope middleware
 Route::middleware('tenant.scope')->post('/v1/listings/{id}/publish', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
+    // WP-28: Guard against null tenant_id (fail-fast if middleware didn't run)
     $tenantId = $request->attributes->get('tenant_id');
+    if (!$tenantId) {
+        return response()->json([
+            'error' => 'missing_header',
+            'message' => 'X-Active-Tenant-Id header is required'
+        ], 400);
+    }
     
     // Find listing
     $listing = DB::table('listings')->where('id', $id)->first();
