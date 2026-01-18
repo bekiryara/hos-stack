@@ -5,6 +5,59 @@
 
 ---
 
+## WP-21: Routes Guardrails (Budget + Drift)
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-21
+
+### Purpose
+No behavior change. Prevent routes from re-growing into a monolith and prevent "legacy/unreferenced routes files" drift. Add deterministic guard that enforces line-count budgets and fails if there are route module files not referenced by the entrypoint.
+
+### Deliverables
+- `ops/pazar_routes_guard.ps1` - Routes guardrails script (budget + drift detection)
+- `ops/pazar_spine_check.ps1` - Added Step 0 (routes guardrails check, fail-fast)
+- `docs/PROOFS/wp21_routes_guardrails_pass.md` - Proof document
+
+### Changes
+1. **Routes Guard Script:**
+   - Verifies entry point and modules directory exist
+   - Runs route duplicate guard first (fail-fast)
+   - Parses `api.php` to extract referenced modules from `require_once` statements
+   - Checks for missing referenced modules (fail if any)
+   - Checks for unreferenced modules (fail if any legacy drift)
+   - Enforces line-count budgets:
+     - Entry point (`api.php`): max 120 lines
+     - Each module: max 900 lines
+   - Prints actual line counts for all files
+
+2. **Pazar Spine Check Integration:**
+   - Added Step 0 at the very beginning: runs `pazar_routes_guard.ps1`
+   - Fail-fast: if guard fails, stops immediately (does not run contract checks)
+   - Does not change existing behavior of other steps
+
+### Commands
+```powershell
+# Run routes guardrails check standalone
+.\ops\pazar_routes_guard.ps1
+
+# Run pazar spine check (includes routes guardrails as Step 0)
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- Routes guard PASS (all referenced modules exist, no unreferenced modules)
+- Route duplicate guard PASS (27 unique routes, no duplicates)
+- Entry point budget met (18 lines < 120)
+- All module budgets met (largest: 03_listings.php with 871 lines < 900)
+- Guard integrated into pazar_spine_check (fail-fast behavior)
+
+### Notes
+- Guard prevents routes from re-growing into monolith (budget enforcement)
+- Guard prevents legacy drift (unreferenced module detection)
+- Zero behavior change (only guardrails added)
+
+---
+
 ## WP-20: Reservation Routes + Auth Preflight Stabilization
 
 **Status:** ✅ COMPLETE  
