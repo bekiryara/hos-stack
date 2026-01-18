@@ -67,6 +67,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'resolve.tenant' => \App\Http\Middleware\ResolveTenant::class,
             'tenant.user' => \App\Http\Middleware\EnsureTenantUser::class,
             'tenant.role' => \App\Http\Middleware\EnsureTenantRole::class,
+            'tenant.scope' => \App\Http\Middleware\TenantScope::class, // WP-26: Store-scope X-Active-Tenant-Id + membership enforcement
             'auth.any' => \App\Http\Middleware\AuthAny::class,
             'auth.ctx' => \App\Http\Middleware\AuthContext::class, // WP-13: JWT auth context
             'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,

@@ -6,39 +6,10 @@ use Illuminate\Support\Facades\DB;
 // WP-9: Offers/Pricing Spine Endpoints
 
 // POST /v1/listings/{id}/offers - Create offer
-Route::post('/v1/listings/{id}/offers', function ($id, \Illuminate\Http\Request $request) {
-    // Require X-Active-Tenant-Id header
-    $tenantIdHeader = $request->header('X-Active-Tenant-Id');
-    if (!$tenantIdHeader) {
-        return response()->json([
-            'error' => 'missing_header',
-            'message' => 'X-Active-Tenant-Id header is required'
-        ], 400);
-    }
-    
-    // Membership enforcement (WP-8): Validate tenant_id format and membership
-    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
-    $membershipClient = new \App\Core\MembershipClient();
-    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
-    $authToken = $request->header('Authorization');
-    
-    // Validate tenant_id format
-    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
-        return response()->json([
-            'error' => 'FORBIDDEN_SCOPE',
-            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
-        ], 403);
-    }
-    
-    // Validate membership
-    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
-        return response()->json([
-            'error' => 'FORBIDDEN_SCOPE',
-            'message' => 'Invalid membership or tenant access denied'
-        ], 403);
-    }
-    
-    $tenantId = $tenantIdHeader;
+// WP-26: Tenant scope enforced via tenant.scope middleware
+Route::middleware('tenant.scope')->post('/v1/listings/{id}/offers', function ($id, \Illuminate\Http\Request $request) {
+    // WP-26: tenant_id is set by TenantScope middleware
+    $tenantId = $request->attributes->get('tenant_id');
     
     // Require Idempotency-Key header
     $idempotencyKey = $request->header('Idempotency-Key');
@@ -215,39 +186,10 @@ Route::get('/v1/offers/{id}', function ($id) {
 });
 
 // POST /v1/offers/{id}/activate - Activate offer
-Route::post('/v1/offers/{id}/activate', function ($id, \Illuminate\Http\Request $request) {
-    // Require X-Active-Tenant-Id header
-    $tenantIdHeader = $request->header('X-Active-Tenant-Id');
-    if (!$tenantIdHeader) {
-        return response()->json([
-            'error' => 'missing_header',
-            'message' => 'X-Active-Tenant-Id header is required'
-        ], 400);
-    }
-    
-    // Membership enforcement (WP-8): Validate tenant_id format and membership
-    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
-    $membershipClient = new \App\Core\MembershipClient();
-    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
-    $authToken = $request->header('Authorization');
-    
-    // Validate tenant_id format
-    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
-        return response()->json([
-            'error' => 'FORBIDDEN_SCOPE',
-            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
-        ], 403);
-    }
-    
-    // Validate membership
-    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
-        return response()->json([
-            'error' => 'FORBIDDEN_SCOPE',
-            'message' => 'Invalid membership or tenant access denied'
-        ], 403);
-    }
-    
-    $tenantId = $tenantIdHeader;
+// WP-26: Tenant scope enforced via tenant.scope middleware
+Route::middleware('tenant.scope')->post('/v1/offers/{id}/activate', function ($id, \Illuminate\Http\Request $request) {
+    // WP-26: tenant_id is set by TenantScope middleware
+    $tenantId = $request->attributes->get('tenant_id');
     
     // Find offer
     $offer = DB::table('listing_offers')->where('id', $id)->first();
@@ -292,39 +234,10 @@ Route::post('/v1/offers/{id}/activate', function ($id, \Illuminate\Http\Request 
 });
 
 // POST /v1/offers/{id}/deactivate - Deactivate offer
-Route::post('/v1/offers/{id}/deactivate', function ($id, \Illuminate\Http\Request $request) {
-    // Require X-Active-Tenant-Id header
-    $tenantIdHeader = $request->header('X-Active-Tenant-Id');
-    if (!$tenantIdHeader) {
-        return response()->json([
-            'error' => 'missing_header',
-            'message' => 'X-Active-Tenant-Id header is required'
-        ], 400);
-    }
-    
-    // Membership enforcement (WP-8): Validate tenant_id format and membership
-    // WP-13: Get userId from token (if available) or use genesis-default (backward compatibility)
-    $membershipClient = new \App\Core\MembershipClient();
-    $userId = $request->attributes->get('requester_user_id') ?? 'genesis-default';
-    $authToken = $request->header('Authorization');
-    
-    // Validate tenant_id format
-    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
-        return response()->json([
-            'error' => 'FORBIDDEN_SCOPE',
-            'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
-        ], 403);
-    }
-    
-    // Validate membership
-    if (!$membershipClient->validateMembership($userId, $tenantIdHeader, $authToken)) {
-        return response()->json([
-            'error' => 'FORBIDDEN_SCOPE',
-            'message' => 'Invalid membership or tenant access denied'
-        ], 403);
-    }
-    
-    $tenantId = $tenantIdHeader;
+// WP-26: Tenant scope enforced via tenant.scope middleware
+Route::middleware('tenant.scope')->post('/v1/offers/{id}/deactivate', function ($id, \Illuminate\Http\Request $request) {
+    // WP-26: tenant_id is set by TenantScope middleware
+    $tenantId = $request->attributes->get('tenant_id');
     
     // Find offer
     $offer = DB::table('listing_offers')->where('id', $id)->first();

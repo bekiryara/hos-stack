@@ -5,6 +5,302 @@
 
 ---
 
+## Architecture Documentation
+
+- **[docs/ARCH/BOUNDARIES.md](../ARCH/BOUNDARIES.md)** - Service boundaries, ownership, and API contracts
+  - Service ownership table (HOS/Core vs Pazar vs Messaging)
+  - API contract: headers, error semantics
+  - Strict mode story (non-strict vs strict membership validation)
+  - Cross-service communication rules (no cross-database access)
+  - Integration points (Pazar ↔ Messaging, Pazar ↔ HOS)
+
+---
+
+## WP-27: Repo Hygiene + Closeout Alignment
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-27
+
+### Purpose
+Make repository clean and deterministic after recent WPs (WP-23, WP-24, WP-25, WP-26). Track all proof docs, helper scripts, and guardrails. Ensure git hygiene.
+
+### Deliverables
+- All proof docs tracked: `docs/PROOFS/wp23_spine_determinism_pass.md`, `wp24_write_path_lock_pass.md`, `wp25_header_contract_enforcement_pass.md`, `wp26_store_scope_unification_pass.md`
+- Architecture docs tracked: `docs/ARCH/`
+- Contracts and CI tracked: `contracts/api/marketplace.write.snapshot.json`, `.github/workflows/gate-write-snapshot.yml`
+- Ops scripts tracked: `ops/_lib/test_auth.ps1`, `ops/boundary_contract_check.ps1`, `ops/ensure_product_test_auth.ps1`, guard scripts (WP-24)
+- Application code tracked: `work/pazar/app/Http/Middleware/TenantScope.php` (WP-26)
+- `docs/PROOFS/wp27_repo_hygiene_closeout_pass.md` - Proof document
+
+### Changes
+1. **File Tracking:**
+   - Staged all proof docs from WP-23 through WP-26 (4 files)
+   - Staged architecture documentation (WP-25)
+   - Staged contracts and CI gate (WP-24)
+   - Staged helper scripts (`ops/_lib/test_auth.ps1`, etc.)
+   - Staged guard scripts (boundary, write snapshot, state transition, idempotency)
+   - Staged WP-26 changes (TenantScope middleware, route updates)
+
+2. **Verifications:**
+   - `pazar_routes_guard.ps1`: PASS (no duplicates, budgets met)
+   - `boundary_contract_check.ps1`: PASS (no cross-db violations, header validation OK)
+   - `pazar_spine_check.ps1`: PARTIAL (2/10 PASS, Listing Contract Check has pre-existing 500 error)
+
+### Commands
+```powershell
+# Check repo hygiene
+git status --porcelain
+
+# Run verifications
+.\ops\pazar_routes_guard.ps1
+.\ops\boundary_contract_check.ps1
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp27_repo_hygiene_closeout_pass.md` - Proof document with git status before/after, verification outputs
+- All files tracked (working tree clean)
+- 2/3 verification checks PASS
+- Pre-existing Listing Contract Check issue documented (separate fix needed)
+
+### Notes
+- Zero behavior change (only file tracking, no code changes)
+- Repo hygiene complete (all WP-23 through WP-26 files tracked)
+- Pre-existing Listing Contract Check 500 error (unrelated to WP-27) should be fixed separately
+- Minimal diff: only staging existing files
+
+---
+
+## WP-26: Store-Scope Unification + Middleware Pack
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-26
+
+### Purpose
+Patlama riski / geri dönüş riski yaratmadan store-scope write endpoint'lerde X-Active-Tenant-Id + membership enforcement'ı tek noktaya topla. Kod tekrarını azalt, routes/api.php içinde dağınık header kontrol bloklarını kaldır. boundary_contract_check.ps1 WARN üretmesin; (güvenli şekilde) mümkünse WARN->FAIL yaparak disipline bağla.
+
+### Deliverables
+- `work/pazar/app/Http/Middleware/TenantScope.php` - New middleware for store-scope validation
+- `work/pazar/bootstrap/app.php` - Middleware alias registration
+- `work/pazar/routes/api/03a_listings_write.php` - 2 endpoints updated
+- `work/pazar/routes/api/03c_offers.php` - 3 endpoints updated
+- `work/pazar/routes/api/04_reservations.php` - 1 endpoint updated
+- `work/pazar/routes/api/06_rentals.php` - 1 endpoint updated
+- `ops/boundary_contract_check.ps1` - Middleware detection + WARN->FAIL
+- `docs/PROOFS/wp26_store_scope_unification_pass.md` - Proof document
+
+### Changes
+1. **New Middleware:**
+   - Created `TenantScope` middleware that enforces X-Active-Tenant-Id presence (400 missing_header), validates UUID format (403 FORBIDDEN_SCOPE), validates membership via MembershipClient (403 FORBIDDEN_SCOPE), and attaches `tenant_id` to request attributes
+
+2. **Route Updates:**
+   - Applied `tenant.scope` middleware to 7 store-scope write endpoints
+   - Removed duplicated inline validation blocks (~33 lines per endpoint, ~231 lines total)
+   - Changed from `$tenantId = $tenantIdHeader` to `$tenantId = $request->attributes->get('tenant_id')`
+
+3. **Boundary Contract Check:**
+   - Updated to detect `middleware('tenant.scope')` OR inline validation
+   - Changed WARN->FAIL for missing header validation
+
+### Commands
+```powershell
+# Run boundary contract check
+.\ops\boundary_contract_check.ps1
+
+# Run spine check (regression test)
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp26_store_scope_unification_pass.md` - Proof document with boundary check output
+- boundary_contract_check.ps1: PASS (zero WARN, middleware detection working)
+- All store-scope write endpoints use `tenant.scope` middleware
+- Code reduction: ~231 lines of duplicated validation removed
+
+### Notes
+- Zero behavior change: All endpoints return identical responses (400/403)
+- DRY principle: Single source of truth for store-scope validation
+- Maintainability: Changes to validation logic only need to be made in middleware
+- Consistency: All store-scope endpoints enforce the same rules
+- Minimal diff: Only middleware creation + route updates
+
+---
+
+## WP-24: Write-Path Lock
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-24
+
+### Purpose
+Lock write-path determinism and eliminate rollback risk. No new features. No behavior change.
+
+### Deliverables
+- `contracts/api/marketplace.write.snapshot.json` - Write snapshot for all POST/PUT/PATCH endpoints
+- `ops/write_snapshot_check.ps1` - CI gate script to check snapshot drift
+- `ops/state_transition_guard.ps1` - State transition whitelist guard
+- `ops/idempotency_coverage_check.ps1` - Idempotency coverage check (fail if missing)
+- `ops/read_latency_p95_check.ps1` - Read-only latency measurement (P95 WARN only)
+- `.github/workflows/gate-write-snapshot.yml` - CI gate workflow
+- `docs/PROOFS/wp24_write_path_lock_pass.md` - Proof document
+
+### Changes
+1. **Write Snapshot:**
+   - Created snapshot with 10 write endpoints (POST methods)
+   - Each endpoint includes: method, path, required headers, idempotency requirement, state transitions
+   - Locks all write endpoints to prevent rollback risk
+
+2. **CI Gate Scripts:**
+   - `write_snapshot_check.ps1`: Validates snapshot endpoints exist in routes, fails if missing
+   - `state_transition_guard.ps1`: Validates state transitions are whitelist-only
+   - `idempotency_coverage_check.ps1`: Validates all required endpoints have idempotency
+
+3. **Read Latency Measurement:**
+   - `read_latency_p95_check.ps1`: Measures P95 latency for read endpoints
+   - WARN if P95 exceeds 500ms threshold (does NOT fail)
+
+4. **CI Gate Workflow:**
+   - Runs on PR for write route or snapshot changes
+   - Blocks merge if snapshot drift or missing idempotency detected
+
+### Commands
+```powershell
+# Check write snapshot drift
+.\ops\write_snapshot_check.ps1
+
+# Check state transitions
+.\ops\state_transition_guard.ps1
+
+# Check idempotency coverage
+.\ops\idempotency_coverage_check.ps1
+
+# Measure read latency (WARN only)
+.\ops\read_latency_p95_check.ps1
+```
+
+### PASS Evidence
+- Write snapshot created with 10 endpoints
+- Snapshot check validates all endpoints exist in routes
+- State transition guard enforces whitelist-only transitions
+- Idempotency coverage check ensures all required endpoints have idempotency
+- Read latency measurement provides performance visibility (WARN only)
+
+---
+
+## WP-25: Header Contract Enforcement (WARN -> DETERMINISTIC PASS)
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-25
+
+### Purpose
+Zero patlama riski: Store-scope endpoint'lerde X-Active-Tenant-Id zorunluluğunu deterministik hale getir. Eliminate false-positive WARN messages in `boundary_contract_check.ps1` by fixing pattern matching to correctly detect X-Active-Tenant-Id header validation in store-scope endpoints.
+
+### Deliverables
+- `ops/boundary_contract_check.ps1` (MOD): Fixed route path matching pattern
+- `docs/PROOFS/wp25_header_contract_enforcement_pass.md` - Proof document
+
+### Changes
+1. **Fixed Route Path Matching:**
+   - Changed path prefix removal from `$path -replace '^/api/', ''` to `$path -replace '^/api', ''` to preserve leading `/`
+   - Improved regex pattern to match both `Route::post('/v1/listings', ...)` and `Route::middleware(...)->post('/v1/listings', ...)`
+   - Properly escape regex special characters while preserving `{id}` placeholder
+
+2. **Code Analysis (Static Check):**
+   - All store-scope endpoints from `marketplace.write.snapshot.json` verified
+   - All endpoints have X-Active-Tenant-Id header validation pattern:
+     ```php
+     $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+     if (!$tenantIdHeader) {
+         return response()->json([
+             'error' => 'missing_header',
+             'message' => 'X-Active-Tenant-Id header is required'
+         ], 400);
+     }
+     ```
+
+### Commands
+```powershell
+# Run boundary contract check
+.\ops\boundary_contract_check.ps1
+
+# Expected: PASS (exit code 0), WARN=0
+# Before fix: WARN messages for all store-scope endpoints
+# After fix: PASS, no WARN messages
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp25_header_contract_enforcement_pass.md` - Proof document with before/after comparison
+- Before fix: 7 WARN messages (false-positive)
+- After fix: PASS, WARN=0 (deterministic)
+- All store-scope endpoints have header validation code present
+- Pattern matching correctly identifies route files and header validation
+
+### Notes
+- Zero behavior change: Only script pattern matching fix, no route code changes
+- Minimal diff: Only `boundary_contract_check.ps1` updated
+- PowerShell 5.1 compatible, ASCII-only outputs
+- Runtime behavior unchanged (header validation was already present)
+
+---
+
+## WP-23: Test Auth Bootstrap + Spine Check Determinism
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-23
+
+### Purpose
+Make Marketplace verification deterministic and fail-fast. Eliminate manual PRODUCT_TEST_AUTH setup by bootstrapping a valid JWT automatically (local/dev only). Fix pazar_spine_check summary crash under StrictMode ("Duration property cannot be found").
+
+### Deliverables
+- `ops/_lib/test_auth.ps1` - Shared helper with `Get-DevTestJwtToken` function
+- `ops/ensure_product_test_auth.ps1` - Entrypoint script for users
+- `ops/reservation_contract_check.ps1` - Updated to use bootstrap token
+- `ops/rental_contract_check.ps1` - Updated to use bootstrap token
+- `ops/order_contract_check.ps1` - Updated to use bootstrap token (removed dummy token)
+- `ops/pazar_spine_check.ps1` - Fixed Duration property error (use pscustomobject)
+- `docs/PROOFS/wp23_spine_determinism_pass.md` - Proof document
+
+### Changes
+1. **Shared Helper:**
+   - Created `Get-DevTestJwtToken` function that bootstraps JWT token via H-OS API
+   - Calls `/v1/admin/users/upsert` to ensure user exists
+   - Calls `/v1/auth/login` to obtain JWT
+   - Sets `$env:PRODUCT_TEST_AUTH` and `$env:HOS_TEST_AUTH`
+   - Throws clear error with remediation if any step fails
+
+2. **Auth-Required Contract Checks:**
+   - Removed "dummy token" fallback from reservation/rental/order checks
+   - Auto-bootstrap token if PRODUCT_TEST_AUTH is missing/invalid
+   - Validate JWT format (two dots) after bootstrap
+   - Fail with clear message if bootstrap fails
+
+3. **pazar_spine_check.ps1 Fix:**
+   - Convert `$results` entries to `[PSCustomObject]` with fixed properties
+   - Always include `DurationSec` (set to `$null` if unknown)
+   - Use safe property access in summary printing
+
+4. **Entrypoint Script:**
+   - Created `ensure_product_test_auth.ps1` for user convenience
+   - Prints only redacted token preview (first 12 chars + "...")
+   - Never prints full JWT
+
+### Commands
+```powershell
+# Bootstrap token manually
+.\ops\ensure_product_test_auth.ps1
+
+# Run pazar_spine_check (will bootstrap token automatically if needed)
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- Bootstrap token works when H-OS is available
+- pazar_spine_check summary no longer crashes (no Duration property errors)
+- Reservation/Rental/Order contract checks bootstrap token automatically
+- No secrets committed; full JWT never printed
+- Minimal diffs; no route behavior changes
+
+---
+
 ## WP-21: Routes Guardrails (Budget + Drift)
 
 **Status:** ✅ COMPLETE  

@@ -18,14 +18,39 @@ Write-Host ""
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
 $tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo
-# WP-13: Get test auth token from env or use default test token
+
+# WP-23: Token bootstrap - auto-acquire if missing
 $authToken = $env:PRODUCT_TEST_AUTH
 if (-not $authToken) {
-    $authToken = $env:HOS_TEST_AUTH
+    Write-Host "[INFO] PRODUCT_TEST_AUTH not set, bootstrapping token..." -ForegroundColor Yellow
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $testAuthPath = Join-Path $scriptDir "_lib\test_auth.ps1"
+    if (Test-Path $testAuthPath) {
+        . $testAuthPath
+        try {
+            $rawToken = Get-DevTestJwtToken
+            $authToken = "Bearer $rawToken"
+        } catch {
+            Write-Host "FAIL: Failed to bootstrap JWT token" -ForegroundColor Red
+            Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Yellow
+            Write-Host "  Run: .\ops\ensure_product_test_auth.ps1" -ForegroundColor Yellow
+            exit 1
+        }
+    } else {
+        Write-Host "FAIL: PRODUCT_TEST_AUTH not set and test_auth.ps1 helper not found" -ForegroundColor Red
+        Write-Host "  Run: .\ops\ensure_product_test_auth.ps1" -ForegroundColor Yellow
+        exit 1
+    }
 }
-if (-not $authToken) {
-    # Default test token (dummy JWT for testing - must have valid sub claim)
-    $authToken = "Bearer test-token-genesis-wp13"
+
+# Validate JWT format (must contain two dots: header.payload.signature)
+$tokenParts = $authToken -split '\.'
+if ($tokenParts.Count -lt 3 -or -not $authToken.StartsWith("Bearer ")) {
+    Write-Host "FAIL: PRODUCT_TEST_AUTH must be a valid Bearer JWT token" -ForegroundColor Red
+    Write-Host "  Format: Bearer <header>.<payload>.<signature>" -ForegroundColor Yellow
+    Write-Host "  Current value: $($authToken.Substring(0, [Math]::Min(50, $authToken.Length)))..." -ForegroundColor Yellow
+    Write-Host "  Run: .\ops\ensure_product_test_auth.ps1" -ForegroundColor Yellow
+    exit 1
 }
 $listingId = $null
 $orderId = $null

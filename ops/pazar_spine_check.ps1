@@ -135,23 +135,47 @@ foreach ($check in $checks) {
             "FAIL"
         }
         
+        # WP-23: Use pscustomobject with fixed properties to avoid Duration property errors
+        $durationSec = $duration.TotalSeconds
         if ($actualStatus -eq "PASS") {
-            Write-Host "[PASS] $($check.Name) ($($check.WP)) - Duration: $($duration.TotalSeconds.ToString('F2'))s" -ForegroundColor Green
-            $results += @{ Name = $check.Name; WP = $check.WP; Status = "PASS"; Duration = $duration.TotalSeconds }
+            Write-Host "[PASS] $($check.Name) ($($check.WP)) - Duration: $($durationSec.ToString('F2'))s" -ForegroundColor Green
+            $results += [PSCustomObject]@{
+                Name = $check.Name
+                WP = $check.WP
+                Status = "PASS"
+                Reason = $null
+                ExitCode = 0
+                DurationSec = $durationSec
+            }
         } else {
             Write-Host "[FAIL] $($check.Name) ($($check.WP)) - Exit code: $exitCode" -ForegroundColor Red
             if ($hasFailInOutput) {
                 Write-Host "  Script output indicates FAIL status" -ForegroundColor Yellow
             }
-            $results += @{ Name = $check.Name; WP = $check.WP; Status = "FAIL"; ExitCode = $exitCode; HasFailInOutput = $hasFailInOutput }
+            $results += [PSCustomObject]@{
+                Name = $check.Name
+                WP = $check.WP
+                Status = "FAIL"
+                Reason = if ($hasFailInOutput) { "Script output indicates FAIL" } else { "Exit code: $exitCode" }
+                ExitCode = $exitCode
+                DurationSec = $durationSec
+            }
             $hasFailures = $true
             # Fail fast: stop on first failure
             break
         }
     } catch {
         $duration = (Get-Date) - $startTime
+        $durationSec = $duration.TotalSeconds
         Write-Host "[FAIL] $($check.Name) ($($check.WP)) - Exception: $($_.Exception.Message)" -ForegroundColor Red
-        $results += @{ Name = $check.Name; WP = $check.WP; Status = "FAIL"; Reason = $_.Exception.Message }
+        $results += [PSCustomObject]@{
+            Name = $check.Name
+            WP = $check.WP
+            Status = "FAIL"
+            Reason = $_.Exception.Message
+            ExitCode = -1
+            DurationSec = $durationSec
+        }
         $hasFailures = $true
         # Fail fast: stop on first failure
         break
@@ -164,7 +188,9 @@ foreach ($check in $checks) {
 Write-Host "=== PAZAR SPINE CHECK SUMMARY ===" -ForegroundColor Cyan
 foreach ($result in $results) {
     $statusColor = if ($result.Status -eq "PASS") { "Green" } else { "Red" }
-    $durationText = if ($result.Duration) { " ($($result.Duration.ToString('F2'))s)" } else { "" }
+    # WP-23: Safe property access - DurationSec is always set (may be $null)
+    $durationSec = $result.DurationSec
+    $durationText = if ($durationSec -ne $null) { " ($($durationSec.ToString('F2'))s)" } else { "" }
     Write-Host "  $($result.Status): $($result.Name) ($($result.WP))$durationText" -ForegroundColor $statusColor
 }
 
