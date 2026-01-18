@@ -1531,55 +1531,55 @@ npm run build
 
 ---
 
-## WP-17: Routes Stabilization v2
+## WP-17: Routes Stabilization v2 (Finalized)
 
 **Status:** ✅ COMPLETE  
 **SPEC Reference:** Maintenance improvement (no SPEC change)  
-**Proof Document:** `docs/PROOFS/wp17_routes_stabilization_pass.md`
+**Proof Document:** `docs/PROOFS/wp17_routes_stabilization_finalization_pass.md`
 
 ### Purpose
-Eliminate "routes/api.php tek dosya büyümesi" riskini ve closure-icinde function tanimi kaynakli 500 riskini sifirla. Davranis degisikligi YOK: URL path'ler, response body'ler, status code'lar ayni kalacak. Minimal diff. Domain/refactor YOK. Sadece route dosyasi modularizasyonu + helper extraction.
+Finalize Pazar API route modularization safely. Remove route duplication risk (same METHOD+URI defined in multiple route files). Keep behavior identical: NO business logic change, NO validation change, NO schema change, NO endpoint change.
 
 ### Scope
-- **Pre-flight:** Report line count (~1700+ lines before, 18 lines after)
-- **Helper extraction:** Extract `buildTree` closure to `pazar_build_tree` helper with `function_exists` guard
-- **Modularization:** Split routes into numbered modules (00-06) for explicit ordering
-- **Entry point:** Refactor `api.php` to thin loader (18 lines)
-- **Categories fix:** Replace closure with `pazar_build_tree()` helper call
-- **Verification:** Double-call test PASS, route count preserved (27 routes), catalog contract check PASS
+- **Duplicate removal:** Removed duplicate `catalog.php` (non-canonical), kept `02_catalog.php` (canonical)
+- **Route duplicate guard:** Updated `ops/route_duplicate_guard.ps1` to use Laravel `route:list --json` for deterministic duplicate detection
+- **Verification:** Route duplicate guard PASS, catalog contract check PASS, listing contract check PASS
 
 ### Deliverables
 
-**Helper File:**
-- `work/pazar/routes/_helpers.php` - Helper functions:
-  - `pazar_active_tenant_id()` - Gets X-Active-Tenant-Id header
-  - `pazar_build_tree(array $categories, $parentId = null)` - Builds category tree (function_exists guard)
+**Deleted:**
+- `work/pazar/routes/api/catalog.php` (duplicate, non-canonical)
+
+**Modified:**
+- `ops/route_duplicate_guard.ps1` - Updated to use Laravel route:list --json for deterministic duplicate detection
 
 **Route Modules (work/pazar/routes/api/):**
 - `00_ping.php` - Ping endpoint
 - `01_world_status.php` - World status endpoint
-- `02_catalog.php` - Categories, filter-schema endpoints (uses `pazar_build_tree()` helper)
-- `03_listings.php` - All listing + offers routes (exactly as-is)
-- `04_reservations.php` - Reservation create/accept/list/get blocks (exactly as-is)
-- `05_orders.php` - Orders list/create (exactly as-is)
-- `06_rentals.php` - Rentals list/create/accept/get (exactly as-is)
+- `02_catalog.php` - Categories, filter-schema endpoints (canonical, uses `pazar_build_tree()` helper)
+- `03_listings.php` - All listing + offers routes
+- `04_reservations.php` - Reservation create/accept/list/get blocks
+- `05_orders.php` - Orders list/create
+- `06_rentals.php` - Rentals list/create/accept/get
+- `messaging.php` - Messaging routes
+- `account_portal.php` - Account portal read endpoints
 
 **Main Entry Point:**
 - `work/pazar/routes/api.php` (18 lines) - Thin loader with require_once in deterministic order
 
 ### Commands
 ```powershell
+# Route duplicate guard (must PASS)
+.\ops\route_duplicate_guard.ps1
+
 # Catalog contract check (double-call regression test)
 .\ops\catalog_contract_check.ps1
 
-# Verify route registration (recommended)
-php artisan route:list
+# Verify route registration
+docker compose exec pazar-app php artisan route:list
 
-# Run contract checks (recommended)
+# Run contract checks
 .\ops\pazar_spine_check.ps1
-
-# Check for duplicate routes
-.\ops\route_duplicate_guard.ps1
 
 # Linter check
 # No linter errors found (verified via read_lints)
