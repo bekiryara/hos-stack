@@ -17,7 +17,7 @@ Write-Host ""
 
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
-$tenantId = "tenant-demo"
+$tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo (WP-8: store-scope requires UUID format)
 $listingId = $null
 $weddingHallId = $null
 

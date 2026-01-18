@@ -1,0 +1,47 @@
+## WP-15: Runtime Truth + Frontend Readiness Lock
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** §23 (productization start criteria), §24 (world status contract), §21 (patlama risk checklist), §20 (Account Portal read aggregation)
+
+### Purpose
+Lock runtime truth and make frontend integration deterministic without adding new business features. Provide a single source of truth for stack bring-up and readiness verification.
+
+### Deliverables
+- `docs/CURRENT.md` - Updated with runtime truth (health checks, contract checks, Account Portal endpoints, frontend readiness conditions)
+- `ops/wp15_frontend_readiness.ps1` - Deterministic readiness check script
+- `docs/PROOFS/wp15_frontend_readiness_pass.md` - Proof document with real outputs
+
+### Commands
+```powershell
+# Frontend readiness check (deterministic)
+.\ops\wp15_frontend_readiness.ps1
+
+# Expected: PASS: READY FOR FRONTEND INTEGRATION (exit code 0)
+# OR: FAIL: NOT READY (exit code 1) with specific failure details
+
+# Health checks (from CURRENT.md)
+curl http://localhost:3000/v1/world/status
+curl http://localhost:3000/v1/worlds
+curl http://localhost:8080/api/world/status
+
+# Contract checks
+.\ops\pazar_spine_check.ps1
+.\ops\order_contract_check.ps1
+.\ops\messaging_contract_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp15_frontend_readiness_pass.md` - Contains real script output showing deterministic readiness check
+- `docs/CURRENT.md` - Updated with runtime truth (health checks, contract checks, frontend readiness conditions)
+- Script returns exit code 0/1 deterministically based on contract check results
+
+### Notes
+- No new business features added
+- No DB migrations
+- No refactors
+- Only: docs + ops verification scripts
+- Script uses PowerShell 5.1 compatible syntax, ASCII-only output, does not close terminal (Read-Host at end)
+
+---
+
+

@@ -1,0 +1,40 @@
+=== Read Snapshot Check ===
+Timestamp: 2026-01-18 03:42:24
+Exit Code: 0
+Duration: 6,18s
+
+--- STDOUT ---
+=== READ SNAPSHOT CHECK (WP-13) ===
+Timestamp: 2026-01-18 03:42:21
+
+Loading snapshots...
+Extracting GET routes from D:\stack\work\pazar\routes\api.php...
+Found 14 GET routes
+
+Validating snapshot endpoints against routes...
+FOUND: GET /api/v1/orders
+FOUND: GET /api/v1/orders
+FOUND: GET /api/v1/rentals
+FOUND: GET /api/v1/rentals
+FOUND: GET /api/v1/reservations
+FOUND: GET /api/v1/reservations
+FOUND: GET /api/v1/listings
+FOUND: GET /api/v1/orders/{id}
+FOUND: GET /api/v1/rentals/{id}
+FOUND: GET /api/v1/reservations/{id}
+FOUND: GET /api/v1/categories
+FOUND: GET /api/v1/categories/{id}/filter-schema
+FOUND: GET /api/v1/listings
+FOUND: GET /api/v1/listings/{id}
+FOUND: GET /api/v1/search
+FOUND: GET /api/v1/listings/{id}/offers
+FOUND: GET /api/v1/offers/{id}
+
+Checking for extra GET routes not in snapshot...
+
+=== READ SNAPSHOT CHECK: PASS ===
+All snapshot endpoints found in routes
+
+
+--- STDERR ---
+

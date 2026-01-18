@@ -1,6 +1,6 @@
-# CURRENT - Single Source of Truth
+# CURRENT - Single Source of Truth (Runtime Truth)
 
-**Last Updated:** 2026-01-14  
+**Last Updated:** 2026-01-17  
 **Baseline:** RELEASE-GRADE BASELINE RESET v1
 
 ## What is the Stack?
@@ -28,6 +28,8 @@ This repository runs **H-OS** (universe governance) and **Pazar** (first commerc
 - **3000**: H-OS API (`http://localhost:3000`)
 - **3002**: H-OS Web (`http://localhost:3002`)
 - **8080**: Pazar App (`http://localhost:8080`)
+- **5173**: Frontend Dev Server (`http://localhost:5173`) - Optional, only if frontend dev server is running
+
 
 ## API Endpoints
 
@@ -45,16 +47,37 @@ This repository runs **H-OS** (universe governance) and **Pazar** (first commerc
 
 **Note:** Laravel routes in `routes/api.php` are automatically prefixed with `/api` by default.
 
-## Green Checks (Working Definition)
+## Health Checks
+
+### Quick Health Checks (curl commands)
+
+```powershell
+# H-OS World Status
+curl http://localhost:3000/v1/world/status
+
+# H-OS Worlds Directory
+curl http://localhost:3000/v1/worlds
+
+# Pazar World Status
+curl http://localhost:8080/api/world/status
+
+# Pazar Health (nginx-level)
+curl http://localhost:8080/up
+```
+
+### Health Check Criteria
 
 Baseline is "working" when:
 
 1. **H-OS Health**: `curl http://localhost:3000/v1/health` returns HTTP 200 with `{"ok":true}`
 2. **Pazar Health**: `curl http://localhost:8080/up` returns HTTP 200 with `"ok"`
-3. **Containers Running**: All required services show "Up" status in `docker compose ps`
-4. **FS Posture**: Pazar storage/logs is writable (no permission errors)
+3. **World Status**: Both H-OS and Pazar world status endpoints return valid responses
+4. **Containers Running**: All required services show "Up" status in `docker compose ps`
+5. **FS Posture**: Pazar storage/logs is writable (no permission errors)
 
-## Verification Command
+## Verification Commands
+
+### Basic Verification
 
 ```powershell
 .\ops\verify.ps1
@@ -70,6 +93,36 @@ This command checks:
 - `0` = PASS (all checks pass)
 - `1` = FAIL (required check failed)
 - Optional services that are down are marked SKIP, not FAIL
+
+### Contract Checks
+
+```powershell
+# Marketplace Spine Check (all contract checks)
+.\ops\pazar_spine_check.ps1
+
+# Individual contract checks (if needed)
+.\ops\order_contract_check.ps1
+.\ops\messaging_contract_check.ps1
+```
+
+**Note:** These scripts verify that backend READ endpoints match their contracts (snapshot files).
+
+### Frontend Readiness Check (WP-15)
+
+```powershell
+.\ops\wp15_frontend_readiness.ps1
+```
+
+This command verifies that the stack is ready for frontend integration:
+- Repo root sanity
+- World status check
+- Marketplace spine check
+- Optional contract checks
+- Frontend presence check
+
+**Exit Codes:**
+- `0` = READY FOR FRONTEND INTEGRATION
+- `1` = NOT READY (see output for specific failure)
 
 ## Compose Profiles
 
@@ -114,6 +167,53 @@ docker compose up -d --build
 - If either fails, fix issues before proceeding
 
 This ensures baseline remains stable and prevents breaking changes.
+
+## Account Portal READ Endpoints (WP-12.1)
+
+If Account Portal READ endpoints are implemented, they are available at:
+
+**Personal Scope** (Authorization header required):
+- `GET /api/v1/orders?buyer_user_id={uuid}`
+- `GET /api/v1/rentals?renter_user_id={uuid}`
+- `GET /api/v1/reservations?requester_user_id={uuid}`
+
+**Store Scope** (X-Active-Tenant-Id header required):
+- `GET /api/v1/listings?tenant_id={uuid}`
+- `GET /api/v1/orders?seller_tenant_id={uuid}`
+- `GET /api/v1/rentals?provider_tenant_id={uuid}`
+- `GET /api/v1/reservations?provider_tenant_id={uuid}`
+
+**Expected Response Format:**
+```json
+{
+  "data": [...],
+  "meta": {
+    "total": 0,
+    "page": 1,
+    "per_page": 20,
+    "total_pages": 0
+  }
+}
+```
+
+## Front-end Readiness Conditions (WP-15)
+
+The stack is ready for frontend integration when:
+
+1. **World Status Check PASS**: H-OS and Pazar world endpoints return valid responses
+2. **Marketplace Spine Check PASS**: All contract checks pass (`.\ops\pazar_spine_check.ps1`)
+3. **Optional Contract Checks**: Order and messaging contract checks (if scripts exist) do not fail
+4. **Frontend Presence**: Frontend folder exists (`work/marketplace-web`) with `package.json`
+5. **Frontend Dev Server** (optional): Port 5173 is LISTENING if frontend dev server is running
+
+**Deterministic Check:**
+```powershell
+.\ops\wp15_frontend_readiness.ps1
+```
+
+**Expected Output:**
+- `PASS: READY FOR FRONTEND INTEGRATION` (exit code 0)
+- OR `FAIL: NOT READY` with specific failure details (exit code 1)
 
 ## Related Docs
 

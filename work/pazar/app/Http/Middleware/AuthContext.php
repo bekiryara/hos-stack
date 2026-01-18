@@ -21,45 +21,46 @@ class AuthContext
     {
         // Get Authorization header
         $authHeader = $request->header('Authorization');
-        if (!$authHeader || !preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
-            return response()->json([
-                'error' => 'AUTH_REQUIRED',
-                'message' => 'Authorization: Bearer token is required'
-            ], 401);
+        
+        // WP-13: If Authorization header exists, verify token and extract user ID
+        // If no header, continue without setting requester_user_id (for store-scope endpoints)
+        if ($authHeader && preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
+            $token = $matches[1];
+
+            // Get JWT secret from environment
+            $jwtSecret = env('HOS_JWT_SECRET') ?: env('JWT_SECRET');
+            if (!$jwtSecret || strlen($jwtSecret) < 32) {
+                // Only fail if token is provided but secret is missing
+                return response()->json([
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => 'JWT secret not configured (HOS_JWT_SECRET or JWT_SECRET required)'
+                ], 500);
+            }
+
+            // Verify JWT token (HS256 algorithm)
+            try {
+                $payload = $this->verifyJWT($token, $jwtSecret);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => 'AUTH_REQUIRED',
+                    'message' => 'Invalid or expired token: ' . $e->getMessage()
+                ], 401);
+            }
+
+            // Extract user ID from payload (sub claim preferred, fallback to user_id)
+            $userId = $payload['sub'] ?? $payload['user_id'] ?? null;
+            if (!$userId) {
+                return response()->json([
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => 'Token payload missing user identifier (sub or user_id)'
+                ], 401);
+            }
+
+            // Set requester_user_id as request attribute
+            $request->attributes->set('requester_user_id', $userId);
         }
-
-        $token = $matches[1];
-
-        // Get JWT secret from environment
-        $jwtSecret = env('HOS_JWT_SECRET') ?: env('JWT_SECRET');
-        if (!$jwtSecret || strlen($jwtSecret) < 32) {
-            return response()->json([
-                'error' => 'VALIDATION_ERROR',
-                'message' => 'JWT secret not configured (HOS_JWT_SECRET or JWT_SECRET required)'
-            ], 500);
-        }
-
-        // Verify JWT token (HS256 algorithm)
-        try {
-            $payload = $this->verifyJWT($token, $jwtSecret);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'AUTH_REQUIRED',
-                'message' => 'Invalid or expired token: ' . $e->getMessage()
-            ], 401);
-        }
-
-        // Extract user ID from payload (sub claim preferred, fallback to user_id)
-        $userId = $payload['sub'] ?? $payload['user_id'] ?? null;
-        if (!$userId) {
-            return response()->json([
-                'error' => 'VALIDATION_ERROR',
-                'message' => 'Token payload missing user identifier (sub or user_id)'
-            ], 401);
-        }
-
-        // Set requester_user_id as request attribute
-        $request->attributes->set('requester_user_id', $userId);
+        // If no Authorization header, continue without setting requester_user_id
+        // (Route handlers can check for personal scope and require token)
 
         return $next($request);
     }

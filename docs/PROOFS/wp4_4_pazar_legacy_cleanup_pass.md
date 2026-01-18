@@ -217,3 +217,5 @@ git status --short | Select-String "^D" | Measure-Object | Select-Object -Expand
 
 
 
+
+

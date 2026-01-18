@@ -1,0 +1,165 @@
+=== Pazar Spine Check ===
+Timestamp: 2026-01-18 03:44:19
+Exit Code: 1
+Duration: 19,48s
+
+--- STDOUT ---
+=== PAZAR SPINE CHECK (WP-4.2) ===
+Timestamp: 2026-01-18 03:44:00
+
+Running all Marketplace spine contract checks in order:
+  1. World Status Check (WP-1.2)
+  2. Catalog Contract Check (WP-2)
+  3. Listing Contract Check (WP-3)
+  4. Reservation Contract Check (WP-4)
+  5. Rental Contract Check (WP-7)
+  6. Tenant Scope Contract Check (WP-8)
+  7. Persona & Scope Check (WP-8 Lock)
+  8. Core Persona Contract Check (WP-8 Core)
+  9. Offer Contract Check (WP-9 Offers)
+  10. Account Portal Contract Check (WP-9 Account Portal)
+
+[RUN] World Status Check (WP-1.2)...
+=== WORLD STATUS CHECK (WP-1.2) ===
+Timestamp: 2026-01-18 03:44:01
+
+[1] Testing HOS GET /v1/world/status...
+Response: {"world_key":"core","availability":"ONLINE","phase":"GENESIS","version":"1.4.0"}
+PASS: HOS /v1/world/status returns valid response
+  world_key: core
+  availability: ONLINE
+  phase: GENESIS
+  version: 1.4.0
+
+[2] Testing HOS GET /v1/worlds...
+Response: [{"world_key":"core","availability":"ONLINE","phase":"GENESIS","version":"1.4.0"},{"world_key":"marketplace","availability":"ONLINE","phase":"GENESIS","version":"1.4.0"},{"world_key":"messaging","availability":"DISABLED","phase":"GENESIS","version":"1.4.0"},{"world_key":"social","availability":"DISABLED","phase":"GENESIS","version":"1.4.0"}]
+PASS: HOS /v1/worlds returns valid array with all worlds
+  - core: ONLINE (GENESIS, v1.4.0)
+  - marketplace: ONLINE (GENESIS, v1.4.0)
+  - messaging: DISABLED (GENESIS, v1.4.0)
+  - social: DISABLED (GENESIS, v1.4.0)
+  [DEBUG] Marketplace status from HOS: ONLINE
+  [DEBUG] HOS successfully pinged Pazar (marketplace ONLINE)
+
+[3] Testing Pazar GET /api/world/status...
+Response: {"world_key":"marketplace","availability":"ONLINE","phase":"GENESIS","version":"1.4.0"}
+PASS: Pazar /api/world/status returns valid response
+  world_key: marketplace
+  availability: ONLINE
+  phase: GENESIS
+  version: 1.4.0
+
+=== WORLD STATUS CHECK: PASS ===
+
+[PASS] World Status Check (WP-1.2) - Duration: 5,21s
+
+[RUN] Catalog Contract Check (WP-2)...
+=== CATALOG CONTRACT CHECK (WP-2) ===
+Timestamp: 2026-01-18 03:44:06
+
+[1] Testing GET /api/v1/categories...
+Response: [{"id":4,"parent_id":null,"slug":"vehicle","name":"Vehicle","vertical":"vehicle","status":"active","children":[{"id":10,"parent_id":4,"slug":"car","name":"Car","vertical":"vehicle","status":"active","children":""}]},{"id":5,"parent_id":null,"slug":"real-estate","name":"Real Estate","vertical":"real_estate","status":"active"},{"id":1,"parent_id":null,"slug":"service","name":"Services","vertical":"service","status":"active","children":[{"id":2,"parent_id":1,"slug":"events","name":"Events","vertical":"service","status":"active","children":""},{"id":8,"parent_id":1,"slug":"food","name":"Food","vertical":"service","status":"active","children":""}]}]
+PASS: Categories endpoint returns non-empty tree
+  Root categories: 3
+  Found wedding-hall category (id: 3)
+  PASS: All required root categories present (vehicle, real-estate, service)
+
+[2] Testing GET /api/v1/categories/3/filter-schema...
+Response: {"category_id":3,"category_slug":"wedding-hall","filters":[{"attribute_key":"capacity_max","value_type":"number","unit":"person","description":"Maximum capacity (number of people)","status":"active","sort_order":10,"ui_component":"number","required":true,"filter_mode":"range","rules":{"min":1,"max":1000}}]}
+PASS: Filter schema endpoint returns valid response
+  Category ID: 3
+  Category Slug: wedding-hall
+  Active filters: 1
+  PASS: wedding-hall has capacity_max filter with required=true
+  Filter attributes:
+    - capacity_max (number, required: True)
+
+=== CATALOG CONTRACT CHECK: PASS ===
+
+[PASS] Catalog Contract Check (WP-2) - Duration: 3,39s
+
+[RUN] Listing Contract Check (WP-3)...
+=== LISTING CONTRACT CHECK (WP-3) ===
+Timestamp: 2026-01-18 03:44:09
+
+[1] Testing GET /api/v1/categories...
+PASS: Categories endpoint returns non-empty array
+  Root categories: 3
+  Found 'wedding-hall' category with ID: 3
+
+[2] Testing POST /api/v1/listings (create DRAFT)...
+PASS: Listing created successfully
+  Listing ID: 81e0ca81-8c8b-4656-a06a-2319acbf8ed4
+  Status: draft
+  Category ID: 3
+
+[3] Testing POST /api/v1/listings/81e0ca81-8c8b-4656-a06a-2319acbf8ed4/publish...
+PASS: Listing published successfully
+  Status: published
+
+[4] Testing GET /api/v1/listings/81e0ca81-8c8b-4656-a06a-2319acbf8ed4...
+PASS: Get listing returns correct data
+  Status: published
+  Attributes: {"capacity_max":500}
+
+[5] Testing GET /api/v1/listings?category_id=3...
+PASS: Search listings returns results
+  Results count: 20
+  Created listing found in results
+
+[6] Testing POST /api/v1/listings without X-Active-Tenant-Id header (negative test)...
+PASS: Request without header correctly rejected (status: 400)
+
+=== LISTING CONTRACT CHECK: PASS ===
+
+[PASS] Listing Contract Check (WP-3) - Duration: 4,74s
+
+[RUN] Reservation Contract Check (WP-4)...
+=== RESERVATION CONTRACT CHECK (WP-4) ===
+Timestamp: 2026-01-18 03:44:15
+
+[PREP] Cleaning up old test reservations...
+
+[0] Getting or creating published listing for testing...
+PASS: Found existing published listing: 81e0ca81-8c8b-4656-a06a-2319acbf8ed4
+  Title: Test Wedding Hall Listing
+  Capacity Max: 500
+
+[1] Testing POST /api/v1/reservations (party_size <= capacity_max)...
+FAIL: Create reservation request failed: Uzak sunucu hata d?nd?rd?: (500) ?? Sunucu Hatas?.
+  Status Code: 500
+
+[1b] Testing Messaging thread creation for reservation...
+SKIP: Cannot verify messaging thread (reservation ID not available)
+
+[2] SKIP: Cannot test idempotency (reservation ID not available)
+
+[3] Testing POST /api/v1/reservations (conflict - same slot)...
+FAIL: Expected 409 CONFLICT, got status: 500
+
+[4] Testing POST /api/v1/reservations (party_size > capacity_max)...
+FAIL: Expected 422 VALIDATION_ERROR, got status: 500
+
+[5] Testing POST /api/v1/reservations/{id}/accept (correct tenant)...
+FAIL: Accept reservation request failed: Uzak sunucu hata d?nd?rd?: (500) ?? Sunucu Hatas?.
+  Status Code: 500
+
+[6] Testing POST /api/v1/reservations/{id}/accept (missing header)...
+FAIL: Could not create reservation for reject test: Uzak sunucu hata d?nd?rd?: (500) ?? Sunucu Hatas?.
+
+=== RESERVATION CONTRACT CHECK: FAIL ===
+
+[FAIL] Reservation Contract Check (WP-4) - Exit code: 0
+  Script output indicates FAIL status
+=== PAZAR SPINE CHECK SUMMARY ===
+  PASS: World Status Check (WP-1.2) (5,21s)
+  PASS: Catalog Contract Check (WP-2) (3,39s)
+  PASS: Listing Contract Check (WP-3) (4,74s)
+  FAIL: Reservation Contract Check (WP-4)
+
+=== PAZAR SPINE CHECK: FAIL ===
+One or more checks failed. Fix issues and re-run.
+
+
+--- STDERR ---
+

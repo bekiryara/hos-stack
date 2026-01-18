@@ -1,0 +1,38 @@
+=== World Status Check ===
+Timestamp: 2026-01-18 04:07:06
+Exit Code: 0
+Duration: 6,38s
+
+--- STDOUT ---
+=== WORLD STATUS CHECK (WP-1.2) ===
+Timestamp: 2026-01-18 04:07:01
+
+[1] Testing HOS GET /v1/world/status...
+Response: {"world_key":"core","availability":"ONLINE","phase":"GENESIS","version":"1.4.0"}
+PASS: HOS /v1/world/status returns valid response
+  world_key: core
+  availability: ONLINE
+  phase: GENESIS
+  version: 1.4.0
+
+[2] Testing HOS GET /v1/worlds...
+Response: [{"world_key":"core","availability":"ONLINE","phase":"GENESIS","version":"1.4.0"},{"world_key":"marketplace","availability":"OFFLINE","phase":"GENESIS","version":"1.4.0"},{"world_key":"messaging","availability":"DISABLED","phase":"GENESIS","version":"1.4.0"},{"world_key":"social","availability":"DISABLED","phase":"GENESIS","version":"1.4.0"}]
+PASS: HOS /v1/worlds returns valid array with all worlds
+  - core: ONLINE (GENESIS, v1.4.0)
+  - marketplace: OFFLINE (GENESIS, v1.4.0)
+  - messaging: DISABLED (GENESIS, v1.4.0)
+  - social: DISABLED (GENESIS, v1.4.0)
+  [DEBUG] Marketplace status from HOS: OFFLINE
+  [DEBUG] WARN: HOS reports marketplace OFFLINE (check PAZAR_STATUS_URL env var)
+  [DEBUG] Expected: http://pazar-app:80 (Docker Compose service name)
+
+[3] Testing Pazar GET /api/world/status...
+FAIL: Pazar /api/world/status request failed: Uzak sunucu hata d?nd?rd?: (500) ?? Sunucu Hatas?.
+  URL: http://localhost:8080/api/world/status
+  Status Code: 500
+
+=== WORLD STATUS CHECK: FAIL ===
+
+
+--- STDERR ---
+

@@ -3,6 +3,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import pino from "pino";
 import { z } from "zod";
+import crypto from "node:crypto";
 
 export async function buildApp({ db, logStream } = {}) {
   if (!db) throw new Error("buildApp requires db");
@@ -81,6 +82,98 @@ export async function buildApp({ db, logStream } = {}) {
         message: "Invalid or missing MESSAGING_API_KEY header"
       });
     }
+  }
+
+  // JWT validation middleware (WP-16)
+  function verifyJWT(token, secret) {
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      throw new Error("Invalid token format");
+    }
+
+    // Decode payload (base64url decode)
+    const payloadB64 = parts[1];
+    const payloadB64Padded = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const padding = "=".repeat((4 - (payloadB64Padded.length % 4)) % 4);
+    const payloadJson = Buffer.from(payloadB64Padded + padding, "base64").toString("utf8");
+    const payload = JSON.parse(payloadJson);
+
+    // Verify expiration
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      throw new Error("Token expired");
+    }
+
+    // Verify signature (HMAC-SHA256)
+    const headerB64 = parts[0];
+    const signatureB64 = parts[2];
+    const data = headerB64 + "." + payloadB64;
+    const expectedSignature = crypto.createHmac("sha256", secret).update(data).digest("base64url");
+    
+    if (expectedSignature !== signatureB64) {
+      throw new Error("Invalid signature");
+    }
+
+    return payload;
+  }
+
+  // Require Authorization header (JWT) middleware (WP-16)
+  async function requireAuth(req, reply) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return reply.code(401).send({
+        error: "AUTH_REQUIRED",
+        message: "Missing or invalid Authorization header"
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const jwtSecret = process.env.HOS_JWT_SECRET || process.env.JWT_SECRET;
+    
+    if (!jwtSecret || jwtSecret.length < 32) {
+      return reply.code(500).send({
+        error: "VALIDATION_ERROR",
+        message: "JWT secret not configured (HOS_JWT_SECRET or JWT_SECRET required)"
+      });
+    }
+
+    try {
+      const payload = verifyJWT(token, jwtSecret);
+      const userId = payload.sub || payload.user_id;
+      
+      if (!userId) {
+        return reply.code(401).send({
+          error: "VALIDATION_ERROR",
+          message: "Token payload missing user identifier (sub or user_id)"
+        });
+      }
+
+      req.userId = userId;
+      return;
+    } catch (e) {
+      return reply.code(401).send({
+        error: "AUTH_REQUIRED",
+        message: `Invalid or expired token: ${e.message}`
+      });
+    }
+  }
+
+  // Require Idempotency-Key header middleware (WP-16)
+  function requireIdempotencyKey(req, reply) {
+    const key = req.headers["idempotency-key"] || req.headers["x-idempotency-key"];
+    if (!key) {
+      return reply.code(400).send({
+        error: "VALIDATION_ERROR",
+        message: "Missing Idempotency-Key header"
+      });
+    }
+    req.idempotencyKey = key;
+    return;
+  }
+
+  // Hash function for idempotency key storage (WP-16)
+  function hashIdempotencyKey(key, resourceType, requestBody) {
+    const data = `${key}:${resourceType}:${JSON.stringify(requestBody)}`;
+    return crypto.createHash("sha256").update(data).digest("hex");
   }
 
   // POST /api/v1/threads/upsert - Upsert thread by context
@@ -196,6 +289,247 @@ export async function buildApp({ db, logStream } = {}) {
     });
   });
 
+  // POST /api/v1/threads - Idempotent thread creation (WP-16)
+  const createThreadSchema = z.object({
+    context_type: z.string().min(1),
+    context_id: z.string().min(1),
+    participants: z.array(z.object({
+      type: z.enum(["user", "tenant"]),
+      id: z.string().min(1)
+    })).min(1)
+  });
+
+  app.post("/api/v1/threads", {
+    preHandler: [requireAuth, requireIdempotencyKey]
+  }, async (req, reply) => {
+    const parsed = createThreadSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: "VALIDATION_ERROR",
+        message: "Invalid request body",
+        details: parsed.error.errors
+      });
+    }
+
+    const { context_type, context_id, participants } = parsed.data;
+    const userId = req.userId;
+    const idempotencyKey = req.idempotencyKey;
+
+    // Check if Authorization user is in participants
+    const userInParticipants = participants.some(p => 
+      (p.type === "user" && p.id === userId) || 
+      (p.type === "tenant" && p.id === userId)
+    );
+    if (!userInParticipants) {
+      return reply.code(403).send({
+        error: "FORBIDDEN_SCOPE",
+        message: "Authorization user not in participants list"
+      });
+    }
+
+    // Check idempotency replay
+    const keyHash = hashIdempotencyKey(idempotencyKey, "thread", { context_type, context_id, participants });
+    const existingRes = await db.query(
+      "select resource_id from idempotency_keys where key_hash = $1",
+      [keyHash]
+    );
+
+    if (existingRes.rowCount > 0) {
+      // Replay: return existing thread
+      const threadId = existingRes.rows[0].resource_id;
+      const threadRes = await db.query(
+        "select id, context_type, context_id, created_at from threads where id = $1",
+        [threadId]
+      );
+      
+      if (threadRes.rowCount > 0) {
+        const thread = threadRes.rows[0];
+        const participantsRes = await db.query(
+          "select participant_type, participant_id from participants where thread_id = $1",
+          [threadId]
+        );
+        
+        return reply.code(409).send({
+          error: "CONFLICT",
+          message: "Idempotency-Key replay detected",
+          thread_id: thread.id,
+          context_type: thread.context_type,
+          context_id: thread.context_id,
+          participants: participantsRes.rows.map(r => ({ type: r.participant_type, id: r.participant_id })),
+          created_at: thread.created_at
+        });
+      }
+    }
+
+    // Create thread
+    const client = await db.connect();
+    try {
+      await client.query("begin");
+
+      const threadRes = await client.query(`
+        insert into threads (context_type, context_id)
+        values ($1, $2)
+        on conflict (context_type, context_id) do update
+        set context_type = excluded.context_type
+        returning id, created_at
+      `, [context_type, context_id]);
+
+      const threadId = threadRes.rows[0].id;
+
+      // Upsert participants
+      for (const participant of participants) {
+        await client.query(`
+          insert into participants (thread_id, participant_type, participant_id)
+          values ($1, $2, $3)
+          on conflict (thread_id, participant_type, participant_id) do nothing
+        `, [threadId, participant.type, participant.id]);
+      }
+
+      // Store idempotency key
+      await client.query(`
+        insert into idempotency_keys (key_hash, resource_type, resource_id, request_hash)
+        values ($1, $2, $3, $4)
+        on conflict (key_hash) do nothing
+      `, [keyHash, "thread", threadId, keyHash]);
+
+      await client.query("commit");
+
+      const participantsRes = await client.query(
+        "select participant_type, participant_id from participants where thread_id = $1",
+        [threadId]
+      );
+
+      return reply.code(201).send({
+        thread_id: threadId,
+        context_type,
+        context_id,
+        participants: participantsRes.rows.map(r => ({ type: r.participant_type, id: r.participant_id })),
+        created_at: threadRes.rows[0].created_at
+      });
+    } catch (e) {
+      await client.query("rollback");
+      throw e;
+    } finally {
+      client.release();
+    }
+  });
+
+  // POST /api/v1/messages - Direct message send (WP-16)
+  const createMessageSchema = z.object({
+    thread_id: z.string().uuid(),
+    body: z.string().min(1).max(10000)
+  });
+
+  app.post("/api/v1/messages", {
+    preHandler: [requireAuth, requireIdempotencyKey]
+  }, async (req, reply) => {
+    const parsed = createMessageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: "VALIDATION_ERROR",
+        message: "Invalid request body",
+        details: parsed.error.errors
+      });
+    }
+
+    const { thread_id, body } = parsed.data;
+    const userId = req.userId;
+    const idempotencyKey = req.idempotencyKey;
+
+    // Check idempotency replay
+    const keyHash = hashIdempotencyKey(idempotencyKey, "message", { thread_id, body });
+    const existingRes = await db.query(
+      "select resource_id from idempotency_keys where key_hash = $1",
+      [keyHash]
+    );
+
+    if (existingRes.rowCount > 0) {
+      // Replay: return existing message
+      const messageId = existingRes.rows[0].resource_id;
+      const messageRes = await db.query(
+        "select id, thread_id, sender_type, sender_id, body, created_at from messages where id = $1",
+        [messageId]
+      );
+      
+      if (messageRes.rowCount > 0) {
+        const message = messageRes.rows[0];
+        return reply.code(409).send({
+          error: "CONFLICT",
+          message: "Idempotency-Key replay detected",
+          message_id: message.id,
+          thread_id: message.thread_id,
+          sender_type: message.sender_type,
+          sender_id: message.sender_id,
+          body: message.body,
+          created_at: message.created_at
+        });
+      }
+    }
+
+    // Verify thread exists and user is participant
+    const threadRes = await db.query("select id from threads where id = $1", [thread_id]);
+    if (threadRes.rowCount === 0) {
+      return reply.code(404).send({
+        error: "NOT_FOUND",
+        message: `Thread with id ${thread_id} not found`
+      });
+    }
+
+    const participantsRes = await db.query(
+      "select participant_type, participant_id from participants where thread_id = $1",
+      [thread_id]
+    );
+    
+    const userIsParticipant = participantsRes.rows.some(p => 
+      (p.participant_type === "user" && p.participant_id === userId) ||
+      (p.participant_type === "tenant" && p.participant_id === userId)
+    );
+
+    if (!userIsParticipant) {
+      return reply.code(403).send({
+        error: "FORBIDDEN_SCOPE",
+        message: "User not participant in thread"
+      });
+    }
+
+    // Create message
+    const client = await db.connect();
+    try {
+      await client.query("begin");
+
+      const msgRes = await client.query(`
+        insert into messages (thread_id, sender_type, sender_id, body)
+        values ($1, $2, $3, $4)
+        returning id, created_at
+      `, [thread_id, "user", userId, body]);
+
+      const message = msgRes.rows[0];
+
+      // Store idempotency key
+      await client.query(`
+        insert into idempotency_keys (key_hash, resource_type, resource_id, request_hash)
+        values ($1, $2, $3, $4)
+        on conflict (key_hash) do nothing
+      `, [keyHash, "message", message.id, keyHash]);
+
+      await client.query("commit");
+
+      return reply.code(201).send({
+        message_id: message.id,
+        thread_id,
+        sender_type: "user",
+        sender_id: userId,
+        body,
+        created_at: message.created_at
+      });
+    } catch (e) {
+      await client.query("rollback");
+      throw e;
+    } finally {
+      client.release();
+    }
+  });
+
   // GET /api/v1/threads/by-context - Get thread by context
   app.get("/api/v1/threads/by-context", {
     preHandler: requireApiKey
@@ -264,6 +598,7 @@ export async function buildApp({ db, logStream } = {}) {
 
   return app;
 }
+
 
 
 

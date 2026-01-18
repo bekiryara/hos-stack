@@ -78,6 +78,25 @@ try {
         } else {
             Write-Host "  PASS: All required root categories present (vehicle, real-estate, service)" -ForegroundColor Green
         }
+        
+        # WP-17: Regression check - call endpoint twice to prevent redeclare fatal
+        Write-Host "  WP-17: Testing double-call to prevent redeclare fatal..." -ForegroundColor Gray
+        try {
+            $response2 = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+            if (-not ($response2 -is [Array])) {
+                Write-Host "  FAIL: Second call returned non-array response (fatal redeclare risk)" -ForegroundColor Red
+                $hasFailures = $true
+            } elseif ($response2.Count -ne $response.Count) {
+                Write-Host "  FAIL: Second call returned different category count ($($response.Count) vs $($response2.Count))" -ForegroundColor Red
+                $hasFailures = $true
+            } else {
+                Write-Host "  PASS: Second call succeeded (no redeclare fatal)" -ForegroundColor Green
+            }
+        } catch {
+            Write-Host "  FAIL: Second call failed: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "    This indicates a redeclare fatal risk (WP-17)" -ForegroundColor Yellow
+            $hasFailures = $true
+        }
     }
 } catch {
     $statusCode = $null

@@ -256,3 +256,4 @@ Run contract check scripts:
 - Frontend must handle error responses consistently
 - Frontend must respect scope restrictions (personal vs tenant vs public)
 
+
