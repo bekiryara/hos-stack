@@ -15,6 +15,29 @@ Write-Host "=== LISTING CONTRACT CHECK (WP-3) ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
 
+# WP-30: Bootstrap auth token if missing
+$authLibPath = Join-Path $scriptDir "_lib\test_auth.ps1"
+if (Test-Path $authLibPath) {
+    . $authLibPath
+}
+
+$authToken = $env:PRODUCT_TEST_AUTH
+if (-not $authToken -or $authToken -notmatch '^Bearer\s+.+\..+\..+$') {
+    Write-Host "[INFO] PRODUCT_TEST_AUTH not set, bootstrapping token..." -ForegroundColor Yellow
+    try {
+        $rawToken = Get-DevTestJwtToken
+        $authToken = "Bearer $rawToken"
+        $env:PRODUCT_TEST_AUTH = $authToken
+        Write-Host "  PASS: Token bootstrapped successfully" -ForegroundColor Green
+    } catch {
+        Write-Host "FAIL: PRODUCT_TEST_AUTH not set and bootstrap failed: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "  Remediation: Ensure H-OS service is running and accessible" -ForegroundColor Yellow
+        exit 1
+    }
+} else {
+    Write-Host "[INFO] Using existing PRODUCT_TEST_AUTH token" -ForegroundColor Gray
+}
+
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
 $tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo (WP-8: store-scope requires UUID format)
@@ -63,7 +86,7 @@ try {
 
 Write-Host ""
 
-# Test 2: POST /api/v1/listings (create DRAFT listing)
+# Test 2: POST /api/v1/listings (create DRAFT listing) - WP-30: Requires Authorization + X-Active-Tenant-Id
 if (-not $weddingHallId) {
     Write-Host "[2] SKIP: Cannot test create listing (wedding-hall category ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
@@ -83,6 +106,7 @@ if (-not $weddingHallId) {
     try {
         $headers = @{
             "Content-Type" = "application/json"
+            "Authorization" = $authToken
             "X-Active-Tenant-Id" = $tenantId
         }
         $createResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
@@ -133,12 +157,13 @@ if (-not $weddingHallId) {
 
 Write-Host ""
 
-# Test 3: POST /api/v1/listings/{id}/publish
+# Test 3: POST /api/v1/listings/{id}/publish - WP-30: Requires Authorization + X-Active-Tenant-Id
 if ($listingId) {
     Write-Host "[3] Testing POST /api/v1/listings/$listingId/publish..." -ForegroundColor Yellow
     $publishUrl = "${pazarBaseUrl}/api/v1/listings/${listingId}/publish"
     try {
         $headers = @{
+            "Authorization" = $authToken
             "X-Active-Tenant-Id" = $tenantId
         }
         $publishResponse = Invoke-RestMethod -Uri $publishUrl -Method Post -Headers $headers -TimeoutSec 10 -ErrorAction Stop
@@ -234,38 +259,93 @@ if (-not $weddingHallId) {
 
 Write-Host ""
 
-# Test 6: Negative - POST /api/v1/listings without header
+# Test 6: Negative - POST /api/v1/listings without Authorization header (WP-30: expect 401)
 if (-not $weddingHallId) {
     Write-Host "[6] SKIP: Cannot test negative case (wedding-hall category ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
 } else {
-    Write-Host "[6] Testing POST /api/v1/listings without X-Active-Tenant-Id header (negative test)..." -ForegroundColor Yellow
+    Write-Host "[6] Testing POST /api/v1/listings without Authorization header (negative test - expect 401)..." -ForegroundColor Yellow
     $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
     $listingBody = @{
         category_id = $weddingHallId
-        title = "Test Without Header"
+        title = "Test Without Auth"
         transaction_modes = @("reservation")
     } | ConvertTo-Json
 
     try {
         $headers = @{
             "Content-Type" = "application/json"
+            "X-Active-Tenant-Id" = $tenantId
         }
         $negativeResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
-        Write-Host "FAIL: Request without header should have failed, but succeeded" -ForegroundColor Red
+        Write-Host "FAIL: Request without Authorization should have failed, but succeeded" -ForegroundColor Red
         $hasFailures = $true
     } catch {
         $statusCode = $null
+        $responseBody = $null
         if ($_.Exception.Response) {
             try {
                 $statusCode = $_.Exception.Response.StatusCode.value__
+                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                $responseBody = $reader.ReadToEnd()
+                $reader.Close()
+            } catch {
+            }
+        }
+        if ($statusCode -eq 401) {
+            Write-Host "PASS: Request without Authorization correctly rejected (status: 401)" -ForegroundColor Green
+        } else {
+            Write-Host "FAIL: Expected 401, got status: $statusCode" -ForegroundColor Red
+            if ($responseBody) {
+                Write-Host "  Response: $($responseBody.Substring(0, [Math]::Min(200, $responseBody.Length)))" -ForegroundColor Yellow
+            }
+            $hasFailures = $true
+        }
+    }
+}
+
+Write-Host ""
+
+# Test 7: Negative - POST /api/v1/listings without X-Active-Tenant-Id header (WP-30: WITH Authorization, expect 400)
+if (-not $weddingHallId) {
+    Write-Host "[7] SKIP: Cannot test negative case (wedding-hall category ID not available)" -ForegroundColor Yellow
+    $hasFailures = $true
+} else {
+    Write-Host "[7] Testing POST /api/v1/listings without X-Active-Tenant-Id header (negative test - WITH Authorization, expect 400)..." -ForegroundColor Yellow
+    $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
+    $listingBody = @{
+        category_id = $weddingHallId
+        title = "Test Without Tenant Header"
+        transaction_modes = @("reservation")
+    } | ConvertTo-Json
+
+    try {
+        $headers = @{
+            "Content-Type" = "application/json"
+            "Authorization" = $authToken
+        }
+        $negativeResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
+        Write-Host "FAIL: Request without X-Active-Tenant-Id should have failed, but succeeded" -ForegroundColor Red
+        $hasFailures = $true
+    } catch {
+        $statusCode = $null
+        $responseBody = $null
+        if ($_.Exception.Response) {
+            try {
+                $statusCode = $_.Exception.Response.StatusCode.value__
+                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                $responseBody = $reader.ReadToEnd()
+                $reader.Close()
             } catch {
             }
         }
         if ($statusCode -eq 400 -or $statusCode -eq 403) {
-            Write-Host "PASS: Request without header correctly rejected (status: $statusCode)" -ForegroundColor Green
+            Write-Host "PASS: Request without X-Active-Tenant-Id correctly rejected (status: $statusCode)" -ForegroundColor Green
         } else {
             Write-Host "FAIL: Expected 400/403, got status: $statusCode" -ForegroundColor Red
+            if ($responseBody) {
+                Write-Host "  Response: $($responseBody.Substring(0, [Math]::Min(200, $responseBody.Length)))" -ForegroundColor Yellow
+            }
             $hasFailures = $true
         }
     }

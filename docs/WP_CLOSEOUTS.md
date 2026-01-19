@@ -5,6 +5,46 @@
 
 ---
 
+## WP-30: Listing Contract Auth Alignment (Post WP-29)
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-30
+
+### Purpose
+After WP-29 security hardening (auth.any on unauthenticated write routes), align listing_contract_check to the new auth behavior and restore full pazar_spine_check PASS deterministically. Zero domain refactor. No route changes. Only contract-check/test alignment + proof/closeout updates.
+
+### Deliverables
+- `ops/listing_contract_check.ps1` (MOD): Added auth bootstrap, updated tests for auth-required behavior
+- `docs/PROOFS/wp30_listing_contract_auth_alignment_pass.md` - Proof document
+
+### Changes
+1. **Auth Bootstrap (WP-30):**
+   - Dot-source `ops/_lib/test_auth.ps1`
+   - If `$env:PRODUCT_TEST_AUTH` missing/invalid -> call `Get-DevTestJwtToken` to set it
+   - Fail-fast message if bootstrap cannot succeed (HOS not running, etc.)
+
+2. **Updated Tests:**
+   - Test 2 (EXISTING but CHANGED): `POST /api/v1/listings` now requires `Authorization` header + `X-Active-Tenant-Id`
+   - Test 3 (EXISTING but CHANGED): `POST /api/v1/listings/{id}/publish` now requires `Authorization` header + `X-Active-Tenant-Id`
+   - Test 6 (NEW): Missing Authorization header -> expect 401 (AUTH_REQUIRED)
+   - Test 7 (NEW): Missing X-Active-Tenant-Id WITH Authorization -> expect 400/403 (TENANT_REQUIRED/FORBIDDEN_SCOPE)
+
+### Commands
+```powershell
+# Test listing contract check with auth alignment
+.\ops\listing_contract_check.ps1
+
+# Full spine check (should now PASS)
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp30_listing_contract_auth_alignment_pass.md` - Proof document with test outputs
+- Listing Contract Check: PASS (auth bootstrap works, all 7 tests pass)
+- Pazar Spine Check: PASS (no 401 surprise left, deterministic PASS)
+
+---
+
 ## WP-29: Security Audit Violations Fix (auth.any coverage)
 
 **Status:** ✅ COMPLETE  
