@@ -90,7 +90,7 @@ function Add-CheckResult {
     }
 }
 
-# Check A: Pazar /metrics (token-aware if METRICS_TOKEN set; supports header X-Metrics-Token and query token)
+# Check A: Pazar /metrics (token-aware if METRICS_TOKEN set; supports Authorization: Bearer header)
 Write-Host "Check A: Pazar /metrics endpoint" -ForegroundColor Cyan
 
 try {
@@ -100,22 +100,21 @@ try {
     }
     $metricsUri = "$BaseUrl/api/metrics"
     
-    # Add token if available (header X-Metrics-Token or query ?token=)
+    # Add token if available (Authorization: Bearer header - WP-31)
     if ($metricsToken) {
-        $metricsHeaders["X-Metrics-Token"] = $metricsToken
-        $metricsUri = "$BaseUrl/api/metrics?token=$metricsToken"
+        $metricsHeaders["Authorization"] = "Bearer $metricsToken"
     }
     
     $response = Invoke-WebRequest -Uri $metricsUri -Method GET -Headers $metricsHeaders -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
     
     if ($response.StatusCode -eq 200) {
         $body = $response.Content
-        if ($body -match "pazar_\w+") {
-            Add-CheckResult -CheckName "Pazar /metrics" -Status "PASS" -Notes "HTTP 200, body contains pazar_ metric" -Blocking $true
-            Write-Host "  [PASS] Pazar /metrics: HTTP 200, body contains pazar_ metric" -ForegroundColor Green
+        if ($body -match "pazar_up\s+1") {
+            Add-CheckResult -CheckName "Pazar /metrics" -Status "PASS" -Notes "HTTP 200, body contains pazar_up 1" -Blocking $true
+            Write-Host "  [PASS] Pazar /metrics: HTTP 200, body contains pazar_up 1" -ForegroundColor Green
         } else {
-            Add-CheckResult -CheckName "Pazar /metrics" -Status "WARN" -Notes "HTTP 200 but body does not contain pazar_ metric" -Blocking $false
-            Write-Host "  [WARN] Pazar /metrics: HTTP 200 but body does not contain pazar_ metric" -ForegroundColor Yellow
+            Add-CheckResult -CheckName "Pazar /metrics" -Status "WARN" -Notes "HTTP 200 but body does not contain pazar_up 1" -Blocking $false
+            Write-Host "  [WARN] Pazar /metrics: HTTP 200 but body does not contain pazar_up 1" -ForegroundColor Yellow
         }
     } else {
         Add-CheckResult -CheckName "Pazar /metrics" -Status "FAIL" -Notes "Expected HTTP 200, got $($response.StatusCode)" -Blocking $true

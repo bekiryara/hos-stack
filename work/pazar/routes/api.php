@@ -6,7 +6,8 @@ use Illuminate\Support\Facades\Route;
 require_once __DIR__.'/_helpers.php';
 
 // Load route modules in deterministic order (WP-17 v2: numbered files for explicit ordering)
-// Order: ping -> world_status -> catalog -> listings -> reservations -> orders -> rentals
+// Order: metrics -> ping -> world_status -> catalog -> listings -> reservations -> orders -> rentals
+require_once __DIR__.'/api/00_metrics.php';
 require_once __DIR__.'/api/00_ping.php';
 require_once __DIR__.'/api/01_world_status.php';
 require_once __DIR__.'/api/02_catalog.php';

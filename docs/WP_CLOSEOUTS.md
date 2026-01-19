@@ -5,6 +5,51 @@
 
 ---
 
+## WP-31: Pazar /api/metrics Endpoint + Observability Status PASS
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-31
+
+### Purpose
+Close SPEC "Observability Gaps": implement Pazar metrics endpoint (currently 404) and make observability checks PASS. Zero behavior change to business flows. Only add read-only endpoint + checks + docs/proof.
+
+### Deliverables
+- `work/pazar/routes/api/00_metrics.php` (NEW): Prometheus metrics endpoint with optional token protection
+- `work/pazar/routes/api.php` (MOD): Added metrics route module require
+- `ops/observability_status.ps1` (MOD): Updated to use Authorization: Bearer header format
+- `docs/PROOFS/wp31_metrics_endpoint_pass.md` - Proof document
+
+### Changes
+1. **Metrics Endpoint (WP-31):**
+   - GET `/api/metrics` endpoint returns Prometheus exposition format (text/plain; version=0.0.4)
+   - Includes minimal metrics: `pazar_up 1` (liveness) and `pazar_build_info{app="pazar",env="<APP_ENV>",php="<PHP_VERSION>"} 1`
+   - Optional token protection: If `METRICS_TOKEN` env var is set, requires `Authorization: Bearer <METRICS_TOKEN>` header
+   - If `METRICS_TOKEN` not set, allows unauthenticated access (safe since metrics are minimal)
+
+2. **Observability Status Check Update:**
+   - Updated to use `Authorization: Bearer <token>` header format (WP-31)
+   - Validates HTTP 200 and body contains `pazar_up 1`
+   - Mark PASS/FAIL with clear ASCII messages and correct exit codes
+
+### Commands
+```powershell
+# Test metrics endpoint directly
+Invoke-WebRequest -Uri "http://localhost:8080/api/metrics" -Method GET
+
+# Run observability status check
+.\ops\observability_status.ps1
+
+# Run ops status (includes observability check)
+.\ops\ops_status.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp31_metrics_endpoint_pass.md` - Proof document with test outputs
+- `/api/metrics` endpoint: PASS (HTTP 200, Prometheus format, contains `pazar_up 1`)
+- Observability Status Check: PASS (Pazar metrics + H-OS health passing)
+
+---
+
 ## WP-30: Listing Contract Auth Alignment (Post WP-29)
 
 **Status:** ✅ COMPLETE  
