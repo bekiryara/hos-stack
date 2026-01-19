@@ -582,9 +582,27 @@ See `docs/WP_CLOSEOUTS.md` for detailed closeout summaries of each WP.
 
 ### Alternative Next Steps
 
-1. **Security Audit Violations:** Address 10 POST routes missing `auth.any` middleware (currently flagged by security audit)
+1. **Security Audit Violations:** ✅ COMPLETE (WP-29) - All 10 POST routes now have `auth.any` middleware
 2. **Observability Gaps:** Implement Pazar /metrics endpoint and Prometheus setup (currently 404)
 3. **Test Environment Setup:** Fix Reservation Contract Check bootstrap (H-OS admin API configuration)
+
+---
+
+## §27. WP-29: Security Audit Violations Fix
+
+**Status:** ✅ COMPLETE  
+**Completed:** 2026-01-19
+
+**Purpose:** Eliminate Security Audit FAIL: "10 violations - POST routes missing auth.any". Zero refactor. Minimal diff. No behavior change except: unauthenticated POST write routes MUST now require auth (expected).
+
+**Deliverables:**
+- Added `auth.any` middleware to 10 POST routes across 5 route modules
+- Updated security audit script to recognize both alias and class name
+- All route guardrails budgets still met
+
+**Proof:** `docs/PROOFS/wp29_security_audit_fix_pass.md`
+
+**Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-29
 
 ---
 

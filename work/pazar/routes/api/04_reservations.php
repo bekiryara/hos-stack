@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\DB;
 
 // Reservation Spine Endpoints (WP-4)
 // POST /v1/reservations - Create reservation
-Route::middleware('auth.ctx')->post('/v1/reservations', function (\Illuminate\Http\Request $request) {
+// WP-29: Auth required via auth.any middleware
+Route::middleware(['auth.any', 'auth.ctx'])->post('/v1/reservations', function (\Illuminate\Http\Request $request) {
     // WP-4.1: Error normalization - wrap entire handler in try-catch
     try {
     // WP-13: AuthContext middleware handles JWT verification and sets requester_user_id
@@ -187,7 +188,8 @@ Route::middleware('auth.ctx')->post('/v1/reservations', function (\Illuminate\Ht
 
 // POST /v1/reservations/{id}/accept - Accept reservation
 // WP-26: Tenant scope enforced via tenant.scope middleware
-Route::middleware(['auth.ctx', 'tenant.scope'])->post('/v1/reservations/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
+// WP-29: Auth required via auth.any middleware
+Route::middleware(['auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/reservations/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
     // WP-4.1: Error normalization - wrap entire handler in try-catch
     try {
     // WP-26: tenant_id is set by TenantScope middleware

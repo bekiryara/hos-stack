@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Schema;
 // Supply Spine Endpoints (WP-3)
 // POST /v1/listings - Create DRAFT listing
 // WP-26: Tenant scope enforced via tenant.scope middleware
-Route::middleware('tenant.scope')->post('/v1/listings', function (\Illuminate\Http\Request $request) {
+// WP-29: Auth required via auth.any middleware
+Route::middleware(['auth.any', 'tenant.scope'])->post('/v1/listings', function (\Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     // WP-28: Guard against null tenant_id (fail-fast if middleware didn't run)
     $tenantId = $request->attributes->get('tenant_id');
@@ -129,7 +130,8 @@ Route::middleware('tenant.scope')->post('/v1/listings', function (\Illuminate\Ht
 
 // POST /v1/listings/{id}/publish - Publish listing
 // WP-26: Tenant scope enforced via tenant.scope middleware
-Route::middleware('tenant.scope')->post('/v1/listings/{id}/publish', function ($id, \Illuminate\Http\Request $request) {
+// WP-29: Auth required via auth.any middleware
+Route::middleware(['auth.any', 'tenant.scope'])->post('/v1/listings/{id}/publish', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     // WP-28: Guard against null tenant_id (fail-fast if middleware didn't run)
     $tenantId = $request->attributes->get('tenant_id');

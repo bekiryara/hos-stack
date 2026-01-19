@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 // POST /v1/listings/{id}/offers - Create offer
 // WP-26: Tenant scope enforced via tenant.scope middleware
-Route::middleware('tenant.scope')->post('/v1/listings/{id}/offers', function ($id, \Illuminate\Http\Request $request) {
+// WP-29: Auth required via auth.any middleware
+Route::middleware(['auth.any', 'tenant.scope'])->post('/v1/listings/{id}/offers', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     $tenantId = $request->attributes->get('tenant_id');
     
@@ -187,7 +188,8 @@ Route::get('/v1/offers/{id}', function ($id) {
 
 // POST /v1/offers/{id}/activate - Activate offer
 // WP-26: Tenant scope enforced via tenant.scope middleware
-Route::middleware('tenant.scope')->post('/v1/offers/{id}/activate', function ($id, \Illuminate\Http\Request $request) {
+// WP-29: Auth required via auth.any middleware
+Route::middleware(['auth.any', 'tenant.scope'])->post('/v1/offers/{id}/activate', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     $tenantId = $request->attributes->get('tenant_id');
     
@@ -235,7 +237,8 @@ Route::middleware('tenant.scope')->post('/v1/offers/{id}/activate', function ($i
 
 // POST /v1/offers/{id}/deactivate - Deactivate offer
 // WP-26: Tenant scope enforced via tenant.scope middleware
-Route::middleware('tenant.scope')->post('/v1/offers/{id}/deactivate', function ($id, \Illuminate\Http\Request $request) {
+// WP-29: Auth required via auth.any middleware
+Route::middleware(['auth.any', 'tenant.scope'])->post('/v1/offers/{id}/deactivate', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     $tenantId = $request->attributes->get('tenant_id');
     

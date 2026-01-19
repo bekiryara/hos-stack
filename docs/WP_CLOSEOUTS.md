@@ -1,7 +1,59 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-01-18  
+**Last Updated:** 2026-01-19  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-29: Security Audit Violations Fix (auth.any coverage)
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-29
+
+### Purpose
+Eliminate Security Audit FAIL: "10 violations - POST routes missing auth.any". Zero refactor. Minimal diff. No behavior change except: unauthenticated POST write routes MUST now require auth (expected).
+
+### Deliverables
+- `work/pazar/routes/api/03a_listings_write.php` (MOD): Added auth.any to 2 POST routes
+- `work/pazar/routes/api/03c_offers.php` (MOD): Added auth.any to 3 POST routes
+- `work/pazar/routes/api/04_reservations.php` (MOD): Added auth.any to 2 POST routes
+- `work/pazar/routes/api/05_orders.php` (MOD): Added auth.any to 1 POST route
+- `work/pazar/routes/api/06_rentals.php` (MOD): Added auth.any to 2 POST routes
+- `ops/security_audit.ps1` (MOD): Updated to check for both auth.any alias and AuthAny class name
+- `docs/PROOFS/wp29_security_audit_fix_pass.md` - Proof document
+
+### Changes
+1. **Added auth.any Middleware:**
+   - Added `auth.any` to all 10 POST write routes across 5 route modules
+   - Routes now require authentication (401 Unauthorized for unauthenticated requests)
+   - Minimal diff: added to existing middleware arrays (no new groups)
+
+2. **Security Audit Script Fix:**
+   - Updated to check for both `auth.any` alias and `App\Http\Middleware\AuthAny` class name
+   - Laravel's route:list returns fully qualified class names, not aliases
+   - Minimal change: added class name pattern check to Rules 1, 2, and 4
+
+### Commands
+```powershell
+# Verify security audit passes
+.\ops\security_audit.ps1
+
+# Verify route guardrails still PASS
+.\ops\pazar_routes_guard.ps1
+
+# Verify boundary checks still PASS
+.\ops\boundary_contract_check.ps1
+
+# Full spine check (may show 401 in listing check - expected)
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp29_security_audit_fix_pass.md` - Proof document with before/after outputs
+- Security Audit: PASS (0 violations, down from 10)
+- Routes Guardrails: PASS (all budgets met, largest module: 359 lines < 900)
+- Boundary Contract Check: PASS (no violations)
+- All 10 POST routes now have auth.any middleware applied
 
 ---
 
