@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 
 // GET /v1/listings - Search listings
-Route::get('/v1/listings', function (\Illuminate\Http\Request $request) {
+// WP-8: GUEST+ persona (no headers required for basic search, store scope requires X-Active-Tenant-Id)
+Route::middleware(['persona.scope:guest'])->get('/v1/listings', function (\Illuminate\Http\Request $request) {
     $query = DB::table('listings');
     
     // Filter by category_id if provided
@@ -96,7 +97,8 @@ Route::get('/v1/listings', function (\Illuminate\Http\Request $request) {
 });
 
 // GET /v1/listings/{id} - Get single listing
-Route::get('/v1/listings/{id}', function ($id) {
+// WP-8: GUEST+ persona (no headers required)
+Route::middleware(['persona.scope:guest'])->get('/v1/listings/{id}', function ($id) {
     $listing = DB::table('listings')->where('id', $id)->first();
     
     if (!$listing) {

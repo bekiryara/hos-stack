@@ -33,6 +33,134 @@ Write-Info "Base URL: ${BaseUrl}"
 Write-Info "H-OS Base URL: ${HosBaseUrl}"
 Write-Info ""
 
+# WP-33: Wait-PazarReady function for cold-start warmup
+function Wait-PazarReady {
+    param(
+        [string]$BaseUrl = "http://localhost:8080",
+        [int]$TimeoutSec = 60,
+        [int]$IntervalMs = 500,
+        [int]$MaxIntervalMs = 3000,
+        [switch]$Jitter
+    )
+    
+    $startTime = Get-Date
+    $currentInterval = $IntervalMs
+    $attempt = 0
+    
+    Write-Info "Waiting for Pazar to be ready (timeout: ${TimeoutSec}s)..."
+    
+    while ($true) {
+        $elapsed = ((Get-Date) - $startTime).TotalSeconds
+        
+        if ($elapsed -ge $TimeoutSec) {
+            Write-Fail "Pazar readiness timeout after ${TimeoutSec}s"
+            Write-Info "Last endpoint tested: $lastEndpoint"
+            Write-Info "Last status code: $lastStatusCode"
+            return $false
+        }
+        
+        $attempt++
+        $allReady = $true
+        $lastEndpoint = ""
+        $lastStatusCode = 0
+        
+        # Check 1: GET /up (must be 200)
+        try {
+            $upResponse = Invoke-WebRequest -Uri "${BaseUrl}/up" -Method "GET" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+            $lastEndpoint = "/up"
+            $lastStatusCode = $upResponse.StatusCode
+            if ($upResponse.StatusCode -ne 200) {
+                $allReady = $false
+            }
+        } catch {
+            $allReady = $false
+            $lastEndpoint = "/up"
+            if ($_.Exception.Response) {
+                $lastStatusCode = [int]$_.Exception.Response.StatusCode.value__
+            } else {
+                $lastStatusCode = 0
+            }
+        }
+        
+        if (-not $allReady) {
+            Start-Sleep -Milliseconds $currentInterval
+            $currentInterval = [Math]::Min($currentInterval * 1.5, $MaxIntervalMs)
+            continue
+        }
+        
+        # Check 2: GET /api/metrics (must be 200 AND body contains "pazar_up 1")
+        try {
+            $metricsResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/metrics" -Method "GET" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+            $lastEndpoint = "/api/metrics"
+            $lastStatusCode = $metricsResponse.StatusCode
+            if ($metricsResponse.StatusCode -ne 200) {
+                $allReady = $false
+            } else {
+                $body = $metricsResponse.Content
+                if ($body -notmatch "pazar_up\s+1") {
+                    $allReady = $false
+                }
+            }
+        } catch {
+            $allReady = $false
+            $lastEndpoint = "/api/metrics"
+            if ($_.Exception.Response) {
+                $lastStatusCode = [int]$_.Exception.Response.StatusCode.value__
+            } else {
+                $lastStatusCode = 0
+            }
+        }
+        
+        if (-not $allReady) {
+            Start-Sleep -Milliseconds $currentInterval
+            $currentInterval = [Math]::Min($currentInterval * 1.5, $MaxIntervalMs)
+            continue
+        }
+        
+        # Check 3: GET /api/v1/categories (must be 200 OR at least not 404)
+        try {
+            $categoriesResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/v1/categories" -Method "GET" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+            $lastEndpoint = "/api/v1/categories"
+            $lastStatusCode = $categoriesResponse.StatusCode
+            if ($categoriesResponse.StatusCode -eq 404) {
+                $allReady = $false
+            }
+        } catch {
+            $allReady = $false
+            $lastEndpoint = "/api/v1/categories"
+            if ($_.Exception.Response) {
+                $lastStatusCode = [int]$_.Exception.Response.StatusCode.value__
+                # Treat 404/502/503/500 as NOT READY
+                if ($lastStatusCode -in @(404, 502, 503, 500)) {
+                    # Continue retrying
+                } else {
+                    # Other errors might be OK (e.g., 401/403), but we'll retry anyway
+                }
+            } else {
+                $lastStatusCode = 0
+            }
+        }
+        
+        if ($allReady) {
+            $elapsed = ((Get-Date) - $startTime).TotalSeconds
+            Write-Pass "Pazar ready after ${elapsed}s (attempt $attempt)"
+            return $true
+        }
+        
+        Start-Sleep -Milliseconds $currentInterval
+        $currentInterval = [Math]::Min($currentInterval * 1.5, $MaxIntervalMs)
+    }
+}
+
+# WP-33: Wait for Pazar to be ready before running tests
+Write-Info ""
+if (-not (Wait-PazarReady -BaseUrl $BaseUrl -TimeoutSec 60)) {
+    Write-Fail "Pazar readiness check failed - aborting E2E tests"
+    Invoke-OpsExit 1
+    return
+}
+Write-Info ""
+
 # Result tracking
 $checkResults = @()
 $overallPass = $true

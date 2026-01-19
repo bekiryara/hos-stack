@@ -5,8 +5,9 @@ use Illuminate\Support\Facades\DB;
 
 // Rental Spine Endpoints (WP-7)
 // POST /v1/rentals - Create rental request
+// WP-8: PERSONAL persona requires Authorization header (persona.scope:personal)
 // WP-29: Auth required via auth.any middleware
-Route::middleware(['auth.any', 'auth.ctx'])->post('/v1/rentals', function (\Illuminate\Http\Request $request) {
+Route::middleware(['persona.scope:personal', 'auth.any', 'auth.ctx'])->post('/v1/rentals', function (\Illuminate\Http\Request $request) {
     // WP-13: AuthContext middleware handles JWT verification and sets requester_user_id
     
     // Require Idempotency-Key header
@@ -137,9 +138,10 @@ Route::middleware(['auth.any', 'auth.ctx'])->post('/v1/rentals', function (\Illu
 });
 
 // POST /v1/rentals/{id}/accept - Accept rental
+// WP-8: STORE persona requires X-Active-Tenant-Id header (persona.scope:store)
 // WP-26: Tenant scope enforced via tenant.scope middleware
 // WP-29: Auth required via auth.any middleware
-Route::middleware(['auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/rentals/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
+Route::middleware(['persona.scope:store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/rentals/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     $tenantId = $request->attributes->get('tenant_id');
     

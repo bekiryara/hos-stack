@@ -1,0 +1,1884 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260119145528
+Username: BEKIR\Bekir
+RunAs User: BEKIR\Bekir
+Configuration Name: 
+Machine: BEKIR (Microsoft Windows NT 10.0.19045.0)
+Host Application: powershell.exe -NoExit -Command Set-Location 'D:\stack'
+Process ID: 15928
+PSVersion: 5.1.19041.6456
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.19041.6456
+BuildVersion: 10.0.19041.6456
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+PS D:\stack> "=== INPUT PACK ===" 
+=== INPUT PACK ===
+PS D:\stack> "Timestamp: $(Get-Date)"
+Timestamp: 01/19/2026 14:55:28
+PS D:\stack> ""
+
+PS D:\stack> Set-Location D:\stack
+PS D:\stack> "--- GIT ---"
+--- GIT ---
+PS D:\stack> git rev-parse --abbrev-ref HEAD 2>&1
+wp9-hos-world-status-fix
+PS D:\stack> git log -1 --oneline 2>&1
+d5816df (HEAD -> wp9-hos-world-status-fix) WP-31: Pazar /api/metrics endpoint + observability status PASS
+PS D:\stack> git status --porcelain 2>&1
+ D docs/NE_YAPTIK.md
+ M work/hos
+ M work/pazar/routes/api/03a_listings_write.php
+?? _share/
+PS D:\stack> git diff --stat 2>&1
+git : warning: in the working copy of 'work/pazar/routes/api/03a_listings_write.php', LF will be replaced by CRLF the n
+ext time Git touches it
+At line:1 char:1
++ git diff --stat 2>&1
++ ~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+ docs/NE_YAPTIK.md                            | 94 ----------------------------
+ work/pazar/routes/api/03a_listings_write.php |  1 +
+ 2 files changed, 1 insertion(+), 94 deletions(-)
+git : warning: in the working copy of 'work/pazar/routes/api/03a_listings_write.php', LF will be replaced by CRLF the n
+ext time Git touches it
+At line:1 char:1
++ git diff --stat 2>&1
++ ~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+PS D:\stack> ""
+
+PS D:\stack> "--- OPS STATUS ---"
+--- OPS STATUS ---
+PS D:\stack> .\ops\ops_status.ps1 2>&1
+=== UNIFIED OPS STATUS DASHBOARD ===
+Timestamp: 2026-01-19 14:55:31
+
+Probing core availability...
+[INFO] Core available: H-OS and hos-db reachable
+
+=== Running Ops Checks ===
+
+Running Ops Drift Guard...
+=== OPS DRIFT GUARD ===
+Timestamp: 2026-01-19 14:55:34
+
+Reading ops_status.ps1 to extract registered checks...
+Found 38 registered scripts in ops_status.ps1
+Found 45 total ops scripts (excluding wrappers/utilities)
+
+Verifying runbook existence for registered checks...
+Verifying proof presence...
+
+=== DRIFT GUARD RESULTS ===
+
+[FAIL] Unwired scripts detected: account_portal_contract_check.ps1, account_portal_list_contract_check.ps1, account_portal_read_check.ps1, baseline_status.ps1, boundary_contract_check.ps1, catalog_contract_check.ps1, core_persona_contract_check.ps1, daily_snapshot.ps1, graveyard_check.ps1, idempotency_coverage_check.ps1, listing_contract_check.ps1, messaging_contract_check.ps1, messaging_write_contract_check.ps1, offer_contract_check.ps1, order_contract_check.ps1, pazar_spine_check.ps1, persona_scope_check.ps1, read_latency_p95_check.ps1, read_snapshot_check.ps1, rental_contract_check.ps1, reservation_contract_check.ps1, search_contract_check.ps1, tenant_scope_contract_check.ps1, world_status_check.ps1, write_snapshot_check.ps1
+These scripts must be added to ops_status.ps1 check registry or explicitly excluded.
+[PASS] All registered checks have runbooks (or documented 'no runbook required')
+
+OVERALL STATUS: FAIL
+
+Remediation:
+1. Add unwired scripts to ops_status.ps1 check registry with metadata (Id, Name, ScriptPath, Blocking, OnFailAction)
+2. Or explicitly exclude scripts if they are utilities/wrappers (update ops_drift_guard.ps1 exclusion list)
+3. Create runbooks for missing checks in docs/runbooks/<check_name>.md
+Running Storage Permissions...
+=== STORAGE PERMISSIONS CHECK ===
+Timestamp: 2026-01-19 14:55:34
+
+Checking storage directory...
+Checking storage/logs directory...
+Checking Laravel log file writability...
+Checking bootstrap/cache directory...
+
+=== STORAGE PERMISSIONS CHECK RESULTS ===
+
+Check                                    Status Notes
+--------------------------------------------------------------------------------
+Storage Directory                        [PASS]   Path exists and writable (owner: www-data:www-data)
+Storage Logs Directory                   [PASS]   Path exists and writable (owner: www-data:www-data)
+Laravel Log File                         [PASS]   laravel.log exists and writable
+Bootstrap Cache Directory                [PASS]   Path exists and writable (owner: www-data:www-data)
+
+OVERALL STATUS: PASS
+Running Repository Doctor...
+=== REPOSITORY DOCTOR ===
+Timestamp: 2026-01-19 14:55:39
+
+[0] Checking execution directory...
+
+[0.1] Checking for duplicate compose service/port conflicts...
+WARNING: Potential compose usage conflicts detected
+Guidance: Use ops/stack_up.ps1 -Profile obs to start only observability services
+
+[1] Checking Docker Compose services...
+
+[2] Checking H-OS health endpoint...
+
+[3] Checking Pazar up endpoint...
+
+[4] Checking for tracked secrets...
+
+[5] Checking for forbidden root artifacts...
+
+[6] Checking snapshot files...
+
+[7] Running repository integrity check...
+[INFO] === Repository Integrity Check ===
+Checking for massive deleted-tracked files...
+Checking for unexpected untracked dump files...
+Checking for duplicate/scratch folders...
+  Remediation: Review and archive/remove duplicate folders manually
+Checking for duplicate compose files...
+Checking for missing critical ops scripts...
+[INFO] === Integrity Check Results ===
+
+
+[WARN] OVERALL STATUS: WARN (1 warnings)
+
+
+=== DOCTOR SUMMARY ===
+
+Check                                    Status     Details
+--------------------------------------------------------------------------------
+Execution Directory                      PASS       Running from repo root
+Duplicate Compose Patterns               WARN       Both root and work/hos compose files exist. Ensure obs profile does not start core services.
+Docker Compose Services                  PASS       All services running
+H-OS Health (/v1/health)                 PASS       HTTP 200, ok:true
+Pazar Up (/up)                           PASS       HTTP 200
+Tracked Secrets                          PASS       No secrets/*.txt or .env files tracked
+Forbidden Root Artifacts                 PASS       No *.zip, *.rar, *.bak, *.tmp files in root
+Snapshot Files                           PASS       All required snapshots present
+Repository Integrity                     WARN       Could not parse integrity check output
+Snapshot Files                           PASS       All required snapshots present
+
+OVERALL STATUS: WARN (2 warnings)
+
+Note: Some checks returned warnings (services may be down)
+Running Stack Verification...
+=== Stack Verification ===
+
+[1] docker compose ps
+NAME                    IMAGE                                                                     COMMAND                  SERVICE         CREATED        STATUS                 PORTS stack-hos-api-1         stack-hos-api                                                             "docker-entrypoint.s…"   hos-api         43 hours ago   Up 3 hours             127.0.0.1:3000->3000/tcp stack-hos-db-1          postgres:16-alpine                                                        "docker-entrypoint.s…"   hos-db          2 days ago     Up 3 hours (healthy)   5432/tcp stack-hos-web-1         sha256:cfe7e122474ca1c86874ffad9bdf4a17ea479f9bb3a1314bd4c62a3dc5a76f2a   "/docker-entrypoint.…"   hos-web         2 days ago     Up 3 hours             127.0.0.1:3002->80/tcp stack-messaging-api-1   stack-messaging-api                                                       "docker-entrypoint.s…"   messaging-api   2 days ago     Up 3 hours             127.0.0.1:8090->3000/tcp stack-messaging-db-1    postgres:16-alpine                                                        "docker-entrypoint.s…"   messaging-db    2 days ago     Up 3 hours (healthy)   5432/tcp stack-pazar-app-1       stack-pazar-app                                                           "/usr/local/bin/dock…"   pazar-app       11 hours ago   Up 43 minutes          127.0.0.1:8080->80/tcp stack-pazar-db-1        postgres:16-alpine                                                        "docker-entrypoint.s…"   pazar-db        2 days ago     Up 3 hours (healthy)   5432/tcp
+
+[2] H-OS health (http://localhost:3000/v1/health)
+PASS: HTTP 200 {"ok":true}
+
+[3] Pazar health (http://localhost:8080/up)
+PASS: HTTP 200
+
+[4] Pazar FS posture (storage/logs writability)
+[PASS] Pazar FS posture: storage/logs writable
+
+=== VERIFICATION PASS ===
+Running Incident Triage...
+=== INCIDENT TRIAGE ===
+Timestamp: 2026-01-19 14:55:51
+
+[1] Checking Docker Compose services...
+
+[2] Checking H-OS health endpoint...
+
+[3] Checking Pazar up endpoint...
+
+[4] Fetching recent logs...
+
+--- Pazar App Logs (last 120 lines) ---
+pazar-app-1  | #26 /var/www/html/app/Http/Middleware/ErrorEnvelope.php(19): Illuminate\\Pipeline\\Pipeline->{closure:Illuminate\\Pipeline\\Pipeline::prepareDestination():168}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #27 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): App\\Http\\Middleware\\ErrorEnvelope->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #28 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #29 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #30 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #31 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #32 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #33 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #34 /var/www/html/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #35 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\\Http\\Middleware\\ValidatePostSize->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #36 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(110): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #37 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #38 /var/www/html/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #39 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\\Http\\Middleware\\HandleCors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #40 /var/www/html/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #41 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\\Http\\Middleware\\TrustProxies->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #42 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #43 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #44 /var/www/html/app/Http/Middleware/Cors.php(24): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #45 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): App\\Http\\Middleware\\Cors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #46 /var/www/html/app/Http/Middleware/SecurityHeaders.php(18): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #47 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): App\\Http\\Middleware\\SecurityHeaders->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #48 /var/www/html/app/Http/Middleware/ForceJsonForApi.php(24): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #49 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(209): App\\Http\\Middleware\\ForceJsonForApi->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+pazar-app-1  | #50 /var/www/html/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(127): Illuminate\\Pipeline\\Pipeline->{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():184}:185}(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #51 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(176): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+pazar-app-1  | #52 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(145): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #53 /var/www/html/public/index.php(9): Illuminate\\Foundation\\Http\\Kernel->handle(Object(Illuminate\\Http\\Request))
+pazar-app-1  | #54 {main}
+pazar-app-1  | "}
+pazar-app-1  | [2026-01-19 11:33:04] local.ERROR: error {"service":"pazar","request_id":"34cee465-7f6b-4dbf-be25-91dcfc8bc5fe","route":"api/v1/listings/abc-123-def","method":"GET","tenant_id":null,"user_id":null,"world":null,"event":"error","error_code":"INTERNAL_ERROR","exception_class":"Illuminate\\Database\\QueryException","message":"SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type uuid: \"abc-123-def\"
+pazar-app-1  | CONTEXT:  unnamed portal parameter $1 = '...' (Connection: pgsql, SQL: select * from \"listings\" where \"id\" = abc-123-def limit 1)"}
+pazar-app-1  | 127.0.0.1 -  19/Jan/2026:11:33:04 +0000 "GET /index.php" 500
+pazar-app-1  | 172.18.0.1 - - [19/Jan/2026:11:33:04 +0000] "GET /api/v1/listings/abc-123-def HTTP/1.1" 500 131 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+pazar-app-1  | 172.18.0.1 - - [19/Jan/2026:11:33:24 +0000] "GET /api/v1/categories HTTP/1.1" 200 973 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+pazar-app-1  | 127.0.0.1 -  19/Jan/2026:11:33:24 +0000 "GET /index.php" 200
+pazar-app-1  | 2026-01-19 11:55:36,856 INFO reaped unknown pid 134 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:36,856 INFO reaped unknown pid 134 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:36,859 INFO reaped unknown pid 142 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:36,859 INFO reaped unknown pid 142 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:37,861 INFO reaped unknown pid 158 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:37,861 INFO reaped unknown pid 158 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:38,863 INFO reaped unknown pid 166 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:38,863 INFO reaped unknown pid 166 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:39,864 INFO reaped unknown pid 182 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:39,864 INFO reaped unknown pid 182 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:39,864 INFO reaped unknown pid 193 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:39,864 INFO reaped unknown pid 193 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:39,864 INFO reaped unknown pid 201 (exit status 0)
+pazar-app-1  | 2026-01-19 11:55:39,864 INFO reaped unknown pid 201 (exit status 0)
+
+--- H-OS API Logs (last 120 lines) ---
+hos-api-1  | {"level":30,"time":1768815892755,"pid":1,"hostname":"6f9a93324b02","reqId":"24b29ada-2bbd-4715-aad8-83e1632341c4","req":{"method":"POST","url":"/v1/admin/users/upsert","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":39566},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768815893098,"pid":1,"hostname":"6f9a93324b02","reqId":"24b29ada-2bbd-4715-aad8-83e1632341c4","res":{"statusCode":201},"responseTime":341.99439899995923,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768815893162,"pid":1,"hostname":"6f9a93324b02","reqId":"dbdbc096-21f0-4f01-8d22-4d1da79663a1","req":{"method":"POST","url":"/v1/auth/login","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":39566},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768815893389,"pid":1,"hostname":"6f9a93324b02","reqId":"dbdbc096-21f0-4f01-8d22-4d1da79663a1","res":{"statusCode":200},"responseTime":226.5547170001082,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768815893404,"pid":1,"hostname":"6f9a93324b02","reqId":"91885f2d-3fc9-4859-9266-acb1a8bd09e4","req":{"method":"GET","url":"/v1/me","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":39566},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768815893444,"pid":1,"hostname":"6f9a93324b02","reqId":"91885f2d-3fc9-4859-9266-acb1a8bd09e4","res":{"statusCode":200},"responseTime":38.84738199971616,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768815893470,"pid":1,"hostname":"6f9a93324b02","reqId":"7fbad968-77bd-44f9-a304-54041f53d6e5","req":{"method":"GET","url":"/v1/me/memberships","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":39566},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768815893491,"pid":1,"hostname":"6f9a93324b02","reqId":"7fbad968-77bd-44f9-a304-54041f53d6e5","res":{"statusCode":200},"responseTime":20.875006000045687,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768815893534,"pid":1,"hostname":"6f9a93324b02","reqId":"c621ed29-bfd4-457a-a07e-95b7eda6289b","req":{"method":"POST","url":"/v1/tenants/v2","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":39566},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768815893561,"pid":1,"hostname":"6f9a93324b02","reqId":"c621ed29-bfd4-457a-a07e-95b7eda6289b","res":{"statusCode":201},"responseTime":27.35067000007257,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768815893583,"pid":1,"hostname":"6f9a93324b02","reqId":"92ab7991-044d-48ea-b001-33dd06b929ee","req":{"method":"GET","url":"/v1/tenants/71537080-5a84-4dad-b367-3ebd4ca32b8c/memberships/me","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":39566},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768815893595,"pid":1,"hostname":"6f9a93324b02","reqId":"92ab7991-044d-48ea-b001-33dd06b929ee","res":{"statusCode":200},"responseTime":11.325286000035703,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768815893626,"pid":1,"hostname":"6f9a93324b02","reqId":"5f8f75e6-a705-460f-90ef-1a91f375bf40","req":{"method":"GET","url":"/v1/tenants/00000000-0000-0000-0000-000000000000/memberships/me","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":39566},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768815893636,"pid":1,"hostname":"6f9a93324b02","reqId":"5f8f75e6-a705-460f-90ef-1a91f375bf40","res":{"statusCode":200},"responseTime":9.859966999851167,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768816768490,"pid":1,"hostname":"6f9a93324b02","reqId":"23a5f444-a5c7-4f65-920e-7f4a60d755bd","req":{"method":"GET","url":"/v1/world/status","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":52722},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768816768492,"pid":1,"hostname":"6f9a93324b02","reqId":"23a5f444-a5c7-4f65-920e-7f4a60d755bd","res":{"statusCode":200},"responseTime":1.3388690007850528,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768816768646,"pid":1,"hostname":"6f9a93324b02","reqId":"57c8415d-724d-4870-a547-0fea635a18ff","req":{"method":"GET","url":"/v1/worlds","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":52722},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768816769213,"pid":1,"hostname":"6f9a93324b02","reqId":"57c8415d-724d-4870-a547-0fea635a18ff","res":{"statusCode":200},"responseTime":566.451306999661,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768818392131,"pid":1,"hostname":"6f9a93324b02","reqId":"55d5aee5-28b6-47af-ba42-04a439457696","req":{"method":"POST","url":"/v1/admin/users/upsert","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":38558},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768818392147,"pid":1,"hostname":"6f9a93324b02","reqId":"55d5aee5-28b6-47af-ba42-04a439457696","res":{"statusCode":400},"responseTime":14.709079000167549,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768818421495,"pid":1,"hostname":"6f9a93324b02","reqId":"8822c57e-5827-4853-b677-ebd052fd6e48","req":{"method":"POST","url":"/v1/admin/users/upsert","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":36454},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768818421506,"pid":1,"hostname":"6f9a93324b02","reqId":"8822c57e-5827-4853-b677-ebd052fd6e48","res":{"statusCode":400},"responseTime":10.803407000377774,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768818458609,"pid":1,"hostname":"6f9a93324b02","reqId":"ded5fbed-62fc-4a42-a387-1f18baccb6ea","req":{"method":"GET","url":"/v1/world/status","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":60216},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768818458611,"pid":1,"hostname":"6f9a93324b02","reqId":"ded5fbed-62fc-4a42-a387-1f18baccb6ea","res":{"statusCode":200},"responseTime":1.6426659999415278,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768818469937,"pid":1,"hostname":"6f9a93324b02","reqId":"539a4fd4-4cd0-4794-a2af-36d83cd7a39c","req":{"method":"POST","url":"/v1/admin/users/upsert","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":45586},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768818469945,"pid":1,"hostname":"6f9a93324b02","reqId":"539a4fd4-4cd0-4794-a2af-36d83cd7a39c","res":{"statusCode":400},"responseTime":6.959763000719249,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768818481996,"pid":1,"hostname":"6f9a93324b02","reqId":"3c524eaa-9ab3-4d96-9bf8-1ff25ddfb414","req":{"method":"POST","url":"/v1/admin/users/upsert","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":60216},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768818482007,"pid":1,"hostname":"6f9a93324b02","reqId":"3c524eaa-9ab3-4d96-9bf8-1ff25ddfb414","res":{"statusCode":400},"responseTime":10.058178000152111,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768818792567,"pid":1,"hostname":"6f9a93324b02","reqId":"f2da4be5-3d93-45e9-8a12-e23fc16ab87e","req":{"method":"POST","url":"/v1/admin/users/upsert","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":35782},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768818792572,"pid":1,"hostname":"6f9a93324b02","reqId":"f2da4be5-3d93-45e9-8a12-e23fc16ab87e","res":{"statusCode":400},"responseTime":4.143612999469042,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768818959826,"pid":1,"hostname":"6f9a93324b02","reqId":"4dbfef91-4131-4d84-8ab4-4528958ad246","req":{"method":"POST","url":"/v1/admin/users/upsert","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":36690},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768818959832,"pid":1,"hostname":"6f9a93324b02","reqId":"4dbfef91-4131-4d84-8ab4-4528958ad246","res":{"statusCode":400},"responseTime":4.988435000181198,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768819031703,"pid":1,"hostname":"6f9a93324b02","reqId":"9b23f9b2-e5e4-4eba-b2e4-a5284b5bf988","req":{"method":"POST","url":"/v1/admin/users/upsert","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":42248},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768819031716,"pid":1,"hostname":"6f9a93324b02","reqId":"9b23f9b2-e5e4-4eba-b2e4-a5284b5bf988","res":{"statusCode":400},"responseTime":11.598280999809504,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768821137176,"pid":1,"hostname":"6f9a93324b02","reqId":"099f5a75-286a-4ad1-8f9d-aa48b441d328","req":{"method":"GET","url":"/v1/health","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":46100},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768821137198,"pid":1,"hostname":"6f9a93324b02","reqId":"099f5a75-286a-4ad1-8f9d-aa48b441d328","res":{"statusCode":200},"responseTime":15.441829999908805,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768821551336,"pid":1,"hostname":"6f9a93324b02","reqId":"00014e89-05ae-417e-8f0a-353a41d2616e","req":{"method":"GET","url":"/v1/health","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":58698},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768821551342,"pid":1,"hostname":"6f9a93324b02","reqId":"00014e89-05ae-417e-8f0a-353a41d2616e","res":{"statusCode":200},"responseTime":3.9018280003219843,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768821584516,"pid":1,"hostname":"6f9a93324b02","reqId":"06f1b328-cdd5-4274-9c73-acb5ef716d9e","req":{"method":"GET","url":"/v1/health","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":43596},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768821584520,"pid":1,"hostname":"6f9a93324b02","reqId":"06f1b328-cdd5-4274-9c73-acb5ef716d9e","res":{"statusCode":200},"responseTime":2.364225000143051,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768821595110,"pid":1,"hostname":"6f9a93324b02","reqId":"9d837d63-a677-4626-9fa7-037e9bece1ab","req":{"method":"GET","url":"/v1/health","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":43596},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768821595112,"pid":1,"hostname":"6f9a93324b02","reqId":"9d837d63-a677-4626-9fa7-037e9bece1ab","res":{"statusCode":200},"responseTime":1.5331110004335642,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768823733201,"pid":1,"hostname":"6f9a93324b02","reqId":"29e83436-cf34-4589-9b07-13e4640d0f78","req":{"method":"GET","url":"/v1/health","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":50874},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768823733214,"pid":1,"hostname":"6f9a93324b02","reqId":"29e83436-cf34-4589-9b07-13e4640d0f78","res":{"statusCode":200},"responseTime":7.244140999391675,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768823740485,"pid":1,"hostname":"6f9a93324b02","reqId":"1185533d-bd58-435f-954c-72e653dc1772","req":{"method":"GET","url":"/v1/health","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":50874},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768823740487,"pid":1,"hostname":"6f9a93324b02","reqId":"1185533d-bd58-435f-954c-72e653dc1772","res":{"statusCode":200},"responseTime":1.9066629987210035,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768823750565,"pid":1,"hostname":"6f9a93324b02","reqId":"9328ac7a-7ff2-422f-9f7e-d24ead8f6538","req":{"method":"GET","url":"/v1/health","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":50874},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768823750567,"pid":1,"hostname":"6f9a93324b02","reqId":"9328ac7a-7ff2-422f-9f7e-d24ead8f6538","res":{"statusCode":200},"responseTime":1.970473000779748,"msg":"request completed"}
+hos-api-1  | {"level":30,"time":1768823751919,"pid":1,"hostname":"6f9a93324b02","reqId":"763b0859-5fa0-4b63-884a-cb75c9f267a2","req":{"method":"GET","url":"/v1/health","host":"localhost:3000","remoteAddress":"172.18.0.1","remotePort":50874},"msg":"incoming request"}
+hos-api-1  | {"level":30,"time":1768823751921,"pid":1,"hostname":"6f9a93324b02","reqId":"763b0859-5fa0-4b63-884a-cb75c9f267a2","res":{"statusCode":200},"responseTime":1.251774000003934,"msg":"request completed"}
+
+=== TRIAGE SUMMARY ===
+
+Check                                    Status     Details
+--------------------------------------------------------------------------------
+Service: hos-api                         PASS       running - stack-hos-api-1
+Service: hos-db                          PASS       running - stack-hos-db-1
+Service: hos-web                         PASS       running - stack-hos-web-1
+Service: messaging-api                   PASS       running - stack-messaging-api-1
+Service: messaging-db                    PASS       running - stack-messaging-db-1
+Service: pazar-app                       PASS       running - stack-pazar-app-1
+Service: pazar-db                        PASS       running - stack-pazar-db-1
+Docker Compose Services                  PASS       All services running
+H-OS Health (/v1/health)                 PASS       HTTP 200 - ok: True
+Pazar Up (/up)                           PASS       HTTP 200
+Pazar App Logs (Errors)                  WARN       6 error/exception entries in last 120 lines
+H-OS API Logs (Errors)                   PASS       No errors in last 120 lines
+
+OVERALL STATUS: WARN (1 warnings)
+Running Storage Write...
+=== STORAGE WRITE CHECK ===
+Timestamp: 2026-01-19 14:55:53
+
+Checking paths exist...
+Checking laravel.log exists...
+Checking worker append (www-data user)...
+
+=== STORAGE WRITE CHECK RESULTS ===
+
+Check                                    Status Notes
+--------------------------------------------------------------------------------
+Paths exist                              [PASS]   storage, storage/logs, bootstrap/cache exist
+laravel.log exists                       [PASS]   File exists
+Worker append (www-data)                 [PASS]   www-data user can append to laravel.log
+
+OVERALL STATUS: PASS
+Running Storage Posture...
+[INFO] === Storage Posture Check ===
+Checking /var/www/html/storage writability...
+Checking /var/www/html/storage/logs writability...
+Checking laravel.log can be created...
+
+=== STORAGE POSTURE CHECK RESULTS ===
+
+Check                                    Status Notes
+--------------------------------------------------------------------------------
+/var/www/html/storage writable           [PASS]   Directory exists and is writable
+/var/www/html/storage/logs writable      [PASS]   Directory exists and is writable
+laravel.log can be created               [PASS]   File can be created by www-data
+
+OVERALL STATUS: PASS
+Running Pazar UI Smoke...
+[INFO] === Pazar UI Smoke Test ===
+[INFO] Testing UI endpoint: http://localhost:8080/ui/admin/control-center
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+[FAIL] UI endpoint returned unexpected status code: 404
+[INFO]
+[INFO] Check                                    Status Notes
+[INFO] --------------------------------------------------------------------------------
+[INFO] UI Smoke Test                             FAIL   Unexpected status code: 404
+[INFO]
+[INFO] OVERALL STATUS: FAIL
+Running Pazar Storage Posture...
+[INFO] === Pazar Storage Posture Check ===
+Checking storage/logs directory...
+Checking laravel.log file...
+Checking laravel.log writability...
+Testing write operation to laravel.log...
+Checking bootstrap/cache directory...
+[INFO] === Storage Posture Results ===
+
+
+[PASS] OVERALL STATUS: PASS (All storage checks passed)
+Running SLO Check...
+PS D:\stack> TerminatingError(slo_check.ps1): "Cannot process argument transformation on parameter 'N'. Cannot convert value "-N" to type "System.Int32". Error: "Giriş dizesi doğru biçimde değildi.""
+Running Security Audit...
+=== Security Audit (Route/Middleware) ===
+
+[1] Fetching routes from pazar-app...
+  [OK] Fetched 28 routes
+Found 28 routes
+
+[2] Auditing routes...
+
+[3] Security Audit Results
+
+[OK] PASS: 0 violations found
+All routes comply with security policy.
+Running Conformance...
+=== Architecture Conformance Gate ===
+
+[A] World registry drift check...
+[FAIL] [A] World registry drift detected: Disabled in registry but not in config: real_estate, services, vehicle
+  -> work\pazar\WORLD_REGISTRY.md
+  -> work\pazar\config\worlds.php
+
+[B] Forbidden artifacts check...
+[PASS] [B] B - No forbidden artifacts (*.bak, *.tmp, *.orig, *.swp, *~)
+
+[C] Disabled-world code policy check...
+[PASS] [C] C - No code in disabled worlds (0 disabled)
+
+[D] Canonical docs single-source check...
+[PASS] [D] D - No duplicate CURRENT*.md or FOUNDING_SPEC*.md files (checked 1 unique files)
+
+[E] Secrets safety check...
+[PASS] [E] E - No secrets tracked in git
+
+[INFO] === Summary ===
+[FAIL] CONFORMANCE FAILED
+
+Failures:
+  [A] World registry drift detected: Disabled in registry but not in config: real_estate, services, vehicle
+    -> work\pazar\WORLD_REGISTRY.md
+    -> work\pazar\config\worlds.php
+Running Product Spine Check...
+Running Product Spine E2E Check...
+=== PRODUCT SPINE E2E CHECK ===
+Timestamp: 2026-01-19 14:56:04
+Base URL: http://localhost:8080
+
+Step 1: Health Quick Checks
+
+Step 2: Credential Check
+Skipping E2E tests (credentials not available)
+
+=== RESULTS ===
+
+
+OVERALL STATUS: WARN
+Running Product Read Path Check...
+Running Routes Snapshot...
+=== Contract Gate (Route Snapshot) ===
+
+[1] Checking Docker Compose status...
+  [OK] Pazar-app is running
+
+[2] Generating current route snapshot...
+  [OK] Current routes generated (28 routes)
+
+[3] Comparing routes...
+  Snapshot routes: 133
+  Current routes: 28
+  Added: 26
+  Removed: 131
+  [FAIL] Route changes detected
+
+[FAIL] CONTRACT FAILED
+
+Route changes detected:
+  [+] Added: 26 routes
+     - GET|HEAD api/v1/rentals/{id}
+     - POST api/v1/reservations/{id}/accept
+     - POST api/v1/listings/{id}/publish
+     - POST api/v1/orders
+     - GET|HEAD api/v1/listings/{id}/offers
+     ... and 21 more
+  [-] Removed: 131 routes
+     - POST ui/admin/control-center/measure/hos
+     - DELETE panel/{tenant_slug}/users/{tenantUser}
+     - GET|HEAD shop/{tenant_slug}/checkout/iyzico/return
+     - GET|HEAD ui/me/orders
+     - POST payments/{payment}/cancel
+     ... and 126 more
+
+Diff saved to: ops\diffs\routes.diff
+
+If these changes are intentional:
+  1. Review the diff: cat ops\diffs\routes.diff
+  2. Update snapshot: docker compose exec -T pazar-app php artisan route:list --json | Out-File -FilePath ops\snapshots\routes.pazar.json -Encoding UTF8
+  3. Commit the updated snapshot
+Running Schema Snapshot...
+[INFO] === DB Contract Gate (Schema Snapshot) ===
+
+[1] Checking Docker Compose status...
+[PASS] Pazar-db is running
+
+[2] Exporting current schema...
+[PASS] Schema exported
+
+[3] Normalizing schema...
+[PASS] Schema normalized
+
+[4] Comparing schemas...
+[FAIL] Schema changes detected
+
+[FAIL] DB CONTRACT FAILED
+
+Schema changes detected:
+  [+] Added: 197 lines
+  [-] Removed: 482 lines
+
+Diff saved to: ops\diffs\schema.diff
+Current schema saved to: ops\diffs\schema.current.sql
+
+If these changes are intentional:
+  1. Review the diff: cat ops\diffs\schema.diff
+  2. Update snapshot: docker compose exec -T pazar-db pg_dump --schema-only --no-owner --no-privileges -U pazar pazar | Out-File -FilePath ops\snapshots\schema.pazar.sql -Encoding UTF8
+  3. Commit the updated snapshot
+Running Error Contract...
+Running Error Contract Check...
+Running Environment Contract...
+=== ENVIRONMENT & SECRETS CONTRACT CHECK ===
+Timestamp: 2026-01-19 14:56:09
+
+APP_ENV not set, defaulting to: local
+APP_ENV: local
+
+=== Checking Required Environment Variables ===
+
+
+=== Checking Optional Secrets (OIDC/JWT) ===
+
+
+=== ENVIRONMENT CONTRACT CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+Running Auth Security...
+=== AUTH SECURITY CHECK ===
+Timestamp: 2026-01-19 14:56:09
+
+=== Running Auth Security Checks ===
+
+Testing Admin Unauthorized Access...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+Testing Panel Unauthorized Access...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+Testing rate limiting (35 requests)...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+Checking session cookie configuration...
+
+=== AUTH SECURITY CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+Running Tenant Boundary...
+=== TENANT BOUNDARY CHECK ===
+Timestamp: 2026-01-19 14:56:15
+
+Reading routes snapshot...
+WARN: No admin route found in snapshot
+WARN: No panel route found in snapshot
+Selected admin route: GET /admin/tenants
+Selected panel route: GET /panel/{tenant_slug}/ping
+
+Testing Admin Unauthorized Access...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+Testing Panel Unauthorized Access...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+Testing tenant boundary isolation...
+WARN: Test credentials not set. Skipping tenant boundary check.
+Set TENANT_TEST_EMAIL, TENANT_TEST_PASSWORD, TENANT_A_SLUG, TENANT_B_SLUG environment variables to enable.
+
+=== TENANT BOUNDARY CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+Running World Spine Governance...
+=== WORLD SPINE GOVERNANCE CHECK ===
+Timestamp: 2026-01-19 14:56:15
+
+Config: work/pazar/config/worlds.php
+Routes: ops/snapshots/routes.pazar.json
+
+[INFO] Parsing worlds config...
+[INFO] Enabled worlds:
+[INFO] Disabled worlds:
+[INFO]
+Reading routes snapshot...
+=== Checking Enabled Worlds ===
+
+
+=== Checking Disabled Worlds ===
+
+
+=== WORLD SPINE CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+Running Product Contract...
+Running Product Contract Check...
+[INFO] Product API Contract Gate
+[INFO] Base URL: http://localhost:8080
+[INFO] API Prefix: /api/v1
+[INFO]
+[INFO] Step 1: Parsing enabled worlds...
+[WARN] No enabled worlds found. Using defaults: commerce, food, rentals
+[PASS] Enabled worlds: commerce, food, rentals
+[INFO]
+[INFO] Step 2: Discovering routes...
+[PASS] Route discovery complete for 3 worlds
+[INFO]
+[INFO] Step 3: Checking credentials...
+[WARN] No auth token available. Some tests will be skipped.
+[WARN] TENANT_A_ID or TENANT_A_SLUG not provided. Some tests will be skipped.
+[INFO]
+[INFO] Step 4A: Testing unauthorized access (no token)...
+[INFO]
+[INFO] Step 5B: Testing tenant missing (no X-Tenant-Id)...
+[WARN] Skipping tenant missing check (no auth token)
+[INFO]
+[INFO] Step 6C: Testing happy path (authenticated CRUD)...
+[WARN] Skipping happy path check (no auth token or tenant)
+[INFO]
+[INFO] Step 7D: Testing cross-tenant isolation...
+[WARN] Skipping cross-tenant check (no auth token, tenant B, or created id)
+[INFO]
+[INFO] Step 8E: Testing world boundary...
+[WARN] Skipping world boundary check (no auth token or tenant)
+[INFO]
+[INFO] ========================================
+[INFO]   RESULTS SUMMARY
+[INFO] ========================================
+[INFO]
+Check                                              + Status     + Notes
+-------------------------------------------------- + ---------- + --------------------------------------------------------------------------------
+Credentials                                       [WARN]    No auth token (PRODUCT_TEST_BEARER)
+Tenant A                                          [WARN]    TENANT_A_ID or TENANT_A_SLUG missing
+Tenant missing                                    [WARN]    Skipped (no auth token)
+Happy path                                        [WARN]    Skipped (no auth/tenant)
+Cross-tenant                                      [WARN]    Skipped (no auth/tenantB/createdId)
+World boundary                                    [WARN]    Skipped (no auth/tenant)
+[INFO]
+[INFO] ========================================
+[WARN] Overall status: PASS with warnings
+Running Product E2E...
+[INFO] === PRODUCT E2E GATE ===
+[INFO] Base URL: http://localhost:8080
+[INFO] H-OS Base URL: http://localhost:3000
+[INFO]
+[INFO] Test 1: H-OS health check...
+[PASS] H-OS health: 200 OK
+[INFO]
+[INFO] Test 2: Pazar metrics endpoint...
+[FAIL] Pazar metrics: Expected 200, got 404
+[INFO]
+[INFO] Test 3: Product spine validation (world param required)...
+[FAIL] Product spine validation: Expected 422, got 404
+[INFO]
+[INFO] Test 3b: Product with world but no auth...
+[FAIL] Product no-auth: Expected 401/403, got 404
+[INFO]
+[INFO] Test 4: Listings per enabled world (unauthorized)...
+[INFO]   Checking commerce...
+[FAIL] commerce listings no-auth: Expected 401/403, got 404
+[INFO]   Checking food...
+[FAIL] food listings no-auth: Expected 401/403, got 404
+[INFO]   Checking rentals...
+[FAIL] rentals listings no-auth: Expected 401/403, got 500
+[INFO]
+[WARN] Auth credentials not provided - skipping auth-required E2E tests
+[INFO]
+[INFO] === Summary ===
+[INFO] PASS: , WARN: , FAIL: 6
+[INFO]
+[INFO] === Check Results ===
+Check | Status | ExitCode | Notes
+----------------------------------------------------------------------------------------------------
+H-OS Health                              [PASS] 0        200 OK, ok:true
+Pazar Metrics                            [FAIL] 1        Status: 404
+Product Spine Validation                 [FAIL] 1        Status: 404
+Product No-Auth                          [FAIL] 1        Status: 404
+commerce Listings No-Auth                [FAIL] 1        Status: 404
+food Listings No-Auth                    [FAIL] 1        Status: 404
+rentals Listings No-Auth                 [FAIL] 1        Status: 500
+Auth-Required E2E                        [WARN] 2        TenantId or AuthToken missing - tests skipped
+[INFO]
+[FAIL] OVERALL STATUS: FAIL
+[INFO] Remediation:
+[INFO]   - Run ops/request_trace.ps1 -RequestId <request_id> for failed requests
+[INFO]   - Run ops/incident_bundle.ps1 to collect diagnostics
+Running Product E2E Contract...
+[INFO] Product API E2E Contract Gate
+[INFO] Base URL: http://localhost:8080
+[INFO]
+[INFO] Step 1: Parsing enabled worlds...
+[WARN] No enabled worlds found. Using defaults: commerce, food, rentals
+[PASS] Enabled worlds: commerce, food, rentals
+[INFO]
+[INFO] Step 2: Discovering routes from snapshot...
+[PASS] Route discovery complete for 3 worlds
+[INFO]
+[INFO] Step 3: Checking credentials...
+[WARN] No auth token available. Some tests will be skipped.
+[WARN] TENANT_A_SLUG or TENANT_A_ID not provided. Some tests will be skipped.
+[INFO]
+[INFO] Step 4A: Testing unauthorized access (no token)...
+[INFO]
+[INFO] Step 5B: Testing tenant missing (no X-Tenant-Id)...
+[WARN] Skipping tenant missing check (no auth token)
+[INFO]
+[INFO] Step 6C: Testing world invalid (wrong world context)...
+[WARN] Skipping world invalid check (no auth token or tenant)
+[INFO]
+[INFO] Step 7D: Testing happy path (authenticated CRUD)...
+[WARN] Skipping happy path tests (no auth token or tenant)
+[INFO]
+[INFO] Step 8E: Testing cross-tenant leakage...
+[WARN] Skipping cross-tenant leakage test (no auth token or TENANT_B_SLUG)
+[INFO]
+[INFO] === Summary ===
+[INFO] PASS: 0, WARN: 6, FAIL: 0
+[INFO]
+[INFO] === Check Results ===
+Check                                      Status Notes
+--------------------------------------------------------------------------------
+[WARN] Credentials                              No auth token (PRODUCT_TEST_AUTH or login)
+[WARN] Tenant A                                 TENANT_A_SLUG or TENANT_A_ID missing
+[WARN] Tenant missing                           Skipped (no auth token)
+[WARN] World invalid                            Skipped (no auth/tenant)
+[WARN] Happy path                               Skipped (no auth/tenant)
+[WARN] Cross-tenant leakage                     Skipped (no auth/TENANT_B_SLUG)
+[INFO]
+[WARN] Product API E2E Contract passed with warnings (6 warning(s))
+Running Product API CRUD E2E...
+[INFO] === PRODUCT API CRUD E2E GATE ===
+[INFO] Base URL: http://localhost:8080
+[INFO]
+[INFO] Step 1: Getting enabled worlds...
+[WARN] No enabled worlds found. Using defaults: commerce, food, rentals
+[PASS] Enabled worlds: commerce, food, rentals
+[INFO]
+[INFO] Step 2: Checking credentials...
+[WARN] No auth token (PRODUCT_TEST_AUTH) - auth-required tests will be skipped
+[WARN] TENANT_A_SLUG or TENANT_A_ID not provided - tenant-scoped tests will be skipped
+[INFO]
+[INFO] Test A: Unauthorized access (no token)...
+[FAIL] commerce unauthorized: Expected 401/403, got 404
+[FAIL] food unauthorized: Expected 401/403, got 404
+[FAIL] rentals unauthorized: Expected 401/403, got 500
+[WARN] Skipping tenant missing check (no auth token)
+[WARN] Skipping happy path CRUD tests (no auth token or tenant)
+[WARN] Skipping cross-tenant leakage test (no auth or both tenants)
+[INFO]
+[INFO] === Summary ===
+[INFO] PASS: 0, WARN: 5, FAIL: 3
+[INFO]
+[INFO] === Check Results ===
+Check | Status | ExitCode | Notes
+----------------------------------------------------------------------------------------------------
+Credentials                              [WARN] 2        No auth token
+Tenant A                                 [WARN] 2        TENANT_A_SLUG or TENANT_A_ID missing
+commerce Unauthorized                    [FAIL] 1        Status: 404
+food Unauthorized                        [FAIL] 1        Status: 404
+rentals Unauthorized                     [FAIL] 1        Status: 500
+Tenant Missing                           [WARN] 2        Skipped (no auth token)
+Happy Path CRUD                          [WARN] 2        Skipped (no auth/tenant)
+Cross-Tenant Leakage                     [WARN] 2        Skipped (no auth/TENANT_B)
+[INFO]
+[FAIL] OVERALL STATUS: FAIL
+[INFO] Remediation:
+[INFO]   - Run ops/request_trace.ps1 -RequestId <request_id> for failed requests
+[INFO]   - Run ops/incident_bundle.ps1 to collect diagnostics
+Running Product API Smoke...
+=== PRODUCT API SMOKE GATE ===
+Timestamp: 2026-01-19 14:56:20
+
+[INFO] Step 1: Parse enabled worlds from config
+[FAIL] No enabled worlds found in config
+Running Product Perf Guard...
+[INFO] Product API Performance Guardrail
+[INFO] Base URL: http://localhost:8080
+[INFO] Iterations: 10 (warmup: 3, measured: 7)
+[INFO]
+[WARN] No enabled worlds found in config. Using defaults: commerce, food, rentals
+[PASS] Enabled worlds: commerce, food, rentals
+[WARN] PRODUCT_TEST_TENANT_ID or PRODUCT_TEST_AUTH not provided. Skipping perf checks.
+Running Product MVP Loop...
+=== PRODUCT MVP LOOP CHECK ===
+Timestamp: 2026-01-19 14:56:20
+Base URL: http://localhost:8080
+
+Step 1: Credential Check
+Skipping MVP loop tests (credentials not available)
+
+=== RESULTS ===
+
+
+OVERALL STATUS: WARN
+Running Product Spine Governance...
+=== PRODUCT SPINE GOVERNANCE CHECK ===
+Timestamp: 2026-01-19 14:56:20
+
+Step 1: Reading worlds configuration
+[INFO] Found 0 enabled world(s):
+[INFO] Found 0 disabled world(s):
+
+Step 2: Reading routes snapshot
+  [OK] Routes snapshot loaded
+
+Step 3: Validating enabled worlds
+
+Step 4: Validating disabled worlds (no routes)
+
+=== PRODUCT SPINE GOVERNANCE RESULTS ===
+
+World      Surface                              Middleware                    Status Notes
+--------------------------------------------------------------------------------
+
+OVERALL STATUS: PASS
+
+All enabled worlds have required routes and middleware. Disabled worlds have no routes.
+Running Product Write Spine...
+=== PRODUCT WRITE SPINE CHECK ===
+Timestamp: 2026-01-19 14:56:21
+World: commerce
+
+Step 1: Unauthorized POST (401/403 proof)
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+  [FAIL] Unauthorized POST: HTTP 404 (expected 401/403)
+Step 2: Auth without tenant (403 proof)
+  [WARN] Auth without Tenant: Auth token not available (set PRODUCT_TEST_TOKEN or PRODUCT_TEST_EMAIL + PRODUCT_TEST_PASSWORD)
+Step 3: Auth + tenant create (201 proof)
+  [WARN] Auth + Tenant Create: Auth token or tenant ID not available (set TENANT_TEST_ID or PRODUCT_TEST_TOKEN and PRODUCT_TEST_TENANT_ID)
+Step 4: Read-after-write (200 proof)
+  [WARN] Read-After-Write: Skipped (create step did not produce listing ID)
+Step 5: Cross-tenant read test (404 proof)
+  [WARN] Cross-Tenant Read: Skipped (create step did not produce listing ID)
+
+=== PRODUCT WRITE SPINE CHECK RESULTS ===
+
+Check                                    Status Notes
+--------------------------------------------------------------------------------
+
+OVERALL STATUS: FAIL
+
+Remediation:
+1. Verify Commerce POST endpoint is implemented: curl -X POST http://localhost:8080/api/v1/commerce/listings
+2. Check tenant boundary enforcement: ensure tenant_id is set from resolved context, not request body
+3. Check world boundary enforcement: ensure world='commerce' is enforced
+4. Verify response envelope: { ok:true, data:{ id, item }, request_id }
+Running Session Posture...
+=== IDENTITY & SESSION POSTURE CHECK ===
+Timestamp: 2026-01-19 14:56:21
+
+APP_ENV not set, defaulting to: local
+APP_ENV: local
+
+=== Checking Session Cookie Configuration ===
+
+Checking session cookie configuration...
+
+=== Checking Auth Endpoint Response ===
+
+Checking auth endpoint response...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+
+=== SESSION POSTURE CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+Running Product Read-Path...
+Running Product Spine Smoke...
+=== PRODUCT SPINE E2E SMOKE TEST ===
+Timestamp: 2026-01-19 14:56:22
+Base URL: http://localhost:8080
+
+Step 1: Read-path surface (unauthorized access)
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (500) İç Sunucu Hatası."
+
+Step 2: Write governance (unauthorized access)
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (405) Metoda İzin Verilmiyor."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+
+Step 3: Authenticated checks (read-path + write-stub)
+  [WARN] Credentials not set, skipping authenticated checks
+  Set PRODUCT_TEST_TOKEN (Bearer token) OR PRODUCT_TEST_EMAIL + PRODUCT_TEST_PASSWORD environment variables to enable.
+  Set PRODUCT_TEST_TENANT_ID environment variable (UUID).
+
+=== PRODUCT SPINE SMOKE TEST RESULTS ===
+
+
+OVERALL STATUS: FAIL
+
+Running OpenAPI Contract...
+=== OPENAPI CONTRACT CHECK ===
+Timestamp: 2026-01-19 14:56:22
+
+Check 1: OpenAPI spec file exists
+
+Check 2: YAML structure validation
+
+Check 3: Write endpoints in OpenAPI spec
+
+Check 4: Documentation drift guard
+
+Check 5: Endpoint probe (optional)
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+
+=== OPENAPI CONTRACT CHECK RESULTS ===
+
+
+OVERALL STATUS: WARN
+
+Running Smoke Surface Gate...
+=== SMOKE SURFACE GATE ===
+Timestamp: 2026-01-19 14:56:23
+Base URL: http://localhost:8080
+
+Check 1: Pazar /up endpoint
+
+Check 2: Pazar /metrics endpoint
+
+Check 3: API error contract smoke
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+
+Check 4: Admin UI surface (no 500)
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+
+Check 5: Prometheus targets (optional)
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+
+=== SMOKE SURFACE GATE RESULTS ===
+
+
+OVERALL STATUS: FAIL
+
+Running Observability Status...
+=== OBSERVABILITY STATUS CHECK ===
+Timestamp: 2026-01-19 14:56:27
+Pazar URL: http://localhost:8080
+H-OS URL: http://localhost:3000
+Prometheus URL: http://localhost:9090
+Alertmanager URL: http://localhost:9093
+
+Check A: Pazar /metrics endpoint
+  [PASS] Pazar /metrics: HTTP 200, body contains pazar_up 1
+
+Check B: H-OS /v1/health endpoint
+  [PASS] H-OS /v1/health: HTTP 200, ok:true
+
+Check C: Prometheus ready + targets
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+
+Check D: Alertmanager ready
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Alertmanager unreachable: Uzak sunucuya bağlanılamıyor
+
+Check E: Prometheus rules group 'pazar_baseline'
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Prometheus rules API unreachable: Uzak sunucuya bağlanılamıyor
+
+=== OBSERVABILITY STATUS SUMMARY ===
+
+[PASS] Pazar /metrics: HTTP 200, body contains pazar_up 1
+[PASS] H-OS /v1/health: HTTP 200, ok:true
+[WARN] Prometheus ready: Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+[WARN] Alertmanager ready: Alertmanager unreachable: Uzak sunucuya bağlanılamıyor
+[WARN] Prometheus rules 'pazar_baseline': Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+
+Overall Status: WARN
+Exit Code: 2
+
+Running RC0 Gate...
+[INFO] === RC0 RELEASE GATE ===
+Timestamp: 2026-01-19 14:56:40
+
+=== Running RC0 Gate Checks ===
+
+[INFO] Running 0) RC0 Check...
+[INFO] === RC0 RELEASE READINESS GATE ===
+[INFO] Timestamp: 2026-01-19 14:56:40
+[INFO]
+[INFO] Probing core availability...
+[INFO] Core available: H-OS and hos-db reachable
+[INFO]
+[INFO] === Running RC0 Checks ===
+[INFO]
+[INFO] Running Repository Doctor...
+=== REPOSITORY DOCTOR ===
+Timestamp: 2026-01-19 14:56:41
+
+[0] Checking execution directory...
+
+[0.1] Checking for duplicate compose service/port conflicts...
+WARNING: Potential compose usage conflicts detected
+Guidance: Use ops/stack_up.ps1 -Profile obs to start only observability services
+
+[1] Checking Docker Compose services...
+
+[2] Checking H-OS health endpoint...
+
+[3] Checking Pazar up endpoint...
+
+[4] Checking for tracked secrets...
+
+[5] Checking for forbidden root artifacts...
+
+[6] Checking snapshot files...
+
+[7] Running repository integrity check...
+[INFO] === Repository Integrity Check ===
+Checking for massive deleted-tracked files...
+Checking for unexpected untracked dump files...
+Checking for duplicate/scratch folders...
+  Remediation: Review and archive/remove duplicate folders manually
+Checking for duplicate compose files...
+Checking for missing critical ops scripts...
+[INFO] === Integrity Check Results ===
+
+
+[WARN] OVERALL STATUS: WARN (1 warnings)
+
+
+=== DOCTOR SUMMARY ===
+
+Check                                    Status     Details
+--------------------------------------------------------------------------------
+Execution Directory                      PASS       Running from repo root
+Duplicate Compose Patterns               WARN       Both root and work/hos compose files exist. Ensure obs profile does not start core services.
+Docker Compose Services                  PASS       All services running
+H-OS Health (/v1/health)                 PASS       HTTP 200, ok:true
+Pazar Up (/up)                           PASS       HTTP 200
+Tracked Secrets                          PASS       No secrets/*.txt or .env files tracked
+Forbidden Root Artifacts                 PASS       No *.zip, *.rar, *.bak, *.tmp files in root
+Snapshot Files                           PASS       All required snapshots present
+Repository Integrity                     WARN       Could not parse integrity check output
+Snapshot Files                           PASS       All required snapshots present
+
+OVERALL STATUS: WARN (2 warnings)
+
+Note: Some checks returned warnings (services may be down)
+[INFO] Running Stack Verification...
+=== Stack Verification ===
+
+[1] docker compose ps
+NAME                    IMAGE                                                                     COMMAND                  SERVICE         CREATED        STATUS                 PORTS stack-hos-api-1         stack-hos-api                                                             "docker-entrypoint.s…"   hos-api         43 hours ago   Up 3 hours             127.0.0.1:3000->3000/tcp stack-hos-db-1          postgres:16-alpine                                                        "docker-entrypoint.s…"   hos-db          2 days ago     Up 3 hours (healthy)   5432/tcp stack-hos-web-1         sha256:cfe7e122474ca1c86874ffad9bdf4a17ea479f9bb3a1314bd4c62a3dc5a76f2a   "/docker-entrypoint.…"   hos-web         2 days ago     Up 3 hours             127.0.0.1:3002->80/tcp stack-messaging-api-1   stack-messaging-api                                                       "docker-entrypoint.s…"   messaging-api   2 days ago     Up 3 hours             127.0.0.1:8090->3000/tcp stack-messaging-db-1    postgres:16-alpine                                                        "docker-entrypoint.s…"   messaging-db    2 days ago     Up 3 hours (healthy)   5432/tcp stack-pazar-app-1       stack-pazar-app                                                           "/usr/local/bin/dock…"   pazar-app       11 hours ago   Up 44 minutes          127.0.0.1:8080->80/tcp stack-pazar-db-1        postgres:16-alpine                                                        "docker-entrypoint.s…"   pazar-db        2 days ago     Up 3 hours (healthy)   5432/tcp
+
+[2] H-OS health (http://localhost:3000/v1/health)
+PASS: HTTP 200 {"ok":true}
+
+[3] Pazar health (http://localhost:8080/up)
+PASS: HTTP 200
+
+[4] Pazar FS posture (storage/logs writability)
+[PASS] Pazar FS posture: storage/logs writable
+
+=== VERIFICATION PASS ===
+[INFO] Running Conformance...
+=== Architecture Conformance Gate ===
+
+[A] World registry drift check...
+[FAIL] [A] World registry drift detected: Disabled in registry but not in config: real_estate, services, vehicle
+  -> work\pazar\WORLD_REGISTRY.md
+  -> work\pazar\config\worlds.php
+
+[B] Forbidden artifacts check...
+[PASS] [B] B - No forbidden artifacts (*.bak, *.tmp, *.orig, *.swp, *~)
+
+[C] Disabled-world code policy check...
+[PASS] [C] C - No code in disabled worlds (0 disabled)
+
+[D] Canonical docs single-source check...
+[PASS] [D] D - No duplicate CURRENT*.md or FOUNDING_SPEC*.md files (checked 1 unique files)
+
+[E] Secrets safety check...
+[PASS] [E] E - No secrets tracked in git
+
+[INFO] === Summary ===
+[FAIL] CONFORMANCE FAILED
+
+Failures:
+  [A] World registry drift detected: Disabled in registry but not in config: real_estate, services, vehicle
+    -> work\pazar\WORLD_REGISTRY.md
+    -> work\pazar\config\worlds.php
+[INFO] Running Security Audit...
+=== Security Audit (Route/Middleware) ===
+
+[1] Fetching routes from pazar-app...
+  [OK] Fetched 28 routes
+Found 28 routes
+
+[2] Auditing routes...
+
+[3] Security Audit Results
+
+[OK] PASS: 0 violations found
+All routes comply with security policy.
+[INFO] Running Environment Contract...
+=== ENVIRONMENT & SECRETS CONTRACT CHECK ===
+Timestamp: 2026-01-19 14:56:56
+
+APP_ENV not set, defaulting to: local
+APP_ENV: local
+
+=== Checking Required Environment Variables ===
+
+
+=== Checking Optional Secrets (OIDC/JWT) ===
+
+
+=== ENVIRONMENT CONTRACT CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+[INFO] Running Session Posture...
+=== IDENTITY & SESSION POSTURE CHECK ===
+Timestamp: 2026-01-19 14:56:56
+
+APP_ENV not set, defaulting to: local
+APP_ENV: local
+
+=== Checking Session Cookie Configuration ===
+
+Checking session cookie configuration...
+
+=== Checking Auth Endpoint Response ===
+
+Checking auth endpoint response...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+
+=== SESSION POSTURE CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+[INFO] Running SLO Check...
+PS D:\stack> TerminatingError(slo_check.ps1): "Cannot process argument transformation on parameter 'N'. Cannot convert value "-N" to type "System.Int32". Error: "Giriş dizesi doğru biçimde değildi.""
+[INFO] Running Observability Status...
+=== OBSERVABILITY STATUS CHECK ===
+Timestamp: 2026-01-19 14:56:56
+Pazar URL: http://localhost:8080
+H-OS URL: http://localhost:3000
+Prometheus URL: http://localhost:9090
+Alertmanager URL: http://localhost:9093
+
+Check A: Pazar /metrics endpoint
+  [PASS] Pazar /metrics: HTTP 200, body contains pazar_up 1
+
+Check B: H-OS /v1/health endpoint
+  [PASS] H-OS /v1/health: HTTP 200, ok:true
+
+Check C: Prometheus ready + targets
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+
+Check D: Alertmanager ready
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Alertmanager unreachable: Uzak sunucuya bağlanılamıyor
+
+Check E: Prometheus rules group 'pazar_baseline'
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Prometheus rules API unreachable: Uzak sunucuya bağlanılamıyor
+
+=== OBSERVABILITY STATUS SUMMARY ===
+
+[PASS] Pazar /metrics: HTTP 200, body contains pazar_up 1
+[PASS] H-OS /v1/health: HTTP 200, ok:true
+[WARN] Prometheus ready: Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+[WARN] Alertmanager ready: Alertmanager unreachable: Uzak sunucuya bağlanılamıyor
+[WARN] Prometheus rules 'pazar_baseline': Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+
+Overall Status: WARN
+Exit Code: 2
+
+[INFO] Running Product E2E...
+[INFO] === PRODUCT E2E GATE ===
+[INFO] Base URL: http://localhost:8080
+[INFO] H-OS Base URL: http://localhost:3000
+[INFO]
+[INFO] Test 1: H-OS health check...
+[PASS] H-OS health: 200 OK
+[INFO]
+[INFO] Test 2: Pazar metrics endpoint...
+[FAIL] Pazar metrics: Expected 200, got 404
+[INFO]
+[INFO] Test 3: Product spine validation (world param required)...
+[FAIL] Product spine validation: Expected 422, got 404
+[INFO]
+[INFO] Test 3b: Product with world but no auth...
+[FAIL] Product no-auth: Expected 401/403, got 404
+[INFO]
+[INFO] Test 4: Listings per enabled world (unauthorized)...
+[INFO]   Checking commerce...
+[FAIL] commerce listings no-auth: Expected 401/403, got 404
+[INFO]   Checking food...
+[FAIL] food listings no-auth: Expected 401/403, got 404
+[INFO]   Checking rentals...
+[FAIL] rentals listings no-auth: Expected 401/403, got 500
+[INFO]
+[WARN] Auth credentials not provided - skipping auth-required E2E tests
+[INFO]
+[INFO] === Summary ===
+[INFO] PASS: , WARN: , FAIL: 6
+[INFO]
+[INFO] === Check Results ===
+Check | Status | ExitCode | Notes
+----------------------------------------------------------------------------------------------------
+H-OS Health                              [PASS] 0        200 OK, ok:true
+Pazar Metrics                            [FAIL] 1        Status: 404
+Product Spine Validation                 [FAIL] 1        Status: 404
+Product No-Auth                          [FAIL] 1        Status: 404
+commerce Listings No-Auth                [FAIL] 1        Status: 404
+food Listings No-Auth                    [FAIL] 1        Status: 404
+rentals Listings No-Auth                 [FAIL] 1        Status: 500
+Auth-Required E2E                        [WARN] 2        TenantId or AuthToken missing - tests skipped
+[INFO]
+[FAIL] OVERALL STATUS: FAIL
+[INFO] Remediation:
+[INFO]   - Run ops/request_trace.ps1 -RequestId <request_id> for failed requests
+[INFO]   - Run ops/incident_bundle.ps1 to collect diagnostics
+[INFO] Running Tenant Boundary...
+=== TENANT BOUNDARY CHECK ===
+Timestamp: 2026-01-19 14:57:11
+
+Reading routes snapshot...
+WARN: No admin route found in snapshot
+WARN: No panel route found in snapshot
+Selected admin route: GET /admin/tenants
+Selected panel route: GET /panel/{tenant_slug}/ping
+
+Testing Admin Unauthorized Access...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+Testing Panel Unauthorized Access...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+Testing tenant boundary isolation...
+WARN: Test credentials not set. Skipping tenant boundary check.
+Set TENANT_TEST_EMAIL, TENANT_TEST_PASSWORD, TENANT_A_SLUG, TENANT_B_SLUG environment variables to enable.
+
+=== TENANT BOUNDARY CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+[INFO]
+[INFO] === RC0 Check Results ===
+[INFO]
+Check                                      Status ExitCode Notes
+--------------------------------------------------------------------------------
+Repository Doctor                        [PASS]   0
+Stack Verification                       [PASS]   0
+Conformance                              [FAIL]   1
+Security Audit                           [PASS]   0
+Environment Contract                     [PASS]   0        Check           Status Notes                      ; -----           ------ -...
+Session Posture                          [PASS]   0        ExitCode                       0                                             ...
+SLO Check                                [FAIL]   1        Error: Cannot process argument transformation on parameter 'N'. Cannot convert value "-N" to type "System.Int32". Error: "Giriş dizesi doğru biçimde değildi."
+Observability Status                     [WARN]   2        2;
+Product E2E                              [FAIL]   1
+Tenant Boundary                          [PASS]   0        Check                     Status ExitCode Notes                              ...
+[INFO]
+[INFO] === Summary ===
+[INFO] PASS: 6, WARN: , FAIL: 3, SKIP: 0
+[INFO] Root cause: 3 check(s) FAIL
+[INFO]
+[FAIL] OVERALL STATUS: FAIL
+[INFO]
+[INFO] FAIL detected - running incident bundle...
+=== INCIDENT BUNDLE GENERATOR ===
+Creating bundle: _archive/incidents/incident-20260119-145711
+OK: Directory created
+[1] Collecting metadata...
+  OK: meta.txt
+[2] Collecting Docker Compose status...
+  OK: compose_ps.txt
+[3] Collecting H-OS health...
+  OK: hos_health.txt
+[4] Collecting Pazar /up endpoint...
+  OK: pazar_up.txt
+[5] Collecting routes snapshot...
+  OK: pazar_routes_snapshot.txt
+[6] Collecting schema snapshot...
+  OK: pazar_schema_snapshot.txt
+[7] Collecting VERSION...
+  OK: version.txt
+[8] Collecting CHANGELOG.md [Unreleased] section...
+  OK: changelog_unreleased.txt
+[9] Collecting Pazar app logs (last 500 lines)...
+  OK: logs_pazar_app.txt
+[10] Collecting H-OS API logs (last 500 lines)...
+  OK: logs_hos_api.txt
+[11] Generating incident_note.md template...
+  OK: incident_note.md
+
+=== BUNDLE COMPLETE ===
+Bundle location: _archive/incidents/incident-20260119-145711
+
+Files created:
+  - meta.txt
+  - compose_ps.txt
+  - hos_health.txt
+  - pazar_up.txt
+  - pazar_routes_snapshot.txt
+  - pazar_schema_snapshot.txt
+  - version.txt
+  - changelog_unreleased.txt
+  - logs_pazar_app.txt
+  - logs_hos_api.txt
+  - incident_note.md
+
+Next steps:
+  1. Review incident_note.md and fill in details
+  2. Attach bundle folder to issue/PR (zip if needed)
+  3. Reference bundle path in incident documentation
+[INFO] INCIDENT_BUNDLE_PATH=D:\stack\_archive\incidents\incident-20260119-145711
+
+RC0 Check failed - RC0 Gate cannot proceed
+
+Running RC0 Check...
+[INFO] === RC0 RELEASE READINESS GATE ===
+[INFO] Timestamp: 2026-01-19 14:57:14
+[INFO]
+[INFO] Probing core availability...
+[INFO] Core available: H-OS and hos-db reachable
+[INFO]
+[INFO] === Running RC0 Checks ===
+[INFO]
+[INFO] Running Repository Doctor...
+=== REPOSITORY DOCTOR ===
+Timestamp: 2026-01-19 14:57:14
+
+[0] Checking execution directory...
+
+[0.1] Checking for duplicate compose service/port conflicts...
+WARNING: Potential compose usage conflicts detected
+Guidance: Use ops/stack_up.ps1 -Profile obs to start only observability services
+
+[1] Checking Docker Compose services...
+
+[2] Checking H-OS health endpoint...
+
+[3] Checking Pazar up endpoint...
+
+[4] Checking for tracked secrets...
+
+[5] Checking for forbidden root artifacts...
+
+[6] Checking snapshot files...
+
+[7] Running repository integrity check...
+[INFO] === Repository Integrity Check ===
+Checking for massive deleted-tracked files...
+Checking for unexpected untracked dump files...
+Checking for duplicate/scratch folders...
+  Remediation: Review and archive/remove duplicate folders manually
+Checking for duplicate compose files...
+Checking for missing critical ops scripts...
+[INFO] === Integrity Check Results ===
+
+
+[WARN] OVERALL STATUS: WARN (1 warnings)
+
+
+=== DOCTOR SUMMARY ===
+
+Check                                    Status     Details
+--------------------------------------------------------------------------------
+Execution Directory                      PASS       Running from repo root
+Duplicate Compose Patterns               WARN       Both root and work/hos compose files exist. Ensure obs profile does not start core services.
+Docker Compose Services                  PASS       All services running
+H-OS Health (/v1/health)                 PASS       HTTP 200, ok:true
+Pazar Up (/up)                           PASS       HTTP 200
+Tracked Secrets                          PASS       No secrets/*.txt or .env files tracked
+Forbidden Root Artifacts                 PASS       No *.zip, *.rar, *.bak, *.tmp files in root
+Snapshot Files                           PASS       All required snapshots present
+Repository Integrity                     WARN       Could not parse integrity check output
+Snapshot Files                           PASS       All required snapshots present
+
+OVERALL STATUS: WARN (2 warnings)
+
+Note: Some checks returned warnings (services may be down)
+[INFO] Running Stack Verification...
+=== Stack Verification ===
+
+[1] docker compose ps
+NAME                    IMAGE                                                                     COMMAND                  SERVICE         CREATED        STATUS                 PORTS stack-hos-api-1         stack-hos-api                                                             "docker-entrypoint.s…"   hos-api         43 hours ago   Up 3 hours             127.0.0.1:3000->3000/tcp stack-hos-db-1          postgres:16-alpine                                                        "docker-entrypoint.s…"   hos-db          2 days ago     Up 3 hours (healthy)   5432/tcp stack-hos-web-1         sha256:cfe7e122474ca1c86874ffad9bdf4a17ea479f9bb3a1314bd4c62a3dc5a76f2a   "/docker-entrypoint.…"   hos-web         2 days ago     Up 3 hours             127.0.0.1:3002->80/tcp stack-messaging-api-1   stack-messaging-api                                                       "docker-entrypoint.s…"   messaging-api   2 days ago     Up 3 hours             127.0.0.1:8090->3000/tcp stack-messaging-db-1    postgres:16-alpine                                                        "docker-entrypoint.s…"   messaging-db    2 days ago     Up 3 hours (healthy)   5432/tcp stack-pazar-app-1       stack-pazar-app                                                           "/usr/local/bin/dock…"   pazar-app       11 hours ago   Up 45 minutes          127.0.0.1:8080->80/tcp stack-pazar-db-1        postgres:16-alpine                                                        "docker-entrypoint.s…"   pazar-db        2 days ago     Up 3 hours (healthy)   5432/tcp
+
+[2] H-OS health (http://localhost:3000/v1/health)
+PASS: HTTP 200 {"ok":true}
+
+[3] Pazar health (http://localhost:8080/up)
+PASS: HTTP 200
+
+[4] Pazar FS posture (storage/logs writability)
+[PASS] Pazar FS posture: storage/logs writable
+
+=== VERIFICATION PASS ===
+[INFO] Running Conformance...
+=== Architecture Conformance Gate ===
+
+[A] World registry drift check...
+[FAIL] [A] World registry drift detected: Disabled in registry but not in config: real_estate, services, vehicle
+  -> work\pazar\WORLD_REGISTRY.md
+  -> work\pazar\config\worlds.php
+
+[B] Forbidden artifacts check...
+[PASS] [B] B - No forbidden artifacts (*.bak, *.tmp, *.orig, *.swp, *~)
+
+[C] Disabled-world code policy check...
+[PASS] [C] C - No code in disabled worlds (0 disabled)
+
+[D] Canonical docs single-source check...
+[PASS] [D] D - No duplicate CURRENT*.md or FOUNDING_SPEC*.md files (checked 1 unique files)
+
+[E] Secrets safety check...
+[PASS] [E] E - No secrets tracked in git
+
+[INFO] === Summary ===
+[FAIL] CONFORMANCE FAILED
+
+Failures:
+  [A] World registry drift detected: Disabled in registry but not in config: real_estate, services, vehicle
+    -> work\pazar\WORLD_REGISTRY.md
+    -> work\pazar\config\worlds.php
+[INFO] Running Security Audit...
+=== Security Audit (Route/Middleware) ===
+
+[1] Fetching routes from pazar-app...
+  [OK] Fetched 28 routes
+Found 28 routes
+
+[2] Auditing routes...
+
+[3] Security Audit Results
+
+[OK] PASS: 0 violations found
+All routes comply with security policy.
+[INFO] Running Environment Contract...
+=== ENVIRONMENT & SECRETS CONTRACT CHECK ===
+Timestamp: 2026-01-19 14:57:28
+
+APP_ENV not set, defaulting to: local
+APP_ENV: local
+
+=== Checking Required Environment Variables ===
+
+
+=== Checking Optional Secrets (OIDC/JWT) ===
+
+
+=== ENVIRONMENT CONTRACT CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+[INFO] Running Session Posture...
+=== IDENTITY & SESSION POSTURE CHECK ===
+Timestamp: 2026-01-19 14:57:28
+
+APP_ENV not set, defaulting to: local
+APP_ENV: local
+
+=== Checking Session Cookie Configuration ===
+
+Checking session cookie configuration...
+
+=== Checking Auth Endpoint Response ===
+
+Checking auth endpoint response...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+
+=== SESSION POSTURE CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+[INFO] Running SLO Check...
+PS D:\stack> TerminatingError(slo_check.ps1): "Cannot process argument transformation on parameter 'N'. Cannot convert value "-N" to type "System.Int32". Error: "Giriş dizesi doğru biçimde değildi.""
+[INFO] Running Observability Status...
+=== OBSERVABILITY STATUS CHECK ===
+Timestamp: 2026-01-19 14:57:29
+Pazar URL: http://localhost:8080
+H-OS URL: http://localhost:3000
+Prometheus URL: http://localhost:9090
+Alertmanager URL: http://localhost:9093
+
+Check A: Pazar /metrics endpoint
+  [PASS] Pazar /metrics: HTTP 200, body contains pazar_up 1
+
+Check B: H-OS /v1/health endpoint
+  [PASS] H-OS /v1/health: HTTP 200, ok:true
+
+Check C: Prometheus ready + targets
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+
+Check D: Alertmanager ready
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Alertmanager unreachable: Uzak sunucuya bağlanılamıyor
+
+Check E: Prometheus rules group 'pazar_baseline'
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Prometheus rules API unreachable: Uzak sunucuya bağlanılamıyor
+
+=== OBSERVABILITY STATUS SUMMARY ===
+
+[PASS] Pazar /metrics: HTTP 200, body contains pazar_up 1
+[PASS] H-OS /v1/health: HTTP 200, ok:true
+[WARN] Prometheus ready: Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+[WARN] Alertmanager ready: Alertmanager unreachable: Uzak sunucuya bağlanılamıyor
+[WARN] Prometheus rules 'pazar_baseline': Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+
+Overall Status: WARN
+Exit Code: 2
+
+[INFO] Running Product E2E...
+[INFO] === PRODUCT E2E GATE ===
+[INFO] Base URL: http://localhost:8080
+[INFO] H-OS Base URL: http://localhost:3000
+[INFO]
+[INFO] Test 1: H-OS health check...
+[PASS] H-OS health: 200 OK
+[INFO]
+[INFO] Test 2: Pazar metrics endpoint...
+[FAIL] Pazar metrics: Expected 200, got 404
+[INFO]
+[INFO] Test 3: Product spine validation (world param required)...
+[FAIL] Product spine validation: Expected 422, got 404
+[INFO]
+[INFO] Test 3b: Product with world but no auth...
+[FAIL] Product no-auth: Expected 401/403, got 404
+[INFO]
+[INFO] Test 4: Listings per enabled world (unauthorized)...
+[INFO]   Checking commerce...
+[FAIL] commerce listings no-auth: Expected 401/403, got 404
+[INFO]   Checking food...
+[FAIL] food listings no-auth: Expected 401/403, got 404
+[INFO]   Checking rentals...
+[FAIL] rentals listings no-auth: Expected 401/403, got 500
+[INFO]
+[WARN] Auth credentials not provided - skipping auth-required E2E tests
+[INFO]
+[INFO] === Summary ===
+[INFO] PASS: , WARN: , FAIL: 6
+[INFO]
+[INFO] === Check Results ===
+Check | Status | ExitCode | Notes
+----------------------------------------------------------------------------------------------------
+H-OS Health                              [PASS] 0        200 OK, ok:true
+Pazar Metrics                            [FAIL] 1        Status: 404
+Product Spine Validation                 [FAIL] 1        Status: 404
+Product No-Auth                          [FAIL] 1        Status: 404
+commerce Listings No-Auth                [FAIL] 1        Status: 404
+food Listings No-Auth                    [FAIL] 1        Status: 404
+rentals Listings No-Auth                 [FAIL] 1        Status: 500
+Auth-Required E2E                        [WARN] 2        TenantId or AuthToken missing - tests skipped
+[INFO]
+[FAIL] OVERALL STATUS: FAIL
+[INFO] Remediation:
+[INFO]   - Run ops/request_trace.ps1 -RequestId <request_id> for failed requests
+[INFO]   - Run ops/incident_bundle.ps1 to collect diagnostics
+[INFO] Running Tenant Boundary...
+=== TENANT BOUNDARY CHECK ===
+Timestamp: 2026-01-19 14:57:43
+
+Reading routes snapshot...
+WARN: No admin route found in snapshot
+WARN: No panel route found in snapshot
+Selected admin route: GET /admin/tenants
+Selected panel route: GET /panel/{tenant_slug}/ping
+
+Testing Admin Unauthorized Access...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+Testing Panel Unauthorized Access...
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucu hata döndürdü: (404) Bulunamadı."
+Testing tenant boundary isolation...
+WARN: Test credentials not set. Skipping tenant boundary check.
+Set TENANT_TEST_EMAIL, TENANT_TEST_PASSWORD, TENANT_A_SLUG, TENANT_B_SLUG environment variables to enable.
+
+=== TENANT BOUNDARY CHECK RESULTS ===
+
+
+OVERALL STATUS: PASS (All checks passed)
+[INFO]
+[INFO] === RC0 Check Results ===
+[INFO]
+Check                                      Status ExitCode Notes
+--------------------------------------------------------------------------------
+Repository Doctor                        [PASS]   0
+Stack Verification                       [PASS]   0
+Conformance                              [FAIL]   1
+Security Audit                           [PASS]   0
+Environment Contract                     [PASS]   0        Check           Status Notes                      ; -----           ------ -...
+Session Posture                          [PASS]   0        ExitCode                       0                                             ...
+SLO Check                                [FAIL]   1        Error: Cannot process argument transformation on parameter 'N'. Cannot convert value "-N" to type "System.Int32". Error: "Giriş dizesi doğru biçimde değildi."
+Observability Status                     [WARN]   2        2;
+Product E2E                              [FAIL]   1
+Tenant Boundary                          [PASS]   0        Check                     Status ExitCode Notes                              ...
+[INFO]
+[INFO] === Summary ===
+[INFO] PASS: 6, WARN: , FAIL: 3, SKIP: 0
+[INFO] Root cause: 3 check(s) FAIL
+[INFO]
+[FAIL] OVERALL STATUS: FAIL
+[INFO]
+[INFO] FAIL detected - running incident bundle...
+=== INCIDENT BUNDLE GENERATOR ===
+Creating bundle: _archive/incidents/incident-20260119-145744
+OK: Directory created
+[1] Collecting metadata...
+  OK: meta.txt
+[2] Collecting Docker Compose status...
+  OK: compose_ps.txt
+[3] Collecting H-OS health...
+  OK: hos_health.txt
+[4] Collecting Pazar /up endpoint...
+  OK: pazar_up.txt
+[5] Collecting routes snapshot...
+  OK: pazar_routes_snapshot.txt
+[6] Collecting schema snapshot...
+  OK: pazar_schema_snapshot.txt
+[7] Collecting VERSION...
+  OK: version.txt
+[8] Collecting CHANGELOG.md [Unreleased] section...
+  OK: changelog_unreleased.txt
+[9] Collecting Pazar app logs (last 500 lines)...
+  OK: logs_pazar_app.txt
+[10] Collecting H-OS API logs (last 500 lines)...
+  OK: logs_hos_api.txt
+[11] Generating incident_note.md template...
+  OK: incident_note.md
+
+=== BUNDLE COMPLETE ===
+Bundle location: _archive/incidents/incident-20260119-145744
+
+Files created:
+  - meta.txt
+  - compose_ps.txt
+  - hos_health.txt
+  - pazar_up.txt
+  - pazar_routes_snapshot.txt
+  - pazar_schema_snapshot.txt
+  - version.txt
+  - changelog_unreleased.txt
+  - logs_pazar_app.txt
+  - logs_hos_api.txt
+  - incident_note.md
+
+Next steps:
+  1. Review incident_note.md and fill in details
+  2. Attach bundle folder to issue/PR (zip if needed)
+  3. Reference bundle path in incident documentation
+[INFO] INCIDENT_BUNDLE_PATH=D:\stack\_archive\incidents\incident-20260119-145744
+
+=== OPS STATUS RESULTS ===
+
+Check                                      Status ExitCode Notes
+--------------------------------------------------------------------------------
+Ops Drift Guard                          [FAIL]   1        (BLOCKING)
+
+Storage Permissions                      [PASS]   0        (BLOCKING)
+
+Repository Doctor                        [PASS]   0        (BLOCKING)
+
+Stack Verification                       [PASS]   0        (BLOCKING)
+
+Incident Triage                          [PASS]   0        (NON-BLOCKING)
+
+Storage Write                            [PASS]   0        (BLOCKING)
+
+Storage Posture                          [PASS]   0        (BLOCKING)
+
+Pazar UI Smoke                           [FAIL]   1        (BLOCKING) 1;
+
+Pazar Storage Posture                    [PASS]   0        (NON-BLOCKING) Write test to laravel.log        PASS   Write operation succee...
+
+SLO Check                                [FAIL]   1        (NON-BLOCKING) Error: Cannot process argument transformation on parameter 'N'...
+
+Security Audit                           [PASS]   0        (BLOCKING)
+
+Conformance                              [FAIL]   1        (BLOCKING)
+
+Product Spine Check                      [FAIL]   1        (BLOCKING) Error: At D:\stack\ops\product_spine_check.ps1:499 char:32
++     ...
+
+Product Spine E2E Check                  [WARN]   2        (BLOCKING) -----              ------ -----                                   ...
+
+Product Read Path Check                  [FAIL]   1        (BLOCKING) Error: At D:\stack\ops\product_read_path_check.ps1:87 char:6
++   ...
+
+Routes Snapshot                          [FAIL]   1        (BLOCKING)
+
+Schema Snapshot                          [FAIL]   1        (BLOCKING)
+
+Error Contract                           [FAIL]   1        422 status check failed (got 404); 422 envelope missing required fields
+
+Environment Contract                     [PASS]   0        (BLOCKING) Check           Status Notes                      ; -----        ...
+
+Auth Security                            [PASS]   0        (BLOCKING) Check                Status ExitCode Notes                        ...
+
+Tenant Boundary                          [PASS]   0        (BLOCKING) Check                     Status ExitCode Notes                   ...
+
+World Spine Governance                   [PASS]   0        (BLOCKING)
+
+Product Contract                         [FAIL]   1        (BLOCKING) Error: At D:\stack\ops\product_contract.ps1:83 char:37
++         ...
+
+Product Contract Check                   [WARN]   2        (BLOCKING)
+
+Product E2E                              [FAIL]   1        (NON-BLOCKING)
+
+Product E2E Contract                     [WARN]   2        (BLOCKING)
+
+Product API CRUD E2E                     [FAIL]   1        (BLOCKING)
+
+Product API Smoke                        [FAIL]   1        (NON-BLOCKING)
+
+Product Perf Guard                       [WARN]   2        (NON-BLOCKING)
+
+Product MVP Loop                         [WARN]   2        (BLOCKING) Check            Status Notes                                     ...
+
+Product Spine Governance                 [PASS]   0        (BLOCKING) 0;
+
+Product Write Spine                      [FAIL]   1        (BLOCKING)
+
+Session Posture                          [PASS]   0        (BLOCKING) ExitCode                       0                                  ...
+
+Product Read-Path                        [FAIL]   1        (NON-BLOCKING) Error: At D:\stack\ops\product_read_path_check.ps1:87 char:6
+...
+
+Product Spine Smoke                      [FAIL]   1        (BLOCKING) PATCH /api/v1/rentals/listings/1 (unauthorized)   FAIL   Status 40...
+
+OpenAPI Contract                         [WARN]   2        (BLOCKING) Write endpoints in OpenAPI             PASS   All write endpoints ...
+
+Smoke Surface Gate                       [FAIL]   1        (BLOCKING) API error contract PASS   HTTP 404 with JSON envelope (ok, error_c...
+
+Observability Status                     [WARN]   2        (NON-BLOCKING) 2;
+
+RC0 Gate                                 [FAIL]   1        (BLOCKING) 1;
+
+RC0 Check                                [FAIL]   1        (BLOCKING) 1;
+
+
+=== Summary ===
+PASS: 14, WARN: 7, FAIL: 19, SKIP: 0
+Root cause: 15 blocking check(s) FAIL
+
+OVERALL STATUS: FAIL (15 blocking failure(s))
+
+Generating incident bundle...
+=== INCIDENT BUNDLE GENERATOR ===
+Creating bundle: _archive/incidents/incident-20260119-145746
+OK: Directory created
+[1] Collecting metadata...
+  OK: meta.txt
+[2] Collecting Docker Compose status...
+  OK: compose_ps.txt
+[3] Collecting H-OS health...
+  OK: hos_health.txt
+[4] Collecting Pazar /up endpoint...
+  OK: pazar_up.txt
+[5] Collecting routes snapshot...
+  OK: pazar_routes_snapshot.txt
+[6] Collecting schema snapshot...
+  OK: pazar_schema_snapshot.txt
+[7] Collecting VERSION...
+  OK: version.txt
+[8] Collecting CHANGELOG.md [Unreleased] section...
+  OK: changelog_unreleased.txt
+[9] Collecting Pazar app logs (last 500 lines)...
+  OK: logs_pazar_app.txt
+[10] Collecting H-OS API logs (last 500 lines)...
+  OK: logs_hos_api.txt
+[11] Generating incident_note.md template...
+  OK: incident_note.md
+
+=== BUNDLE COMPLETE ===
+Bundle location: _archive/incidents/incident-20260119-145746
+
+Files created:
+  - meta.txt
+  - compose_ps.txt
+  - hos_health.txt
+  - pazar_up.txt
+  - pazar_routes_snapshot.txt
+  - pazar_schema_snapshot.txt
+  - version.txt
+  - changelog_unreleased.txt
+  - logs_pazar_app.txt
+  - logs_hos_api.txt
+  - incident_note.md
+
+Next steps:
+  1. Review incident_note.md and fill in details
+  2. Attach bundle folder to issue/PR (zip if needed)
+  3. Reference bundle path in incident documentation
+INCIDENT_BUNDLE_PATH=_archive/incidents/ (check output above)
+PS D:\stack> ""
+
+PS D:\stack> "--- OBSERVABILITY STATUS (WP-31 related) ---"
+--- OBSERVABILITY STATUS (WP-31 related) ---
+PS D:\stack> .\ops\observability_status.ps1 2>&1
+=== OBSERVABILITY STATUS CHECK ===
+Timestamp: 2026-01-19 14:57:48
+Pazar URL: http://localhost:8080
+H-OS URL: http://localhost:3000
+Prometheus URL: http://localhost:9090
+Alertmanager URL: http://localhost:9093
+
+Check A: Pazar /metrics endpoint
+  [PASS] Pazar /metrics: HTTP 200, body contains pazar_up 1
+
+Check B: H-OS /v1/health endpoint
+  [PASS] H-OS /v1/health: HTTP 200, ok:true
+
+Check C: Prometheus ready + targets
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+
+Check D: Alertmanager ready
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Alertmanager unreachable: Uzak sunucuya bağlanılamıyor
+
+Check E: Prometheus rules group 'pazar_baseline'
+PS D:\stack> TerminatingError(Invoke-WebRequest): "Uzak sunucuya bağlanılamıyor"
+  [WARN] Prometheus rules API unreachable: Uzak sunucuya bağlanılamıyor
+
+=== OBSERVABILITY STATUS SUMMARY ===
+
+[PASS] Pazar /metrics: HTTP 200, body contains pazar_up 1
+[PASS] H-OS /v1/health: HTTP 200, ok:true
+[WARN] Prometheus ready: Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+[WARN] Alertmanager ready: Alertmanager unreachable: Uzak sunucuya bağlanılamıyor
+[WARN] Prometheus rules 'pazar_baseline': Prometheus unreachable: Uzak sunucuya bağlanılamıyor
+
+Overall Status: WARN
+Exit Code: 2
+
+2
+PS D:\stack> ""
+
+PS D:\stack> if (Test-Path "D:\stack\work\marketplace-web\package.json") {
+  "--- FRONTEND BUILD (marketplace-web) ---"
+  Set-Location D:\stack\work\marketplace-web
+  node -v 2>&1
+  npm -v 2>&1
+  npm run build 2>&1
+  ""
+}
+--- FRONTEND BUILD (marketplace-web) ---
+v24.12.0
+11.6.2
+
+> marketplace-web@1.0.0 build
+> vite build
+
+vite v5.4.21 building for production...
+✓ 51 modules transformed.
+dist/index.html                   0.41 kB │ gzip:  0.28 kB
+dist/assets/index-CRv1pbP5.css   10.95 kB │ gzip:  2.10 kB
+dist/assets/index-D_ZcWINH.js   135.28 kB │ gzip: 44.69 kB
+✓ built in 3.14s
+
+PS D:\stack\work\marketplace-web> try { Stop-Transcript | Out-Null } catch {}
+**********************
+Windows PowerShell transcript end
+End time: 20260119145808
+**********************

@@ -97,6 +97,49 @@ npm run build
 
 ---
 
+## WP-33: Ops Gate Warmup + Retry (Eliminate Cold-Start 404 Flakiness)
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-33
+
+### Purpose
+Make ops gates deterministic on cold start: Product E2E + Tenant Boundary should not fail due to transient 404/500 while Pazar is still warming up. Minimal diff. No domain refactor. No endpoint redesign. Only ops reliability.
+
+### Deliverables
+- `ops/product_e2e.ps1` (MOD): Added Wait-PazarReady function with warmup logic, called before tests
+- `ops/tenant_boundary_check.ps1` (MOD): Added warmup, hardened 404 handling (no TerminatingError)
+- `docs/PROOFS/wp33_ops_gate_warmup_pass.md` - Proof document
+
+### Changes
+1. **Product E2E Gate (product_e2e.ps1):**
+   - Added `Wait-PazarReady` function: polls `/up`, `/api/metrics`, `/api/v1/categories` in order
+   - Treats HTTP 404/502/503/500 as NOT READY (retries with exponential backoff)
+   - Calls `Wait-PazarReady` BEFORE running existing Product E2E tests
+   - On timeout, FAIL with clear message including last status code and last endpoint tested
+
+2. **Tenant Boundary Check (tenant_boundary_check.ps1):**
+   - Added `Wait-PazarBasicReady` inline warmup helper (30s timeout)
+   - Handles 404 gracefully: no TerminatingError crash, downgrades to WARN with explanation
+   - If no admin/panel route exists in snapshot, downgrades to WARN (not blocking FAIL)
+   - Warmup call before unauthorized access tests
+
+### Commands
+```powershell
+# Test cold start behavior
+docker compose restart pazar-app
+.\ops\product_e2e.ps1
+
+# Test tenant boundary check
+.\ops\tenant_boundary_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp33_ops_gate_warmup_pass.md` - Proof document with before/after snippets
+- Product E2E Gate: PASS (waits until ready, no transient 404 failures)
+- Tenant Boundary Check: PASS (no TerminatingError on 404, graceful WARN)
+
+---
+
 ## WP-30: Listing Contract Auth Alignment (Post WP-29)
 
 **Status:** ✅ COMPLETE  

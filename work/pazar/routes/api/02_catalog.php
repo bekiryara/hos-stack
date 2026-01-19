@@ -6,7 +6,8 @@ use Illuminate\Support\Facades\Schema;
 
 // Catalog Spine Endpoints (SPEC §6.2, WP-2)
 // GET /v1/categories (tree format)
-Route::get('/v1/categories', function () {
+// WP-8: GUEST+ persona (no headers required)
+Route::middleware(['persona.scope:guest'])->get('/v1/categories', function () {
     
     // Fetch all categories with parent relationships
     $categories = DB::table('categories')
@@ -32,7 +33,8 @@ Route::get('/v1/categories', function () {
 });
 
 // GET /v1/categories/{id}/filter-schema
-Route::get('/v1/categories/{id}/filter-schema', function ($id) {
+// WP-8: GUEST+ persona (no headers required)
+Route::middleware(['persona.scope:guest'])->get('/v1/categories/{id}/filter-schema', function ($id) {
     
     // Verify category exists
     $category = DB::table('categories')->where('id', $id)->first();

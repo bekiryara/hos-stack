@@ -86,19 +86,67 @@ if ($violations.Count -gt 0) {
 
 Write-Host ""
 
-# Check 2: Required headers on store-scope endpoints (best-effort check)
-Write-Host "[2] Checking store-scope endpoints for required headers..." -ForegroundColor Yellow
+# Check 2: Required headers on persona-scope endpoints (WP-8)
+Write-Host "[2] Checking persona-scope endpoints for required headers (WP-8)..." -ForegroundColor Yellow
 
 $writeSnapshot = Join-Path $repoRoot "contracts\api\marketplace.write.snapshot.json"
 if (Test-Path $writeSnapshot) {
     try {
         $writeSnap = Get-Content $writeSnapshot -Raw | ConvertFrom-Json
-        $storeScopeEndpoints = $writeSnap | Where-Object { $_.scope -eq "store" }
         
         $pazarRoutesDir = Join-Path $repoRoot "work\pazar\routes\api"
         $routeFiles = Get-ChildItem -Path $pazarRoutesDir -Filter "*.php" -File
         
         $missingHeaderChecks = @()
+        
+        # WP-8: Check PERSONAL endpoints (require Authorization header)
+        $personalEndpoints = @(
+            @{ method = "POST"; path = "/api/v1/reservations" },
+            @{ method = "POST"; path = "/api/v1/rentals" },
+            @{ method = "POST"; path = "/api/v1/orders" }
+        )
+        
+        foreach ($endpoint in $personalEndpoints) {
+            $method = $endpoint.method
+            $path = $endpoint.path
+            $pathInRoute = $path -replace '^/api', ''
+            
+            # Find route file
+            $foundInFile = $null
+            $routeContent = $null
+            
+            foreach ($routeFile in $routeFiles) {
+                $content = Get-Content $routeFile.FullName -Raw
+                
+                # Build regex pattern
+                $pathTemp = $pathInRoute -replace '\{id\}', '___ID_PLACEHOLDER___'
+                $pathEscaped = [regex]::Escape($pathTemp)
+                $pathEscaped = $pathEscaped -replace '___ID_PLACEHOLDER___', '\{id\}'
+                $methodLower = $method.ToLower()
+                $pattern = "Route::(?:middleware\([^)]+\)->)?$methodLower\(['""]$pathEscaped['""]"
+                
+                if ($content -match $pattern) {
+                    $foundInFile = $routeFile.FullName
+                    $routeContent = $content
+                    break
+                }
+            }
+            
+            if ($foundInFile) {
+                # WP-8: Check for persona.scope:personal middleware OR Authorization header validation
+                $hasPersonaScopeMiddleware = ($routeContent -match "middleware\(['""]persona\.scope:personal['""]|middleware\(\[[^]]*['""]persona\.scope:personal['""]")
+                $hasAuthHeaderCheck = ($routeContent -match "Authorization|bearerToken|bearer\(\)")
+                
+                if (-not $hasPersonaScopeMiddleware -and -not $hasAuthHeaderCheck) {
+                    $missingHeaderChecks += "$method $path - missing Authorization header check (no persona.scope:personal middleware or inline validation)"
+                }
+            } else {
+                $missingHeaderChecks += "$method $path - route file not found (cannot verify header check)"
+            }
+        }
+        
+        # WP-8: Check STORE endpoints (require X-Active-Tenant-Id header)
+        $storeScopeEndpoints = $writeSnap | Where-Object { $_.scope -eq "store" }
         
         foreach ($endpoint in $storeScopeEndpoints) {
             $method = $endpoint.method
@@ -111,19 +159,11 @@ if (Test-Path $writeSnapshot) {
             
             foreach ($routeFile in $routeFiles) {
                 $content = Get-Content $routeFile.FullName -Raw
-                # Remove /api prefix, keep leading / (e.g., /api/v1/listings -> /v1/listings)
                 $pathInRoute = $path -replace '^/api', ''
                 
-                # Build regex pattern to match Route::post('/v1/listings', ...) or Route::middleware(...)->post('/v1/listings', ...)
-                # Escape special regex characters but preserve {id} placeholder
-                # Step 1: Replace {id} with temporary placeholder
                 $pathTemp = $pathInRoute -replace '\{id\}', '___ID_PLACEHOLDER___'
-                # Step 2: Escape all special characters
                 $pathEscaped = [regex]::Escape($pathTemp)
-                # Step 3: Restore {id} as regex pattern \{id\}
                 $pathEscaped = $pathEscaped -replace '___ID_PLACEHOLDER___', '\{id\}'
-                
-                # Match Route::METHOD('/path' or Route::middleware(...)->METHOD('/path
                 $methodLower = $method.ToLower()
                 $pattern = "Route::(?:middleware\([^)]+\)->)?$methodLower\(['""]$pathEscaped['""]"
                 
@@ -135,17 +175,15 @@ if (Test-Path $writeSnapshot) {
             }
             
             if ($foundInFile) {
-                # Check for X-Active-Tenant-Id header validation
-                # WP-26: Check for tenant.scope middleware OR inline header validation
+                # WP-8: Check for persona.scope:store OR tenant.scope middleware OR inline header validation
+                $hasPersonaScopeMiddleware = ($routeContent -match "middleware\(['""]persona\.scope:store['""]|middleware\(\[[^]]*['""]persona\.scope:store['""]")
                 $hasTenantScopeMiddleware = ($routeContent -match "middleware\(['""]tenant\.scope['""]|middleware\(\[[^]]*['""]tenant\.scope['""]")
                 $hasInlineHeaderCheck = ($routeContent -match "X-Active-Tenant-Id|XActiveTenantId")
                 
-                # WP-26: Require either middleware OR inline validation
-                if (-not $hasTenantScopeMiddleware -and -not $hasInlineHeaderCheck -and "X-Active-Tenant-Id" -in $requiredHeaders) {
-                    $missingHeaderChecks += "$method $path - missing X-Active-Tenant-Id header check (no middleware or inline validation)"
+                if (-not $hasPersonaScopeMiddleware -and -not $hasTenantScopeMiddleware -and -not $hasInlineHeaderCheck -and "X-Active-Tenant-Id" -in $requiredHeaders) {
+                    $missingHeaderChecks += "$method $path - missing X-Active-Tenant-Id header check (no persona.scope:store/tenant.scope middleware or inline validation)"
                 }
             } else {
-                # If route file not found, report as WARN (might be in middleware or dynamic route)
                 if ("X-Active-Tenant-Id" -in $requiredHeaders) {
                     $missingHeaderChecks += "$method $path - route file not found (cannot verify header check)"
                 }
@@ -153,13 +191,13 @@ if (Test-Path $writeSnapshot) {
         }
         
         if ($missingHeaderChecks.Count -gt 0) {
-            Write-Host "FAIL: Store-scope endpoints missing header validation:" -ForegroundColor Red
+            Write-Host "FAIL: Persona-scope endpoints missing header validation (WP-8):" -ForegroundColor Red
             foreach ($missing in $missingHeaderChecks) {
                 Write-Host "  - $missing" -ForegroundColor Red
             }
             $hasFailures = $true
         } else {
-            Write-Host "PASS: Store-scope endpoints have required header validation (middleware or inline)" -ForegroundColor Green
+            Write-Host "PASS: Persona-scope endpoints have required header validation (WP-8)" -ForegroundColor Green
         }
     } catch {
         Write-Host "WARN: Could not validate header checks: $($_.Exception.Message)" -ForegroundColor Yellow

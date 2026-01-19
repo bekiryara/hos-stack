@@ -35,6 +35,24 @@ Run these commands to verify the stack is healthy:
 
 All commands return exit code `0` on success, `1` on failure.
 
+## Public Repository Rules
+
+**⚠️ IMPORTANT:** This is a public repository. Follow these rules:
+
+- **Never commit secrets:** Never commit `.env` files, API keys, passwords, or tokens
+- **Run checks before pushing:** Run `.\ops\public_ready_check.ps1` before pushing
+- **Use environment variables:** Use `.env` files (not tracked) for local configuration
+- **Test values only:** Test tokens/keys in code must be clearly marked as test-only
+
+**Before pushing:**
+```powershell
+.\ops\public_ready_check.ps1
+```
+
+**If secrets are detected:**
+- See `REMEDIATION_SECRETS.md` for remediation steps
+- See `docs/runbooks/repo_public_release.md` for detailed guide
+
 ## Baseline is Frozen
 
 **⚠️ IMPORTANT:** The baseline is frozen. These items **CANNOT** be changed without explicit decision:

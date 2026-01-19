@@ -1,10 +1,57 @@
 // API client for Marketplace backend
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
+/**
+ * Persona modes for WP-8 Persona & Scope Lock (SPEC §5.1-§5.3)
+ * - GUEST: No headers required
+ * - PERSONAL: Authorization header required
+ * - STORE: X-Active-Tenant-Id header required
+ */
+export const PERSONA_MODES = {
+  GUEST: 'guest',
+  PERSONAL: 'personal',
+  STORE: 'store',
+};
+
+/**
+ * Build headers based on persona mode (WP-8)
+ * @param {string} personaMode - 'guest', 'personal', or 'store'
+ * @param {Object} config - { authToken, tenantId }
+ * @returns {Object} Headers object
+ */
+function buildPersonaHeaders(personaMode, config = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (personaMode === PERSONA_MODES.PERSONAL) {
+    // PERSONAL: Authorization header required (SPEC §5.2)
+    if (config.authToken) {
+      headers['Authorization'] = config.authToken.startsWith('Bearer ') 
+        ? config.authToken 
+        : `Bearer ${config.authToken}`;
+    }
+  } else if (personaMode === PERSONA_MODES.STORE) {
+    // STORE: X-Active-Tenant-Id header required (SPEC §5.2)
+    if (config.tenantId) {
+      headers['X-Active-Tenant-Id'] = config.tenantId;
+    }
+    // Optional: Authorization header for store scope (GENESIS phase)
+    if (config.authToken) {
+      headers['Authorization'] = config.authToken.startsWith('Bearer ') 
+        ? config.authToken 
+        : `Bearer ${config.authToken}`;
+    }
+  }
+  // GUEST: No headers required
+
+  return headers;
+}
+
 export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   
-  // Merge headers: Authorization from options.headers takes precedence
+  // Merge headers: options.headers takes precedence over persona headers
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -70,6 +117,7 @@ function generateIdempotencyKey() {
 }
 
 export const api = {
+  // GUEST persona: No headers required (SPEC §5.3)
   getCategories: () => apiRequest('/api/v1/categories'),
   getFilterSchema: (categoryId) => apiRequest(`/api/v1/categories/${categoryId}/filter-schema`),
   searchListings: (params) => {
@@ -78,97 +126,66 @@ export const api = {
   },
   getListing: (id) => apiRequest(`/api/v1/listings/${id}`),
   
-  // Account Portal - Personal scope (WP-32)
-  // Authorization: Bearer token required
+  // Account Portal - Personal scope (WP-32, WP-8)
+  // PERSONAL persona: Authorization header required (SPEC §5.2)
   getMyOrders: (userId, authToken) => {
-    const headers = {};
-    if (authToken) {
-      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
-    }
+    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
     return apiRequest(`/api/v1/orders?buyer_user_id=${userId}`, { headers });
   },
   getMyRentals: (userId, authToken) => {
-    const headers = {};
-    if (authToken) {
-      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
-    }
+    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
     return apiRequest(`/api/v1/rentals?renter_user_id=${userId}`, { headers });
   },
   getMyReservations: (userId, authToken) => {
-    const headers = {};
-    if (authToken) {
-      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
-    }
+    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
     return apiRequest(`/api/v1/reservations?requester_user_id=${userId}`, { headers });
   },
   
-  // Account Portal - Store scope (WP-32)
-  // X-Active-Tenant-Id header required
+  // Account Portal - Store scope (WP-32, WP-8)
+  // STORE persona: X-Active-Tenant-Id header required (SPEC §5.2)
   getStoreListings: (tenantId, authToken) => {
-    const headers = {
-      'X-Active-Tenant-Id': tenantId,
-    };
-    if (authToken) {
-      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
-    }
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId, authToken });
     return apiRequest(`/api/v1/listings?tenant_id=${tenantId}`, { headers });
   },
   getStoreOrders: (tenantId, authToken) => {
-    const headers = {
-      'X-Active-Tenant-Id': tenantId,
-    };
-    if (authToken) {
-      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
-    }
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId, authToken });
     return apiRequest(`/api/v1/orders?seller_tenant_id=${tenantId}`, { headers });
   },
   getStoreRentals: (tenantId, authToken) => {
-    const headers = {
-      'X-Active-Tenant-Id': tenantId,
-    };
-    if (authToken) {
-      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
-    }
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId, authToken });
     return apiRequest(`/api/v1/rentals?provider_tenant_id=${tenantId}`, { headers });
   },
   getStoreReservations: (tenantId, authToken) => {
-    const headers = {
-      'X-Active-Tenant-Id': tenantId,
-    };
-    if (authToken) {
-      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
-    }
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId, authToken });
     return apiRequest(`/api/v1/reservations?provider_tenant_id=${tenantId}`, { headers });
   },
   
-  // Write operations
+  // Write operations (WP-8: Persona-based headers)
+  // STORE persona: X-Active-Tenant-Id required
   createListing: (data, tenantId) => {
     const idempotencyKey = generateIdempotencyKey();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId });
+    headers['Idempotency-Key'] = idempotencyKey;
     return apiRequest('/api/v1/listings', {
       method: 'POST',
       body: JSON.stringify(data),
-      headers: {
-        'X-Active-Tenant-Id': tenantId,
-        'Idempotency-Key': idempotencyKey,
-      },
+      headers,
     });
   },
   
   publishListing: (id, tenantId) => {
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId });
     return apiRequest(`/api/v1/listings/${id}/publish`, {
       method: 'POST',
-      headers: {
-        'X-Active-Tenant-Id': tenantId,
-      },
+      headers,
     });
   },
   
+  // PERSONAL persona: Authorization header required (SPEC §5.2)
   createReservation: (data, authToken, userId) => {
     const idempotencyKey = generateIdempotencyKey();
-    const headers = {
-      'Authorization': authToken,
-      'Idempotency-Key': idempotencyKey,
-    };
+    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
+    headers['Idempotency-Key'] = idempotencyKey;
     if (userId) {
       headers['X-Requester-User-Id'] = userId;
     }
@@ -181,10 +198,8 @@ export const api = {
   
   createRental: (data, authToken, userId) => {
     const idempotencyKey = generateIdempotencyKey();
-    const headers = {
-      'Authorization': authToken,
-      'Idempotency-Key': idempotencyKey,
-    };
+    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
+    headers['Idempotency-Key'] = idempotencyKey;
     if (userId) {
       headers['X-Requester-User-Id'] = userId;
     }
