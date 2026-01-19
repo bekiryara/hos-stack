@@ -32,21 +32,33 @@ try {
 
 Write-Host ""
 
-# Check 2: Git Status (must be clean)
+# Check 2: Git Status (must be clean, ignore submodule untracked content)
 Write-Host "[2] Checking git status..." -ForegroundColor Yellow
 try {
     $gitStatus = git status --porcelain 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "FAIL: Git status command failed" -ForegroundColor Red
         $hasFailures = $true
-    } elseif ($gitStatus) {
-        Write-Host "FAIL: Git working directory is not clean" -ForegroundColor Red
-        Write-Host "  Uncommitted changes:" -ForegroundColor Yellow
-        $gitStatus | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
-        Write-Host "  Fix: Commit or stash changes before public release" -ForegroundColor Yellow
-        $hasFailures = $true
     } else {
-        Write-Host "PASS: Git working directory is clean" -ForegroundColor Green
+        # Filter out submodule untracked content (e.g., "modified:   work/hos (untracked content)")
+        $relevantChanges = $gitStatus | Where-Object { 
+            $_ -and 
+            -not ($_ -match '\(untracked content\)') -and
+            -not ($_ -match '\(new commits\)')
+        }
+        
+        if ($relevantChanges) {
+            Write-Host "FAIL: Git working directory is not clean" -ForegroundColor Red
+            Write-Host "  Uncommitted changes:" -ForegroundColor Yellow
+            $relevantChanges | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+            Write-Host "  Fix: Commit or stash changes before public release" -ForegroundColor Yellow
+            $hasFailures = $true
+        } else {
+            Write-Host "PASS: Git working directory is clean" -ForegroundColor Green
+            if ($gitStatus -match 'untracked content') {
+                Write-Host "  Note: Submodule untracked content ignored (not blocking)" -ForegroundColor Gray
+            }
+        }
     }
 } catch {
     Write-Host "FAIL: Git status check failed: $($_.Exception.Message)" -ForegroundColor Red

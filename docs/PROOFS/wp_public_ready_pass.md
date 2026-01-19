@@ -47,7 +47,7 @@ Repository has been hardened for public GitHub release:
    - With: `APP_KEY=<APP_KEY>`
 
 3. **CHANGELOG.md**
-   - Replaced: `MESSAGING_API_KEY=dev-messaging-key`
+   - Replaced: `MESSAGING_API_KEY=<MESSAGING_API_KEY>`
    - With: `MESSAGING_API_KEY=<MESSAGING_API_KEY>`
    - Replaced: `Bearer test-token-genesis-wp13`
    - With: `Bearer <token>`
