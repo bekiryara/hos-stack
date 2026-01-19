@@ -228,3 +228,4 @@ All tests pass:
 
 **WP-30 Complete:** Listing contract check aligned with auth-required writes; spine determinism restored.
 
+

@@ -227,3 +227,4 @@ WP-26 successfully unified store-scope validation into a single `TenantScope` mi
 
 **Result:** Zero behavior change, ~231 lines of duplicated code removed, deterministic PASS. ✅
 
+

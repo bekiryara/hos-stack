@@ -283,3 +283,4 @@ if ($tenantId === 'some-hardcoded-uuid') {
 - WP-8: Membership strict mode enforcement
 - WP-24: Write-path lock (state transitions, idempotency)
 
+
