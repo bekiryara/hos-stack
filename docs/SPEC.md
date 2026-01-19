@@ -1,7 +1,7 @@
 # SPEC v1.4 - Canonical Specification
 
 **Version:** 1.4.0  
-**Last Updated:** 2026-01-16  
+**Last Updated:** 2026-01-19  
 **Status:** GENESIS  
 **Single Source of Truth:** This document is the canonical specification for hos-stack.
 
@@ -288,9 +288,74 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 
 ---
 
-## §9. Workspace Packages (WP) Status
+## §9. Completed Work Packages
 
-### §9.1. WP-0: Governance Lock (§25.2)
+This section lists all Work Packages (WP) that have been completed and evidenced by proof documents in `docs/PROOFS/`.
+
+### Completed WPs (WP-17 through WP-28B)
+
+- **WP-17:** Routes Stabilization Finalization - Finalized Pazar API route modularization, removed duplicate routes, updated route duplicate guard. Proof: `docs/PROOFS/wp17_routes_stabilization_finalization_pass.md`
+- **WP-19:** Messaging Write Alignment + Ops Hardening - Aligned messaging write endpoints with ops scripts, hardened contract check script. Proof: `docs/PROOFS/wp19_messaging_write_alignment_pass.md`
+- **WP-20:** Reservation Routes + Auth Preflight Stabilization - Made Reservation Contract Check deterministic, eliminated 500 errors, required real JWT tokens. Proof: `docs/PROOFS/wp20_reservation_auth_stabilization_pass.md`
+- **WP-21:** Routes Guardrails (Budget + Drift) - Added deterministic guard enforcing line-count budgets and preventing unreferenced route module drift. Proof: `docs/PROOFS/wp21_routes_guardrails_pass.md`
+- **WP-22:** Listings Routes Headroom - Ensured listings routes remain within budget after additions. Proof: `docs/PROOFS/wp22_listings_routes_headroom_pass.md`
+- **WP-23:** Test Auth Bootstrap + Spine Check Determinism - Made Marketplace verification deterministic, eliminated manual PRODUCT_TEST_AUTH setup. Proof: `docs/PROOFS/wp23_spine_determinism_pass.md`
+- **WP-24:** Write-Path Lock - Locked write-path determinism, created write snapshot, added CI gate scripts. Proof: `docs/PROOFS/wp24_write_path_lock_pass.md`
+- **WP-25:** Header Contract Enforcement - Eliminated false-positive WARN messages in boundary_contract_check.ps1. Proof: `docs/PROOFS/wp25_header_contract_enforcement_pass.md`
+- **WP-26:** Store-Scope Unification + Middleware Pack - Unified X-Active-Tenant-Id + membership enforcement into TenantScope middleware. Proof: `docs/PROOFS/wp26_store_scope_unification_pass.md`
+- **WP-27:** Repo Hygiene + Closeout Alignment - Made repository clean and deterministic after recent WPs. Proof: `docs/PROOFS/wp27_repo_hygiene_closeout_pass.md`
+- **WP-28:** Listing 500 Elimination + Store-Scope Header Hardening - Fixed HTTP 500 errors on POST /api/v1/listings endpoints. Proof: `docs/PROOFS/wp28_listing_contract_500_fix_pass.md`
+- **WP-28B:** Fix tenant.scope Middleware Binding - Fixed Composer autoload cache issue preventing tenant.scope middleware resolution. Proof: `docs/PROOFS/wp28_listing_contract_500_fix_pass.md` (updated)
+
+For detailed closeout summaries, see `docs/WP_CLOSEOUTS.md`.
+
+---
+
+## §9A. Current Stable Invariants
+
+These invariants are enforced across all endpoints and must not be violated by any code changes.
+
+### §9A.1. Idempotency
+
+- All write operations (POST, PUT, PATCH, DELETE) require `Idempotency-Key` header
+- Same (scope, key, request_hash) returns same response (stored in `idempotency_keys` table)
+- Idempotency keys expire after 24 hours (TTL)
+- Replay detection prevents duplicate processing
+
+**Enforcement:** `ops/idempotency_coverage_check.ps1` validates all required endpoints have idempotency implemented.
+
+### §9A.2. Scope Validation
+
+- Store-scope endpoints require `X-Active-Tenant-Id` header (enforced via `tenant.scope` middleware)
+- Tenant ID format validated (UUID)
+- Membership validated via MembershipClient (strict mode via HOS API)
+- Missing/invalid header → 400/403 with appropriate error codes
+
+**Enforcement:** `ops/boundary_contract_check.ps1` validates header presence and middleware usage.
+
+### §9A.3. Determinism
+
+- Route modules loaded in deterministic order (numbered prefixes: 00_ping.php, 01_world_status.php, ...)
+- Stable naming scheme (numbered for ordering, descriptive for identification)
+- Route duplicate guard prevents duplicate route definitions
+- Line-count budgets enforced (entry point max 120 lines, modules max 900 lines)
+
+**Enforcement:** `ops/pazar_routes_guard.ps1` validates budgets and detects unreferenced modules.
+
+### §9A.4. Guardrails
+
+- Route duplicate detection (27 unique routes, no duplicates)
+- Module reference validation (all referenced modules exist, no unreferenced modules)
+- Line-count budget enforcement (prevents monolith regrowth)
+- Write-path snapshot validation (prevents unauthorized endpoint changes)
+
+**Enforcement:** Multiple guard scripts in `ops/` directory validate these invariants.
+
+---
+
+## §9B. Workspace Packages (WP) Status
+
+### §9B.1. WP-0: Governance Lock (§25.2)
 
 **Status:** ✅ COMPLETE
 
@@ -492,6 +557,37 @@ See `docs/WP_CLOSEOUTS.md` for detailed closeout summaries of each WP.
 
 ---
 
+## §26. Next WP Candidate
+
+### Recommended Next Step
+
+**WP-NEXT: Governance Sync + Routes/Status Audit + Pazar Legacy Inventory** ✅ COMPLETE
+
+**Status:** Completed 2026-01-19
+
+**Purpose:** Determine exact current state, align SPEC + WP_CLOSEOUTS + CHANGELOG with actual implementation, confirm routes modularization status, produce legacy inventory.
+
+**Deliverables:**
+- `docs/PROOFS/wp_next_governance_sync_pass.md` - Reality snapshot and audit results
+- `docs/LEGACY_PAZAR_INVENTORY.md` - Legacy file inventory (none found)
+- Updated `docs/SPEC.md`, `docs/WP_CLOSEOUTS.md`, `CHANGELOG.md`
+
+**Findings:**
+- Routes already modularized (no refactoring needed)
+- Core contract checks mostly PASS (3/4)
+- No legacy files found in work/pazar/
+- Governance docs updated with completed WPs and invariants
+
+**Proof:** `docs/PROOFS/wp_next_governance_sync_pass.md`
+
+### Alternative Next Steps
+
+1. **Security Audit Violations:** Address 10 POST routes missing `auth.any` middleware (currently flagged by security audit)
+2. **Observability Gaps:** Implement Pazar /metrics endpoint and Prometheus setup (currently 404)
+3. **Test Environment Setup:** Fix Reservation Contract Check bootstrap (H-OS admin API configuration)
+
+---
+
 **SPEC v1.4 - Canonical Specification**  
-**Last Updated:** 2026-01-18  
+**Last Updated:** 2026-01-19  
 **Status:** GENESIS
