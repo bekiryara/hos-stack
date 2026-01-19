@@ -56,6 +56,57 @@ Make Listing Contract Check PASS again; eliminate HTTP 500 on POST /api/v1/listi
 - POST /api/v1/listings/{id}/publish without header → 400 (was 500)
 - Schema::hasColumn guarded with hasTable check
 
+---
+
+## WP-28B: Fix tenant.scope Middleware Binding (Listing 500 Root-Cause)
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-28B
+
+### Purpose
+Fix Composer autoload cache issue that prevented `tenant.scope` middleware from being resolved. Eliminate "Target class [tenant.scope] does not exist" BindingResolutionException.
+
+### Root Cause
+After WP-28 code changes, `listing_contract_check` still returned 500 errors. Logs showed:
+```
+Target class [tenant.scope] does not exist. (BindingResolutionException)
+```
+
+**Root Cause:** Composer autoload cache was stale. The `TenantScope` class exists and is registered in `bootstrap/app.php` (line 70), but Composer's autoload cache did not include it.
+
+### Fix Applied
+1. **Verified middleware registration:**
+   - `bootstrap/app.php` line 70: `'tenant.scope' => \App\Http\Middleware\TenantScope::class` ✅
+   - `app/Http/Middleware/TenantScope.php` exists ✅
+
+2. **Regenerated Composer autoload via container rebuild:**
+   - Issue: Container does not have `composer` command (production image)
+   - Issue: Host does not have PHP installed
+   - Solution: Container rebuild (`docker compose build pazar-app`)
+   - Rebuild runs `composer install` during Docker build, which regenerates autoload files
+   - Container started: `docker compose up -d pazar-app`
+
+### Deliverables
+- No code changes (only autoload cache regeneration)
+- `docs/PROOFS/wp28_listing_contract_500_fix_pass.md` (MOD) - Updated with WP-28B section
+
+### Commands
+```powershell
+# Rebuild container (regenerates autoload during build)
+docker compose build pazar-app
+docker compose up -d pazar-app
+Start-Sleep -Seconds 10
+
+# Verify fix
+.\ops\listing_contract_check.ps1
+.\ops\pazar_spine_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp28_listing_contract_500_fix_pass.md` - Updated with WP-28B root cause and fix
+- Listing Contract Check PASS (400 responses instead of 500)
+- No more "Target class [tenant.scope] does not exist" errors in logs
+
 ### Notes
 - Zero behavior change (only error handling improved)
 - Minimal diff (only 3 defensive checks added)
