@@ -4,202 +4,282 @@
     
     <!-- Access Section -->
     <div class="access-section">
+      <h3>Access</h3>
+      
+      <div class="form-row">
+        <label>
+          Base URL:
+          <input v-model="baseUrl" type="text" placeholder="http://localhost:8080" @blur="saveToLocalStorage" />
+        </label>
+      </div>
+      
+      <div class="form-row">
+        <label>
+          Authorization Token:
+          <div class="token-input">
+            <input 
+              v-model="authToken" 
+              :type="showToken ? 'text' : 'password'" 
+              placeholder="Bearer ..." 
+              @blur="saveToLocalStorage"
+            />
+            <button @click="showToken = !showToken" class="toggle-btn">
+              {{ showToken ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+        </label>
+      </div>
+      
       <div class="form-row">
         <label>
           Mode:
-          <select v-model="mode">
-            <option value="store">Store (Tenant)</option>
-            <option value="personal">Personal (User)</option>
+          <select v-model="mode" @change="saveToLocalStorage">
+            <option value="personal">Personal</option>
+            <option value="store">Store</option>
           </select>
         </label>
       </div>
       
-      <!-- Store Panel -->
-      <div v-if="mode === 'store'" class="panel">
-        <h3>Store (Tenant) Panel</h3>
-        <div class="form-row">
-          <label>
-            Tenant ID:
-            <input v-model="tenantId" type="text" placeholder="UUID for X-Active-Tenant-Id" />
-          </label>
-        </div>
-        <div class="form-row">
-          <label>
-            Authorization Token (optional):
-            <div class="token-input">
-              <input 
-                v-model="authToken" 
-                :type="showToken ? 'text' : 'password'" 
-                placeholder="Bearer ..." 
-              />
-              <button @click="showToken = !showToken" class="toggle-btn">
-                {{ showToken ? 'Hide' : 'Show' }}
-              </button>
-            </div>
-          </label>
-        </div>
-        <div class="button-group">
-          <button @click="loadStoreListings" :disabled="!tenantId || storeListingsLoading">
-            Listings
-          </button>
-          <button @click="loadStoreOrders" :disabled="!tenantId || storeOrdersLoading">
-            Orders
-          </button>
-          <button @click="loadStoreRentals" :disabled="!tenantId || storeRentalsLoading">
-            Rentals
-          </button>
-          <button @click="loadStoreReservations" :disabled="!tenantId || storeReservationsLoading">
-            Reservations
-          </button>
-        </div>
+      <div v-if="mode === 'personal'" class="form-row">
+        <label>
+          User ID:
+          <input v-model="userId" type="text" placeholder="UUID" @blur="saveToLocalStorage" />
+        </label>
       </div>
       
-      <!-- Personal Panel -->
-      <div v-if="mode === 'personal'" class="panel">
-        <h3>Personal (User) Panel</h3>
-        <div class="form-row">
-          <label>
-            User ID:
-            <input v-model="userId" type="text" placeholder="UUID for X-Requester-User-Id" />
-          </label>
-        </div>
-        <div class="form-row">
-          <label>
-            Authorization Token (required):
-            <div class="token-input">
-              <input 
-                v-model="authToken" 
-                :type="showToken ? 'text' : 'password'" 
-                placeholder="Bearer ..." 
-                required
-              />
-              <button @click="showToken = !showToken" class="toggle-btn">
-                {{ showToken ? 'Hide' : 'Show' }}
-              </button>
-            </div>
-          </label>
-        </div>
-        <div v-if="!authToken" class="token-warning">
-          ⚠️ Token is required for personal scope requests
-        </div>
-        <div class="button-group">
-          <button 
-            @click="loadPersonalOrders" 
-            :disabled="!authToken || personalOrdersLoading"
-            :title="!authToken ? 'Token required' : ''"
-          >
-            My Orders
-          </button>
-          <button 
-            @click="loadPersonalRentals" 
-            :disabled="!authToken || personalRentalsLoading"
-            :title="!authToken ? 'Token required' : ''"
-          >
-            My Rentals
-          </button>
-          <button 
-            @click="loadPersonalReservations" 
-            :disabled="!authToken || personalReservationsLoading"
-            :title="!authToken ? 'Token required' : ''"
-          >
-            My Reservations
-          </button>
-        </div>
+      <div v-if="mode === 'store'" class="form-row">
+        <label>
+          Tenant ID:
+          <input v-model="tenantId" type="text" placeholder="UUID" @blur="saveToLocalStorage" />
+        </label>
+      </div>
+      
+      <div class="button-group">
+        <button @click="refreshAll" :disabled="loading">
+          {{ loading ? 'Loading...' : 'Refresh' }}
+        </button>
       </div>
     </div>
 
     <!-- Results Section -->
     <div class="results-section">
-      <!-- Store Results -->
-      <div v-if="mode === 'store'">
-        <div v-if="storeListingsResult" class="result-box">
-          <h3>Listings Result</h3>
-          <div class="result-summary">
-            <strong>Count:</strong> {{ Array.isArray(storeListingsResult.data) ? storeListingsResult.data.length : 'N/A' }}
-            <span v-if="Array.isArray(storeListingsResult.data) && storeListingsResult.data.length > 0">
-              | <strong>First:</strong> {{ JSON.stringify(storeListingsResult.data[0]).substring(0, 100) }}...
-            </span>
-          </div>
-          <pre class="json-output">{{ formatJSON(storeListingsResult) }}</pre>
-        </div>
-        
-        <div v-if="storeOrdersResult" class="result-box">
-          <h3>Orders Result</h3>
-          <div class="result-summary">
-            <strong>Count:</strong> {{ Array.isArray(storeOrdersResult.data) ? storeOrdersResult.data.length : 'N/A' }}
-            <span v-if="Array.isArray(storeOrdersResult.data) && storeOrdersResult.data.length > 0">
-              | <strong>First:</strong> {{ JSON.stringify(storeOrdersResult.data[0]).substring(0, 100) }}...
-            </span>
-          </div>
-          <pre class="json-output">{{ formatJSON(storeOrdersResult) }}</pre>
-        </div>
-        
-        <div v-if="storeRentalsResult" class="result-box">
-          <h3>Rentals Result</h3>
-          <div class="result-summary">
-            <strong>Count:</strong> {{ Array.isArray(storeRentalsResult.data) ? storeRentalsResult.data.length : 'N/A' }}
-            <span v-if="Array.isArray(storeRentalsResult.data) && storeRentalsResult.data.length > 0">
-              | <strong>First:</strong> {{ JSON.stringify(storeRentalsResult.data[0]).substring(0, 100) }}...
-            </span>
-          </div>
-          <pre class="json-output">{{ formatJSON(storeRentalsResult) }}</pre>
-        </div>
-        
-        <div v-if="storeReservationsResult" class="result-box">
-          <h3>Reservations Result</h3>
-          <div class="result-summary">
-            <strong>Count:</strong> {{ Array.isArray(storeReservationsResult.data) ? storeReservationsResult.data.length : 'N/A' }}
-            <span v-if="Array.isArray(storeReservationsResult.data) && storeReservationsResult.data.length > 0">
-              | <strong>First:</strong> {{ JSON.stringify(storeReservationsResult.data[0]).substring(0, 100) }}...
-            </span>
-          </div>
-          <pre class="json-output">{{ formatJSON(storeReservationsResult) }}</pre>
-        </div>
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-state">
+        <p>Loading data...</p>
       </div>
       
-      <!-- Personal Results -->
-      <div v-if="mode === 'personal'">
-        <div v-if="personalOrdersResult" class="result-box">
-          <h3>My Orders Result</h3>
-          <div class="result-summary">
-            <strong>Count:</strong> {{ Array.isArray(personalOrdersResult.data) ? personalOrdersResult.data.length : 'N/A' }}
-            <span v-if="Array.isArray(personalOrdersResult.data) && personalOrdersResult.data.length > 0">
-              | <strong>First:</strong> {{ JSON.stringify(personalOrdersResult.data[0]).substring(0, 100) }}...
-            </span>
-          </div>
-          <pre class="json-output">{{ formatJSON(personalOrdersResult) }}</pre>
-        </div>
-        
-        <div v-if="personalRentalsResult" class="result-box">
-          <h3>My Rentals Result</h3>
-          <div class="result-summary">
-            <strong>Count:</strong> {{ Array.isArray(personalRentalsResult.data) ? personalRentalsResult.data.length : 'N/A' }}
-            <span v-if="Array.isArray(personalRentalsResult.data) && personalRentalsResult.data.length > 0">
-              | <strong>First:</strong> {{ JSON.stringify(personalRentalsResult.data[0]).substring(0, 100) }}...
-            </span>
-          </div>
-          <pre class="json-output">{{ formatJSON(personalRentalsResult) }}</pre>
-        </div>
-        
-        <div v-if="personalReservationsResult" class="result-box">
-          <h3>My Reservations Result</h3>
-          <div class="result-summary">
-            <strong>Count:</strong> {{ Array.isArray(personalReservationsResult.data) ? personalReservationsResult.data.length : 'N/A' }}
-            <span v-if="Array.isArray(personalReservationsResult.data) && personalReservationsResult.data.length > 0">
-              | <strong>First:</strong> {{ JSON.stringify(personalReservationsResult.data[0]).substring(0, 100) }}...
-            </span>
-          </div>
-          <pre class="json-output">{{ formatJSON(personalReservationsResult) }}</pre>
-        </div>
-      </div>
-      
-      <!-- Error Display -->
-      <div v-if="lastError" class="error-box">
+      <!-- Error State -->
+      <div v-if="error" class="error-box">
         <h3>Error</h3>
         <div class="error-details">
-          <div><strong>Status:</strong> {{ lastError.status || 'N/A' }}</div>
-          <div><strong>Message:</strong> {{ lastError.message || 'Unknown error' }}</div>
-          <pre v-if="lastError.body" class="json-output">{{ formatJSON(lastError.body) }}</pre>
+          <div><strong>Status:</strong> {{ error.status || 'N/A' }}</div>
+          <div v-if="error.errorCode"><strong>Error Code:</strong> {{ error.errorCode }}</div>
+          <div><strong>Message:</strong> {{ error.message || 'Unknown error' }}</div>
+        </div>
+      </div>
+      
+      <!-- Personal Mode Results -->
+      <div v-if="mode === 'personal' && !loading && !error">
+        <div class="result-section">
+          <h3>My Orders</h3>
+          <div v-if="personalOrders.length === 0" class="empty-state">
+            No orders yet
+          </div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Listing ID</th>
+                <th>Status</th>
+                <th>Quantity</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in personalOrders" :key="order.id">
+                <td>{{ order.id }}</td>
+                <td>{{ order.listing_id }}</td>
+                <td>{{ order.status }}</td>
+                <td>{{ order.quantity }}</td>
+                <td>{{ formatDate(order.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="result-section">
+          <h3>My Rentals</h3>
+          <div v-if="personalRentals.length === 0" class="empty-state">
+            No rentals yet
+          </div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Listing ID</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="rental in personalRentals" :key="rental.id">
+                <td>{{ rental.id }}</td>
+                <td>{{ rental.listing_id }}</td>
+                <td>{{ formatDate(rental.start_at) }}</td>
+                <td>{{ formatDate(rental.end_at) }}</td>
+                <td>{{ rental.status }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="result-section">
+          <h3>My Reservations</h3>
+          <div v-if="personalReservations.length === 0" class="empty-state">
+            No reservations yet
+          </div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Listing ID</th>
+                <th>Slot Start</th>
+                <th>Slot End</th>
+                <th>Party Size</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="reservation in personalReservations" :key="reservation.id">
+                <td>{{ reservation.id }}</td>
+                <td>{{ reservation.listing_id }}</td>
+                <td>{{ formatDate(reservation.slot_start) }}</td>
+                <td>{{ formatDate(reservation.slot_end) }}</td>
+                <td>{{ reservation.party_size }}</td>
+                <td>{{ reservation.status }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Store Mode Results -->
+      <div v-if="mode === 'store' && !loading && !error">
+        <div class="result-section">
+          <h3>Store Listings</h3>
+          <div v-if="storeListings.length === 0" class="empty-state">
+            No listings yet
+          </div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Category ID</th>
+                <th>Status</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="listing in storeListings" :key="listing.id">
+                <td>{{ listing.id }}</td>
+                <td>{{ listing.title }}</td>
+                <td>{{ listing.category_id }}</td>
+                <td>{{ listing.status }}</td>
+                <td>{{ formatDate(listing.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="result-section">
+          <h3>Store Orders</h3>
+          <div v-if="storeOrders.length === 0" class="empty-state">
+            No orders yet
+          </div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Listing ID</th>
+                <th>Buyer User ID</th>
+                <th>Status</th>
+                <th>Quantity</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in storeOrders" :key="order.id">
+                <td>{{ order.id }}</td>
+                <td>{{ order.listing_id }}</td>
+                <td>{{ order.buyer_user_id }}</td>
+                <td>{{ order.status }}</td>
+                <td>{{ order.quantity }}</td>
+                <td>{{ formatDate(order.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="result-section">
+          <h3>Store Rentals</h3>
+          <div v-if="storeRentals.length === 0" class="empty-state">
+            No rentals yet
+          </div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Listing ID</th>
+                <th>Renter User ID</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="rental in storeRentals" :key="rental.id">
+                <td>{{ rental.id }}</td>
+                <td>{{ rental.listing_id }}</td>
+                <td>{{ rental.renter_user_id }}</td>
+                <td>{{ formatDate(rental.start_at) }}</td>
+                <td>{{ formatDate(rental.end_at) }}</td>
+                <td>{{ rental.status }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="result-section">
+          <h3>Store Reservations</h3>
+          <div v-if="storeReservations.length === 0" class="empty-state">
+            No reservations yet
+          </div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Listing ID</th>
+                <th>Requester User ID</th>
+                <th>Slot Start</th>
+                <th>Slot End</th>
+                <th>Party Size</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="reservation in storeReservations" :key="reservation.id">
+                <td>{{ reservation.id }}</td>
+                <td>{{ reservation.listing_id }}</td>
+                <td>{{ reservation.requester_user_id }}</td>
+                <td>{{ formatDate(reservation.slot_start) }}</td>
+                <td>{{ formatDate(reservation.slot_end) }}</td>
+                <td>{{ reservation.party_size }}</td>
+                <td>{{ reservation.status }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -207,55 +287,32 @@
 </template>
 
 <script>
-import { storeApi, personalApi } from '../lib/pazarApi.js';
+import { api, normalizeListResponse } from '../api/client.js';
 
 export default {
   name: 'AccountPortalPage',
   data() {
     return {
-      mode: 'personal',
+      baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
       authToken: '',
+      mode: 'personal',
       userId: '',
       tenantId: '',
       showToken: false,
       
-      // Store results
-      storeListingsResult: null,
-      storeOrdersResult: null,
-      storeRentalsResult: null,
-      storeReservationsResult: null,
+      // Data
+      personalOrders: [],
+      personalRentals: [],
+      personalReservations: [],
+      storeListings: [],
+      storeOrders: [],
+      storeRentals: [],
+      storeReservations: [],
       
-      // Personal results
-      personalOrdersResult: null,
-      personalRentalsResult: null,
-      personalReservationsResult: null,
-      
-      // Loading states
-      storeListingsLoading: false,
-      storeOrdersLoading: false,
-      storeRentalsLoading: false,
-      storeReservationsLoading: false,
-      personalOrdersLoading: false,
-      personalRentalsLoading: false,
-      personalReservationsLoading: false,
-      
-      // Error state
-      lastError: null,
+      // State
+      loading: false,
+      error: null,
     };
-  },
-  watch: {
-    authToken() {
-      this.saveToLocalStorage();
-    },
-    userId() {
-      this.saveToLocalStorage();
-    },
-    tenantId() {
-      this.saveToLocalStorage();
-    },
-    mode() {
-      this.saveToLocalStorage();
-    },
   },
   mounted() {
     this.loadFromLocalStorage();
@@ -263,181 +320,156 @@ export default {
   methods: {
     saveToLocalStorage() {
       if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('accountPortal_baseUrl', this.baseUrl);
         localStorage.setItem('accountPortal_authToken', this.authToken);
+        localStorage.setItem('accountPortal_mode', this.mode);
         localStorage.setItem('accountPortal_userId', this.userId);
         localStorage.setItem('accountPortal_tenantId', this.tenantId);
-        localStorage.setItem('accountPortal_mode', this.mode);
       }
     },
     loadFromLocalStorage() {
       if (typeof localStorage !== 'undefined') {
+        this.baseUrl = localStorage.getItem('accountPortal_baseUrl') || this.baseUrl;
         this.authToken = localStorage.getItem('accountPortal_authToken') || '';
+        this.mode = localStorage.getItem('accountPortal_mode') || 'personal';
         this.userId = localStorage.getItem('accountPortal_userId') || '';
         this.tenantId = localStorage.getItem('accountPortal_tenantId') || '';
-        this.mode = localStorage.getItem('accountPortal_mode') || 'personal';
       }
     },
-    formatJSON(obj) {
+    formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
       try {
-        return JSON.stringify(obj, null, 2);
-      } catch (e) {
-        return String(obj);
+        return new Date(dateStr).toLocaleString();
+      } catch {
+        return dateStr;
       }
     },
-    
-    // Store API calls
-    async loadStoreListings() {
-      if (!this.tenantId) {
-        this.lastError = { message: 'Tenant ID is required' };
-        return;
-      }
-      this.storeListingsLoading = true;
-      this.lastError = null;
-      this.storeListingsResult = null;
+    async refreshAll() {
+      this.loading = true;
+      this.error = null;
+      
+      // Clear previous data
+      this.personalOrders = [];
+      this.personalRentals = [];
+      this.personalReservations = [];
+      this.storeListings = [];
+      this.storeOrders = [];
+      this.storeRentals = [];
+      this.storeReservations = [];
+      
       try {
-        const result = await storeApi.getListings(this.tenantId, this.authToken || null);
-        if (result.ok) {
-          this.storeListingsResult = result;
+        if (this.mode === 'personal') {
+          // Personal scope: parallel loads
+          if (!this.userId) {
+            throw new Error('User ID is required for personal scope');
+          }
+          
+          const [ordersResp, rentalsResp, reservationsResp] = await Promise.all([
+            api.getMyOrders(this.userId, this.authToken || null).catch(e => e),
+            api.getMyRentals(this.userId, this.authToken || null).catch(e => e),
+            api.getMyReservations(this.userId, this.authToken || null).catch(e => e),
+          ]);
+          
+          // Check for errors
+          if (ordersResp instanceof Error) {
+            this.error = {
+              status: ordersResp.status,
+              errorCode: ordersResp.errorCode,
+              message: ordersResp.message,
+            };
+            return;
+          }
+          if (rentalsResp instanceof Error) {
+            this.error = {
+              status: rentalsResp.status,
+              errorCode: rentalsResp.errorCode,
+              message: rentalsResp.message,
+            };
+            return;
+          }
+          if (reservationsResp instanceof Error) {
+            this.error = {
+              status: reservationsResp.status,
+              errorCode: reservationsResp.errorCode,
+              message: reservationsResp.message,
+            };
+            return;
+          }
+          
+          // Normalize responses
+          const ordersNorm = normalizeListResponse(ordersResp);
+          const rentalsNorm = normalizeListResponse(rentalsResp);
+          const reservationsNorm = normalizeListResponse(reservationsResp);
+          
+          this.personalOrders = ordersNorm.items || [];
+          this.personalRentals = rentalsNorm.items || [];
+          this.personalReservations = reservationsNorm.items || [];
         } else {
-          this.lastError = result;
+          // Store scope: parallel loads
+          if (!this.tenantId) {
+            throw new Error('Tenant ID is required for store scope');
+          }
+          
+          const [listingsResp, ordersResp, rentalsResp, reservationsResp] = await Promise.all([
+            api.getStoreListings(this.tenantId, this.authToken || null).catch(e => e),
+            api.getStoreOrders(this.tenantId, this.authToken || null).catch(e => e),
+            api.getStoreRentals(this.tenantId, this.authToken || null).catch(e => e),
+            api.getStoreReservations(this.tenantId, this.authToken || null).catch(e => e),
+          ]);
+          
+          // Check for errors
+          if (listingsResp instanceof Error) {
+            this.error = {
+              status: listingsResp.status,
+              errorCode: listingsResp.errorCode,
+              message: listingsResp.message,
+            };
+            return;
+          }
+          if (ordersResp instanceof Error) {
+            this.error = {
+              status: ordersResp.status,
+              errorCode: ordersResp.errorCode,
+              message: ordersResp.message,
+            };
+            return;
+          }
+          if (rentalsResp instanceof Error) {
+            this.error = {
+              status: rentalsResp.status,
+              errorCode: rentalsResp.errorCode,
+              message: rentalsResp.message,
+            };
+            return;
+          }
+          if (reservationsResp instanceof Error) {
+            this.error = {
+              status: reservationsResp.status,
+              errorCode: reservationsResp.errorCode,
+              message: reservationsResp.message,
+            };
+            return;
+          }
+          
+          // Normalize responses
+          const listingsNorm = normalizeListResponse(listingsResp);
+          const ordersNorm = normalizeListResponse(ordersResp);
+          const rentalsNorm = normalizeListResponse(rentalsResp);
+          const reservationsNorm = normalizeListResponse(reservationsResp);
+          
+          this.storeListings = listingsNorm.items || [];
+          this.storeOrders = ordersNorm.items || [];
+          this.storeRentals = rentalsNorm.items || [];
+          this.storeReservations = reservationsNorm.items || [];
         }
       } catch (error) {
-        this.lastError = { message: error.message, status: 0 };
+        this.error = {
+          status: error.status || 0,
+          errorCode: error.errorCode,
+          message: error.message || 'Unknown error',
+        };
       } finally {
-        this.storeListingsLoading = false;
-      }
-    },
-    
-    async loadStoreOrders() {
-      if (!this.tenantId) {
-        this.lastError = { message: 'Tenant ID is required' };
-        return;
-      }
-      this.storeOrdersLoading = true;
-      this.lastError = null;
-      this.storeOrdersResult = null;
-      try {
-        const result = await storeApi.getOrders(this.tenantId, this.authToken || null);
-        if (result.ok) {
-          this.storeOrdersResult = result;
-        } else {
-          this.lastError = result;
-        }
-      } catch (error) {
-        this.lastError = { message: error.message, status: 0 };
-      } finally {
-        this.storeOrdersLoading = false;
-      }
-    },
-    
-    async loadStoreRentals() {
-      if (!this.tenantId) {
-        this.lastError = { message: 'Tenant ID is required' };
-        return;
-      }
-      this.storeRentalsLoading = true;
-      this.lastError = null;
-      this.storeRentalsResult = null;
-      try {
-        const result = await storeApi.getRentals(this.tenantId, this.authToken || null);
-        if (result.ok) {
-          this.storeRentalsResult = result;
-        } else {
-          this.lastError = result;
-        }
-      } catch (error) {
-        this.lastError = { message: error.message, status: 0 };
-      } finally {
-        this.storeRentalsLoading = false;
-      }
-    },
-    
-    async loadStoreReservations() {
-      if (!this.tenantId) {
-        this.lastError = { message: 'Tenant ID is required' };
-        return;
-      }
-      this.storeReservationsLoading = true;
-      this.lastError = null;
-      this.storeReservationsResult = null;
-      try {
-        const result = await storeApi.getReservations(this.tenantId, this.authToken || null);
-        if (result.ok) {
-          this.storeReservationsResult = result;
-        } else {
-          this.lastError = result;
-        }
-      } catch (error) {
-        this.lastError = { message: error.message, status: 0 };
-      } finally {
-        this.storeReservationsLoading = false;
-      }
-    },
-    
-    // Personal API calls
-    async loadPersonalOrders() {
-      if (!this.authToken) {
-        this.lastError = { message: 'Authorization Token is required for personal scope' };
-        return;
-      }
-      this.personalOrdersLoading = true;
-      this.lastError = null;
-      this.personalOrdersResult = null;
-      try {
-        const result = await personalApi.getOrders(this.userId || null, this.authToken);
-        if (result.ok) {
-          this.personalOrdersResult = result;
-        } else {
-          this.lastError = result;
-        }
-      } catch (error) {
-        this.lastError = { message: error.message, status: 0 };
-      } finally {
-        this.personalOrdersLoading = false;
-      }
-    },
-    
-    async loadPersonalRentals() {
-      if (!this.authToken) {
-        this.lastError = { message: 'Authorization Token is required for personal scope' };
-        return;
-      }
-      this.personalRentalsLoading = true;
-      this.lastError = null;
-      this.personalRentalsResult = null;
-      try {
-        const result = await personalApi.getRentals(this.userId || null, this.authToken);
-        if (result.ok) {
-          this.personalRentalsResult = result;
-        } else {
-          this.lastError = result;
-        }
-      } catch (error) {
-        this.lastError = { message: error.message, status: 0 };
-      } finally {
-        this.personalRentalsLoading = false;
-      }
-    },
-    
-    async loadPersonalReservations() {
-      if (!this.authToken) {
-        this.lastError = { message: 'Authorization Token is required for personal scope' };
-        return;
-      }
-      this.personalReservationsLoading = true;
-      this.lastError = null;
-      this.personalReservationsResult = null;
-      try {
-        const result = await personalApi.getReservations(this.userId || null, this.authToken);
-        if (result.ok) {
-          this.personalReservationsResult = result;
-        } else {
-          this.lastError = result;
-        }
-      } catch (error) {
-        this.lastError = { message: error.message, status: 0 };
-      } finally {
-        this.personalReservationsLoading = false;
+        this.loading = false;
       }
     },
   },
@@ -459,15 +491,7 @@ export default {
   border: 1px solid #ddd;
 }
 
-.panel {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-.panel h3 {
+.access-section h3 {
   margin-top: 0;
   margin-bottom: 1rem;
   color: #333;
@@ -515,20 +539,10 @@ export default {
   background: #555;
 }
 
-.token-warning {
-  padding: 0.75rem;
-  background: #fff3cd;
-  border: 1px solid #ffc107;
-  border-radius: 4px;
-  color: #856404;
-  margin: 0.75rem 0;
-}
-
 .button-group {
   display: flex;
   gap: 0.5rem;
   margin-top: 1rem;
-  flex-wrap: wrap;
 }
 
 .button-group button {
@@ -554,37 +568,10 @@ export default {
   margin-top: 2rem;
 }
 
-.result-box {
-  margin: 1rem 0;
-  padding: 1rem;
-  background: #f9f9f9;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-.result-box h3 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  color: #333;
-}
-
-.result-summary {
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+.loading-state {
+  padding: 2rem;
+  text-align: center;
   color: #666;
-}
-
-.json-output {
-  background: #2d2d2d;
-  color: #f8f8f2;
-  padding: 1rem;
-  border-radius: 4px;
-  overflow-x: auto;
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  max-height: 500px;
-  overflow-y: auto;
 }
 
 .error-box {
@@ -607,5 +594,54 @@ export default {
 
 .error-details div {
   margin: 0.5rem 0;
+}
+
+.result-section {
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.result-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.data-table thead {
+  background: #f5f5f5;
+}
+
+.data-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #ddd;
+}
+
+.data-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+.data-table tbody tr:hover {
+  background: #f9f9f9;
 }
 </style>

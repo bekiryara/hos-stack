@@ -3,12 +3,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 
 export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
+  
+  // Merge headers: Authorization from options.headers takes precedence
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -42,6 +46,20 @@ export function unwrapData(resp) {
   return resp;
 }
 
+// Normalize list response helper (WP-32)
+// If resp is an array => return { items: resp, meta: null }
+// If resp is object with resp.data => return { items: resp.data, meta: resp.meta || null }
+// Else => return { items: resp, meta: null } (fallback)
+export function normalizeListResponse(resp) {
+  if (Array.isArray(resp)) {
+    return { items: resp, meta: null };
+  }
+  if (resp && typeof resp === 'object' && 'data' in resp) {
+    return { items: resp.data, meta: resp.meta || null };
+  }
+  return { items: resp, meta: null };
+}
+
 // Generate UUID v4 for idempotency keys
 function generateIdempotencyKey() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -60,76 +78,65 @@ export const api = {
   },
   getListing: (id) => apiRequest(`/api/v1/listings/${id}`),
   
-  // Account Portal - Personal scope (Authorization required)
-  getMyOrders: (authToken, userIdOpt) => {
-    const headers = {
-      'Authorization': authToken,
-    };
-    if (userIdOpt) {
-      headers['X-Requester-User-Id'] = userIdOpt;
+  // Account Portal - Personal scope (WP-32)
+  // Authorization: Bearer token required
+  getMyOrders: (userId, authToken) => {
+    const headers = {};
+    if (authToken) {
+      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
     }
-    const endpoint = userIdOpt ? `/api/v1/orders?buyer_user_id=${userIdOpt}` : '/api/v1/orders';
-    return apiRequest(endpoint, { headers });
+    return apiRequest(`/api/v1/orders?buyer_user_id=${userId}`, { headers });
   },
-  getMyRentals: (authToken, userIdOpt) => {
-    const headers = {
-      'Authorization': authToken,
-    };
-    if (userIdOpt) {
-      headers['X-Requester-User-Id'] = userIdOpt;
+  getMyRentals: (userId, authToken) => {
+    const headers = {};
+    if (authToken) {
+      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
     }
-    const endpoint = userIdOpt ? `/api/v1/rentals?renter_user_id=${userIdOpt}` : '/api/v1/rentals';
-    return apiRequest(endpoint, { headers });
+    return apiRequest(`/api/v1/rentals?renter_user_id=${userId}`, { headers });
   },
-  getMyReservations: (authToken, userIdOpt) => {
-    const headers = {
-      'Authorization': authToken,
-    };
-    if (userIdOpt) {
-      headers['X-Requester-User-Id'] = userIdOpt;
+  getMyReservations: (userId, authToken) => {
+    const headers = {};
+    if (authToken) {
+      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
     }
-    const endpoint = userIdOpt ? `/api/v1/reservations?requester_user_id=${userIdOpt}` : '/api/v1/reservations';
-    return apiRequest(endpoint, { headers });
+    return apiRequest(`/api/v1/reservations?requester_user_id=${userId}`, { headers });
   },
   
-  // Account Portal - Store scope (X-Active-Tenant-Id required)
-  getStoreListings: (authToken, tenantId, userIdOpt) => {
+  // Account Portal - Store scope (WP-32)
+  // X-Active-Tenant-Id header required
+  getStoreListings: (tenantId, authToken) => {
     const headers = {
-      'Authorization': authToken,
       'X-Active-Tenant-Id': tenantId,
     };
-    if (userIdOpt) {
-      headers['X-Requester-User-Id'] = userIdOpt;
+    if (authToken) {
+      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
     }
     return apiRequest(`/api/v1/listings?tenant_id=${tenantId}`, { headers });
   },
-  getStoreOrders: (authToken, tenantId, userIdOpt) => {
+  getStoreOrders: (tenantId, authToken) => {
     const headers = {
-      'Authorization': authToken,
       'X-Active-Tenant-Id': tenantId,
     };
-    if (userIdOpt) {
-      headers['X-Requester-User-Id'] = userIdOpt;
+    if (authToken) {
+      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
     }
     return apiRequest(`/api/v1/orders?seller_tenant_id=${tenantId}`, { headers });
   },
-  getStoreRentals: (authToken, tenantId, userIdOpt) => {
+  getStoreRentals: (tenantId, authToken) => {
     const headers = {
-      'Authorization': authToken,
       'X-Active-Tenant-Id': tenantId,
     };
-    if (userIdOpt) {
-      headers['X-Requester-User-Id'] = userIdOpt;
+    if (authToken) {
+      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
     }
     return apiRequest(`/api/v1/rentals?provider_tenant_id=${tenantId}`, { headers });
   },
-  getStoreReservations: (authToken, tenantId, userIdOpt) => {
+  getStoreReservations: (tenantId, authToken) => {
     const headers = {
-      'Authorization': authToken,
       'X-Active-Tenant-Id': tenantId,
     };
-    if (userIdOpt) {
-      headers['X-Requester-User-Id'] = userIdOpt;
+    if (authToken) {
+      headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
     }
     return apiRequest(`/api/v1/reservations?provider_tenant_id=${tenantId}`, { headers });
   },

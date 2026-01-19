@@ -50,6 +50,53 @@ Invoke-WebRequest -Uri "http://localhost:8080/api/metrics" -Method GET
 
 ---
 
+## WP-32: Account Portal Frontend Integration (Read-Only)
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-32
+
+### Purpose
+Make Account Portal page actually render data by connecting it to real backend READ endpoints. Minimal diff. No backend changes. No new endpoints. No new dependencies. Deterministic: build must pass; errors must be shown clearly in UI.
+
+### Deliverables
+- `work/marketplace-web/src/api/client.js` (MOD): Added normalizeListResponse helper, extended apiRequest for extra headers, updated Account Portal methods
+- `work/marketplace-web/src/pages/AccountPortalPage.vue` (MOD): Rewritten to use api client directly with proper loading/error/empty states
+- `docs/PROOFS/wp32_account_portal_frontend_integration_pass.md` - Proof document
+
+### Changes
+1. **API Client (client.js):**
+   - Added `normalizeListResponse` helper: handles array responses and {data, meta} envelope format
+   - Extended `apiRequest` to accept extra headers (merge with existing Authorization header)
+   - Updated Account Portal methods: Personal scope (getMyOrders, getMyRentals, getMyReservations) and Store scope (getStoreListings, getStoreOrders, getStoreRentals, getStoreReservations)
+
+2. **Account Portal Page (AccountPortalPage.vue):**
+   - Rewritten to use api client directly (removed dependency on pazarApi.js)
+   - Single "Access" section: Base URL, Authorization Token (localStorage), User ID, Tenant ID, Mode selector, Refresh button
+   - Loading state: "Loading data..." indicator
+   - Error state: HTTP status, errorCode (if present), message
+   - Empty state: "No items yet" message
+   - List items: Simple HTML tables with relevant columns
+
+### Commands
+```bash
+# Build frontend
+cd work/marketplace-web
+npm run build
+
+# Manual testing (after starting dev server)
+# 1. Navigate to /account-portal
+# 2. Set mode, IDs, token
+# 3. Click Refresh
+# 4. Verify data loads and displays correctly
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp32_account_portal_frontend_integration_pass.md` - Proof document with build output and manual test notes
+- Build: PASS (npm run build completes successfully, no errors)
+- Frontend integration: Account Portal page connects to real backend READ endpoints, displays data in tables, shows clear error states
+
+---
+
 ## WP-30: Listing Contract Auth Alignment (Post WP-29)
 
 **Status:** ✅ COMPLETE  
