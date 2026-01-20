@@ -1,7 +1,65 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-01-19  
+**Last Updated:** 2026-01-20  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-33: Public Ready Pass + GitHub PR Sync v2
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-33
+
+### Purpose
+Make repo public-ready and GitHub-first with ZERO blowup risk. Ensure `ops/public_ready_check.ps1` and `ops/secret_scan.ps1` both PASS. Upgrade GitHub sync flow to PR-based (v2) that blocks direct push to default branch.
+
+### Deliverables
+- `ops/github_sync_safe.ps1` (NEW): PR-based GitHub sync script v2 with hard blocks
+- `docs/PROOFS/wp33_public_ready_pass.md` - Proof document
+
+### Changes
+1. **Secret Scan Fix:**
+   - Verified all secrets already sanitized (PASS with 0 hits)
+   - No remediation needed (previous gates already handled)
+
+2. **Public Ready Check:**
+   - Git working tree cleaned (committed all changes)
+   - All checks PASS: secret scan, git status, .env files, vendor/, node_modules/
+
+3. **GitHub Sync Safe v2:**
+   - HARD BLOCK if current branch is default branch (main/master)
+   - HARD BLOCK if secret_scan fails
+   - HARD BLOCK if public_ready_check fails
+   - HARD BLOCK if submodule work/hos is dirty
+   - Commit only if staged changes exist (no empty commit)
+   - Push CURRENT BRANCH only: `git push -u origin HEAD`
+   - Print PR URL hint (compare link)
+   - ASCII-only messages, exit code 0 PASS / 1 FAIL
+
+### Commands
+```powershell
+# Run secret scan
+.\ops\secret_scan.ps1
+
+# Run public ready check
+.\ops\public_ready_check.ps1
+
+# Run GitHub sync safe v2 (PR-based flow)
+.\ops\github_sync_safe.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp33_public_ready_pass.md` - Proof document with all test outputs
+- Secret Scan: PASS (0 hits, no secrets in tracked files)
+- Public Ready Check: PASS (all 5 checks passing)
+- GitHub Sync Safe v2: PASS (blocks default branch, enforces all checks)
+
+### Validation
+- Zero blowup risk (all checks enforced)
+- PR-based flow (no direct push to default branch)
+- ASCII-only outputs (all messages ASCII)
+- Deterministic (all checks reproducible)
+- Minimal diff (only script creation and commit cleanup)
 
 ---
 

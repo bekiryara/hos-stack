@@ -117,3 +117,4 @@ Added guardrail check in `ops/catalog_contract_check.ps1`:
 - ✅ Ops contract check includes guardrail and passes
 - ✅ Minimal diff, deterministic
 
+

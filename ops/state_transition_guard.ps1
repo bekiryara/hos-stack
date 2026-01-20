@@ -141,3 +141,4 @@ Write-Host "All state transitions match snapshot whitelist" -ForegroundColor Gre
 Write-Host "Note: This is a best-effort check. Manual review recommended for critical transitions." -ForegroundColor Gray
 exit 0
 
+

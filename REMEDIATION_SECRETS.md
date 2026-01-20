@@ -139,3 +139,4 @@ git commit -m "Initial public release (secrets moved to .env)"
 - `.gitignore` - Verify .env is ignored
 - `README.md` - Document public repo rules (add in STEP 5)
 
+

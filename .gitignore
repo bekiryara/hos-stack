@@ -60,3 +60,20 @@ storage/logs/
 storage/*.log
 bootstrap/cache/*
 !bootstrap/cache/.gitkeep
+
+# Submodule untracked content (deterministic ignore)
+**/work/**/.git/
+**/work/**/storage/
+**/work/**/bootstrap/cache/
+**/work/**/vendor/
+
+# Secret files (deterministic ignore)
+**/*.key
+**/*.pem
+**/*.pfx
+**/*.p12
+**/id_rsa*
+**/id_ed25519*
+**/secrets/
+**/.env.local
+**/.env.*.local
