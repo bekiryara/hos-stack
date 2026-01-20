@@ -143,10 +143,29 @@
 
 ## Quick Links
 
-### GitHub Raw URLs (for direct file access)
+### GitHub Raw URLs (for direct file access - AI can read these directly)
+
+**Backend API:**
 - [API Routes](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api.php)
-- [Docker Compose](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docker-compose.yml)
+- [Bootstrap App](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/bootstrap/app.php)
+- [World Registry](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Worlds/WorldRegistry.php)
+- [Worlds Config](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/config/worlds.php)
+
+**Middleware:**
+- [CORS](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/Cors.php)
+- [Security Headers](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/SecurityHeaders.php)
+- [Force JSON](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/ForceJsonForApi.php)
+- [Request ID](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/RequestId.php)
+- [Error Envelope](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/ErrorEnvelope.php)
+
+**Frontend:**
 - [Frontend Main](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/main.js)
+- [Router](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/router.js)
+- [Pazar API Client](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/lib/pazarApi.js)
+- [API Client](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/api/client.js)
+
+**Infrastructure:**
+- [Docker Compose](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docker-compose.yml)
 
 ### GitHub Pages (for documentation)
 - [Home](https://bekiryara.github.io/hos-stack/)
@@ -163,6 +182,18 @@
 - **PR-based workflow** - All changes go through PRs, never direct push to main
 - **Documentation first** - Read `docs/` before diving into code
 - **Ops scripts** - Run `ops/ops_status.ps1` to check system health
+
+### How to Read Code Files
+
+**IMPORTANT:** AI can read raw GitHub URLs directly. Use the "GitHub Raw URLs" section above to access files.
+
+**Example:**
+1. Read this CODE_INDEX.md file first
+2. Find the file you need in the sections above
+3. Use the raw URL from the "GitHub Raw URLs" section
+4. AI can read raw URLs directly without clicking links
+
+**Why?** AI web tools can only open URLs from search results or user messages, not from clicking links on pages. So all raw URLs are listed above for direct access.
 
 ---
 
