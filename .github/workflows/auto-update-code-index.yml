@@ -1,15 +1,14 @@
 name: Auto-Update CODE_INDEX.md
 
 on:
-  workflow_dispatch:  # Sadece manuel tetikleme (güvenli)
-  # push'ta otomatik çalışmasını isterseniz aşağıdaki yorumları kaldırın:
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - 'work/**'
-  #     - 'ops/**'
-  #     - '!docs/CODE_INDEX.md'
+  workflow_dispatch:  # Manuel tetikleme
+  push:
+    branches:
+      - main
+    paths:
+      - 'work/**'
+      - 'ops/**'
+      - '!docs/CODE_INDEX.md'
 
 permissions:
   contents: write
@@ -40,6 +39,8 @@ jobs:
           if git diff --quiet HEAD; then
             echo "No changes to push"
           else
-            git push origin main
+            git add docs/CODE_INDEX.md
+            git commit -m "Auto-update CODE_INDEX.md: Add new files detected" || echo "No changes to commit"
+            git push origin main || echo "Nothing to push"
           fi
 
