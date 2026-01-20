@@ -76,6 +76,17 @@
 - **Request ID:** [`work/pazar/app/Http/Middleware/RequestId.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/RequestId.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/RequestId.php)
 - **Error Envelope:** [`work/pazar/app/Http/Middleware/ErrorEnvelope.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/ErrorEnvelope.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/ErrorEnvelope.php)
 
+### Database Migrations (`work/pazar/database/migrations/`)
+
+- **Listings Table:** [`work/pazar/database/migrations/2026_01_10_000000_create_listings_table.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/database/migrations/2026_01_10_000000_create_listings_table.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_10_000000_create_listings_table.php)
+- **Products Table:** [`work/pazar/database/migrations/2026_01_11_000000_create_products_table.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/database/migrations/2026_01_11_000000_create_products_table.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_11_000000_create_products_table.php)
+- **Categories Table:** [`work/pazar/database/migrations/2026_01_15_100000_create_categories_table.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/database/migrations/2026_01_15_100000_create_categories_table.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_15_100000_create_categories_table.php)
+- **Attributes Table:** [`work/pazar/database/migrations/2026_01_15_100001_create_attributes_table.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/database/migrations/2026_01_15_100001_create_attributes_table.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_15_100001_create_attributes_table.php)
+- **Category Filter Schema:** [`work/pazar/database/migrations/2026_01_15_100002_create_category_filter_schema_table.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/database/migrations/2026_01_15_100002_create_category_filter_schema_table.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_15_100002_create_category_filter_schema_table.php)
+- **Reservations Table:** [`work/pazar/database/migrations/2026_01_16_100003_create_reservations_table.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/database/migrations/2026_01_16_100003_create_reservations_table.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_16_100003_create_reservations_table.php)
+- **Idempotency Keys:** [`work/pazar/database/migrations/2026_01_16_100004_create_idempotency_keys_table.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/database/migrations/2026_01_16_100004_create_idempotency_keys_table.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_16_100004_create_idempotency_keys_table.php)
+- **Sessions Table:** [`work/pazar/database/migrations/2026_01_16_141957_create_sessions_table.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/database/migrations/2026_01_16_141957_create_sessions_table.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_16_141957_create_sessions_table.php)
+
 ### Configuration
 
 - **Bootstrap:** [`work/pazar/bootstrap/app.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/bootstrap/app.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/bootstrap/app.php)
@@ -143,15 +154,49 @@
 
 **Description:** PowerShell scripts for operations and maintenance.
 
-### Key Scripts
+### Core Scripts (Most Important)
 
 - **Ops Status:** [`ops/ops_status.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/ops_status.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/ops_status.ps1) - Unified ops dashboard
-- **Public Ready Check:** [`ops/public_ready_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/public_ready_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/public_ready_check.ps1) - Pre-release checks
-- **Secret Scan:** [`ops/secret_scan.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/secret_scan.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/secret_scan.ps1) - Security scan for secrets
-- **GitHub Sync Safe:** [`ops/github_sync_safe.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/github_sync_safe.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/github_sync_safe.ps1) - PR-based sync enforcement
 - **Verify:** [`ops/verify.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/verify.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/verify.ps1) - Full health check
 - **Baseline Status:** [`ops/baseline_status.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/baseline_status.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/baseline_status.ps1) - Baseline status check
 - **Conformance:** [`ops/conformance.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/conformance.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/conformance.ps1) - Conformance checks
+- **Daily Snapshot:** [`ops/daily_snapshot.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/daily_snapshot.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/daily_snapshot.ps1) - Daily evidence capture
+
+### Security & Governance
+
+- **Public Ready Check:** [`ops/public_ready_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/public_ready_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/public_ready_check.ps1) - Pre-release checks
+- **Secret Scan:** [`ops/secret_scan.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/secret_scan.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/secret_scan.ps1) - Security scan for secrets
+- **Security Audit:** [`ops/security_audit.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/security_audit.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/security_audit.ps1) - Security audit
+- **Auth Security Check:** [`ops/auth_security_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/auth_security_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/auth_security_check.ps1) - Auth security check
+
+### GitHub & Sync
+
+- **GitHub Sync Safe:** [`ops/github_sync_safe.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/github_sync_safe.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/github_sync_safe.ps1) - PR-based sync enforcement
+- **CI Guard:** [`ops/ci_guard.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/ci_guard.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/ci_guard.ps1) - CI drift guard
+- **Repo Integrity:** [`ops/repo_integrity.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/repo_integrity.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/repo_integrity.ps1) - Repository integrity check
+
+### Contract & Spine Checks
+
+- **Pazar Spine Check:** [`ops/pazar_spine_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/pazar_spine_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/pazar_spine_check.ps1) - Pazar spine verification
+- **Product Spine Check:** [`ops/product_spine_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/product_spine_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/product_spine_check.ps1) - Product spine check
+- **Listing Contract Check:** [`ops/listing_contract_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/listing_contract_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/listing_contract_check.ps1) - Listing contract verification
+- **Reservation Contract Check:** [`ops/reservation_contract_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/reservation_contract_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/reservation_contract_check.ps1) - Reservation contract check
+- **Catalog Contract Check:** [`ops/catalog_contract_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/catalog_contract_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/catalog_contract_check.ps1) - Catalog contract check
+- **Product Contract Check:** [`ops/product_contract_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/product_contract_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/product_contract_check.ps1) - Product contract check
+- **Messaging Contract Check:** [`ops/messaging_contract_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/messaging_contract_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/messaging_contract_check.ps1) - Messaging contract check
+
+### Observability & Monitoring
+
+- **Observability Status:** [`ops/observability_status.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/observability_status.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/observability_status.ps1) - Observability status
+- **Routes Snapshot:** [`ops/routes_snapshot.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/routes_snapshot.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/routes_snapshot.ps1) - Routes snapshot
+- **Schema Snapshot:** [`ops/schema_snapshot.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/schema_snapshot.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/schema_snapshot.ps1) - Database schema snapshot
+
+### Release & Bundle
+
+- **Release Check:** [`ops/release_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/release_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/release_check.ps1) - Release check
+- **RC0 Gate:** [`ops/rc0_gate.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/rc0_gate.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/rc0_gate.ps1) - RC0 gate
+- **Release Bundle:** [`ops/release_bundle.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/release_bundle.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/release_bundle.ps1) - Release bundle generation
+- **Incident Bundle:** [`ops/incident_bundle.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/incident_bundle.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/incident_bundle.ps1) - Incident bundle generation
 
 ---
 
@@ -229,6 +274,9 @@
 - [Pazar CORS Middleware](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/Cors.php)
 - [Pazar Security Headers](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/SecurityHeaders.php)
 - [Pazar World Registry](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Worlds/WorldRegistry.php)
+- [Pazar Listings Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_10_000000_create_listings_table.php)
+- [Pazar Categories Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_15_100000_create_categories_table.php)
+- [Pazar Reservations Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_16_100003_create_reservations_table.php)
 
 **Messaging Service:**
 - [Messaging API Index](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/src/index.js)
@@ -247,6 +295,12 @@
 **Ops Scripts:**
 - [Ops Status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/ops_status.ps1)
 - [Verify](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/verify.ps1)
+- [Baseline Status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/baseline_status.ps1)
+- [Conformance](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/conformance.ps1)
+- [Daily Snapshot](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/daily_snapshot.ps1)
+- [Secret Scan](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/secret_scan.ps1)
+- [Pazar Spine Check](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/pazar_spine_check.ps1)
+- [Product Spine Check](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/product_spine_check.ps1)
 
 **Documentation (Most Important):**
 - [README](https://raw.githubusercontent.com/bekiryara/hos-stack/main/README.md)
