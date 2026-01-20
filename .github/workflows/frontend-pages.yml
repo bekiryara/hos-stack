@@ -8,6 +8,7 @@ on:
       - 'work/marketplace-web/**'
       - '.github/workflows/frontend-pages.yml'
   workflow_dispatch:
+  # Trigger workflow after secret update
 
 permissions:
   contents: read
@@ -34,10 +35,16 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: work/marketplace-web/package-lock.json
+        # Cache optional, continue if package-lock.json doesn't exist
 
       - name: Install dependencies
         working-directory: work/marketplace-web
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Build
         working-directory: work/marketplace-web
