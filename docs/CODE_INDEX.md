@@ -176,24 +176,41 @@
 
 ---
 
-## Documentation
+## Documentation (`docs/`)
 
-### Architecture
+**Description:** All documentation files - architecture, specifications, runbooks, and proofs.
 
-- **Architecture Overview:** [docs/ARCHITECTURE.md](https://bekiryara.github.io/hos-stack/ARCHITECTURE.html)
-- **Specification:** [docs/SPEC.md](https://bekiryara.github.io/hos-stack/SPEC.html)
-- **Product Roadmap:** [docs/PRODUCT/PRODUCT_ROADMAP.md](https://bekiryara.github.io/hos-stack/PRODUCT/PRODUCT_ROADMAP.html)
+### Core Documentation (Most Important - Frequently Updated)
 
-### Runbooks
+- **README:** [`README.md`](https://github.com/bekiryara/hos-stack/blob/main/README.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/README.md) - Main entry point
+- **SPEC:** [`docs/SPEC.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/SPEC.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/SPEC.md) - Canonical specification (single source of truth)
+- **CURRENT:** [`docs/CURRENT.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/CURRENT.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/CURRENT.md) - Current system state (single source of truth)
+- **ARCHITECTURE:** [`docs/ARCHITECTURE.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/ARCHITECTURE.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/ARCHITECTURE.md) - System architecture overview
+- **DECISIONS:** [`docs/DECISIONS.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/DECISIONS.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/DECISIONS.md) - Baseline decisions and frozen items
+- **WP_CLOSEOUTS:** [`docs/WP_CLOSEOUTS.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/WP_CLOSEOUTS.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/WP_CLOSEOUTS.md) - Work package closeouts and status
 
-- **Ops Status:** [docs/runbooks/ops_status.md](https://bekiryara.github.io/hos-stack/runbooks/ops_status.html)
-- **Security:** [docs/runbooks/security.md](https://bekiryara.github.io/hos-stack/runbooks/security.html)
-- **Incident Response:** [docs/runbooks/incident.md](https://bekiryara.github.io/hos-stack/runbooks/incident.html)
+### Getting Started
 
-### Proofs
+- **ONBOARDING:** [`docs/ONBOARDING.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/ONBOARDING.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/ONBOARDING.md) - Quick start guide for newcomers
+- **START_HERE:** [`docs/START_HERE.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/START_HERE.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/START_HERE.md) - First file to read
+- **CONTRIBUTING:** [`docs/CONTRIBUTING.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/CONTRIBUTING.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/CONTRIBUTING.md) - Contribution guidelines
 
-- **All Proofs:** [docs/PROOFS/](https://github.com/bekiryara/hos-stack/tree/main/docs/PROOFS/) directory
-- **Work Package Closeouts:** [docs/WP_CLOSEOUTS.md](https://bekiryara.github.io/hos-stack/WP_CLOSEOUTS.html)
+### Product & Planning
+
+- **Product Roadmap:** [`docs/PRODUCT/PRODUCT_ROADMAP.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/PRODUCT/PRODUCT_ROADMAP.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/PRODUCT/PRODUCT_ROADMAP.md)
+- **MVP Scope:** [`docs/PRODUCT/MVP_SCOPE.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/PRODUCT/MVP_SCOPE.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/PRODUCT/MVP_SCOPE.md)
+- **OpenAPI Spec:** [`docs/PRODUCT/openapi.yaml`](https://github.com/bekiryara/hos-stack/blob/main/docs/PRODUCT/openapi.yaml) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/PRODUCT/openapi.yaml)
+
+### Runbooks (`docs/runbooks/`)
+
+- **Ops Status:** [`docs/runbooks/ops_status.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/runbooks/ops_status.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/runbooks/ops_status.md) - Unified ops dashboard
+- **Security:** [`docs/runbooks/security.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/runbooks/security.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/runbooks/security.md)
+- **Incident Response:** [`docs/runbooks/incident.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/runbooks/incident.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/runbooks/incident.md)
+- **Daily Ops:** [`docs/runbooks/daily_ops.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/runbooks/daily_ops.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/runbooks/daily_ops.md)
+
+### Proofs (`docs/PROOFS/`)
+
+- **All Proofs:** [docs/PROOFS/](https://github.com/bekiryara/hos-stack/tree/main/docs/PROOFS/) directory - Proof documents for all work packages
 
 ---
 
@@ -230,6 +247,15 @@
 **Ops Scripts:**
 - [Ops Status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/ops_status.ps1)
 - [Verify](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/verify.ps1)
+
+**Documentation (Most Important):**
+- [README](https://raw.githubusercontent.com/bekiryara/hos-stack/main/README.md)
+- [SPEC](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/SPEC.md)
+- [CURRENT](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/CURRENT.md)
+- [ARCHITECTURE](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/ARCHITECTURE.md)
+- [DECISIONS](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/DECISIONS.md)
+- [WP_CLOSEOUTS](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/WP_CLOSEOUTS.md)
+- [ONBOARDING](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/ONBOARDING.md)
 
 ### GitHub Pages (for documentation)
 
