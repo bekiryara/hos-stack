@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/', // GitHub Pages root'ta deploy
+  base: '/hos-stack/', // GitHub Pages için doğru path
   server: {
     port: 5173,
     host: true
