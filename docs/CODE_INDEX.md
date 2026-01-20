@@ -1,221 +1,170 @@
-# Code Index - Complete System Overview
+# Code Index - H-OS Stack
 
-**Last Updated:** 2026-01-20  
-**Purpose:** Single entry point for ChatGPT/AI to understand entire codebase structure  
+**Purpose:** Central index for AI/ChatGPT to navigate and read the entire codebase efficiently.
+
+**GitHub Repository:** https://github.com/bekiryara/hos-stack
+
 **GitHub Pages:** https://bekiryara.github.io/hos-stack/CODE_INDEX.html
 
-## 🎯 For ChatGPT/AI: Start Here!
+---
 
-This file contains **ALL** important code file links. Read this first, then follow the links to read actual code files.
+## Reading Strategy for AI
 
-## Quick Links to All Code Files
+1. **Start here:** Read this file to understand the codebase structure
+2. **Backend API:** Read `work/pazar/routes/api.php` for all API endpoints
+3. **Frontend:** Read `work/marketplace-web/src/` for Vue.js components
+4. **Configuration:** Read `docker-compose.yml` for service architecture
+5. **Documentation:** Browse `docs/` for architecture, specs, and runbooks
 
-### Backend Routes (Pazar - Laravel)
+---
 
-**Main Route File:**
-- `work/pazar/routes/api.php` - Route manifest (loads all modules)
+## Backend API (Pazar - Laravel)
 
-**Route Modules (in order):**
-1. `work/pazar/routes/api/00_metrics.php` - Metrics endpoint
-2. `work/pazar/routes/api/00_ping.php` - Ping endpoint
-3. `work/pazar/routes/api/01_world_status.php` - World status
-4. `work/pazar/routes/api/02_catalog.php` - Category tree + filter schema
-5. `work/pazar/routes/api/03a_listings_write.php` - Create/publish listings
-6. `work/pazar/routes/api/03b_listings_read.php` - Read listings
-7. `work/pazar/routes/api/03c_offers.php` - Offers management
-8. `work/pazar/routes/api/04_reservations.php` - Reservations CRUD
-9. `work/pazar/routes/api/05_orders.php` - Orders management
-10. `work/pazar/routes/api/06_rentals.php` - Rentals management
-11. `work/pazar/routes/api/account_portal.php` - Account Portal endpoints
-12. `work/pazar/routes/api/messaging.php` - Messaging routes
+### Main Routes File
+- **GitHub:** https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api.php
+- **GitHub Pages:** https://bekiryara.github.io/hos-stack/work/pazar/routes/api.php
+- **Description:** Main API routes file containing all endpoints
 
-### H-OS API (Node.js)
+### Key Endpoints
 
-**Main Files:**
-- `work/hos/services/api/src/app.js` - Main application file (all routes)
-- `work/hos/services/api/src/routes/` - Route modules (if modularized)
+#### World Status
+- `GET /api/world/status` - World availability and version info
 
-### Frontend (Vue.js)
+#### Catalog
+- `GET /api/v1/categories` - Category tree
+- `GET /api/v1/catalog/filters` - Filter schema
 
-**Main Files:**
-- `work/marketplace-web/src/pages/AccountPortalPage.vue` - Account Portal UI
-- `work/marketplace-web/src/api/client.js` - API client
-- `work/marketplace-web/vite.config.js` - Vite configuration
+#### Listings
+- `GET /api/v1/listings` - List listings (search, filter, paginate)
+- `GET /api/v1/listings/{id}` - Get listing detail
+- `POST /api/v1/listings` - Create listing
+- `PUT /api/v1/listings/{id}` - Update listing
+- `POST /api/v1/listings/{id}/publish` - Publish listing
 
-### Configuration
+#### Reservations
+- `GET /api/v1/reservations` - List reservations
+- `POST /api/v1/reservations` - Create reservation
+- `PUT /api/v1/reservations/{id}/accept` - Accept reservation
+- `PUT /api/v1/reservations/{id}/reject` - Reject reservation
 
-**Docker & Services:**
-- `docker-compose.yml` - Main compose file (all services)
-- `work/pazar/bootstrap/app.php` - Laravel bootstrap
-- `work/hos/docker-compose.ports.yml` - H-OS ports config
+#### Messaging
+- `GET /api/v1/messaging/threads` - List message threads
+- `POST /api/v1/messaging/threads` - Create thread
+- `GET /api/v1/messaging/threads/{id}/messages` - Get messages
+- `POST /api/v1/messaging/threads/{id}/messages` - Send message
 
 ### Middleware
+- **CORS:** `work/pazar/app/Http/Middleware/Cors.php`
+- **Security Headers:** `work/pazar/app/Http/Middleware/SecurityHeaders.php`
+- **Force JSON:** `work/pazar/app/Http/Middleware/ForceJsonForApi.php`
+- **Request ID:** `work/pazar/app/Http/Middleware/RequestId.php`
+- **Error Envelope:** `work/pazar/app/Http/Middleware/ErrorEnvelope.php`
 
-**Pazar Middleware:**
-- `work/pazar/app/Http/Middleware/PersonaScope.php` - Persona-based access
-- `work/pazar/app/Http/Middleware/TenantScope.php` - Tenant isolation
-- `work/pazar/app/Http/Middleware/Cors.php` - CORS handling
+### Configuration
+- **Bootstrap:** `work/pazar/bootstrap/app.php`
+- **World Registry:** `work/pazar/app/Worlds/WorldRegistry.php`
+- **Config:** `work/pazar/config/worlds.php`
 
-### Contracts & Snapshots
+---
 
-**API Contracts:**
-- `contracts/api/marketplace.write.snapshot.json` - Write endpoints contract
-- `contracts/api/marketplace.read.snapshot.json` - Read endpoints contract
-- `contracts/api/account_portal.read.snapshot.json` - Account Portal contract
+## Frontend (Marketplace Web - Vue.js)
 
-## System Architecture
+### Main Entry Point
+- **GitHub:** https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/main.js
+- **GitHub Pages:** https://bekiryara.github.io/hos-stack/work/marketplace-web/src/main.js
 
-### Services
+### Pages
+- **Listings Search:** `work/marketplace-web/src/pages/ListingsSearchPage.vue`
+- **Listing Detail:** `work/marketplace-web/src/pages/ListingDetailPage.vue`
+- **Create Listing:** `work/marketplace-web/src/pages/CreateListingPage.vue`
+- **Account Portal:** `work/marketplace-web/src/pages/AccountPortalPage.vue`
+- **Categories:** `work/marketplace-web/src/pages/CategoriesPage.vue`
 
-1. **H-OS API** (Port 3000)
-   - Universe governance
-   - Auth/JWT management
-   - World registry
+### Components
+- **Category Tree:** `work/marketplace-web/src/components/CategoryTree.vue`
+- **Filters Panel:** `work/marketplace-web/src/components/FiltersPanel.vue`
+- **Listings Grid:** `work/marketplace-web/src/components/ListingsGrid.vue`
+- **Publish Listing Action:** `work/marketplace-web/src/components/PublishListingAction.vue`
 
-2. **H-OS Web** (Port 3002)
-   - Web UI for H-OS
+### API Client
+- **Pazar API:** `work/marketplace-web/src/lib/pazarApi.js`
+- **API Client:** `work/marketplace-web/src/api/client.js`
 
-3. **Pazar App** (Port 8080)
-   - Laravel application
-   - Marketplace API
-   - Business logic
+### Router
+- **Routes:** `work/marketplace-web/src/router.js`
 
-4. **Messaging API** (Port 8090)
-   - Messaging service
+---
 
-### Database
+## Infrastructure
 
-- **hos-db**: PostgreSQL (H-OS data)
-- **pazar-db**: PostgreSQL (Pazar data)
-- **messaging-db**: PostgreSQL (Messaging data)
+### Docker Compose
+- **GitHub:** https://github.com/bekiryara/hos-stack/blob/main/docker-compose.yml
+- **GitHub Pages:** https://bekiryara.github.io/hos-stack/docker-compose.yml
+- **Services:**
+  - `hos-api` - H-OS API (Node.js)
+  - `hos-db` - PostgreSQL database
+  - `pazar-app` - Pazar API (Laravel)
+  - `pazar-db` - MySQL database
+  - `pazar-web` - Marketplace frontend (Vue.js/Vite)
 
-## Key Endpoints
+### Environment Configuration
+- **Example:** `.env.example`
+- **Local:** `.env` (not tracked, use `.env.example` as template)
 
-### Catalog
-- `GET /api/v1/categories` - Category tree
-- `GET /api/v1/categories/{id}/filter-schema` - Filter schema
+---
 
-### Listings
-- `POST /api/v1/listings` - Create listing (DRAFT)
-- `POST /api/v1/listings/{id}/publish` - Publish listing
-- `GET /api/v1/listings` - List listings
-- `GET /api/v1/listings/{id}` - Get listing
+## Documentation
 
-### Reservations
-- `POST /api/v1/reservations` - Create reservation
-- `POST /api/v1/reservations/{id}/accept` - Accept reservation
-- `GET /api/v1/reservations/{id}` - Get reservation
+### Architecture
+- **Architecture Overview:** `docs/ARCHITECTURE.md`
+- **Specification:** `docs/SPEC.md`
+- **Product Roadmap:** `docs/PRODUCT/PRODUCT_ROADMAP.md`
 
-### Orders
-- `POST /api/v1/orders` - Create order
-- `GET /api/v1/orders` - List orders
+### Runbooks
+- **Ops Status:** `docs/runbooks/ops_status.md`
+- **Security:** `docs/runbooks/security.md`
+- **Incident Response:** `docs/runbooks/incident.md`
 
-### Rentals
-- `POST /api/v1/rentals` - Create rental
-- `GET /api/v1/rentals` - List rentals
+### Proofs
+- **All Proofs:** `docs/PROOFS/` directory
+- **Work Package Closeouts:** `docs/WP_CLOSEOUTS.md`
 
-## GitHub API Reading Strategy
-
-**For ChatGPT/AI:**
-
-1. **Start with this file** (`docs/CODE_INDEX.md`) - Read completely
-2. Read `README.md` for overview
-3. Read `docs/CURRENT.md` for current state
-4. Read route files in order (00_metrics.php → 06_rentals.php)
-5. Read middleware files for auth/access control
-6. Read frontend files for UI structure
-
-**GitHub API URLs (All files ready to read):**
-
-**Documentation:**
-- README: `https://api.github.com/repos/bekiryara/hos-stack/contents/README.md`
-- CURRENT: `https://api.github.com/repos/bekiryara/hos-stack/contents/docs/CURRENT.md`
-- This file: `https://api.github.com/repos/bekiryara/hos-stack/contents/docs/CODE_INDEX.md`
-
-**Pazar Routes (read all):**
-- Route manifest: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api.php`
-- 00_metrics: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/00_metrics.php`
-- 00_ping: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/00_ping.php`
-- 01_world_status: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/01_world_status.php`
-- 02_catalog: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/02_catalog.php`
-- 03a_listings_write: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/03a_listings_write.php`
-- 03b_listings_read: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/03b_listings_read.php`
-- 03c_offers: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/03c_offers.php`
-- 04_reservations: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/04_reservations.php`
-- 05_orders: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/05_orders.php`
-- 06_rentals: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/06_rentals.php`
-- account_portal: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/account_portal.php`
-
-**Middleware:**
-- PersonaScope: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/app/Http/Middleware/PersonaScope.php`
-- TenantScope: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/app/Http/Middleware/TenantScope.php`
-- Cors: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/app/Http/Middleware/Cors.php`
-
-**Frontend:**
-- API Client: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/marketplace-web/src/api/client.js`
-- Account Portal: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/marketplace-web/src/pages/AccountPortalPage.vue`
-
-**Configuration:**
-- Docker Compose: `https://api.github.com/repos/bekiryara/hos-stack/contents/docker-compose.yml`
-- Laravel Bootstrap: `https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/bootstrap/app.php`
-
-## Documentation Files
-
-**Entry Points:**
-- `docs/ONBOARDING.md` - Quick start
-- `docs/CURRENT.md` - Single source of truth
-- `docs/DECISIONS.md` - Baseline decisions
-- `docs/ARCHITECTURE.md` - System architecture
-
-**Runbooks:**
-- `docs/runbooks/daily_ops.md` - Daily operations
-- `docs/runbooks/repo_public_release.md` - Public release guide
-
-**Proofs:**
-- `docs/PROOFS/` - 177 proof documents (WP completions)
+---
 
 ## Operations Scripts
 
-**Key Scripts:**
-- `ops/verify.ps1` - Full verification
-- `ops/ops_status.ps1` - Unified ops dashboard
-- `ops/daily_snapshot.ps1` - Daily evidence capture
-- `ops/secret_scan.ps1` - Secret scanning
-- `ops/public_ready_check.ps1` - Public readiness check
+### Key Scripts
+- **Ops Status:** `ops/ops_status.ps1` - Unified ops dashboard
+- **Public Ready Check:** `ops/public_ready_check.ps1` - Pre-release checks
+- **Secret Scan:** `ops/secret_scan.ps1` - Security scan for secrets
+- **GitHub Sync Safe:** `ops/github_sync_safe.ps1` - PR-based sync enforcement
 
-## How to Read This Repo (For AI)
+---
 
-**Step 1:** Read `README.md` (5 min)
-**Step 2:** Read `docs/CURRENT.md` (10 min)
-**Step 3:** Read `docs/CODE_INDEX.md` (this file) (5 min)
-**Step 4:** Read route files in `work/pazar/routes/api/` (30 min)
-**Step 5:** Read middleware files (10 min)
-**Step 6:** Read frontend files (15 min)
+## Quick Links
 
-**Total:** ~75 minutes to understand entire codebase
+### GitHub Raw URLs (for direct file access)
+- API Routes: https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api.php
+- Docker Compose: https://raw.githubusercontent.com/bekiryara/hos-stack/main/docker-compose.yml
+- Frontend Main: https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/main.js
 
-## File Count Summary
+### GitHub Pages (for documentation)
+- Home: https://bekiryara.github.io/hos-stack/
+- This Index: https://bekiryara.github.io/hos-stack/CODE_INDEX.html
+- Architecture: https://bekiryara.github.io/hos-stack/ARCHITECTURE.html
+- Spec: https://bekiryara.github.io/hos-stack/SPEC.html
 
-- **Route files:** 12 PHP files
-- **Middleware:** 3 PHP files
-- **Frontend:** 21 files (Vue + JS)
-- **Ops scripts:** 109 PowerShell files
-- **Documentation:** 177 proof files + runbooks
-- **Total tracked files:** ~500+ files
+---
 
-## Technology Stack
+## Notes for AI
 
-- **Backend:** Laravel (PHP), Node.js (H-OS)
-- **Frontend:** Vue.js 3, Vite
-- **Database:** PostgreSQL 16
-- **Container:** Docker Compose
-- **Ops:** PowerShell 5.1+
+- **All code is public** - No secrets in tracked files
+- **Use environment variables** - Check `.env.example` for required vars
+- **PR-based workflow** - All changes go through PRs, never direct push to main
+- **Documentation first** - Read `docs/` before diving into code
+- **Ops scripts** - Run `ops/ops_status.ps1` to check system health
 
-## Important Notes
+---
 
-- All routes require authentication (auth.any middleware)
-- Persona-based access: guest, personal, store
-- Tenant isolation enforced via TenantScope middleware
-- Idempotency required for write operations
-- Error responses follow standardized format
+**Last Updated:** 2026-01-19
 

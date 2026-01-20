@@ -1,63 +1,86 @@
-# HOS-Stack Documentation
+# H-OS Stack Documentation
 
-**Repository:** [bekiryara/hos-stack](https://github.com/bekiryara/hos-stack)
+**Welcome to the H-OS Stack documentation!**
 
-## 🚀 Quick Navigation
-
-### For Developers
-- **[Quick Start](ONBOARDING.md)** - Get started in 2 commands
-- **[Current State](CURRENT.md)** - Single source of truth
-- **[Code Index](CODE_INDEX.md)** - Complete codebase map (for AI/ChatGPT)
-
-### For AI/ChatGPT
-- **[Code Index](CODE_INDEX.md)** - Start here! Complete system overview with all file links
-
-### Architecture & Decisions
-- **[Architecture](ARCHITECTURE.md)** - System architecture
-- **[Decisions](DECISIONS.md)** - Baseline decisions and frozen items
-- **[Repository Layout](REPO_LAYOUT.md)** - File structure
-
-### Operations
-- **[Daily Operations](runbooks/daily_ops.md)** - Daily snapshot guide
-- **[Ops Status](runbooks/ops_status.md)** - Unified ops dashboard
-- **[Public Release](runbooks/repo_public_release.md)** - Public release guide
-
-### Product
-- **[Product API Spine](PRODUCT/PRODUCT_API_SPINE.md)** - API structure
-- **[MVP Scope](PRODUCT/MVP_SCOPE.md)** - MVP definition
-- **[OpenAPI Spec](PRODUCT/openapi.yaml)** - API specification
-
-### Proofs
-- **[Proof Documents](PROOFS/)** - 177 proof documents
-
-## System Overview
-
-**H-OS + Pazar Stack** - Production-ready marketplace platform
-
-### Services
-- **H-OS API**: `http://localhost:3000` (universe governance)
-- **H-OS Web**: `http://localhost:3002` (web UI)
-- **Pazar App**: `http://localhost:8080` (marketplace API)
-
-### Tech Stack
-- **Backend**: Laravel (PHP), Node.js
-- **Frontend**: Vue.js 3, Vite
-- **Database**: PostgreSQL 16
-- **Container**: Docker Compose
-
-## Quick Links
-
-### Code Files
-- [Pazar Routes](CODE_INDEX.md#backend-routes-pazar---laravel)
-- [H-OS API](CODE_INDEX.md#h-os-api-nodejs)
-- [Frontend](CODE_INDEX.md#frontend-vuejs)
-
-### Documentation
-- [All Runbooks](runbooks/)
-- [All Proofs](PROOFS/)
-- [Architecture Docs](ARCH/)
+This is a full-stack marketplace platform built with Laravel (backend), Vue.js (frontend), and Docker (infrastructure).
 
 ---
 
-**Last Updated:** 2026-01-20
+## Quick Navigation
+
+### For Developers
+- **[Code Index](CODE_INDEX.html)** - Complete codebase navigation guide
+- **[Architecture](ARCHITECTURE.html)** - System architecture overview
+- **[Specification](SPEC.html)** - Technical specification
+- **[Getting Started](START_HERE.html)** - Onboarding guide
+
+### For AI/ChatGPT
+- **[Code Index](CODE_INDEX.html)** - Start here to understand the codebase structure
+- **[API Routes](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api.php)** - All backend endpoints
+- **[Frontend Components](https://github.com/bekiryara/hos-stack/tree/main/work/marketplace-web/src)** - Vue.js components
+
+---
+
+## System Overview
+
+### Services
+
+1. **H-OS API** (`hos-api`)
+   - Node.js service
+   - Authentication and authorization
+   - OIDC provider
+
+2. **Pazar API** (`pazar-app`)
+   - Laravel application
+   - Marketplace backend
+   - RESTful API endpoints
+
+3. **Marketplace Web** (`pazar-web`)
+   - Vue.js frontend
+   - Vite build tool
+   - User interface
+
+4. **Databases**
+   - PostgreSQL (H-OS)
+   - MySQL (Pazar)
+
+### Tech Stack
+
+- **Backend:** Laravel (PHP), Node.js
+- **Frontend:** Vue.js, Vite
+- **Database:** PostgreSQL, MySQL
+- **Infrastructure:** Docker, Docker Compose
+- **CI/CD:** GitHub Actions
+
+---
+
+## Quick Links
+
+### Code
+- [Backend API Routes](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api.php)
+- [Frontend Source](https://github.com/bekiryara/hos-stack/tree/main/work/marketplace-web/src)
+- [Docker Compose](https://github.com/bekiryara/hos-stack/blob/main/docker-compose.yml)
+
+### Documentation
+- [Architecture](ARCHITECTURE.html)
+- [Product Roadmap](PRODUCT/PRODUCT_ROADMAP.html)
+- [Runbooks](runbooks/)
+- [Proofs](PROOFS/)
+
+### Operations
+- [Ops Status Runbook](runbooks/ops_status.html)
+- [Security Runbook](runbooks/security.html)
+- [Incident Response](runbooks/incident.html)
+
+---
+
+## Repository
+
+**GitHub:** https://github.com/bekiryara/hos-stack
+
+**GitHub Pages:** https://bekiryara.github.io/hos-stack/
+
+---
+
+**Last Updated:** 2026-01-19
 
