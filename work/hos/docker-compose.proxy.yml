@@ -1,0 +1,28 @@
+services:
+  # Reverse-proxy (optional) for prod-like HTTPS testing on localhost.
+  # Hosts:
+  # - https://api.localhost
+  # - https://grafana.localhost
+  # - https://prometheus.localhost
+  # - https://alertmanager.localhost
+  # - https://tempo.localhost
+  proxy:
+    profiles: ["proxy"]
+    image: caddy:2.8-alpine
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+    volumes:
+      - ./services/proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+

@@ -1,0 +1,114 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --panel: #111b2e;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --border: rgba(255,255,255,.10);
+  --accent: #60a5fa;
+  --danger: #f87171;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  background: radial-gradient(1200px 900px at 20% 10%, rgba(96,165,250,.18), transparent 55%), var(--bg);
+  color: var(--text);
+}
+
+.page {
+  min-height: 100%;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(17,27,46,.7);
+  backdrop-filter: blur(8px);
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: .4px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+button {
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.main {
+  padding: 20px 18px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+h1 {
+  margin: 6px 0 14px;
+  font-size: 20px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  background: rgba(17,27,46,.75);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.card.error {
+  border-color: rgba(248,113,113,.5);
+}
+
+.title {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--muted);
+}
+
+.hint {
+  margin-top: 14px;
+  color: var(--muted);
+}
+
+code {
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px 6px;
+}

@@ -1,0 +1,23 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: "null"
+  group_by: ["alertname"]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 1h
+  routes:
+    # By default, send warning/critical alerts to a local webhook receiver so alerting can be proven end-to-end.
+    - receiver: "webhook"
+      matchers:
+        - severity=~"warning|critical"
+
+receivers:
+  - name: "null"
+  - name: "webhook"
+    webhook_configs:
+      - url: "http://alert-webhook:8080/"
+        send_resolved: true
+
+

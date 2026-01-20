@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>H-OS Admin</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">H</div>
+        <div>
+          <div class="title">H-OS Admin</div>
+          <div class="subtitle">Minimal UI (services/web)</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="btn-refresh" class="btn btn-ghost" title="Refresh token + reload profile">Refresh</button>
+        <button id="btn-logout" class="btn btn-danger" title="Logout (revoke refresh cookie)">Logout</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="grid">
+        <div class="card">
+          <h2>Session</h2>
+          <div class="row">
+            <label>API</label>
+            <div class="mono">/api → api:3000</div>
+          </div>
+          <div class="row">
+            <label>Status</label>
+            <div id="api-status" class="mono">unknown</div>
+          </div>
+          <div class="row">
+            <label>Me</label>
+            <div id="me" class="mono">not logged in</div>
+          </div>
+          <div class="row">
+            <label>Token</label>
+            <div class="mono">
+              <button id="btn-copy-token" class="btn btn-secondary">Copy</button>
+              <span id="token-state" class="muted">none</span>
+            </div>
+          </div>
+          <div class="row">
+            <label>Notes</label>
+            <div class="muted">
+              Refresh cookie (HttpOnly) is handled by the API and forwarded through this UI via nginx proxy.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Tenant</h2>
+          <form id="tenant-form" class="form">
+            <div class="field">
+              <label>slug</label>
+              <input id="tenant-slug" placeholder="demo-tenant" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label>name</label>
+              <input id="tenant-name" placeholder="Demo Tenant" autocomplete="off" />
+            </div>
+            <button class="btn btn-primary" type="submit">Create tenant</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Auth</h2>
+          <form id="login-form" class="form">
+            <div class="field">
+              <label>tenantSlug</label>
+              <input id="auth-tenant" placeholder="demo-tenant" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label>email</label>
+              <input id="auth-email" placeholder="demo@example.com" autocomplete="email" />
+            </div>
+            <div class="field">
+              <label>password</label>
+              <input id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password" />
+            </div>
+            <div class="row gap">
+              <button id="btn-login" class="btn btn-primary" type="submit">Login</button>
+              <button id="btn-register" class="btn btn-secondary" type="button">Register (first user only)</button>
+            </div>
+          </form>
+          <div class="muted small">
+            Register is allowed only for the first user in a tenant (to prevent tenant takeover).
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card-head">
+            <h2>Users</h2>
+            <button id="btn-load-users" class="btn btn-secondary">Load</button>
+          </div>
+          <div id="users" class="mono pre"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Audit</h2>
+            <button id="btn-load-audit" class="btn btn-secondary">Load</button>
+          </div>
+          <div id="audit" class="mono pre"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Console</h2>
+          <button id="btn-clear" class="btn btn-ghost">Clear</button>
+        </div>
+        <div id="log" class="mono pre log"></div>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
+
+

@@ -1,0 +1,23 @@
+﻿HTTP/1.1 200 OK
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=15552000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+x-ratelimit-limit: 200
+x-ratelimit-remaining: 199
+x-ratelimit-reset: 60
+content-type: application/json; charset=utf-8
+x-request-id: 2505e217-90b9-4456-989a-8ad8ad01baa1
+content-length: 136
+Date: Tue, 30 Dec 2025 12:30:50 GMT
+Connection: keep-alive
+Keep-Alive: timeout=72
+
+{"sub":"fc38d783-c5a0-4370-8015-5580a28bb136","email":"u1@example.com","name":"u1","hos_user_id":"fc38d783-c5a0-4370-8015-5580a28bb136"}

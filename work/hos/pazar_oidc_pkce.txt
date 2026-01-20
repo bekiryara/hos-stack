@@ -1,0 +1,5 @@
+﻿request_id=pazar-oidc-smoke-0001
+redirect_uri=http://localhost/pazar/index.php/ui/oidc/callback
+authorize_location=http://localhost/pazar/index.php/ui/oidc/callback?code=CV_idCoR5CglRLXMOmrobG3LqnzpJVgo6Eel8wSabsQ&state=state-pazar-1
+code=CV_idCoR5CglRLXMOmrobG3LqnzpJVgo6Eel8wSabsQ
+code_verifier=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

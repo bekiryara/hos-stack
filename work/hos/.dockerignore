@@ -1,0 +1,22 @@
+**/node_modules
+**/dist
+.env
+.env.*
+.git
+
+# Local secrets / dumps (do not send to Docker daemon as build context)
+secrets/
+backups/
+backups-test/
+backups/**/*.sql
+backups-test/**/*.sql
+
+# Local/CI artifacts
+_tmp_*
+**/*.log
+
+
+
+
+
+

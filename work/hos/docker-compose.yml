@@ -1,0 +1,208 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hos
+      POSTGRES_DB: hos
+      # Prefer *_FILE secrets; keep plain var empty so it doesn't need to exist in shell.
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_PASSWORD: ""
+    secrets:
+      - db_password
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Dev/debug: return error_description for OIDC failures (safe; still returns 401)
+      HOS_DEBUG_OIDC: ${HOS_DEBUG_OIDC:-true}
+      # Canonical local dev key (override in env if needed)
+      HOS_API_KEY: ${HOS_API_KEY:-dev-api-key}
+      # REGISTER v1.2 ops toggles (FOUNDING_SPEC proofs)
+      # - HOS_WORLD_ALLOWLIST: comma-separated world_ids; defaults to canonical set in code when empty
+      # - HOS_WORLD_CLOSED: comma-separated world_ids to hard-close (returns 410 WORLD_CLOSED)
+      HOS_WORLD_ALLOWLIST: ${HOS_WORLD_ALLOWLIST:-}
+      HOS_WORLD_CLOSED: ${HOS_WORLD_CLOSED:-}
+      LEGACY_SUNSET: ${LEGACY_SUNSET:-2026-12-31}
+      # Telemetry is opt-in
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      # Prefer *_FILE secrets; ensure plain vars are empty so config reads from files.
+      DATABASE_URL_FILE: /run/secrets/database_url
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      GOOGLE_CLIENT_ID_FILE: /run/secrets/google_client_id
+      GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
+      GOOGLE_REDIRECT_URI_FILE: /run/secrets/google_redirect_uri
+      DATABASE_URL: ""
+      JWT_SECRET: ""
+    secrets:
+      - database_url
+      - jwt_secret
+      - google_client_id
+      - google_client_secret
+      - google_redirect_uri
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: services/web/Dockerfile
+    ports:
+      - "127.0.0.1:3002:80"
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  grafana:
+    profiles: ["obs"]
+    image: grafana/grafana:11.3.0
+    environment:
+      # Dev default: anonymous viewer enabled. Use docker-compose.prod.yml to disable and require admin password.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./services/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      prometheus:
+        condition: service_started
+    restart: unless-stopped
+
+  prometheus:
+    profiles: ["obs"]
+    image: prom/prometheus:v2.55.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./services/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./services/observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    depends_on:
+      api:
+        condition: service_started
+      postgres-exporter:
+        condition: service_started
+    restart: unless-stopped
+
+  alertmanager:
+    profiles: ["obs"]
+    image: prom/alertmanager:v0.27.0
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    volumes:
+      - ./services/observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    restart: unless-stopped
+
+  mailpit:
+    profiles: ["mail"]
+    image: axllent/mailpit:v1.20.6
+    restart: unless-stopped
+
+  tempo:
+    profiles: ["obs"]
+    image: grafana/tempo:2.6.0
+    command:
+      - -config.file=/etc/tempo/tempo.yaml
+    volumes:
+      - ./services/observability/tempo.yaml:/etc/tempo/tempo.yaml:ro
+    restart: unless-stopped
+
+  otel-collector:
+    profiles: ["obs"]
+    image: otel/opentelemetry-collector-contrib:0.126.0
+    command:
+      - --config=/etc/otel-collector-config.yaml
+    volumes:
+      - ./services/observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    depends_on:
+      tempo:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres-exporter:
+    profiles: ["obs"]
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    secrets:
+      - db_password
+    # In secrets mode, read DB password from Docker secret so exporter does not drift from DB.
+    entrypoint:
+      - sh
+      - -lc
+      - |
+          # Strip UTF-8 BOM and CRLF/newlines from the secret file (Windows PowerShell writes UTF-8 BOM by default).
+          # IMPORTANT: docker compose interpolates variables at config time; use $$ to defer to shell runtime.
+          bom="$$(printf '\357\273\277')"
+          raw="$$(cat /run/secrets/db_password | tr -d '\r\n')"
+          case "$$raw" in
+            "$$bom"*) raw="$${raw#$$bom}" ;;
+          esac
+          export PGPASSWORD="$$raw"
+          export DATA_SOURCE_NAME="postgresql://$${POSTGRES_USER:-hos}:$$PGPASSWORD@db:5432/$${POSTGRES_DB:-hos}?sslmode=disable"
+          exec /bin/postgres_exporter
+    restart: unless-stopped
+
+  loki:
+    profiles: ["obs"]
+    image: grafana/loki:3.3.0
+    command:
+      - -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./services/observability/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+    restart: unless-stopped
+
+  promtail:
+    profiles: ["obs"]
+    image: grafana/promtail:3.3.0
+    command:
+      - -config.file=/etc/promtail/promtail-config.yaml
+    volumes:
+      - ./services/observability/promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml:ro
+    depends_on:
+      loki:
+        condition: service_started
+    restart: unless-stopped
+
+  alert-webhook:
+    profiles: ["obs"]
+    image: python:3.12-alpine
+    working_dir: /app
+    volumes:
+      - ./services/observability/alert-webhook:/app:ro
+    command: ["python", "server.py"]
+    restart: unless-stopped
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  database_url:
+    file: ./secrets/database_url.txt
+  google_client_id:
+    file: ./secrets/google_client_id.txt
+  google_client_secret:
+    file: ./secrets/google_client_secret.txt
+  google_redirect_uri:
+    file: ./secrets/google_redirect_uri.txt
+
+volumes:
+  db_data:
+  grafana_data:
+

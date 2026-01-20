@@ -1,0 +1,72 @@
+{
+  "uid": "hos-logs-overview",
+  "title": "H-OS Logs Overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "tags": ["hos", "logs", "loki"],
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "project",
+        "label": "Project",
+        "datasource": { "type": "loki", "uid": "loki" },
+        "query": { "query": "label_values({project=~\".+\"}, project)" },
+        "refresh": 1,
+        "multi": false,
+        "includeAll": false,
+        "current": { "text": "h-os", "value": "h-os" }
+      },
+      {
+        "type": "query",
+        "name": "service",
+        "label": "Service",
+        "datasource": { "type": "loki", "uid": "loki" },
+        "query": { "query": "label_values({project=~\"$project\"}, service)" },
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": ".*" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Error logs / sec (pino level>=50)",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 7 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (service) (rate({project=~\"$project\", service=~\"$service\", level=~\"5[0-9]|60\"}[5m]))"
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "type": "logs",
+      "title": "Logs (selected services)",
+      "gridPos": { "x": 0, "y": 7, "w": 24, "h": 13 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{project=~\"$project\", service=~\"$service\"}"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true
+      }
+    }
+  ]
+}
+
+

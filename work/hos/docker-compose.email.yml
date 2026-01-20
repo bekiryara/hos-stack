@@ -1,0 +1,9 @@
+services:
+  # Enable email alert notifications by mounting a generated Alertmanager config.
+  # This file is intended to be used via ops/bootstrap.ps1 -EmailAlerts (it generates the config).
+  alertmanager:
+    volumes:
+      - ./services/observability/alertmanager/alertmanager.generated.yml:/etc/alertmanager/alertmanager.yml:ro
+
+
+

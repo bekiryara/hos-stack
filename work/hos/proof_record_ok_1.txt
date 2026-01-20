@@ -1,0 +1,23 @@
+﻿HTTP/1.1 200 OK
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=15552000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0
+x-ratelimit-limit: 200
+x-ratelimit-remaining: 198
+x-ratelimit-reset: 58
+content-type: application/json; charset=utf-8
+x-request-id: 38351071-e712-4c0c-83bf-99d7e314ee64
+content-length: 75
+Date: Tue, 30 Dec 2025 20:40:48 GMT
+Connection: keep-alive
+Keep-Alive: timeout=72
+
+{"ok":true,"proof_id":"97be94fb-f331-4920-9383-34694fa4d402","stored":true}

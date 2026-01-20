@@ -1,0 +1,20 @@
+services:
+  # Production-oriented overrides.
+  # NOTE: This repo is still a local/dev stack by default; use this override only when you want
+  # safer defaults (no anonymous Grafana, non-default admin password).
+  api:
+    environment:
+      # Force Secure cookies in production deployments (behind HTTPS / reverse proxy).
+      # If you are terminating TLS in a proxy, also ensure it forwards x-forwarded-proto=https
+      # or keep this enabled to avoid relying on proxy headers.
+      COOKIE_SECURE: "true"
+
+  grafana:
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?GRAFANA_ADMIN_USER is required}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+
+
+

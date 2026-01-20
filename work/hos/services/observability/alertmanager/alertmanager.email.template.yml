@@ -1,0 +1,24 @@
+# Template used by ops/bootstrap.ps1 -EmailAlerts
+# It generates `alertmanager.generated.yml` by replacing __PLACEHOLDER__ tokens.
+global:
+  smtp_smarthost: "__SMTP_SMARTHOST__"
+  smtp_from: "__ALERT_EMAIL_FROM__"
+  smtp_auth_username: "__SMTP_AUTH_USERNAME__"
+  smtp_auth_password: "__SMTP_AUTH_PASSWORD__"
+  smtp_require_tls: __SMTP_REQUIRE_TLS__
+
+route:
+  receiver: "email"
+  group_by: ["alertname", "job", "instance"]
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: "email"
+    email_configs:
+      - to: "__ALERT_EMAIL_TO__"
+        send_resolved: true
+
+
+

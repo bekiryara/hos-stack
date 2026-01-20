@@ -1,0 +1,15 @@
+services:
+  # Lockdown overrides (optional).
+  #
+  # Goal: make "unsafe defaults" impossible to accidentally run.
+  # Use with:
+  #   docker compose -f docker-compose.yml -f docker-compose.lockdown.yml -f docker-compose.ports.yml up -d --build
+  #
+  # NOTE: This file intentionally stays small; most security-sensitive overrides live in docker-compose.prod.yml.
+  api:
+    environment:
+      # Example: force OTEL off in lockdown
+      OTEL_ENABLED: "false"
+
+
+
