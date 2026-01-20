@@ -1,0 +1,10 @@
+theme: jekyll-theme-minimal
+title: HOS-Stack Documentation
+description: Production-ready HOS + Pazar Stack Documentation
+show_downloads: false
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+  collections: true
+
