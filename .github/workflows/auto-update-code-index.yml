@@ -1,0 +1,45 @@
+name: Auto-Update CODE_INDEX.md
+
+on:
+  workflow_dispatch:  # Sadece manuel tetikleme (güvenli)
+  # push'ta otomatik çalışmasını isterseniz aşağıdaki yorumları kaldırın:
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'work/**'
+  #     - 'ops/**'
+  #     - '!docs/CODE_INDEX.md'
+
+permissions:
+  contents: write
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup PowerShell
+        uses: actions/setup-powershell@v1
+
+      - name: Run Update Script
+        run: |
+          pwsh -File ops/update_code_index.ps1 -AutoCommit
+
+      - name: Push Changes
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet HEAD; then
+            echo "No changes to push"
+          else
+            git push origin main
+          fi
+

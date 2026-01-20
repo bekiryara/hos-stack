@@ -1,4 +1,4 @@
-# Code Index - H-OS Stack
+﻿# Code Index - H-OS Stack
 
 **Purpose:** Central index for AI/ChatGPT to navigate and read the entire codebase efficiently.
 
@@ -53,6 +53,23 @@
 ### Routes
 
 - **Main Routes:** [`work/pazar/routes/api.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api.php)
+- **00_metrics.php**: [`work/pazar/routes/api/00_metrics.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/00_metrics.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/00_metrics.php)
+- **00_ping.php**: [`work/pazar/routes/api/00_ping.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/00_ping.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/00_ping.php)
+- **01_world_status.php**: [`work/pazar/routes/api/01_world_status.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/01_world_status.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/01_world_status.php)
+- **02_catalog.php**: [`work/pazar/routes/api/02_catalog.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/02_catalog.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/02_catalog.php)
+- **03a_listings_write.php**: [`work/pazar/routes/api/03a_listings_write.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/03a_listings_write.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/03a_listings_write.php)
+- **03b_listings_read.php**: [`work/pazar/routes/api/03b_listings_read.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/03b_listings_read.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/03b_listings_read.php)
+- **03c_offers.php**: [`work/pazar/routes/api/03c_offers.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/03c_offers.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/03c_offers.php)
+- **04_reservations.php**: [`work/pazar/routes/api/04_reservations.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/04_reservations.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/04_reservations.php)
+- **05_orders.php**: [`work/pazar/routes/api/05_orders.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/05_orders.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/05_orders.php)
+- **06_rentals.php**: [`work/pazar/routes/api/06_rentals.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/06_rentals.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/06_rentals.php)
+- **account_portal.php**: [`work/pazar/routes/api/account_portal.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/account_portal.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/account_portal.php)
+- **messaging.php**: [`work/pazar/routes/api/messaging.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/messaging.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/messaging.php)
+- **03a_listings_write.php**: [$normalized](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/03a_listings_write.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/03a_listings_write.php)
+- **02_catalog.php**: [$normalized](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/02_catalog.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/02_catalog.php)
+- **01_world_status.php**: [$normalized](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/01_world_status.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/01_world_status.php)
+- **00_ping.php**: [$normalized](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/00_ping.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/00_ping.php)
+- **00_metrics.php**: [$normalized](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api/00_metrics.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/00_metrics.php)
 
 **Key Endpoints:**
 - `GET /api/world/status` - World availability and version info
@@ -191,6 +208,15 @@
 - **Routes Snapshot:** [`ops/routes_snapshot.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/routes_snapshot.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/routes_snapshot.ps1) - Routes snapshot
 - **Schema Snapshot:** [`ops/schema_snapshot.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/schema_snapshot.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/schema_snapshot.ps1) - Database schema snapshot
 
+### Ops Library (`ops/_lib/`)
+
+- **core_availability.ps1**: [`ops/_lib/core_availability.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/_lib/core_availability.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/_lib/core_availability.ps1)
+- **ops_env.ps1**: [`ops/_lib/ops_env.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/_lib/ops_env.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/_lib/ops_env.ps1)
+- **ops_exit.ps1**: [`ops/_lib/ops_exit.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/_lib/ops_exit.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/_lib/ops_exit.ps1)
+- **ops_output.ps1**: [`ops/_lib/ops_output.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/_lib/ops_output.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/_lib/ops_output.ps1)
+- **routes_json.ps1**: [`ops/_lib/routes_json.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/_lib/routes_json.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/_lib/routes_json.ps1)
+- **test_auth.ps1**: [`ops/_lib/test_auth.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/_lib/test_auth.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/_lib/test_auth.ps1)
+- **worlds_config.ps1**: [`ops/_lib/worlds_config.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/_lib/worlds_config.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/_lib/worlds_config.ps1)
 ### Release & Bundle
 
 - **Release Check:** [`ops/release_check.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/release_check.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/release_check.ps1) - Release check
@@ -350,4 +376,4 @@
 
 ---
 
-**Last Updated:** 2026-01-20
+$12026-01-20
