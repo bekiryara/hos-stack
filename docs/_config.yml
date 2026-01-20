@@ -1,9 +1,9 @@
 theme: jekyll-theme-minimal
-title: HOS-Stack Documentation
-description: Production-ready HOS + Pazar Stack Documentation
-show_downloads: false
+title: H-OS Stack Documentation
+description: H-OS Stack - Full-stack marketplace platform documentation
 plugins:
   - jekyll-relative-links
+
 relative_links:
   enabled: true
   collections: true
