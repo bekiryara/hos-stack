@@ -288,45 +288,65 @@
 ## Quick Links - All Raw URLs (AI Direct Access)
 
 **H-OS Service:**
-- [H-OS API Index](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/index.js)
-- [H-OS API App](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/app.js)
-- [H-OS API Config](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/config.js)
-- [H-OS API DB](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/db.js)
-- [H-OS API Auth](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/auth.js)
+- [H-OS Docker Compose](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/docker-compose.yml) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/hos/docker-compose.yml)
+- [H-OS API Index](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/index.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/hos/services/api/src/index.js)
+- [H-OS API Server](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/server.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/hos/services/api/src/server.js)
+- [H-OS API App](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/app.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/hos/services/api/src/app.js)
+- [H-OS API Config](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/config.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/hos/services/api/src/config.js)
+- [H-OS API DB](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/db.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/hos/services/api/src/db.js)
+- [H-OS API Auth](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/hos/services/api/src/auth.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/hos/services/api/src/auth.js)
 
 **Pazar Service:**
-- [Pazar API Routes](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api.php)
-- [Pazar Bootstrap](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/bootstrap/app.php)
-- [Pazar CORS Middleware](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/Cors.php)
-- [Pazar Security Headers](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/SecurityHeaders.php)
-- [Pazar World Registry](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Worlds/WorldRegistry.php)
-- [Pazar Listings Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_10_000000_create_listings_table.php)
-- [Pazar Categories Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_15_100000_create_categories_table.php)
-- [Pazar Reservations Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_16_100003_create_reservations_table.php)
+- [Pazar API Routes](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api.php)
+- [Pazar Bootstrap](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/bootstrap/app.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/bootstrap/app.php)
+- [Pazar Worlds Config](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/config/worlds.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/config/worlds.php)
+- [Pazar CORS Middleware](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/Cors.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/app/Http/Middleware/Cors.php)
+- [Pazar Security Headers](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/SecurityHeaders.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/app/Http/Middleware/SecurityHeaders.php)
+- [Pazar Force JSON](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/ForceJsonForApi.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/app/Http/Middleware/ForceJsonForApi.php)
+- [Pazar Request ID](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/RequestId.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/app/Http/Middleware/RequestId.php)
+- [Pazar World Registry](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Worlds/WorldRegistry.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/app/Worlds/WorldRegistry.php)
+- [Pazar Route: 00_metrics](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/00_metrics.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/00_metrics.php)
+- [Pazar Route: 01_world_status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/01_world_status.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/01_world_status.php)
+- [Pazar Route: 02_catalog](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/02_catalog.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/02_catalog.php)
+- [Pazar Route: 03a_listings_write](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/03a_listings_write.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/03a_listings_write.php)
+- [Pazar Route: 03b_listings_read](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/03b_listings_read.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/03b_listings_read.php)
+- [Pazar Route: 03c_offers](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/03c_offers.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/03c_offers.php)
+- [Pazar Route: 04_reservations](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/04_reservations.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/04_reservations.php)
+- [Pazar Route: 05_orders](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/05_orders.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/05_orders.php)
+- [Pazar Route: account_portal](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/account_portal.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/account_portal.php)
+- [Pazar Route: messaging](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api/messaging.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/routes/api/messaging.php)
+- [Pazar Listings Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_10_000000_create_listings_table.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/database/migrations/2026_01_10_000000_create_listings_table.php)
+- [Pazar Categories Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_15_100000_create_categories_table.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/database/migrations/2026_01_15_100000_create_categories_table.php)
+- [Pazar Reservations Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_16_100003_create_reservations_table.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/database/migrations/2026_01_16_100003_create_reservations_table.php)
+- [Pazar Sessions Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/database/migrations/2026_01_16_141957_create_sessions_table.php) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/pazar/database/migrations/2026_01_16_141957_create_sessions_table.php)
 
 **Messaging Service:**
-- [Messaging API Index](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/src/index.js)
-- [Messaging API App](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/src/app.js)
-- [Messaging API Config](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/src/config.js)
-- [Messaging API DB](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/src/db.js)
+- [Messaging API Index](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/src/index.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/messaging/services/api/src/index.js)
+- [Messaging API App](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/src/app.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/messaging/services/api/src/app.js)
+- [Messaging API Config](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/src/config.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/messaging/services/api/src/config.js)
+- [Messaging API DB](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/src/db.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/messaging/services/api/src/db.js)
+- [Messaging Threads Migration](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/migrations/001_create_threads_table.sql) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/messaging/services/api/migrations/001_create_threads_table.sql)
+- [Messaging Package.json](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/messaging/services/api/package.json) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/messaging/services/api/package.json)
 
 **Frontend:**
-- [Frontend Main](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/main.js)
-- [Frontend Router](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/router.js)
-- [Pazar API Client](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/lib/pazarApi.js)
+- [Frontend Main](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/main.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/marketplace-web/src/main.js)
+- [Frontend Router](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/router.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/marketplace-web/src/router.js)
+- [Frontend ListingsSearchPage](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/pages/ListingsSearchPage.vue) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/marketplace-web/src/pages/ListingsSearchPage.vue)
+- [Pazar API Client](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/lib/pazarApi.js) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/work/marketplace-web/src/lib/pazarApi.js)
 
 **Infrastructure:**
 - [Docker Compose](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docker-compose.yml)
 
 **Ops Scripts:**
-- [Ops Status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/ops_status.ps1)
-- [Verify](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/verify.ps1)
-- [Baseline Status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/baseline_status.ps1)
-- [Conformance](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/conformance.ps1)
-- [Daily Snapshot](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/daily_snapshot.ps1)
-- [Secret Scan](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/secret_scan.ps1)
-- [Pazar Spine Check](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/pazar_spine_check.ps1)
-- [Product Spine Check](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/product_spine_check.ps1)
+- [Ops Status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/ops_status.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/ops_status.ps1)
+- [Verify](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/verify.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/verify.ps1)
+- [GitHub Sync Safe](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/github_sync_safe.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/github_sync_safe.ps1)
+- [Baseline Status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/baseline_status.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/baseline_status.ps1)
+- [Conformance](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/conformance.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/conformance.ps1)
+- [Daily Snapshot](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/daily_snapshot.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/daily_snapshot.ps1)
+- [Secret Scan](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/secret_scan.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/secret_scan.ps1)
+- [Pazar Spine Check](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/pazar_spine_check.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/pazar_spine_check.ps1)
+- [Product Spine Check](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/product_spine_check.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/product_spine_check.ps1)
 
 **Documentation (Most Important):**
 - [README](https://raw.githubusercontent.com/bekiryara/hos-stack/main/README.md)
@@ -358,13 +378,19 @@
 
 **IMPORTANT:** AI can read raw GitHub URLs directly. Use the "Quick Links - All Raw URLs" section above to access files.
 
+**Cache Miss Sorunu Çözümü:**
+- Raw URL çalışmazsa → GitHub API URL'sini kullan (her linkin yanında [API] linki var)
+- GitHub API formatı: `https://api.github.com/repos/bekiryara/hos-stack/contents/{path}`
+- API response'u base64 encoded, decode etmen gerekir
+
 **Example:**
 1. Read this CODE_INDEX.md file first
 2. Find the service you need (H-OS, Pazar, Messaging, Frontend)
 3. Use the raw URL from the "Quick Links" section
-4. AI can read raw URLs directly without clicking links
+4. If raw URL fails (cache miss), use the [API] link instead
+5. AI can read raw URLs or API URLs directly without clicking links
 
-**Why?** AI web tools can only open URLs from search results or user messages, not from clicking links on pages. So all raw URLs are listed above for direct access.
+**Why?** AI web tools can only open URLs from search results or user messages, not from clicking links on pages. So all raw URLs and API URLs are listed above for direct access.
 
 **Repository Structure:**
 - `work/hos/` - H-OS service files
