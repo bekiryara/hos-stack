@@ -9,7 +9,3 @@ create table if not exists threads (
 
 create index if not exists idx_threads_context on threads (context_type, context_id);
 
-
-
-
-

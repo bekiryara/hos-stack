@@ -58,7 +58,3 @@ export async function applyMigrations(db, { migrationsDir = defaultMigrationsDir
   }
 }
 
-
-
-
-

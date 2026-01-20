@@ -16,7 +16,3 @@ export function getConfig() {
   return parsed.data;
 }
 
-
-
-
-

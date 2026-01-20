@@ -210,7 +210,3 @@ PASS: Request without header correctly rejected (status: 400)
 
 
 
-
-
-
-

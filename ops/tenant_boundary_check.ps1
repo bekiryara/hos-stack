@@ -17,51 +17,6 @@ Write-Host "=== TENANT BOUNDARY CHECK ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
 
-# WP-33: Simple warmup helper (inline, minimal)
-function Wait-PazarBasicReady {
-    param(
-        [string]$BaseUrl = "http://localhost:8080",
-        [int]$TimeoutSec = 30,
-        [int]$IntervalMs = 500
-    )
-    
-    $startTime = Get-Date
-    $attempt = 0
-    
-    while ($true) {
-        $elapsed = ((Get-Date) - $startTime).TotalSeconds
-        if ($elapsed -ge $TimeoutSec) {
-            Write-Host "WARN: Pazar warmup timeout after ${TimeoutSec}s, proceeding anyway" -ForegroundColor Yellow
-            return $false
-        }
-        
-        $attempt++
-        try {
-            $upResponse = Invoke-WebRequest -Uri "${BaseUrl}/up" -Method "GET" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-            if ($upResponse.StatusCode -eq 200) {
-                try {
-                    $metricsResponse = Invoke-WebRequest -Uri "${BaseUrl}/api/metrics" -Method "GET" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-                    if ($metricsResponse.StatusCode -eq 200) {
-                        Write-Host "Pazar warmup: Ready after ${elapsed}s" -ForegroundColor Green
-                        return $true
-                    }
-                } catch {
-                    # Continue retrying
-                }
-            }
-        } catch {
-            # Continue retrying
-        }
-        
-        Start-Sleep -Milliseconds $IntervalMs
-    }
-}
-
-# WP-33: Warmup before tests
-Write-Host "Warming up Pazar..." -ForegroundColor Yellow
-Wait-PazarBasicReady -BaseUrl "http://localhost:8080" -TimeoutSec 30 | Out-Null
-Write-Host ""
-
 # Results table
 $results = @()
 
@@ -91,19 +46,14 @@ $panelRoute = $routes | Where-Object {
     ($_.middleware -contains "tenant.user" -or $_.middleware -contains "auth.any")
 } | Select-Object -First 1
 
-# WP-33: Handle missing admin route gracefully (downgrade to WARN)
 if (-not $adminRoute) {
     Write-Host "WARN: No admin route found in snapshot" -ForegroundColor Yellow
-    Write-Host "  Explanation: Admin routes may not exist in current snapshot. This is not a blocking failure." -ForegroundColor Gray
     $adminRoute = @{ uri = "/admin/tenants"; method = "GET" }
-    # Don't fail - will be handled in test
 }
 
 if (-not $panelRoute) {
     Write-Host "WARN: No panel route found in snapshot" -ForegroundColor Yellow
-    Write-Host "  Explanation: Panel routes may not exist in current snapshot. This is not a blocking failure." -ForegroundColor Gray
     $panelRoute = @{ uri = "/panel/{tenant_slug}/ping"; method = "GET" }
-    # Don't fail - will be handled in test
 }
 
 Write-Host "Selected admin route: $($adminRoute.method) $($adminRoute.uri)" -ForegroundColor Gray
@@ -135,42 +85,13 @@ function Test-AuthResponse {
             $requestHeaders[$key] = $Headers[$key]
         }
         
-        # WP-33: Handle 404 gracefully (don't crash with TerminatingError)
-        try {
-            if ($Method -eq "GET") {
-                $response = Invoke-WebRequest -Uri $Url -Method $Method -Headers $requestHeaders -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
-            } else {
-                $response = Invoke-WebRequest -Uri $Url -Method $Method -Headers $requestHeaders -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
-            }
-            
-            $statusCode = $response.StatusCode
-        } catch {
-            # WP-33: Catch 404 and other HTTP errors gracefully
-            $errorResponse = $_.Exception.Response
-            if ($errorResponse) {
-                $statusCode = [int]$errorResponse.StatusCode.value__
-                # If 404 and not in expected codes, treat as WARN (route may not exist)
-                if ($statusCode -eq 404 -and $ExpectedStatusCodes -notcontains 404) {
-                    $status = "WARN"
-                    $notes = "Status 404 (route may not exist in current deployment)"
-                    $exitCode = 2
-                    $results += [PSCustomObject]@{
-                        Check = $CheckName
-                        Status = $status
-                        ExitCode = $exitCode
-                        Notes = $notes
-                    }
-                    return @{
-                        Status = $status
-                        ExitCode = $exitCode
-                    }
-                }
-                # Re-throw to be handled by outer catch
-                throw
-            } else {
-                throw
-            }
+        if ($Method -eq "GET") {
+            $response = Invoke-WebRequest -Uri $Url -Method $Method -Headers $requestHeaders -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+        } else {
+            $response = Invoke-WebRequest -Uri $Url -Method $Method -Headers $requestHeaders -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
         }
+        
+        $statusCode = $response.StatusCode
         
         if ($ExpectedStatusCodes -contains $statusCode) {
             if ($ExpectJsonEnvelope) {
@@ -248,43 +169,21 @@ function Test-AuthResponse {
 }
 
 # Check A: Admin unauthorized access
-# WP-33: Handle 404 gracefully (route may not exist)
 $adminUrl = "http://localhost:8080$($adminRoute.uri)"
-$adminResult = Test-AuthResponse -CheckName "Admin Unauthorized Access" `
+Test-AuthResponse -CheckName "Admin Unauthorized Access" `
     -Method "GET" `
     -Url $adminUrl `
-    -ExpectedStatusCodes @(401, 403, 404) `
+    -ExpectedStatusCodes @(401, 403) `
     -ExpectJsonEnvelope $true
-
-# If admin route returns 404, downgrade to WARN with explanation
-if ($adminResult.Status -eq "WARN" -or ($adminResult.Status -eq "PASS" -and $adminResult.ExitCode -eq 0)) {
-    $adminCheck = $results | Where-Object { $_.Check -eq "Admin Unauthorized Access" } | Select-Object -First 1
-    if ($adminCheck -and $adminCheck.Notes -match "404") {
-        $adminCheck.Status = "WARN"
-        $adminCheck.ExitCode = 2
-        $adminCheck.Notes = "Status 404 - Admin route may not exist in current deployment (not a blocking failure)"
-    }
-}
 
 # Check B: Panel unauthorized access
-# WP-33: Handle 404 gracefully (route may not exist)
 $panelUrlTemplate = $panelRoute.uri -replace '\{tenant_slug\}', 'test-tenant'
 $panelUrl = "http://localhost:8080$panelUrlTemplate"
-$panelResult = Test-AuthResponse -CheckName "Panel Unauthorized Access" `
+Test-AuthResponse -CheckName "Panel Unauthorized Access" `
     -Method "GET" `
     -Url $panelUrl `
-    -ExpectedStatusCodes @(401, 403, 404) `
+    -ExpectedStatusCodes @(401, 403) `
     -ExpectJsonEnvelope $true
-
-# If panel route returns 404, downgrade to WARN with explanation
-if ($panelResult.Status -eq "WARN" -or ($panelResult.Status -eq "PASS" -and $panelResult.ExitCode -eq 0)) {
-    $panelCheck = $results | Where-Object { $_.Check -eq "Panel Unauthorized Access" } | Select-Object -First 1
-    if ($panelCheck -and $panelCheck.Notes -match "404") {
-        $panelCheck.Status = "WARN"
-        $panelCheck.ExitCode = 2
-        $panelCheck.Notes = "Status 404 - Panel route may not exist in current deployment (not a blocking failure)"
-    }
-}
 
 # Check C: Tenant boundary isolation
 Write-Host "Testing tenant boundary isolation..." -ForegroundColor Yellow

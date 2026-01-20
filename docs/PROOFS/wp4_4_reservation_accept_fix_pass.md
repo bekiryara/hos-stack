@@ -210,7 +210,3 @@ if ($updated === 0) {
 
 **WP-4.4 Status:** ✅ COMPLETE
 
-
-
-
-

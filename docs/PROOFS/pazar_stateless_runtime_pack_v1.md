@@ -62,7 +62,7 @@ docker compose ps
 curl.exe -i http://localhost:8080/up
 
 # 2) Generate APP_KEY (env-only). Output: base64:....
-# NOTE: This does NOT write .env. Copy the printed key into docker-compose.yml pazar-app APP_KEY=<APP_KEY>
+# NOTE: This does NOT write .env. Copy the printed key into docker-compose.yml pazar-app APP_KEY=
 docker compose exec -T pazar-app sh -lc "php -r '\$k=random_bytes(32); echo \"base64:\".base64_encode(\$k).\"\\n\";'"
 
 # 3) After you paste APP_KEY into docker-compose.yml, restart only pazar-app

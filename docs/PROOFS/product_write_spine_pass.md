@@ -25,7 +25,7 @@
 ```bash
 curl -i -X POST \
   -H "Accept: application/json" \
-  -H "Authorization: Bearer <JWT>" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
   -H "X-Tenant-Id: 550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -d '{"title":"Test Commerce Listing"}' \
@@ -66,7 +66,7 @@ X-Request-Id: 7f8e9d0a-1b2c-3d4e-5f6a-7b8c9d0e1f2a
 ```bash
 curl -i -X POST \
   -H "Accept: application/json" \
-  -H "Authorization: Bearer <JWT>" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
   -H "X-Tenant-Id: 550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -d '{}' \
@@ -108,7 +108,7 @@ X-Request-Id: 8a9b0c1d-2e3f-4a5b-6c7d-8e9f0a1b2c3d
 ```bash
 curl -i -X PATCH \
   -H "Accept: application/json" \
-  -H "Authorization: Bearer <JWT>" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
   -H "X-Tenant-Id: 550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -d '{"title":"Updated Commerce Listing"}' \
@@ -149,7 +149,7 @@ X-Request-Id: 9b0c1d2e-3f4a-5b6c-7d8e-9f0a1b2c3d4e
 ```bash
 curl -i -X PATCH \
   -H "Accept: application/json" \
-  -H "Authorization: Bearer <JWT>" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
   -H "X-Tenant-Id: 550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -d '{}' \
@@ -191,7 +191,7 @@ X-Request-Id: 0c1d2e3f-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 ```bash
 curl -i -X PATCH \
   -H "Accept: application/json" \
-  -H "Authorization: Bearer <JWT>" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
   -H "X-Tenant-Id: 550e8400-e29b-41d4-a716-446655440000" \
   -H "Content-Type: application/json" \
   -d '{"title":"Updated"}' \
@@ -230,7 +230,7 @@ X-Request-Id: 1d2e3f4a-5b6c-7d8e-9f0a-1b2c3d4e5f6a
 ```bash
 curl -i -X DELETE \
   -H "Accept: application/json" \
-  -H "Authorization: Bearer <JWT>" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
   -H "X-Tenant-Id: 550e8400-e29b-41d4-a716-446655440000" \
   "http://localhost:8080/api/v1/commerce/listings/123e4567-e89b-12d3-a456-426614174000"
 ```
