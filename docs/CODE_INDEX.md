@@ -21,7 +21,7 @@
 ## Backend API (Pazar - Laravel)
 
 ### Main Routes File
-- **GitHub:** [work/pazar/routes/api.php](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api.php)
+- **GitHub:** [work/pazar/routes/api.php](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/routes/api.php)
 - **GitHub Pages:** [work/pazar/routes/api.php](https://bekiryara.github.io/hos-stack/work/pazar/routes/api.php)
 - **Description:** Main API routes file containing all endpoints
 
@@ -54,51 +54,51 @@
 - `POST /api/v1/messaging/threads/{id}/messages` - Send message
 
 ### Middleware
-- **CORS:** [`work/pazar/app/Http/Middleware/Cors.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/Cors.php)
-- **Security Headers:** [`work/pazar/app/Http/Middleware/SecurityHeaders.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/SecurityHeaders.php)
-- **Force JSON:** [`work/pazar/app/Http/Middleware/ForceJsonForApi.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/ForceJsonForApi.php)
-- **Request ID:** [`work/pazar/app/Http/Middleware/RequestId.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/RequestId.php)
-- **Error Envelope:** [`work/pazar/app/Http/Middleware/ErrorEnvelope.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/ErrorEnvelope.php)
+- **CORS:** [`work/pazar/app/Http/Middleware/Cors.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/Cors.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/Cors.php)
+- **Security Headers:** [`work/pazar/app/Http/Middleware/SecurityHeaders.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/SecurityHeaders.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/SecurityHeaders.php)
+- **Force JSON:** [`work/pazar/app/Http/Middleware/ForceJsonForApi.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/ForceJsonForApi.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/ForceJsonForApi.php)
+- **Request ID:** [`work/pazar/app/Http/Middleware/RequestId.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/RequestId.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/RequestId.php)
+- **Error Envelope:** [`work/pazar/app/Http/Middleware/ErrorEnvelope.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Http/Middleware/ErrorEnvelope.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Http/Middleware/ErrorEnvelope.php)
 
 ### Configuration
-- **Bootstrap:** [`work/pazar/bootstrap/app.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/bootstrap/app.php)
-- **World Registry:** [`work/pazar/app/Worlds/WorldRegistry.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Worlds/WorldRegistry.php)
-- **Config:** [`work/pazar/config/worlds.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/config/worlds.php)
+- **Bootstrap:** [`work/pazar/bootstrap/app.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/bootstrap/app.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/bootstrap/app.php)
+- **World Registry:** [`work/pazar/app/Worlds/WorldRegistry.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/app/Worlds/WorldRegistry.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/app/Worlds/WorldRegistry.php)
+- **Config:** [`work/pazar/config/worlds.php`](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/config/worlds.php) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/pazar/config/worlds.php)
 
 ---
 
 ## Frontend (Marketplace Web - Vue.js)
 
 ### Main Entry Point
-- **GitHub:** [work/marketplace-web/src/main.js](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/main.js)
+- **GitHub:** [work/marketplace-web/src/main.js](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/main.js) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/main.js)
 - **GitHub Pages:** [work/marketplace-web/src/main.js](https://bekiryara.github.io/hos-stack/work/marketplace-web/src/main.js)
 
 ### Pages
-- **Listings Search:** [`work/marketplace-web/src/pages/ListingsSearchPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/ListingsSearchPage.vue)
-- **Listing Detail:** [`work/marketplace-web/src/pages/ListingDetailPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/ListingDetailPage.vue)
-- **Create Listing:** [`work/marketplace-web/src/pages/CreateListingPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/CreateListingPage.vue)
-- **Account Portal:** [`work/marketplace-web/src/pages/AccountPortalPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/AccountPortalPage.vue)
-- **Categories:** [`work/marketplace-web/src/pages/CategoriesPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/CategoriesPage.vue)
+- **Listings Search:** [`work/marketplace-web/src/pages/ListingsSearchPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/ListingsSearchPage.vue) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/pages/ListingsSearchPage.vue)
+- **Listing Detail:** [`work/marketplace-web/src/pages/ListingDetailPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/ListingDetailPage.vue) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/pages/ListingDetailPage.vue)
+- **Create Listing:** [`work/marketplace-web/src/pages/CreateListingPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/CreateListingPage.vue) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/pages/CreateListingPage.vue)
+- **Account Portal:** [`work/marketplace-web/src/pages/AccountPortalPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/AccountPortalPage.vue) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/pages/AccountPortalPage.vue)
+- **Categories:** [`work/marketplace-web/src/pages/CategoriesPage.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/pages/CategoriesPage.vue) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/pages/CategoriesPage.vue)
 
 ### Components
-- **Category Tree:** [`work/marketplace-web/src/components/CategoryTree.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/components/CategoryTree.vue)
-- **Filters Panel:** [`work/marketplace-web/src/components/FiltersPanel.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/components/FiltersPanel.vue)
-- **Listings Grid:** [`work/marketplace-web/src/components/ListingsGrid.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/components/ListingsGrid.vue)
-- **Publish Listing Action:** [`work/marketplace-web/src/components/PublishListingAction.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/components/PublishListingAction.vue)
+- **Category Tree:** [`work/marketplace-web/src/components/CategoryTree.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/components/CategoryTree.vue) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/components/CategoryTree.vue)
+- **Filters Panel:** [`work/marketplace-web/src/components/FiltersPanel.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/components/FiltersPanel.vue) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/components/FiltersPanel.vue)
+- **Listings Grid:** [`work/marketplace-web/src/components/ListingsGrid.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/components/ListingsGrid.vue) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/components/ListingsGrid.vue)
+- **Publish Listing Action:** [`work/marketplace-web/src/components/PublishListingAction.vue`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/components/PublishListingAction.vue) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/components/PublishListingAction.vue)
 
 ### API Client
-- **Pazar API:** [`work/marketplace-web/src/lib/pazarApi.js`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/lib/pazarApi.js)
-- **API Client:** [`work/marketplace-web/src/api/client.js`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/api/client.js)
+- **Pazar API:** [`work/marketplace-web/src/lib/pazarApi.js`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/lib/pazarApi.js) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/lib/pazarApi.js)
+- **API Client:** [`work/marketplace-web/src/api/client.js`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/api/client.js) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/api/client.js)
 
 ### Router
-- **Routes:** [`work/marketplace-web/src/router.js`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/router.js)
+- **Routes:** [`work/marketplace-web/src/router.js`](https://github.com/bekiryara/hos-stack/blob/main/work/marketplace-web/src/router.js) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/work/marketplace-web/src/router.js)
 
 ---
 
 ## Infrastructure
 
 ### Docker Compose
-- **GitHub:** [docker-compose.yml](https://github.com/bekiryara/hos-stack/blob/main/docker-compose.yml)
+- **GitHub:** [docker-compose.yml](https://github.com/bekiryara/hos-stack/blob/main/docker-compose.yml) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docker-compose.yml)
 - **GitHub Pages:** [docker-compose.yml](https://bekiryara.github.io/hos-stack/docker-compose.yml)
 - **Services:**
   - `hos-api` - H-OS API (Node.js)
