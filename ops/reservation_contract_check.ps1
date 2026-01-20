@@ -18,47 +18,6 @@ Write-Host ""
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
 $tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo
-
-# WP-23: Token bootstrap - auto-acquire if missing
-$authToken = $env:PRODUCT_TEST_AUTH
-if (-not $authToken) {
-    Write-Host "[INFO] PRODUCT_TEST_AUTH not set, bootstrapping token..." -ForegroundColor Yellow
-    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $testAuthPath = Join-Path $scriptDir "_lib\test_auth.ps1"
-    if (Test-Path $testAuthPath) {
-        . $testAuthPath
-        try {
-            $rawToken = Get-DevTestJwtToken
-            $authToken = "Bearer $rawToken"
-        } catch {
-            Write-Host "FAIL: Failed to bootstrap JWT token" -ForegroundColor Red
-            Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Yellow
-            Write-Host "  Run: .\ops\ensure_product_test_auth.ps1" -ForegroundColor Yellow
-            exit 1
-        }
-    } else {
-        Write-Host "FAIL: PRODUCT_TEST_AUTH not set and test_auth.ps1 helper not found" -ForegroundColor Red
-        Write-Host "  Run: .\ops\ensure_product_test_auth.ps1" -ForegroundColor Yellow
-        exit 1
-    }
-}
-
-# Validate JWT format (must contain two dots: header.payload.signature)
-$tokenParts = $authToken -split '\.'
-if ($tokenParts.Count -lt 3 -or -not $authToken.StartsWith("Bearer ")) {
-    Write-Host "FAIL: PRODUCT_TEST_AUTH must be a valid Bearer JWT token" -ForegroundColor Red
-    Write-Host "  Format: Bearer <header>.<payload>.<signature>" -ForegroundColor Yellow
-    Write-Host "  Current value: $($authToken.Substring(0, [Math]::Min(50, $authToken.Length)))..." -ForegroundColor Yellow
-    Write-Host "  Run: .\ops\ensure_product_test_auth.ps1" -ForegroundColor Yellow
-    exit 1
-}
-
-# Optional provider token (for accept tests)
-$providerAuth = $env:PROVIDER_TEST_AUTH
-if (-not $providerAuth) {
-    $providerAuth = $authToken
-    Write-Host "[WARN] PROVIDER_TEST_AUTH not set, using PRODUCT_TEST_AUTH for provider operations" -ForegroundColor Yellow
-}
 $listingId = $null
 $reservationId = $null
 
@@ -228,7 +187,6 @@ try {
     $headers = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $idempotencyKey
-        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     $createResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $reservationBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     
@@ -247,25 +205,15 @@ try {
     }
 } catch {
     $statusCode = $null
-    $responseBody = $null
     if ($_.Exception.Response) {
         try {
             $statusCode = $_.Exception.Response.StatusCode.value__
-            $stream = $_.Exception.Response.GetResponseStream()
-            $reader = New-Object System.IO.StreamReader($stream)
-            $responseBody = $reader.ReadToEnd()
-            $reader.Close()
-            $stream.Close()
         } catch {
         }
     }
     Write-Host "FAIL: Create reservation request failed: $($_.Exception.Message)" -ForegroundColor Red
     if ($statusCode) {
         Write-Host "  Status Code: $statusCode" -ForegroundColor Yellow
-    }
-    if ($responseBody) {
-        $bodySnippet = $responseBody.Substring(0, [Math]::Min(200, $responseBody.Length))
-        Write-Host "  Response: $bodySnippet" -ForegroundColor Gray
     }
     $hasFailures = $true
 }
@@ -311,7 +259,6 @@ if ($reservationId) {
         $headers = @{
             "Content-Type" = "application/json"
             "Idempotency-Key" = $idempotencyKey
-            "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
         }
         $replayResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $reservationBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
         
@@ -350,7 +297,6 @@ try {
     $headers = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $conflictIdempotencyKey
-        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     $conflictResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $conflictBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     Write-Host "FAIL: Conflict reservation should have failed but succeeded" -ForegroundColor Red
@@ -395,7 +341,6 @@ try {
     $headers = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $invalidIdempotencyKey
-        "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
     }
     $invalidResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $invalidBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     Write-Host "FAIL: Invalid reservation should have failed but succeeded" -ForegroundColor Red
@@ -455,7 +400,6 @@ if ($listingId) {
         $acceptTestHeaders = @{
             "Content-Type" = "application/json"
             "Idempotency-Key" = $acceptTestIdempotencyKey
-            "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
         }
         $acceptTestCreateResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $acceptTestReservationBody -Headers $acceptTestHeaders -TimeoutSec 10 -ErrorAction Stop
         $acceptTestReservationId = $acceptTestCreateResponse.id
@@ -469,7 +413,6 @@ if ($listingId) {
         
         $acceptHeaders = @{
             "X-Active-Tenant-Id" = $providerTenantId
-            "Authorization" = $providerAuth  # WP-20: Accept endpoint requires auth.ctx middleware
         }
         $acceptResponse = Invoke-RestMethod -Uri $acceptUrl -Method Post -Headers $acceptHeaders -TimeoutSec 10 -ErrorAction Stop
         
@@ -482,25 +425,15 @@ if ($listingId) {
         }
     } catch {
         $statusCode = $null
-        $responseBody = $null
         if ($_.Exception.Response) {
             try {
                 $statusCode = $_.Exception.Response.StatusCode.value__
-                $stream = $_.Exception.Response.GetResponseStream()
-                $reader = New-Object System.IO.StreamReader($stream)
-                $responseBody = $reader.ReadToEnd()
-                $reader.Close()
-                $stream.Close()
             } catch {
             }
         }
         Write-Host "FAIL: Accept reservation request failed: $($_.Exception.Message)" -ForegroundColor Red
         if ($statusCode) {
             Write-Host "  Status Code: $statusCode" -ForegroundColor Yellow
-        }
-        if ($responseBody) {
-            $bodySnippet = $responseBody.Substring(0, [Math]::Min(200, $responseBody.Length))
-            Write-Host "  Response: $bodySnippet" -ForegroundColor Gray
         }
         $hasFailures = $true
     }
@@ -539,17 +472,16 @@ if ($listingId) {
         $rejectTestHeaders = @{
             "Content-Type" = "application/json"
             "Idempotency-Key" = $rejectTestIdempotencyKey
-            "Authorization" = $authToken  # WP-8: PERSONAL write requires Authorization
         }
         $rejectTestCreateResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $rejectTestReservationBody -Headers $rejectTestHeaders -TimeoutSec 10 -ErrorAction Stop
         $rejectTestReservationId = $rejectTestCreateResponse.id
         
-        # Now test reject (missing X-Active-Tenant-Id header, but keep Authorization)
+        # Now test reject (missing header)
         $acceptUrl = "${pazarBaseUrl}/api/v1/reservations/${rejectTestReservationId}/accept"
         
         try {
             $headers = @{
-                "Authorization" = $providerAuth  # WP-20: Keep Authorization, omit X-Active-Tenant-Id
+                # No X-Active-Tenant-Id header
             }
             $rejectResponse = Invoke-RestMethod -Uri $acceptUrl -Method Post -Headers $headers -TimeoutSec 10 -ErrorAction Stop
             Write-Host "FAIL: Request without header should have failed but succeeded" -ForegroundColor Red

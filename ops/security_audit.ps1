@@ -114,8 +114,7 @@ foreach ($route in $routes) {
     
     # Rule 1: Admin routes must have auth.any AND super.admin
     if ($uri -like '/admin*') {
-        $hasAuthAny = ($middleware -contains 'auth.any') -or ($middleware -like '*AuthAny*')
-        if (-not $hasAuthAny) {
+        if ($middleware -notcontains 'auth.any') {
             $violationsForRoute += "Missing middleware: auth.any"
         }
         if ($middleware -notcontains 'super.admin') {
@@ -125,8 +124,7 @@ foreach ($route in $routes) {
     
     # Rule 2: Panel routes must have auth.any
     if ($uri -like '/panel*') {
-        $hasAuthAny = ($middleware -contains 'auth.any') -or ($middleware -like '*AuthAny*')
-        if (-not $hasAuthAny) {
+        if ($middleware -notcontains 'auth.any') {
             $violationsForRoute += "Missing middleware: auth.any"
         }
     }
@@ -145,9 +143,7 @@ foreach ($route in $routes) {
     $stateChangingMethods = @('POST', 'PUT', 'PATCH', 'DELETE')
     if ($stateChangingMethods -contains $method) {
         if (-not (Test-Allowlisted -Path $uri)) {
-            # Check for auth.any alias OR AuthAny class name (Laravel may return class name instead of alias)
-            $hasAuthAny = ($middleware -contains 'auth.any') -or ($middleware -like '*AuthAny*')
-            if (-not $hasAuthAny) {
+            if ($middleware -notcontains 'auth.any') {
                 $violationsForRoute += "State-changing route missing auth.any (or not allowlisted)"
             }
         }

@@ -8,20 +8,6 @@ Example: `VAR — §24.4` or `YOK → EK — §25.2`
 
 **Note:** This line MUST be present in PR description for CI gate to pass. See SPEC §8.1.
 
-## Proof
-
-**REQUIRED:** Which ops check output or workflow link proves this change works?
-
-- Ops check: `.\ops\<script>.ps1` output
-- Workflow: [GitHub Actions run link](https://github.com/...)
-
-## Risk
-
-**REQUIRED:** Risk level and rollback note:
-
-- Risk: `low` / `med` / `high`
-- Rollback: How to rollback this change if needed
-
 ## What Changed
 
 Brief description of what this PR changes.

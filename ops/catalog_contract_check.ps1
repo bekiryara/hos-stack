@@ -21,59 +21,8 @@ $weddingHallId = $null
 # Test 1: GET /api/v1/categories
 Write-Host "[1] Testing GET /api/v1/categories..." -ForegroundColor Yellow
 $categoriesUrl = "http://localhost:8080/api/v1/categories"
-
-# Guardrail: Check for 500 errors and "Target class [persona.scope] does not exist" error
-Write-Host "  [Guardrail] Checking for middleware registration errors..." -ForegroundColor Gray
 try {
-    $httpResponse = Invoke-WebRequest -Uri $categoriesUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
-    $statusCode = $httpResponse.StatusCode
-    $responseBody = $httpResponse.Content
-    
-    # Check for 500 status
-    if ($statusCode -eq 500) {
-        Write-Host "FAIL: GET /api/v1/categories returns 500 Internal Server Error" -ForegroundColor Red
-        Write-Host "  Status Code: $statusCode" -ForegroundColor Yellow
-        if ($responseBody -match "Target class \[persona\.scope\] does not exist") {
-            Write-Host "  ERROR: Middleware alias 'persona.scope' is not registered" -ForegroundColor Red
-            Write-Host "  Fix: Ensure 'persona.scope' => PersonaScope::class is in bootstrap/app.php" -ForegroundColor Yellow
-        }
-        $hasFailures = $true
-        # Don't continue with JSON parsing if 500
-        throw "HTTP 500 error detected"
-    }
-    
-    # Parse JSON response
-    $response = $responseBody | ConvertFrom-Json
-} catch {
-    # If it's our guardrail throw, re-throw
-    if ($_.Exception.Message -eq "HTTP 500 error detected") {
-        throw
-    }
-    
-    # Check for 500 errors in exception
-    $statusCode = $null
-    if ($_.Exception.Response) {
-        try {
-            $statusCode = $_.Exception.Response.StatusCode.value__
-        } catch {
-            try {
-                $statusCode = $_.Exception.Response.StatusCode
-            } catch {
-            }
-        }
-    }
-    
-    if ($statusCode -eq 500) {
-        Write-Host "FAIL: GET /api/v1/categories returns 500 Internal Server Error" -ForegroundColor Red
-        Write-Host "  Status Code: $statusCode" -ForegroundColor Yellow
-        Write-Host "  This may indicate middleware registration issues (e.g., 'persona.scope' alias not found)" -ForegroundColor Yellow
-        $hasFailures = $true
-        throw "HTTP 500 error detected"
-    }
-    
-    # Otherwise try Invoke-RestMethod for JSON parsing
-    try {
-        $response = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+    $response = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
     Write-Host "Response: $($response | ConvertTo-Json -Depth 3 -Compress)" -ForegroundColor Gray
 
     # Validate response format
@@ -128,25 +77,6 @@ try {
             $hasFailures = $true
         } else {
             Write-Host "  PASS: All required root categories present (vehicle, real-estate, service)" -ForegroundColor Green
-        }
-        
-        # WP-17: Regression check - call endpoint twice to prevent redeclare fatal
-        Write-Host "  WP-17: Testing double-call to prevent redeclare fatal..." -ForegroundColor Gray
-        try {
-            $response2 = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
-            if (-not ($response2 -is [Array])) {
-                Write-Host "  FAIL: Second call returned non-array response (fatal redeclare risk)" -ForegroundColor Red
-                $hasFailures = $true
-            } elseif ($response2.Count -ne $response.Count) {
-                Write-Host "  FAIL: Second call returned different category count ($($response.Count) vs $($response2.Count))" -ForegroundColor Red
-                $hasFailures = $true
-            } else {
-                Write-Host "  PASS: Second call succeeded (no redeclare fatal)" -ForegroundColor Green
-            }
-        } catch {
-            Write-Host "  FAIL: Second call failed: $($_.Exception.Message)" -ForegroundColor Red
-            Write-Host "    This indicates a redeclare fatal risk (WP-17)" -ForegroundColor Yellow
-            $hasFailures = $true
         }
     }
 } catch {

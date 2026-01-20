@@ -2,11 +2,6 @@
 work/hos/secrets/*.txt
 .env
 .env.*
-*.pem
-*.key
-id_rsa*
-secrets/
-**/secrets.*
 oidc_token*.json
 cookies.txt
 headers.txt
@@ -37,43 +32,3 @@ ops/diffs/
 
 # Temp files
 _temp_*.txt
-
-# Vendor / dependencies (NO TRACK policy)
-work/pazar/vendor/
-work/pazar/node_modules/
-**/node_modules/
-**/vendor/
-**/dist/
-_tmp*
-.DS_Store
-
-# IDE / editor files
-.idea/
-.vscode/
-*.swp
-*.tmp
-*.swo
-*~
-
-# Laravel specific
-storage/logs/
-storage/*.log
-bootstrap/cache/*
-!bootstrap/cache/.gitkeep
-
-# Submodule untracked content (deterministic ignore)
-**/work/**/.git/
-**/work/**/storage/
-**/work/**/bootstrap/cache/
-**/work/**/vendor/
-
-# Secret files (deterministic ignore)
-**/*.key
-**/*.pem
-**/*.pfx
-**/*.p12
-**/id_rsa*
-**/id_ed25519*
-**/secrets/
-**/.env.local
-**/.env.*.local

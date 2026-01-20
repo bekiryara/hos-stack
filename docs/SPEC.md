@@ -1,7 +1,7 @@
 # SPEC v1.4 - Canonical Specification
 
 **Version:** 1.4.0  
-**Last Updated:** 2026-01-19  
+**Last Updated:** 2026-01-16  
 **Status:** GENESIS  
 **Single Source of Truth:** This document is the canonical specification for hos-stack.
 
@@ -188,59 +188,12 @@ HTTP 503 Service Unavailable:
 
 ---
 
-## §5. Persona & Scope Lock (WP-8)
-
-### §5.1. Persona Definitions
-
-- **GUEST**: Unauthenticated user (no Authorization header)
-- **PERSONAL**: Authenticated user performing personal transactions (Authorization: Bearer token required)
-- **STORE**: Authenticated tenant performing store/provider operations (X-Active-Tenant-Id header required)
-
-### §5.2. Required Header Contract
-
-**PERSONAL write/read operations:**
-- `Authorization: Bearer <token>` header **REQUIRED**
-- Missing header → 401 + `error_code: AUTH_REQUIRED`
-
-**STORE operations:**
-- `X-Active-Tenant-Id: <tenant_id>` header **REQUIRED**
-- Missing header → 400/403 + `error_code: missing_header` or `FORBIDDEN_SCOPE`
-- In GENESIS: Authorization optional (only tenant header enforced)
-- Future: Authorization may be required for full membership validation
-
-### §5.3. Endpoint-Persona Matrix
-
-| Endpoint | Method | Persona | Required Headers |
-|----------|--------|---------|------------------|
-| `/api/v1/categories` | GET | GUEST+ | None |
-| `/api/v1/categories/{id}/filter-schema` | GET | GUEST+ | None |
-| `/api/v1/listings` | GET | GUEST+ | None |
-| `/api/v1/listings/{id}` | GET | GUEST+ | None |
-| `/api/v1/listings` | POST | STORE | `X-Active-Tenant-Id` |
-| `/api/v1/listings/{id}/publish` | POST | STORE | `X-Active-Tenant-Id` |
-| `/api/v1/reservations` | POST | PERSONAL | `Authorization`, `Idempotency-Key` |
-| `/api/v1/reservations/{id}` | GET | PERSONAL/STORE | `Authorization` (if read owner/provider) |
-| `/api/v1/reservations/{id}/accept` | POST | STORE | `X-Active-Tenant-Id` |
-| `/api/v1/rentals` | POST | PERSONAL | `Authorization`, `Idempotency-Key` |
-| `/api/v1/rentals/{id}` | GET | PERSONAL/STORE | `Authorization` (if read owner/provider) |
-| `/api/v1/rentals/{id}/accept` | POST | STORE | `X-Active-Tenant-Id` |
-| `/api/v1/orders` | POST | PERSONAL | `Authorization`, `Idempotency-Key` |
-| `/api/v1/orders/{id}` | GET | PERSONAL/STORE | `Authorization` (if read owner/provider) |
-
-**Messaging endpoints:**
-- Thread/message read/write: PERSONAL/STORE (Authorization required) + participant validation
-- WP-16 (PLANNED): POST /api/v1/threads (idempotent), POST /api/v1/messages (direct send)
-
----
-
-## §5A. Error Codes (§17.5)
+## §5. Error Codes (§17.5)
 
 - **WORLD_DISABLED**: World is disabled in registry/config
 - **VALIDATION_ERROR**: Validation failed (e.g., party_size > capacity_max) (§6.3)
 - **CONFLICT**: Resource conflict (e.g., slot overlap) (§6.7)
-- **AUTH_REQUIRED**: Missing Authorization header for PERSONAL operations (§5.2)
 - **missing_header**: Required header missing (X-Active-Tenant-Id, Idempotency-Key)
-- **FORBIDDEN_SCOPE**: Invalid tenant scope or membership denied (§5.2)
 - **invalid_tenant_id**: Tenant ID format invalid
 - **unauthorized**: Tenant ownership mismatch
 - **listing_not_found**: Listing does not exist
@@ -288,74 +241,9 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 
 ---
 
-## §9. Completed Work Packages
+## §9. Workspace Packages (WP) Status
 
-This section lists all Work Packages (WP) that have been completed and evidenced by proof documents in `docs/PROOFS/`.
-
-### Completed WPs (WP-17 through WP-28B)
-
-- **WP-17:** Routes Stabilization Finalization - Finalized Pazar API route modularization, removed duplicate routes, updated route duplicate guard. Proof: `docs/PROOFS/wp17_routes_stabilization_finalization_pass.md`
-- **WP-19:** Messaging Write Alignment + Ops Hardening - Aligned messaging write endpoints with ops scripts, hardened contract check script. Proof: `docs/PROOFS/wp19_messaging_write_alignment_pass.md`
-- **WP-20:** Reservation Routes + Auth Preflight Stabilization - Made Reservation Contract Check deterministic, eliminated 500 errors, required real JWT tokens. Proof: `docs/PROOFS/wp20_reservation_auth_stabilization_pass.md`
-- **WP-21:** Routes Guardrails (Budget + Drift) - Added deterministic guard enforcing line-count budgets and preventing unreferenced route module drift. Proof: `docs/PROOFS/wp21_routes_guardrails_pass.md`
-- **WP-22:** Listings Routes Headroom - Ensured listings routes remain within budget after additions. Proof: `docs/PROOFS/wp22_listings_routes_headroom_pass.md`
-- **WP-23:** Test Auth Bootstrap + Spine Check Determinism - Made Marketplace verification deterministic, eliminated manual PRODUCT_TEST_AUTH setup. Proof: `docs/PROOFS/wp23_spine_determinism_pass.md`
-- **WP-24:** Write-Path Lock - Locked write-path determinism, created write snapshot, added CI gate scripts. Proof: `docs/PROOFS/wp24_write_path_lock_pass.md`
-- **WP-25:** Header Contract Enforcement - Eliminated false-positive WARN messages in boundary_contract_check.ps1. Proof: `docs/PROOFS/wp25_header_contract_enforcement_pass.md`
-- **WP-26:** Store-Scope Unification + Middleware Pack - Unified X-Active-Tenant-Id + membership enforcement into TenantScope middleware. Proof: `docs/PROOFS/wp26_store_scope_unification_pass.md`
-- **WP-27:** Repo Hygiene + Closeout Alignment - Made repository clean and deterministic after recent WPs. Proof: `docs/PROOFS/wp27_repo_hygiene_closeout_pass.md`
-- **WP-28:** Listing 500 Elimination + Store-Scope Header Hardening - Fixed HTTP 500 errors on POST /api/v1/listings endpoints. Proof: `docs/PROOFS/wp28_listing_contract_500_fix_pass.md`
-- **WP-28B:** Fix tenant.scope Middleware Binding - Fixed Composer autoload cache issue preventing tenant.scope middleware resolution. Proof: `docs/PROOFS/wp28_listing_contract_500_fix_pass.md` (updated)
-
-For detailed closeout summaries, see `docs/WP_CLOSEOUTS.md`.
-
----
-
-## §9A. Current Stable Invariants
-
-These invariants are enforced across all endpoints and must not be violated by any code changes.
-
-### §9A.1. Idempotency
-
-- All write operations (POST, PUT, PATCH, DELETE) require `Idempotency-Key` header
-- Same (scope, key, request_hash) returns same response (stored in `idempotency_keys` table)
-- Idempotency keys expire after 24 hours (TTL)
-- Replay detection prevents duplicate processing
-
-**Enforcement:** `ops/idempotency_coverage_check.ps1` validates all required endpoints have idempotency implemented.
-
-### §9A.2. Scope Validation
-
-- Store-scope endpoints require `X-Active-Tenant-Id` header (enforced via `tenant.scope` middleware)
-- Tenant ID format validated (UUID)
-- Membership validated via MembershipClient (strict mode via HOS API)
-- Missing/invalid header → 400/403 with appropriate error codes
-
-**Enforcement:** `ops/boundary_contract_check.ps1` validates header presence and middleware usage.
-
-### §9A.3. Determinism
-
-- Route modules loaded in deterministic order (numbered prefixes: 00_ping.php, 01_world_status.php, ...)
-- Stable naming scheme (numbered for ordering, descriptive for identification)
-- Route duplicate guard prevents duplicate route definitions
-- Line-count budgets enforced (entry point max 120 lines, modules max 900 lines)
-
-**Enforcement:** `ops/pazar_routes_guard.ps1` validates budgets and detects unreferenced modules.
-
-### §9A.4. Guardrails
-
-- Route duplicate detection (27 unique routes, no duplicates)
-- Module reference validation (all referenced modules exist, no unreferenced modules)
-- Line-count budget enforcement (prevents monolith regrowth)
-- Write-path snapshot validation (prevents unauthorized endpoint changes)
-
-**Enforcement:** Multiple guard scripts in `ops/` directory validate these invariants.
-
----
-
-## §9B. Workspace Packages (WP) Status
-
-### §9B.1. WP-0: Governance Lock (§25.2)
+### §9.1. WP-0: Governance Lock (§25.2)
 
 **Status:** ✅ COMPLETE
 
@@ -498,114 +386,6 @@ See `docs/WP_CLOSEOUTS.md` for detailed closeout summaries of each WP.
 
 ---
 
-## §25. Work Packages (WP)
-
-### §25.2. WP List
-
-- **WP-0:** Governance Lock
-- **WP-1:** GENESIS World Status
-- **WP-2:** Catalog Spine
-- **WP-3:** Supply Spine (Listings)
-- **WP-4:** Reservation Spine
-- **WP-5:** Messaging Integration
-- **WP-6:** Orders Spine
-- **WP-7:** Rentals Spine
-- **WP-8:** Persona & Scope Lock + Core Persona Switch
-- **WP-9:** Marketplace Web (Read-First) Thin Slice
-- **WP-16:** Messaging Write Thin Slice (PLANNED)
-
-### §25.3. WP-9: Marketplace Web (Read-First) Thin Slice
-
-**Purpose:** Read-first web interface for Marketplace: Category tree → Listing search → Listing detail.
-
-**Rules:**
-- No backend code changes (routes, controllers, DB, migrations untouched)
-- No business logic in UI (only displays and calls API)
-- No hardcoded categories/filters (all from API `/categories` and `/filter-schema`)
-- UI renders dynamically from API responses
-
-**Deliverables:**
-- Vue 3 + Vite frontend project (`work/marketplace-web/`)
-- 3 pages: CategoriesPage, ListingsSearchPage, ListingDetailPage
-- 3 components: CategoryTree, FiltersPanel, ListingsGrid
-- API client consuming existing Marketplace endpoints
-
-**Proof:** `docs/PROOFS/wp9_marketplace_web_read_spine_pass.md`
-
-**Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-9
-
-### §25.4. WP-16: Messaging Write Thin Slice (PLANNED)
-
-**Purpose:** Add messaging write endpoints (POST /api/v1/threads, POST /api/v1/messages) with authorization, idempotency, and thread ownership enforcement.
-
-**Status:** PLANNING (NO IMPLEMENTATION YET)
-
-**Rules:**
-- Authorization required (JWT token)
-- Thread ownership enforced (participant validation)
-- Idempotency-Key required
-- Minimal thin slice (2 endpoints)
-- Frontend stub only (disabled CTA)
-
-**Planned Endpoints:**
-- POST /api/v1/threads (idempotent thread creation)
-- POST /api/v1/messages (direct message send)
-
-**Plan:** See `docs/WP16_PLAN.md`
-
-**Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-16 (PLANNED)
-
----
-
-## §26. Next WP Candidate
-
-### Recommended Next Step
-
-**WP-NEXT: Governance Sync + Routes/Status Audit + Pazar Legacy Inventory** ✅ COMPLETE
-
-**Status:** Completed 2026-01-19
-
-**Purpose:** Determine exact current state, align SPEC + WP_CLOSEOUTS + CHANGELOG with actual implementation, confirm routes modularization status, produce legacy inventory.
-
-**Deliverables:**
-- `docs/PROOFS/wp_next_governance_sync_pass.md` - Reality snapshot and audit results
-- `docs/LEGACY_PAZAR_INVENTORY.md` - Legacy file inventory (none found)
-- Updated `docs/SPEC.md`, `docs/WP_CLOSEOUTS.md`, `CHANGELOG.md`
-
-**Findings:**
-- Routes already modularized (no refactoring needed)
-- Core contract checks mostly PASS (3/4)
-- No legacy files found in work/pazar/
-- Governance docs updated with completed WPs and invariants
-
-**Proof:** `docs/PROOFS/wp_next_governance_sync_pass.md`
-
-### Alternative Next Steps
-
-1. **Security Audit Violations:** ✅ COMPLETE (WP-29) - All 10 POST routes now have `auth.any` middleware
-2. **Observability Gaps:** Implement Pazar /metrics endpoint and Prometheus setup (currently 404)
-3. **Test Environment Setup:** Fix Reservation Contract Check bootstrap (H-OS admin API configuration)
-
----
-
-## §27. WP-29: Security Audit Violations Fix
-
-**Status:** ✅ COMPLETE  
-**Completed:** 2026-01-19
-
-**Purpose:** Eliminate Security Audit FAIL: "10 violations - POST routes missing auth.any". Zero refactor. Minimal diff. No behavior change except: unauthenticated POST write routes MUST now require auth (expected).
-
-**Deliverables:**
-- Added `auth.any` middleware to 10 POST routes across 5 route modules
-- Updated security audit script to recognize both alias and class name
-- All route guardrails budgets still met
-
-**Proof:** `docs/PROOFS/wp29_security_audit_fix_pass.md`
-
-**Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-29
-
----
-
 **SPEC v1.4 - Canonical Specification**  
-**Last Updated:** 2026-01-19  
+**Last Updated:** 2026-01-16  
 **Status:** GENESIS

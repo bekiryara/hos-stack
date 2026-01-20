@@ -15,60 +15,18 @@ if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
 Write-Host "=== PAZAR SPINE CHECK (WP-4.2) ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
-
-# Step 0: Routes guardrails (WP-21) - fail-fast
-Write-Host "[STEP 0] Routes Guardrails Check (WP-21)..." -ForegroundColor Yellow
-$routesGuardPath = Join-Path $scriptDir "pazar_routes_guard.ps1"
-if (Test-Path $routesGuardPath) {
-    try {
-        & $routesGuardPath 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "FAIL: Routes guardrails check failed" -ForegroundColor Red
-            Write-Host "Fix route issues before running contract checks" -ForegroundColor Yellow
-            if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
-                Invoke-OpsExit -ExitCode 1
-            } else {
-                exit 1
-            }
-        }
-        Write-Host "[PASS] Routes Guardrails Check (WP-21)" -ForegroundColor Green
-    } catch {
-        Write-Host "FAIL: Routes guardrails check error: $($_.Exception.Message)" -ForegroundColor Red
-        if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
-            Invoke-OpsExit -ExitCode 1
-        } else {
-            exit 1
-        }
-    }
-} else {
-    Write-Host "WARN: Routes guardrails script not found, skipping" -ForegroundColor Yellow
-}
-Write-Host ""
-
 Write-Host "Running all Marketplace spine contract checks in order:" -ForegroundColor Yellow
 Write-Host "  1. World Status Check (WP-1.2)" -ForegroundColor Gray
 Write-Host "  2. Catalog Contract Check (WP-2)" -ForegroundColor Gray
 Write-Host "  3. Listing Contract Check (WP-3)" -ForegroundColor Gray
 Write-Host "  4. Reservation Contract Check (WP-4)" -ForegroundColor Gray
-Write-Host "  5. Rental Contract Check (WP-7)" -ForegroundColor Gray
-Write-Host "  6. Tenant Scope Contract Check (WP-8)" -ForegroundColor Gray
-Write-Host "  7. Persona & Scope Check (WP-8 Lock)" -ForegroundColor Gray
-Write-Host "  8. Core Persona Contract Check (WP-8 Core)" -ForegroundColor Gray
-Write-Host "  9. Offer Contract Check (WP-9 Offers)" -ForegroundColor Gray
-Write-Host "  10. Account Portal Contract Check (WP-9 Account Portal)" -ForegroundColor Gray
 Write-Host ""
 
 $checks = @(
     @{ Name = "World Status Check"; Script = "world_status_check.ps1"; WP = "WP-1.2" },
     @{ Name = "Catalog Contract Check"; Script = "catalog_contract_check.ps1"; WP = "WP-2" },
     @{ Name = "Listing Contract Check"; Script = "listing_contract_check.ps1"; WP = "WP-3" },
-    @{ Name = "Reservation Contract Check"; Script = "reservation_contract_check.ps1"; WP = "WP-4" },
-    @{ Name = "Rental Contract Check"; Script = "rental_contract_check.ps1"; WP = "WP-7" },
-    @{ Name = "Tenant Scope Contract Check"; Script = "tenant_scope_contract_check.ps1"; WP = "WP-8" },
-    @{ Name = "Persona & Scope Check"; Script = "persona_scope_check.ps1"; WP = "WP-8 Lock" },
-    @{ Name = "Core Persona Contract Check"; Script = "core_persona_contract_check.ps1"; WP = "WP-8 Core" },
-    @{ Name = "Offer Contract Check"; Script = "offer_contract_check.ps1"; WP = "WP-9 Offers" },
-    @{ Name = "Account Portal Contract Check"; Script = "account_portal_contract_check.ps1"; WP = "WP-9 Account Portal" }
+    @{ Name = "Reservation Contract Check"; Script = "reservation_contract_check.ps1"; WP = "WP-4" }
 )
 
 $results = @()
@@ -135,47 +93,23 @@ foreach ($check in $checks) {
             "FAIL"
         }
         
-        # WP-23: Use pscustomobject with fixed properties to avoid Duration property errors
-        $durationSec = $duration.TotalSeconds
         if ($actualStatus -eq "PASS") {
-            Write-Host "[PASS] $($check.Name) ($($check.WP)) - Duration: $($durationSec.ToString('F2'))s" -ForegroundColor Green
-            $results += [PSCustomObject]@{
-                Name = $check.Name
-                WP = $check.WP
-                Status = "PASS"
-                Reason = $null
-                ExitCode = 0
-                DurationSec = $durationSec
-            }
+            Write-Host "[PASS] $($check.Name) ($($check.WP)) - Duration: $($duration.TotalSeconds.ToString('F2'))s" -ForegroundColor Green
+            $results += @{ Name = $check.Name; WP = $check.WP; Status = "PASS"; Duration = $duration.TotalSeconds }
         } else {
             Write-Host "[FAIL] $($check.Name) ($($check.WP)) - Exit code: $exitCode" -ForegroundColor Red
             if ($hasFailInOutput) {
                 Write-Host "  Script output indicates FAIL status" -ForegroundColor Yellow
             }
-            $results += [PSCustomObject]@{
-                Name = $check.Name
-                WP = $check.WP
-                Status = "FAIL"
-                Reason = if ($hasFailInOutput) { "Script output indicates FAIL" } else { "Exit code: $exitCode" }
-                ExitCode = $exitCode
-                DurationSec = $durationSec
-            }
+            $results += @{ Name = $check.Name; WP = $check.WP; Status = "FAIL"; ExitCode = $exitCode; HasFailInOutput = $hasFailInOutput }
             $hasFailures = $true
             # Fail fast: stop on first failure
             break
         }
     } catch {
         $duration = (Get-Date) - $startTime
-        $durationSec = $duration.TotalSeconds
         Write-Host "[FAIL] $($check.Name) ($($check.WP)) - Exception: $($_.Exception.Message)" -ForegroundColor Red
-        $results += [PSCustomObject]@{
-            Name = $check.Name
-            WP = $check.WP
-            Status = "FAIL"
-            Reason = $_.Exception.Message
-            ExitCode = -1
-            DurationSec = $durationSec
-        }
+        $results += @{ Name = $check.Name; WP = $check.WP; Status = "FAIL"; Reason = $_.Exception.Message }
         $hasFailures = $true
         # Fail fast: stop on first failure
         break
@@ -188,9 +122,7 @@ foreach ($check in $checks) {
 Write-Host "=== PAZAR SPINE CHECK SUMMARY ===" -ForegroundColor Cyan
 foreach ($result in $results) {
     $statusColor = if ($result.Status -eq "PASS") { "Green" } else { "Red" }
-    # WP-23: Safe property access - DurationSec is always set (may be $null)
-    $durationSec = $result.DurationSec
-    $durationText = if ($durationSec -ne $null) { " ($($durationSec.ToString('F2'))s)" } else { "" }
+    $durationText = if ($result.Duration) { " ($($result.Duration.ToString('F2'))s)" } else { "" }
     Write-Host "  $($result.Status): $($result.Name) ($($result.WP))$durationText" -ForegroundColor $statusColor
 }
 

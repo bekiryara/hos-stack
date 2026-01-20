@@ -40,7 +40,6 @@ services:
       GOOGLE_REDIRECT_URI_FILE: /run/secrets/google_redirect_uri
       DATABASE_URL: ""
       JWT_SECRET: ""
-      CORE_MEMBERSHIP_STRICT: "off"  # WP-8: Set to "on" for strict membership enforcement
     secrets:
       - database_url
       - jwt_secret
@@ -129,12 +128,6 @@ services:
       SESSION_DOMAIN: localhost
       MESSAGING_BASE_URL: http://messaging-api:3000
       MESSAGING_API_KEY: dev-messaging-key
-      HOS_API_BASE_URL: http://hos-api:3000
-      HOS_API_TIMEOUT: "2"
-      MARKETPLACE_MEMBERSHIP_STRICT: "off"  # WP-8: Set to "on" for strict membership enforcement
-      # WP-13: JWT secret for token verification (same secret as HOS uses)
-      HOS_JWT_SECRET: ${HOS_JWT_SECRET:-dev-jwt-secret-minimum-32-characters-for-testing}
-      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-minimum-32-characters-for-testing}
     volumes:
       # .env mount removed: stateless runtime, all config from ENV
       - ./work/pazar/resources/views:/var/www/html/resources/views

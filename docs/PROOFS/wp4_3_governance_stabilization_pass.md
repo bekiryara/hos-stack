@@ -144,7 +144,3 @@ docker compose exec -T pazar-app php artisan db:seed --class=CatalogSpineSeeder 
 
 
 
-
-
-
-

@@ -9,7 +9,3 @@ create table if not exists participants (
 
 create index if not exists idx_participants_thread on participants (thread_id);
 
-
-
-
-
