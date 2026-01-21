@@ -13,7 +13,7 @@ Canonical source of truth for world definitions in Pazar application.
 
 **Enabled Worlds (detailed):**
 - `marketplace` - Marketplace (Pazar)
-  - Verticals: commerce, food, rentals
+  - Verticals: commerce (E-commerce), food (Food delivery), rentals (Rental/Reservation)
 
 **Disabled Worlds (planned but closed):**
 - `messaging` - Mesajlaşma

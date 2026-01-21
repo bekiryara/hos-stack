@@ -194,7 +194,9 @@ async function registerApiRoutes(app, { db, legacy = false }) {
   // - missing/empty ctx.world => 400
   // - closed world => 410 WORLD_CLOSED
   // Canonical allowlist defaults; can be overridden in ops via env.
-  const CANONICAL_WORLDS = ["commerce", "rentals", "food", "services", "real_estate", "vehicles"];
+  // Updated to new system: marketplace, messaging, social
+  // Note: 'commerce' kept for backward compatibility during transition
+  const CANONICAL_WORLDS = ["marketplace", "messaging", "social", "commerce"];
   const allowedWorlds = new Set(
     String(process.env.HOS_WORLD_ALLOWLIST ?? "")
       .split(",")

@@ -8,9 +8,8 @@ Route::get('/world/status', function () {
     $registry = new WorldRegistry();
     $worldKey = 'marketplace';
     
-    // Check if marketplace world is enabled (marketplace = commerce world in registry)
-    // For minimal implementation: check if 'commerce' is enabled
-    $isEnabled = $registry->isEnabled('commerce');
+    // Check if marketplace world is enabled
+    $isEnabled = $registry->isEnabled('marketplace');
     
     // Read version from VERSION file or env (minimal: use env or default)
     $version = env('APP_VERSION', '1.4.0');

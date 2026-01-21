@@ -108,7 +108,7 @@ final class WorldRegistry
     public function defaultKey(): string
     {
         $enabled = $this->getEnabledWorlds();
-        return !empty($enabled) ? (string) reset($enabled) : 'commerce';
+        return !empty($enabled) ? (string) reset($enabled) : 'marketplace';
     }
 }
 
