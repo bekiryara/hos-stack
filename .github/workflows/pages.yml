@@ -56,6 +56,12 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+      # Create _site directory before Jekyll build
+      - name: Prepare _site directory
+        run: |
+          mkdir -p _site
+          chmod 755 _site
+
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
