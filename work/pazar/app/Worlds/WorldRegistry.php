@@ -83,12 +83,10 @@ final class WorldRegistry
     public function all(): array
     {
         $labels = [
-            'commerce' => 'Pazar (Satış/Alışveriş)',
-            'food' => 'Yemek',
-            'rentals' => 'Kiralama (Rezervasyon)',
-            'services' => 'Hizmetler',
-            'real_estate' => 'Emlak',
-            'vehicle' => 'Taşıtlar',
+            'core' => 'Çekirdek',
+            'marketplace' => 'Pazar',
+            'messaging' => 'Mesajlaşma',
+            'social' => 'Sosyal',
         ];
 
         $result = [];

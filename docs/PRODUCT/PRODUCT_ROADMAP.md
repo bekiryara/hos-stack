@@ -8,36 +8,27 @@
 
 ### Enabled Worlds (Active)
 
-1. **commerce** - E-commerce (Satış/Alışveriş)
+1. **marketplace** - Marketplace (Pazar)
    - Status: enabled
-   - Label (TR): Pazar (Satış/Alışveriş)
-   - Example categories: Elektronik, Giyim, Ev & Yaşam, Anne & Bebek, Spor, Kitap & Hobi
-
-2. **food** - Food delivery (Yemek)
-   - Status: enabled
-   - Label (TR): Yemek
-   - Example categories: Pide & Lahmacun, Döner & Kebap, Pizza, Ev Yemekleri, Tatlı, Kahvaltı
-
-3. **rentals** - Rental/Reservation (Kiralama)
-   - Status: enabled
-   - Label (TR): Kiralama (Rezervasyon)
-   - Example categories: Tatil Konaklama, Araç Kiralama, Ekipman Kiralama, Etkinlik Mekânı, Depo/Ofis, Günlük Daire
+   - Label (TR): Pazar
+   - Verticals (categories):
+     - **commerce** - E-commerce (Satış/Alışveriş)
+       - Example categories: Elektronik, Giyim, Ev & Yaşam, Anne & Bebek, Spor, Kitap & Hobi
+     - **food** - Food delivery (Yemek)
+       - Example categories: Pide & Lahmacun, Döner & Kebap, Pizza, Ev Yemekleri, Tatlı, Kahvaltı
+     - **rentals** - Rental/Reservation (Kiralama)
+       - Example categories: Tatil Konaklama, Araç Kiralama, Ekipman Kiralama, Etkinlik Mekânı, Depo/Ofis, Günlük Daire
 
 ### Disabled Worlds (Planned but Closed)
 
-4. **services** - Services (Hizmetler)
+2. **messaging** - Mesajlaşma
    - Status: disabled
-   - Label (TR): Hizmetler
+   - Label (TR): Mesajlaşma
    - Note: Planned but currently closed
 
-5. **real_estate** - Real Estate (Emlak)
+3. **social** - Sosyal
    - Status: disabled
-   - Label (TR): Emlak
-   - Note: Planned but currently closed
-
-6. **vehicle** - Vehicles (Taşıtlar)
-   - Status: disabled
-   - Label (TR): Taşıtlar
+   - Label (TR): Sosyal
    - Note: Planned but currently closed
 
 **Canonical Source:** `work/pazar/WORLD_REGISTRY.md` and `work/pazar/config/worlds.php`
@@ -51,14 +42,14 @@
 **Scope:**
 - World navigation UI (world selector/dropdown)
 - Tenant context display (current tenant info)
-- Read-only home pages for all enabled worlds (commerce, food, rentals)
+- Read-only home pages for marketplace world (with vertical navigation: commerce, food, rentals)
 - No database write operations (read-only)
 - Basic UI/UX for world switching
 
 **Definition of Done:**
 - [ ] World navigation component functional
 - [ ] Tenant context visible in UI
-- [ ] Home pages render for all enabled worlds (commerce, food, rentals)
+- [ ] Home pages render for marketplace world (with vertical selection: commerce, food, rentals)
 - [ ] No database writes during MVP-0 (read-only operations only)
 - [ ] `ops/verify.ps1` PASS (stack health, FS posture)
 - [ ] `ops/conformance.ps1` PASS (world registry, disabled-world code policy)
@@ -82,24 +73,24 @@
 
 ### MVP-1: Listing Read Path (Index/Show)
 
-**Goal:** Enable users to view listings (index/list view and detail view) for World 1: commerce.
+**Goal:** Enable users to view listings (index/list view and detail view) for marketplace world (commerce vertical).
 
 **Scope:**
-- Listing index/list view (commerce world)
-- Listing detail/show view (commerce world)
+- Listing index/list view (marketplace world, commerce vertical)
+- Listing detail/show view (marketplace world, commerce vertical)
 - Basic listing display (title, description, price, images, etc.)
 - Tenant-scoped listing display (only tenant's listings)
-- World context maintained (world=commerce)
+- World context maintained (world=marketplace, vertical=commerce)
 
 **Definition of Done:**
-- [ ] Listing index page functional (commerce world)
-- [ ] Listing detail page functional (commerce world)
+- [ ] Listing index page functional (marketplace world, commerce vertical)
+- [ ] Listing detail page functional (marketplace world, commerce vertical)
 - [ ] Listings are tenant-scoped (only current tenant's listings visible)
-- [ ] World context maintained (world=commerce parameter)
+- [ ] World context maintained (world=marketplace parameter, vertical=commerce)
 - [ ] Basic listing fields displayed (title, description, price, images, etc.)
 - [ ] `ops/verify.ps1` PASS (stack health, FS posture)
 - [ ] `ops/conformance.ps1` PASS (world registry, disabled-world code)
-- [ ] `ops/world_spine_check.ps1` PASS (commerce world routes/controllers)
+- [ ] `ops/world_spine_check.ps1` PASS (marketplace world routes/controllers)
 - [ ] `ops/routes_snapshot.ps1` PASS (route contract updated with listing routes)
 - [ ] `ops/schema_snapshot.ps1` PASS (schema contract, listing tables/columns)
 - [ ] `ops/env_contract.ps1` PASS (required env vars)
@@ -127,10 +118,10 @@
 
 ### MVP-2: Listing Write Path (Create/Publish) + Audit/Event + Ops Hooks
 
-**Goal:** Enable users to create and publish listings for World 1: commerce, with audit trail, event logging, and ops hooks.
+**Goal:** Enable users to create and publish listings for marketplace world (commerce vertical), with audit trail, event logging, and ops hooks.
 
 **Scope:**
-- Listing creation form (commerce world)
+- Listing creation form (marketplace world, commerce vertical)
 - Listing publish/unpublish functionality
 - Audit trail (who created/modified, when)
 - Event logging (listing created, published, etc.)
@@ -138,16 +129,16 @@
 - Tenant-scoped listing creation (only tenant can create listings)
 
 **Definition of Done:**
-- [ ] Listing creation form functional (commerce world)
-- [ ] Listing publish/unpublish functional (commerce world)
+- [ ] Listing creation form functional (marketplace world, commerce vertical)
+- [ ] Listing publish/unpublish functional (marketplace world, commerce vertical)
 - [ ] Audit trail recorded (created_by, updated_by, created_at, updated_at)
 - [ ] Event logging functional (listing.created, listing.published events)
 - [ ] Ops hooks integrated (metrics, alerts, request traces)
 - [ ] Tenant-scoped creation (only tenant can create listings)
-- [ ] World context maintained (world=commerce parameter)
+- [ ] World context maintained (world=marketplace parameter, vertical=commerce)
 - [ ] `ops/verify.ps1` PASS (stack health, FS posture)
 - [ ] `ops/conformance.ps1` PASS (world registry, disabled-world code)
-- [ ] `ops/world_spine_check.ps1` PASS (commerce world routes/controllers)
+- [ ] `ops/world_spine_check.ps1` PASS (marketplace world routes/controllers)
 - [ ] `ops/routes_snapshot.ps1` PASS (route contract updated with create/publish routes)
 - [ ] `ops/schema_snapshot.ps1` PASS (schema contract updated with audit fields, events table)
 - [ ] `ops/env_contract.ps1` PASS (required env vars for audit/events)
@@ -186,27 +177,27 @@
 3. **MVP-1** (commerce listing read path: index/show)
 4. **MVP-2** (commerce listing write path: create/publish + audit/event + ops hooks)
 
-After MVP-2 for commerce:
-- Expand to other worlds (food, rentals) - reuse commerce patterns
+After MVP-2 for marketplace (commerce vertical):
+- Expand to other verticals (food, rentals) - reuse commerce patterns
 - Add payment processing (future phase)
 - Add advanced search (future phase)
 
 ## World Development Priority
 
-1. **World 1: commerce** (MVP-1 and MVP-2 focus)
+1. **Marketplace World - commerce vertical** (MVP-1 and MVP-2 focus)
    - First vertical slice
-   - Establish patterns for other worlds
+   - Establish patterns for other verticals
    - Validate ops gates and monitoring
 
-2. **World 2: food** (post-commerce MVP-2)
+2. **Marketplace World - food vertical** (post-commerce MVP-2)
    - Reuse commerce patterns
    - Food-specific adaptations
 
-3. **World 3: rentals** (post-food)
+3. **Marketplace World - rentals vertical** (post-food)
    - Reuse commerce/food patterns
    - Rental-specific adaptations
 
-4. **Worlds 4-6: services, real_estate, vehicle** (future)
+4. **Other Worlds: messaging, social** (future)
    - Currently disabled
    - Enable when ready
 

@@ -42,33 +42,23 @@ See `.github/workflows/product-spine.yml` for CI configuration.
 Timestamp: 2026-01-11 HH:MM:SS
 
 Step 1: Reading enabled worlds from config/worlds.php
-  [PASS] Enabled Worlds: Found 3 enabled world(s): commerce, food, rentals
+  [PASS] Enabled Worlds: Found marketplace world
 
 Step 2: Route Discovery
   [OK] Routes snapshot loaded
 
 Step 3: Validating routes and middleware for enabled worlds
-  Checking world: commerce
-  [PASS] commerce - Routes Exist: GET /api/v1/commerce/listings and GET /api/v1/commerce/listings/{id} found
-  [PASS] commerce - Middleware: Required middleware present: auth.any, resolve.tenant, tenant.user
-  Checking world: food
-  [PASS] food - Routes Exist: GET /api/v1/food/listings and GET /api/v1/food/listings/{id} found
-  [PASS] food - Middleware: Required middleware present: auth.any, resolve.tenant, tenant.user
-  Checking world: rentals
-  [PASS] rentals - Routes Exist: GET /api/v1/rentals/listings and GET /api/v1/rentals/listings/{id} found
-  [PASS] rentals - Middleware: Required middleware present: auth.any, resolve.tenant, tenant.user
+  Checking world: marketplace
+  [PASS] marketplace - Routes Exist: GET /api/v1/marketplace/listings and GET /api/v1/marketplace/listings/{id} found
+  [PASS] marketplace - Middleware: Required middleware present: auth.any, resolve.tenant, tenant.user
 
 === PRODUCT SPINE CHECK RESULTS ===
 
 Check                                    Status Notes
 --------------------------------------------------------------------------------
-Enabled Worlds                           [PASS] Found 3 enabled world(s): commerce, food, rentals
-commerce - Routes Exist                   [PASS] GET /api/v1/commerce/listings and GET /api/v1/commerce/listings/{id} found
-commerce - Middleware                     [PASS] Required middleware present: auth.any, resolve.tenant, tenant.user
-food - Routes Exist                       [PASS] GET /api/v1/food/listings and GET /api/v1/food/listings/{id} found
-food - Middleware                         [PASS] Required middleware present: auth.any, resolve.tenant, tenant.user
-rentals - Routes Exist                    [PASS] GET /api/v1/rentals/listings and GET /api/v1/rentals/listings/{id} found
-rentals - Middleware                      [PASS] Required middleware present: auth.any, resolve.tenant, tenant.user
+Enabled Worlds                           [PASS] Found marketplace world
+marketplace - Routes Exist                [PASS] GET /api/v1/marketplace/listings and GET /api/v1/marketplace/listings/{id} found
+marketplace - Middleware                  [PASS] Required middleware present: auth.any, resolve.tenant, tenant.user
 
 OVERALL STATUS: PASS
 
@@ -89,9 +79,9 @@ Step 2: Route Discovery
   [WARN] Error generating snapshot: ...
 
 Step 3: Validating routes and middleware for enabled worlds
-  Checking world: commerce
-  [PASS] commerce - Routes Exist: Routes found in filesystem (middleware verified at runtime)
-  [WARN] commerce - Middleware: Middleware verification requires routes snapshot or runtime check
+  Checking world: marketplace
+  [PASS] marketplace - Routes Exist: Routes found in filesystem (middleware verified at runtime)
+  [WARN] marketplace - Middleware: Middleware verification requires routes snapshot or runtime check
 
 OVERALL STATUS: WARN
 
@@ -109,9 +99,9 @@ Note: Some checks were skipped or inconclusive. Generate routes snapshot for ful
 ...
 
 Step 3: Validating routes and middleware for enabled worlds
-  Checking world: food
-  [FAIL] food - Routes Exist: GET /api/v1/food/listings route not found
-  [FAIL] food - Middleware: Routes not found, cannot verify middleware
+  Checking world: marketplace
+  [FAIL] marketplace - Routes Exist: GET /api/v1/marketplace/listings route not found
+  [FAIL] marketplace - Middleware: Routes not found, cannot verify middleware
 
 OVERALL STATUS: FAIL
 
@@ -130,7 +120,7 @@ Remediation:
 
 ## Product Spine E2E Smoke Test
 
-The `ops/product_spine_smoke.ps1` script provides a comprehensive end-to-end smoke test for the Product API spine across all enabled worlds (commerce, food, rentals).
+The `ops/product_spine_smoke.ps1` script provides a comprehensive end-to-end smoke test for the Product API spine across marketplace world.
 
 ### Purpose
 
@@ -179,43 +169,27 @@ Timestamp: 2026-01-11 12:00:00
 Base URL: http://localhost:8080
 
 Step 1: Read-path surface (unauthorized access)
-  [PASS] GET /api/v1/commerce/listings (unauthorized)
-  [PASS] GET /api/v1/food/listings (unauthorized)
-  [PASS] GET /api/v1/rentals/listings (unauthorized)
+  [PASS] GET /api/v1/marketplace/listings (unauthorized)
 
 Step 2: Write governance (unauthorized access)
-  [PASS] POST /api/v1/commerce/listings (unauthorized)
-  [PASS] PATCH /api/v1/commerce/listings/1 (unauthorized)
-  [PASS] DELETE /api/v1/commerce/listings/1 (unauthorized)
-  [PASS] POST /api/v1/food/listings (unauthorized)
-  [PASS] PATCH /api/v1/food/listings/1 (unauthorized)
-  [PASS] DELETE /api/v1/food/listings/1 (unauthorized)
-  [PASS] POST /api/v1/rentals/listings (unauthorized)
-  [PASS] PATCH /api/v1/rentals/listings/1 (unauthorized)
-  [PASS] DELETE /api/v1/rentals/listings/1 (unauthorized)
+  [PASS] POST /api/v1/marketplace/listings (unauthorized)
+  [PASS] PATCH /api/v1/marketplace/listings/1 (unauthorized)
+  [PASS] DELETE /api/v1/marketplace/listings/1 (unauthorized)
 
 Step 3: Authenticated checks (read-path + write-stub)
   Obtaining token via login...
-  [PASS] GET /api/v1/commerce/listings (authenticated)
-  [PASS] GET /api/v1/food/listings (authenticated)
-  [PASS] GET /api/v1/rentals/listings (authenticated)
-  [PASS] POST /api/v1/commerce/listings (authenticated, stub)
-  [PASS] PATCH /api/v1/commerce/listings/1 (authenticated, stub)
-  [PASS] DELETE /api/v1/commerce/listings/1 (authenticated, stub)
-  [PASS] POST /api/v1/food/listings (authenticated, stub)
-  [PASS] PATCH /api/v1/food/listings/1 (authenticated, stub)
-  [PASS] DELETE /api/v1/food/listings/1 (authenticated, stub)
-  [PASS] POST /api/v1/rentals/listings (authenticated, stub)
-  [PASS] PATCH /api/v1/rentals/listings/1 (authenticated, stub)
-  [PASS] DELETE /api/v1/rentals/listings/1 (authenticated, stub)
+  [PASS] GET /api/v1/marketplace/listings (authenticated)
+  [PASS] POST /api/v1/marketplace/listings (authenticated, stub)
+  [PASS] PATCH /api/v1/marketplace/listings/1 (authenticated, stub)
+  [PASS] DELETE /api/v1/marketplace/listings/1 (authenticated, stub)
 
 === PRODUCT SPINE SMOKE TEST RESULTS ===
 
 Check                                    Status Notes
 -----                                    ------ -----
-GET /api/v1/commerce/listings (unauth)   PASS   Status 401, JSON envelope correct
+GET /api/v1/marketplace/listings (unauth)   PASS   Status 401, JSON envelope correct
 ...
-POST /api/v1/commerce/listings (auth)    PASS   Status 501, JSON envelope correct (ok:false, error_code: NOT_IMPLEMENTED, request_id present)
+POST /api/v1/marketplace/listings (auth)    PASS   Status 501, JSON envelope correct (ok:false, error_code: NOT_IMPLEMENTED, request_id present)
 ...
 
 OVERALL STATUS: PASS

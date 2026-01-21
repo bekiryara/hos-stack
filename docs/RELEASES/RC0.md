@@ -142,7 +142,7 @@ RC0 is complete when:
 ## Post-RC0: Product Development
 
 Once RC0 PASS is achieved:
-- Start MVP development (World 1: commerce vertical slice)
+- Start MVP development (marketplace world vertical slice)
 - Follow product roadmap (MVP-0 → MVP-1 → MVP-2)
 - Maintain ops gates (verify, conformance, security, etc.)
 - Continue monitoring (UI errors, storage posture, request traces)

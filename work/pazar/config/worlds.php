@@ -12,15 +12,12 @@
 
 return [
     'enabled' => [
-        'commerce',
-        'food',
-        'rentals',
+        'marketplace',
     ],
     
     'disabled' => [
-        'services',
-        'real_estate',
-        'vehicle',
+        'messaging',
+        'social',
     ],
 ];
 

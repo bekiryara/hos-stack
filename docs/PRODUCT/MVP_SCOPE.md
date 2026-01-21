@@ -1,6 +1,6 @@
-# MVP Scope: World 1 (Commerce) Vertical Slice
+# MVP Scope: Marketplace (Commerce Vertical) Slice
 
-**World:** commerce (World 1)
+**World:** marketplace (commerce vertical)
 
 **Phase:** MVP-1 + MVP-2 (Vertical Slice)
 
@@ -9,36 +9,37 @@
 ## Kullanıcı Senaryosu
 
 **User Journey:**
-1. Tenant içinde commerce home sayfasına giriş
-2. Commerce listing listesi görüntüleme (index/list view)
-3. Commerce listing detay sayfası görüntüleme (detail/show view)
-4. Commerce listing oluşturma (create form)
-5. Commerce listing yayınlama (publish action)
+1. Tenant içinde marketplace (commerce vertical) home sayfasına giriş
+2. Marketplace listing listesi görüntüleme (commerce vertical, index/list view)
+3. Marketplace listing detay sayfası görüntüleme (commerce vertical, detail/show view)
+4. Marketplace listing oluşturma (commerce vertical, create form)
+5. Marketplace listing yayınlama (commerce vertical, publish action)
 
 **Tenant Context:**
 - User is authenticated via H-OS OIDC (existing auth)
 - User belongs to a tenant (tenant context from session/token)
 - User can only see/create listings for their tenant
-- World context: `world=commerce`
+- World context: `world=marketplace`, `vertical=commerce`
 
 ## Scope (Included)
 
 ### MVP-1: Read Path
 
-1. **Commerce Home Page**
+1. **Marketplace Home Page (Commerce Vertical)**
    - World navigation (world selector)
+   - Vertical selector (commerce/food/rentals)
    - Tenant context display (current tenant info)
    - Links to listing index
 
 2. **Listing Index/List View**
-   - Route: `/commerce/listings` or `/world/commerce/listings`
-   - Display: List of listings for current tenant (commerce world)
+   - Route: `/marketplace/listings?vertical=commerce` or `/world/marketplace/listings?vertical=commerce`
+   - Display: List of listings for current tenant (marketplace world, commerce vertical)
    - Fields: Title, description, price, images, status (published/draft)
    - Pagination: Basic (limit 20-50 items per page)
    - Sorting: By created_at (descending, newest first)
 
 3. **Listing Detail/Show View**
-   - Route: `/commerce/listings/{id}` or `/world/commerce/listings/{id}`
+   - Route: `/marketplace/listings/{id}?vertical=commerce` or `/world/marketplace/listings/{id}?vertical=commerce`
    - Display: Single listing detail
    - Fields: All listing fields (title, description, price, images, status, created_at, updated_at)
    - Tenant-scoped: Only tenant's listings accessible (403 if other tenant)
@@ -46,15 +47,15 @@
 ### MVP-2: Write Path + Audit/Event + Ops Hooks
 
 4. **Listing Create Form**
-   - Route: `/commerce/listings/create` (GET: form, POST: create action)
+   - Route: `/marketplace/listings/create?vertical=commerce` (GET: form, POST: create action)
    - Form fields: Title, description, price, images (basic upload), category (basic)
    - Validation: Required fields, price format, image size/type
    - Tenant-scoped: Created listing belongs to current tenant
-   - World-scoped: Listing world=commerce
+   - World-scoped: Listing world=marketplace, vertical=commerce
 
 5. **Listing Publish/Unpublish**
-   - Route: `/commerce/listings/{id}/publish` (POST)
-   - Route: `/commerce/listings/{id}/unpublish` (POST)
+   - Route: `/marketplace/listings/{id}/publish?vertical=commerce` (POST)
+   - Route: `/marketplace/listings/{id}/unpublish?vertical=commerce` (POST)
    - Status: published/draft toggle
    - Tenant-scoped: Only tenant can publish/unpublish their listings
    - Authorization: tenant.user or tenant.admin middleware
@@ -95,10 +96,10 @@
 - No listing versioning (simple update/replace)
 - No listing templates
 
-### Other Worlds
-- No food world features (focus on commerce only)
-- No rentals world features (focus on commerce only)
-- World navigation present but only commerce functional
+### Other Verticals
+- No food vertical features (focus on commerce vertical only)
+- No rentals vertical features (focus on commerce vertical only)
+- Vertical navigation present but only commerce functional
 
 ### Advanced UI/UX
 - No drag-and-drop image upload (basic file input)
@@ -202,7 +203,7 @@
 - [ ] Listing index page loads (no 500 errors)
 - [ ] Listing detail page loads (no 500 errors)
 - [ ] Tenant isolation verified (403 for other tenant's listings)
-- [ ] World context maintained (world=commerce)
+- [ ] World context maintained (world=marketplace, vertical=commerce)
 - [ ] All ops gates PASS (verify, conformance, world_spine, routes_snapshot, schema_snapshot, auth_security, tenant_boundary)
 
 ### MVP-2 Success (Write Path + Audit/Event + Ops Hooks)
@@ -219,12 +220,12 @@
 
 ## Post-MVP: Next Steps
 
-After MVP-2 for commerce:
-1. Expand to food world (reuse commerce patterns)
-2. Expand to rentals world (reuse commerce/food patterns)
+After MVP-2 for marketplace (commerce vertical):
+1. Expand to food vertical (reuse commerce patterns)
+2. Expand to rentals vertical (reuse commerce/food patterns)
 3. Add payment processing (future phase)
 4. Add advanced search (future phase)
-5. Enable other worlds (services, real_estate, vehicle) when ready
+5. Enable other worlds (messaging, social) when ready
 
 ## Related Documents
 
