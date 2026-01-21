@@ -4,6 +4,7 @@
 
 param(
     [switch]$AutoCommit = $false,
+    [switch]$AutoPush = $false,
     [switch]$DryRun = $false
 )
 
@@ -218,7 +219,19 @@ if ($AutoCommit) {
     Write-Host "`nOtomatik commit yapılıyor..." -ForegroundColor Yellow
     git add $codeIndexPath
     git commit -m "Auto-update CODE_INDEX.md: Add $($newFiles.Count) new files"
-    Write-Host "Commit yapıldı! Push için: git push" -ForegroundColor Green
+    Write-Host "Commit yapıldı!" -ForegroundColor Green
+    
+    if ($AutoPush) {
+        Write-Host "`nOtomatik push yapılıyor..." -ForegroundColor Yellow
+        git push origin main
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Push başarılı! GitHub'a yayınlandı." -ForegroundColor Green
+        } else {
+            Write-Host "Push başarısız! Manuel kontrol gerekli." -ForegroundColor Red
+        }
+    } else {
+        Write-Host "Push için: .\ops\update_code_index.ps1 -AutoCommit -AutoPush" -ForegroundColor Cyan
+    }
 }
 
 Write-Host "`n=== TAMAMLANDI ===" -ForegroundColor Green

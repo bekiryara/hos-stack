@@ -188,6 +188,7 @@
 
 ### GitHub & Sync
 
+- **Update Code Index:** [`ops/update_code_index.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/update_code_index.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/update_code_index.ps1) - Auto-update CODE_INDEX.md with commit and push (`-AutoCommit -AutoPush`)
 - **GitHub Sync Safe:** [`ops/github_sync_safe.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/github_sync_safe.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/github_sync_safe.ps1) - PR-based sync enforcement
 - **CI Guard:** [`ops/ci_guard.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/ci_guard.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/ci_guard.ps1) - CI drift guard
 - **Repo Integrity:** [`ops/repo_integrity.ps1`](https://github.com/bekiryara/hos-stack/blob/main/ops/repo_integrity.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/repo_integrity.ps1) - Repository integrity check
@@ -340,6 +341,7 @@
 **Ops Scripts:**
 - [Ops Status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/ops_status.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/ops_status.ps1)
 - [Verify](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/verify.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/verify.ps1)
+- [Update Code Index](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/update_code_index.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/update_code_index.ps1) - Auto-update CODE_INDEX.md with commit and push
 - [GitHub Sync Safe](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/github_sync_safe.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/github_sync_safe.ps1)
 - [Baseline Status](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/baseline_status.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/baseline_status.ps1)
 - [Conformance](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/conformance.ps1) | [API](https://api.github.com/repos/bekiryara/hos-stack/contents/ops/conformance.ps1)
