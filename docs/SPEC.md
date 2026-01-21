@@ -188,12 +188,59 @@ HTTP 503 Service Unavailable:
 
 ---
 
-## §5. Error Codes (§17.5)
+## §5. Persona & Scope Lock (WP-8)
+
+### §5.1. Persona Definitions
+
+- **GUEST**: Unauthenticated user (no Authorization header)
+- **PERSONAL**: Authenticated user performing personal transactions (Authorization: Bearer token required)
+- **STORE**: Authenticated tenant performing store/provider operations (X-Active-Tenant-Id header required)
+
+### §5.2. Required Header Contract
+
+**PERSONAL write/read operations:**
+- `Authorization: Bearer <token>` header **REQUIRED**
+- Missing header → 401 + `error_code: AUTH_REQUIRED`
+
+**STORE operations:**
+- `X-Active-Tenant-Id: <tenant_id>` header **REQUIRED**
+- Missing header → 400/403 + `error_code: missing_header` or `FORBIDDEN_SCOPE`
+- In GENESIS: Authorization optional (only tenant header enforced)
+- Future: Authorization may be required for full membership validation
+
+### §5.3. Endpoint-Persona Matrix
+
+| Endpoint | Method | Persona | Required Headers |
+|----------|--------|---------|------------------|
+| `/api/v1/categories` | GET | GUEST+ | None |
+| `/api/v1/categories/{id}/filter-schema` | GET | GUEST+ | None |
+| `/api/v1/listings` | GET | GUEST+ | None |
+| `/api/v1/listings/{id}` | GET | GUEST+ | None |
+| `/api/v1/listings` | POST | STORE | `X-Active-Tenant-Id` |
+| `/api/v1/listings/{id}/publish` | POST | STORE | `X-Active-Tenant-Id` |
+| `/api/v1/reservations` | POST | PERSONAL | `Authorization`, `Idempotency-Key` |
+| `/api/v1/reservations/{id}` | GET | PERSONAL/STORE | `Authorization` (if read owner/provider) |
+| `/api/v1/reservations/{id}/accept` | POST | STORE | `X-Active-Tenant-Id` |
+| `/api/v1/rentals` | POST | PERSONAL | `Authorization`, `Idempotency-Key` |
+| `/api/v1/rentals/{id}` | GET | PERSONAL/STORE | `Authorization` (if read owner/provider) |
+| `/api/v1/rentals/{id}/accept` | POST | STORE | `X-Active-Tenant-Id` |
+| `/api/v1/orders` | POST | PERSONAL | `Authorization`, `Idempotency-Key` |
+| `/api/v1/orders/{id}` | GET | PERSONAL/STORE | `Authorization` (if read owner/provider) |
+
+**Messaging endpoints:**
+- Thread/message read/write: PERSONAL/STORE (Authorization required) + participant validation
+- WP-16 (PLANNED): POST /api/v1/threads (idempotent), POST /api/v1/messages (direct send)
+
+---
+
+## §5A. Error Codes (§17.5)
 
 - **WORLD_DISABLED**: World is disabled in registry/config
 - **VALIDATION_ERROR**: Validation failed (e.g., party_size > capacity_max) (§6.3)
 - **CONFLICT**: Resource conflict (e.g., slot overlap) (§6.7)
+- **AUTH_REQUIRED**: Missing Authorization header for PERSONAL operations (§5.2)
 - **missing_header**: Required header missing (X-Active-Tenant-Id, Idempotency-Key)
+- **FORBIDDEN_SCOPE**: Invalid tenant scope or membership denied (§5.2)
 - **invalid_tenant_id**: Tenant ID format invalid
 - **unauthorized**: Tenant ownership mismatch
 - **listing_not_found**: Listing does not exist
@@ -386,6 +433,65 @@ See `docs/WP_CLOSEOUTS.md` for detailed closeout summaries of each WP.
 
 ---
 
+## §25. Work Packages (WP)
+
+### §25.2. WP List
+
+- **WP-0:** Governance Lock
+- **WP-1:** GENESIS World Status
+- **WP-2:** Catalog Spine
+- **WP-3:** Supply Spine (Listings)
+- **WP-4:** Reservation Spine
+- **WP-5:** Messaging Integration
+- **WP-6:** Orders Spine
+- **WP-7:** Rentals Spine
+- **WP-8:** Persona & Scope Lock + Core Persona Switch
+- **WP-9:** Marketplace Web (Read-First) Thin Slice
+- **WP-16:** Messaging Write Thin Slice (PLANNED)
+
+### §25.3. WP-9: Marketplace Web (Read-First) Thin Slice
+
+**Purpose:** Read-first web interface for Marketplace: Category tree → Listing search → Listing detail.
+
+**Rules:**
+- No backend code changes (routes, controllers, DB, migrations untouched)
+- No business logic in UI (only displays and calls API)
+- No hardcoded categories/filters (all from API `/categories` and `/filter-schema`)
+- UI renders dynamically from API responses
+
+**Deliverables:**
+- Vue 3 + Vite frontend project (`work/marketplace-web/`)
+- 3 pages: CategoriesPage, ListingsSearchPage, ListingDetailPage
+- 3 components: CategoryTree, FiltersPanel, ListingsGrid
+- API client consuming existing Marketplace endpoints
+
+**Proof:** `docs/PROOFS/wp9_marketplace_web_read_spine_pass.md`
+
+**Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-9
+
+### §25.4. WP-16: Messaging Write Thin Slice (PLANNED)
+
+**Purpose:** Add messaging write endpoints (POST /api/v1/threads, POST /api/v1/messages) with authorization, idempotency, and thread ownership enforcement.
+
+**Status:** PLANNING (NO IMPLEMENTATION YET)
+
+**Rules:**
+- Authorization required (JWT token)
+- Thread ownership enforced (participant validation)
+- Idempotency-Key required
+- Minimal thin slice (2 endpoints)
+- Frontend stub only (disabled CTA)
+
+**Planned Endpoints:**
+- POST /api/v1/threads (idempotent thread creation)
+- POST /api/v1/messages (direct message send)
+
+**Plan:** See `docs/WP16_PLAN.md`
+
+**Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-16 (PLANNED)
+
+---
+
 **SPEC v1.4 - Canonical Specification**  
-**Last Updated:** 2026-01-16  
+**Last Updated:** 2026-01-18  
 **Status:** GENESIS
