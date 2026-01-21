@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'work/marketplace-web/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -28,6 +29,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Build Frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: work/marketplace-web/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: work/marketplace-web
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build frontend
+        working-directory: work/marketplace-web
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'http://localhost:8080' }}
+
+      # Build Documentation with Jekyll
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
@@ -37,11 +62,18 @@ jobs:
           source: ./docs
           destination: ./_site
 
+      # Copy frontend to marketplace subdirectory
+      - name: Copy frontend to marketplace
+        run: |
+          mkdir -p _site/marketplace
+          cp -r work/marketplace-web/dist/* _site/marketplace/
+
+      # Upload combined artifact
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-
