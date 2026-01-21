@@ -3,12 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use App\Worlds\WorldRegistry;
 
-// GENESIS World Status (SPEC §24.4, WP-1)
+// GENESIS World Status (SPEC ?24.4, WP-1)
 Route::get('/world/status', function () {
     $registry = new WorldRegistry();
     $worldKey = 'marketplace';
     
     // Check if marketplace world is enabled
+    // WorldRegistry uses 'marketplace' as world ID (not 'commerce')
     $isEnabled = $registry->isEnabled('marketplace');
     
     // Read version from VERSION file or env (minimal: use env or default)
@@ -21,7 +22,7 @@ Route::get('/world/status', function () {
         $commit = substr($commit, 0, 7); // short SHA
     }
     
-    // If world is disabled, return 503 + WORLD_DISABLED (SPEC §17.5)
+    // If world is disabled, return 503 + WORLD_DISABLED (SPEC ?17.5)
     if (!$isEnabled) {
         return response()->json([
             'error_code' => 'WORLD_DISABLED',
@@ -30,7 +31,7 @@ Route::get('/world/status', function () {
         ], 503);
     }
     
-    // Build response (SPEC §24.4 format)
+    // Build response (SPEC ?24.4 format)
     $response = [
         'world_key' => $worldKey,
         'availability' => 'ONLINE',
@@ -45,4 +46,6 @@ Route::get('/world/status', function () {
     
     return response()->json($response);
 });
+
+
 
