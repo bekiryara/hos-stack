@@ -57,7 +57,6 @@ See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the complete frozen baseline de
 - **Onboarding**: [`docs/ONBOARDING.md`](docs/ONBOARDING.md) - Quick start for newcomers
 - **Current State**: [`docs/CURRENT.md`](docs/CURRENT.md) - Single source of truth (stack, ports, services)
 - **Decisions**: [`docs/DECISIONS.md`](docs/DECISIONS.md) - Baseline definition + frozen items
-- **What We Did**: [`docs/NE_YAPTIK.md`](docs/NE_YAPTIK.md) - Summary of repository hardening
 
 ### Daily Operations
 - **Daily Ops**: [`docs/runbooks/daily_ops.md`](docs/runbooks/daily_ops.md) - Daily snapshot runbook
@@ -65,7 +64,6 @@ See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the complete frozen baseline de
 
 ### Contributing
 - **Contributing**: [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) - Commit rules, PR conventions, CHANGELOG discipline
-- **Commit Rules**: [`docs/COMMIT_RULES.md`](docs/COMMIT_RULES.md) - Commit message format
 
 ## Repository Structure
 

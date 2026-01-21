@@ -144,3 +144,39 @@ Commerce/food/rentals artık dünya değil, marketplace'in vertical'ları.
 - ✅ Sadece dokümantasyon ve config güncellenecek
 - ⏸️ Kod dosyaları opsiyonel (WorldRegistry.php defaultKey() sadece)
 
+---
+
+## GEREKSİZ MD DOSYALARI TEMİZLİK
+
+**Sorun:** 161 MD dosyası var, çoğu gereksiz/duplicate/geçici.
+
+### SİLİNECEKLER (Geçici/Gereksiz) - ✅ TAMAMLANDI
+
+**Kök Dizin:**
+1. ✅ **GITHUB_PAGES_MERGE_ADIMLARI.md** - SİLİNDİ (Geçici merge adımları)
+2. ✅ **PR_DESCRIPTION_GITHUB_PAGES.md** - SİLİNDİ (Geçici PR açıklaması)
+3. ✅ **OPS_ENVANTERI.md** - SİLİNDİ (Duplicate, CODE_INDEX.md var)
+4. ✅ **OPS_SCRIPT_CORE_VS_KARANTINA.md** - SİLİNDİ (Geçici analiz)
+5. ✅ **STACK_DOSYA_ENVANTERI.md** - SİLİNDİ (Duplicate, CODE_INDEX.md var)
+
+**docs/ Klasörü:**
+6. ✅ **docs/NE_YAPTIK.md** - SİLİNDİ (Geçici not)
+7. ✅ **docs/RISK_ANALYSIS_SILINEN_DOSYALAR.md** - SİLİNDİ (Geçici analiz)
+8. ✅ **docs/REPO_INVENTORY.md** - SİLİNDİ (Eski envanter, CODE_INDEX.md var)
+9. ✅ **docs/REPO_LAYOUT_AZ.md** - SİLİNDİ (Duplicate, REPO_LAYOUT.md var)
+10. ✅ **docs/APPENDIX_ASIS_PAZAR.md** - SİLİNDİ (Eski analiz, eski sistem referansları)
+11. ✅ **docs/COMMIT_RULES.md** - SİLİNDİ (Duplicate, CONTRIBUTING.md'de var)
+
+**Korunanlar:**
+- ⏸️ **docs/WP_4_4_DIFF_PLAN.md** - KORUNACAK (WP dosyalarına dokunmuyoruz)
+- ⏸️ **docs/WP_CLOSEOUTS.md** - KORUNACAK (WP dosyalarına dokunmuyoruz)
+- ⏸️ **_archive/** - KORUNACAK (Zaten archive edilmiş, tarihi belgeler)
+
+### KORUNACAKLAR (Önemli)
+
+- SPEC.md, CURRENT.md, CODE_INDEX.md, ARCHITECTURE.md, DECISIONS.md
+- PRODUCT/*.md (PRODUCT_ROADMAP.md, PRODUCT_API_SPINE.md, MVP_SCOPE.md)
+- RULES.md, RC0.md
+- Runbooks/*.md (operasyonel)
+- PROOFS/*.md (tarihi belgeler, ama çok fazla var)
+

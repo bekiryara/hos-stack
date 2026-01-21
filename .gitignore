@@ -32,3 +32,7 @@ ops/diffs/
 
 # Temp files
 _temp_*.txt
+
+# Node modules (should never be tracked)
+node_modules/
+work/marketplace-web/node_modules/
