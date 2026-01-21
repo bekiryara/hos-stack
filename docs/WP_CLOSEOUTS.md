@@ -1,4 +1,4 @@
-# WP Closeouts - Workspace Package Summaries
+﻿# WP Closeouts - Workspace Package Summaries
 
 **Last Updated:** 2026-01-20  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
@@ -155,10 +155,10 @@ npm run build
 
 ---
 
-## WP-33: Ops Gate Warmup + Retry (Eliminate Cold-Start 404 Flakiness)
+## WP-34: Ops Gate Warmup + Retry (Eliminate Cold-Start 404 Flakiness)
 
 **Status:** ✅ COMPLETE  
-**SPEC Reference:** WP-33
+**SPEC Reference:** WP-34
 
 ### Purpose
 Make ops gates deterministic on cold start: Product E2E + Tenant Boundary should not fail due to transient 404/500 while Pazar is still warming up. Minimal diff. No domain refactor. No endpoint redesign. Only ops reliability.
