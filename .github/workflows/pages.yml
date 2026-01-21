@@ -65,8 +65,7 @@ jobs:
       # Copy frontend to marketplace subdirectory
       - name: Copy frontend to marketplace
         run: |
-          mkdir -p _site/marketplace || true
-          chmod -R u+w _site
+          mkdir -p _site/marketplace
           cp -r work/marketplace-web/dist/* _site/marketplace/
 
       # Upload combined artifact
