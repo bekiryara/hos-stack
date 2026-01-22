@@ -2138,3 +2138,40 @@ Invoke-WebRequest http://localhost:3000/v1/worlds  # marketplace must be ONLINE
 - **ASCII-only:** All outputs ASCII format
 
 ---
+
+
+## WP-40: Frontend Smoke v1 (No New Dependencies, Deterministic)
+
+**Purpose:** Establish frontend smoke test discipline for V1 prototype: omurga (worlds) must PASS before frontend test can PASS, HOS Web must be accessible and render World Directory, marketplace-web build must PASS.
+
+**Deliverables:**
+- ops/frontend_smoke.ps1 (NEW): Frontend smoke test script with worlds check dependency
+- docs/PROOFS/wp40_frontend_smoke_pass.md - Proof document
+
+**Commands:**
+`powershell
+# Run frontend smoke test
+.\ops\frontend_smoke.ps1
+
+# Individual checks
+.\ops\world_status_check.ps1  # Must PASS first
+Invoke-WebRequest http://localhost:3002  # HOS Web check
+cd work\marketplace-web; npm run build  # Build check
+`
+
+**Proof:** docs/PROOFS/wp40_frontend_smoke_pass.md
+
+**Acceptance:**
+-  Frontend smoke test script created (ops/frontend_smoke.ps1)
+-  Worlds check dependency enforced (fail-fast if worlds check fails)
+-  HOS Web accessibility verified (status 200, world directory marker found)
+-  marketplace-web build verified (npm run build PASS)
+-  All steps PASS, exit code 0
+
+**Notes:**
+- **No new dependencies:** Uses existing PowerShell, Invoke-WebRequest, npm
+- **Minimal diff:** Only script creation, no code changes
+- **Deterministic:** Fail-fast on worlds check failure (omurga broken)
+- **ASCII-only:** All outputs ASCII format
+
+---
