@@ -530,6 +530,8 @@ if ($hasFailures) {
     exit 1
 } else {
     Write-Host "=== PROTOTYPE FLOW SMOKE: PASS ===" -ForegroundColor Green
+    # WP-51: Print RESULT line for demo orchestration
+    Write-Host "RESULT: tenant_id=$tenantId listing_id=$listingId thread_id=$threadId" -ForegroundColor Cyan
     exit 0
 }
 

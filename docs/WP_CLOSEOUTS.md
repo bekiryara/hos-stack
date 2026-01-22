@@ -12,6 +12,43 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-51: User-Like Prototype Demo Entrypoint
+
+**Purpose:** Turn the now-GREEN E2E backend flow (WP-48) into a user-like, repeatable prototype demo you can run + click through. Single command prepares demo data, prints clickable URLs, and provides a deterministic checklist.
+
+**Deliverables:**
+- ops/prototype_user_demo.ps1 (NEW): Single entrypoint for user-like demo (optional Docker stack start, waits for services, runs ensure_demo_membership + prototype_flow_smoke + frontend_smoke, extracts artifacts, prints click targets + checklist, optional browser open)
+- ops/prototype_flow_smoke.ps1 (MODIFIED): Added RESULT line on PASS with tenant_id, listing_id, thread_id for demo orchestration
+- docs/PROOFS/wp51_user_demo_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Run user demo (prepares data + prints URLs + checklist)
+.\ops\prototype_user_demo.ps1
+
+# Optional: Start Docker stack first
+.\ops\prototype_user_demo.ps1 -StartStack
+
+# Optional: Open browser automatically
+.\ops\prototype_user_demo.ps1 -OpenBrowser
+
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp51_user_demo_pass.md
+
+**Acceptance:**
+- prototype_user_demo: PASS (all scripts PASS, click targets printed, checklist provided)
+- prototype_flow_smoke: PASS (RESULT line printed)
+- frontend_smoke: PASS
+- All gates: PASS
+
+---
+
 ## WP-49: Demo Membership Bootstrap (Make prototype_flow_smoke GREEN)
 
 **Purpose:** Make Prototype v1 "user-like" E2E flow deterministic by ensuring the test user always has a valid tenant membership. prototype_flow_smoke can now run without manual setup.
