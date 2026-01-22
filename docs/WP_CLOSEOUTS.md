@@ -2138,3 +2138,40 @@ Invoke-WebRequest http://localhost:3000/v1/worlds  # marketplace must be ONLINE
 - **ASCII-only:** All outputs ASCII format
 
 ---
+
+## WP-41: Gates Restore v1 (Secret Scan + Conformance Parser Fix)
+
+**Purpose:** Restore WP-33-required gates (secret_scan.ps1), fix conformance false FAIL by making worlds_config.ps1 parse multiline PHP arrays, and track canonical files (MERGE_RECOVERY_PLAN.md, test_auth.ps1).
+
+**Deliverables:**
+- `ops/secret_scan.ps1` (NEW): Scans tracked files for common secret patterns (private keys, GitHub tokens, AWS keys, Slack tokens, Google API keys, Stripe keys, Bearer tokens, DB connection strings)
+- `ops/_lib/worlds_config.ps1` (FIX): Updated regex to handle multiline PHP arrays using `(?s)` Singleline option
+- `ops/conformance.ps1` (FIX): Updated registry parser to use `(?s)` for multiline matching and `"`r?`n"` for line splitting
+- `docs/MERGE_RECOVERY_PLAN.md` (TRACKED): Added to git tracking
+- `ops/_lib/test_auth.ps1` (TRACKED): Added to git tracking
+- `docs/PROOFS/wp41_gates_restore_pass.md` - Proof document
+
+**Commands:**
+```powershell
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:** `docs/PROOFS/wp41_gates_restore_pass.md`
+
+**Acceptance:**
+- ✅ Secret scan: 0 hits (PASS)
+- ✅ Conformance: All checks PASS (world registry drift fixed)
+- ✅ Public ready: PASS after commit (only "git not clean" remains)
+- ✅ Multiline PHP arrays parsed correctly
+- ✅ Registry parser handles both Windows and Unix line endings
+
+**Notes:**
+- **Minimal diff:** Only gate scripts and parser fixes, no feature work
+- **No refactor:** Only fixes needed to pass gates
+- **ASCII-only:** All outputs ASCII format
+- **Exit codes:** 0 (PASS) or 1 (FAIL) for all scripts
+
+---
