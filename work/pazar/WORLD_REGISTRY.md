@@ -6,17 +6,17 @@ Canonical source of truth for world definitions in Pazar application.
 
 ### Enabled Worlds
 - marketplace
+- messaging
 
 ### Disabled Worlds
-- messaging
 - social
 
 **Enabled Worlds (detailed):**
 - `marketplace` - Marketplace (Pazar)
   - Verticals: commerce (E-commerce), food (Food delivery), rentals (Rental/Reservation)
+- `messaging` - Mesajlaşma
 
 **Disabled Worlds (planned but closed):**
-- `messaging` - Mesajlaşma
 - `social` - Sosyal
 
 ## World Definitions
@@ -29,11 +29,6 @@ Canonical source of truth for world definitions in Pazar application.
 **verticals:** commerce (E-commerce), food (Food delivery), rentals (Rental/Reservation)
 
 ### Disabled Worlds
-
-**world_id:** `messaging`  
-**label_tr:** Mesajlaşma  
-**status:** disabled  
-**note:** Planned but currently closed
 
 **world_id:** `social`  
 **label_tr:** Sosyal  

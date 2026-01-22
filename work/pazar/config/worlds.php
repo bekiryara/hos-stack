@@ -13,10 +13,10 @@
 return [
     'enabled' => [
         'marketplace',
+        'messaging',
     ],
     
     'disabled' => [
-        'messaging',
         'social',
     ],
 ];

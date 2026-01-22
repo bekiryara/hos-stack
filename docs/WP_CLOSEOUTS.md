@@ -5,6 +5,57 @@
 
 ---
 
+## WP-36: Governance Restore
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-36
+
+### Purpose
+Restore governance gates to GREEN: fix world registry drift (conformance Section A) and remove vendor/node_modules from git tracking (public_ready_check).
+
+### Deliverables
+- `work/pazar/WORLD_REGISTRY.md` (MOD): Aligned enabled/disabled worlds
+- `work/pazar/config/worlds.php` (MOD): Aligned enabled/disabled arrays
+- `.gitignore` (MOD): Added vendor/, **/node_modules/, **/dist/
+- `docs/PROOFS/wp36_governance_restore_pass.md` - Proof document
+
+### Changes
+1. **World Registry Alignment:**
+   - Moved `messaging` from Disabled Worlds to Enabled Worlds
+   - Kept `social` in Disabled Worlds
+   - Canonical mapping: Enabled: marketplace, messaging | Disabled: social
+
+2. **Vendor/Node_Modules Removal:**
+   - Removed `work/pazar/vendor/` from git tracking (~8208 files)
+   - Removed `work/marketplace-web/node_modules/` from git tracking (~767 files)
+   - Updated `.gitignore` to prevent future tracking
+
+### Commands
+```powershell
+# Remove from git tracking
+git rm -r --cached work/pazar/vendor
+git rm -r --cached work/marketplace-web/node_modules
+
+# Validate gates
+.\ops\conformance.ps1
+.\ops\public_ready_check.ps1
+.\ops\secret_scan.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp36_governance_restore_pass.md` - Proof document with all test outputs
+- Conformance Section A: PASS - "World registry matches config (enabled: 2, disabled: 1)"
+- Public Ready Check: PASS - "No vendor/ directories are tracked", "No node_modules/ directories are tracked"
+- Tracked Files: vendor/ 0 files (was 8208), node_modules/ 0 files (was 767)
+
+### Validation
+- Zero behavior change (governance fixes only)
+- Minimal diff (only world registry, config, .gitignore changed)
+- All gates PASS (conformance, public_ready_check, secret_scan)
+- Tracked files reduced by ~8975 files
+
+---
+
 ## WP-35: Docs DB Truth Lock
 
 **Status:** ✅ COMPLETE  

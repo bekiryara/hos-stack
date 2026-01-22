@@ -34,5 +34,9 @@ ops/diffs/
 _temp_*.txt
 
 # Node modules (should never be tracked)
-node_modules/
+**/node_modules/
 work/marketplace-web/node_modules/
+
+# Vendor (should never be tracked)
+work/pazar/vendor/
+**/dist/
