@@ -259,7 +259,8 @@
 - **CURRENT:** [`docs/CURRENT.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/CURRENT.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/CURRENT.md) - Current system state (single source of truth)
 - **ARCHITECTURE:** [`docs/ARCHITECTURE.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/ARCHITECTURE.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/ARCHITECTURE.md) - System architecture overview
 - **DECISIONS:** [`docs/DECISIONS.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/DECISIONS.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/DECISIONS.md) - Baseline decisions and frozen items
-- **WP_CLOSEOUTS:** [`docs/WP_CLOSEOUTS.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/WP_CLOSEOUTS.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/WP_CLOSEOUTS.md) - Work package closeouts and status
+- **WP_CLOSEOUTS:** [`docs/WP_CLOSEOUTS.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/WP_CLOSEOUTS.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/WP_CLOSEOUTS.md) - Work package closeouts and status (last 12 WP entries)
+- **WP_CLOSEOUTS_ARCHIVE:** [`docs/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md`](https://github.com/bekiryara/hos-stack/blob/main/docs/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/docs/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md) - Archived WP closeouts (older entries)
 
 ### Getting Started
 
