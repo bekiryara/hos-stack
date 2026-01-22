@@ -40,3 +40,4 @@ work/marketplace-web/node_modules/
 # Vendor (should never be tracked)
 work/pazar/vendor/
 **/dist/
+work/marketplace-web/dist/
