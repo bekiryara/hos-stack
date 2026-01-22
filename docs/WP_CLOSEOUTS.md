@@ -2139,6 +2139,49 @@ Invoke-WebRequest http://localhost:3000/v1/worlds  # marketplace must be ONLINE
 
 ---
 
+## WP-44: Prototype Spine v1 (Runtime Smoke + Prototype Launcher + Deterministic Output)
+
+**Purpose:** Add definitive runtime smoke script and Prototype Launcher UI section. Make frontend_smoke.ps1 output deterministic (no silent/blank runs).
+
+**Deliverables:**
+- ops/prototype_smoke.ps1 (NEW): Runtime smoke script (Docker services + HTTP endpoints + HOS Web UI marker)
+- work/hos/services/web/src/ui/App.tsx (MODIFIED): Added Prototype Launcher section with Quick Links and data-test marker
+- work/hos/services/web/index.html (MODIFIED): Added prototype-launcher-marker HTML comment
+- ops/frontend_smoke.ps1 (MODIFIED): Fixed deterministic output (FAIL on missing marker, no blank runs)
+- docs/PROOFS/wp44_prototype_spine_smoke_pass.md - Proof document
+
+**Commands:**
+```powershell
+# Run prototype smoke
+.\ops\prototype_smoke.ps1
+
+# Run frontend smoke
+.\ops\frontend_smoke.ps1
+
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:** docs/PROOFS/wp44_prototype_spine_smoke_pass.md
+
+**Acceptance:**
+- Prototype smoke script created (ops/prototype_smoke.ps1)
+- Prototype Launcher UI section added (App.tsx + index.html marker)
+- Frontend smoke deterministic output (no blank runs, FAIL on missing marker)
+- All endpoint checks PASS (HOS core, HOS worlds, Pazar, Messaging)
+- HOS Web UI marker detected (prototype-launcher-marker comment)
+- All scripts: ASCII-only output, clear PASS/FAIL, exit code 0/1
+
+**Notes:**
+- **Minimal diff:** Only script creation, UI marker addition, smoke output fix
+- **No refactor:** Only prototype discipline additions, no business logic changes
+- **ASCII-only:** All scripts output ASCII format
+- **Exit codes:** 0 (PASS) or 1 (FAIL) for all scripts
+
+---
+
 ## WP-43: Build Artefact Hygiene v1 (dist ignore + untrack, deterministic public_ready)
 
 **Purpose:** Ensure marketplace-web build (npm run build) does not pollute the repository. public_ready_check.ps1 must always PASS with clean working tree.

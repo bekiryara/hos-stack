@@ -70,6 +70,33 @@ export function App() {
           </div>
         )}
 
+        <h1>Prototype Launcher</h1>
+
+        <div data-test="prototype-launcher">
+          <div style={{ marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}>
+            <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>Quick Links</div>
+            <div style={{ fontSize: '0.875rem' }}>
+              <div style={{ marginBottom: '0.25rem' }}>
+                <a href="http://localhost:3000/v1/worlds" target="_blank" rel="noreferrer">http://localhost:3000/v1/worlds</a>
+              </div>
+              <div style={{ marginBottom: '0.25rem' }}>
+                <a href="http://localhost:3000/v1/world/status" target="_blank" rel="noreferrer">http://localhost:3000/v1/world/status</a>
+              </div>
+              <div style={{ marginBottom: '0.25rem' }}>
+                <a href="http://localhost:8080/api/world/status" target="_blank" rel="noreferrer">http://localhost:8080/api/world/status</a>
+              </div>
+              <div style={{ marginBottom: '0.25rem' }}>
+                <a href="http://localhost:8090/api/world/status" target="_blank" rel="noreferrer">http://localhost:8090/api/world/status</a>
+                {process.env.MESSAGING_PUBLIC_URL && (
+                  <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#666' }}>
+                    (env override: {process.env.MESSAGING_PUBLIC_URL})
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <h1>World Directory</h1>
 
         {worldsError ? (

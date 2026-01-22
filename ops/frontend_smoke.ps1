@@ -45,13 +45,16 @@ try {
         Write-Host "PASS: HOS Web returned status code 200" -ForegroundColor Green
     }
     
-    # Check for "World Directory" or "Worlds" marker (App.tsx renders "World Directory" or "Worlds" section)
+    # Check for prototype-launcher marker (HTML comment or App.tsx renders data-test="prototype-launcher")
+    # React SPA renders client-side, so check for HTML comment marker or rendered content
     $bodyContent = $hosWebResponse.Content
-    if ($bodyContent -match "World Directory|Worlds|world_key") {
-        Write-Host "PASS: HOS Web body contains world directory marker" -ForegroundColor Green
+    if ($bodyContent -match 'prototype-launcher-marker' -or $bodyContent -match 'data-test="prototype-launcher"' -or $bodyContent -match 'Prototype Launcher') {
+        Write-Host "PASS: HOS Web body contains prototype-launcher marker" -ForegroundColor Green
     } else {
-        Write-Host "WARN: HOS Web body does not contain world directory marker" -ForegroundColor Yellow
-        Write-Host "  (This may be OK if UI structure changed, but verify manually)" -ForegroundColor Gray
+        Write-Host "FAIL: HOS Web body missing prototype-launcher marker" -ForegroundColor Red
+        Write-Host "  Expected marker: prototype-launcher-marker comment or data-test=`"prototype-launcher`"" -ForegroundColor Yellow
+        Write-Host "  Hint: Verify index.html and App.tsx changes - marker is required for prototype discipline" -ForegroundColor Yellow
+        $hasFailures = $true
     }
 } catch {
     Write-Host "FAIL: HOS Web unreachable: $($_.Exception.Message)" -ForegroundColor Red
