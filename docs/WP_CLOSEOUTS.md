@@ -12,6 +12,40 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-47: Dev Auth Determinism (JWT Bootstrap Must Pass)
+
+**Purpose:** Make prototype_flow_smoke JWT bootstrap deterministically PASS with proper error handling. Fix response body reading, improve error messages, fix email format.
+
+**Deliverables:**
+- ops/_lib/test_auth.ps1 (MODIFIED): Improved response body reading (ErrorDetails.Message first, then GetResponseStream), enhanced error parsing (handles Zod error format), better 401 error messages, email format fixed (testuser@example.com)
+- ops/prototype_flow_smoke.ps1 (MODIFIED): Explicit API key handling, better error messages, token masking
+- docs/PROOFS/wp47_dev_auth_determinism_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Run prototype flow smoke
+.\ops\prototype_flow_smoke.ps1
+
+# Run prototype v1 runner
+.\ops\prototype_v1.ps1
+```
+
+**Proof:** docs/PROOFS/wp47_dev_auth_determinism_pass.md
+
+**Acceptance:**
+- JWT token acquisition: PASS (token obtained successfully)
+- Error handling: Improved (response body parsed, fieldErrors displayed)
+- API key handling: Improved (env variable support, clear 401 messages)
+- Token masking: PASS (last 6 chars only)
+
+**Notes:**
+- **Minimal diff:** Only error handling improvements, email format fix
+- **No refactor:** No business logic changes
+- **ASCII-only:** All outputs ASCII format
+- **PowerShell 5.1:** Compatible
+
+---
+
 ## WP-38: Pazar Ping Reliability v1
 
 **Purpose:** Fix marketplace ping false-OFFLINE issue by increasing timeout, consolidating ping logic into shared helper, and using Docker network-friendly defaults.

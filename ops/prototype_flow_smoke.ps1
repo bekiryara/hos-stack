@@ -26,18 +26,28 @@ function Write-Sanitized {
 Write-Host "[1] Acquiring JWT token..." -ForegroundColor Yellow
 try {
     . "$PSScriptRoot\_lib\test_auth.ps1"
-    $jwtToken = Get-DevTestJwtToken
+    # Get API key from env or use default
+    $apiKey = $env:HOS_API_KEY
+    if (-not $apiKey) {
+        $apiKey = "dev-api-key"
+    }
+    $jwtToken = Get-DevTestJwtToken -HosApiKey $apiKey
     if (-not $jwtToken) {
         throw "Failed to obtain JWT token"
     }
-    Write-Host "PASS: Token acquired" -ForegroundColor Green
+    # Mask token (show last 6 chars)
+    $tokenMask = if ($jwtToken.Length -gt 6) { "***" + $jwtToken.Substring($jwtToken.Length - 6) } else { "***" }
+    Write-Host "PASS: Token acquired ($tokenMask)" -ForegroundColor Green
 } catch {
     Write-Sanitized "FAIL: JWT token acquisition failed: $($_.Exception.Message)" "Red"
     Write-Host ""
-    Write-Host "Hints:" -ForegroundColor Yellow
-    Write-Host "  - HOS may be down (check http://localhost:3000/v1/world/status)" -ForegroundColor Gray
-    Write-Host "  - Dev auth helper may fail; verify ops/_lib/test_auth.ps1 config" -ForegroundColor Gray
-    Write-Host "  - If docker not running, start stack: docker compose up -d" -ForegroundColor Gray
+    Write-Host "Remediation:" -ForegroundColor Yellow
+    if ($_.Exception.Message -match "401" -or $_.Exception.Message -match "unauthorized" -or $_.Exception.Message -match "api.*key" -or $_.Exception.Message -match "Status 401") {
+        Write-Host "  Set HOS_API_KEY environment variable: `$env:HOS_API_KEY = 'your-api-key'" -ForegroundColor Yellow
+    } else {
+        Write-Host "  - HOS may be down (check http://localhost:3000/v1/world/status)" -ForegroundColor Gray
+        Write-Host "  - If docker not running, start stack: docker compose up -d" -ForegroundColor Gray
+    }
     $hasFailures = $true
     exit 1
 }
