@@ -2139,6 +2139,46 @@ Invoke-WebRequest http://localhost:3000/v1/worlds  # marketplace must be ONLINE
 
 ---
 
+## WP-43: Build Artefact Hygiene v1 (dist ignore + untrack, deterministic public_ready)
+
+**Purpose:** Ensure marketplace-web build (npm run build) does not pollute the repository. public_ready_check.ps1 must always PASS with clean working tree.
+
+**Deliverables:**
+- .gitignore (MODIFIED): Added `work/marketplace-web/dist/` entry
+- work/marketplace-web/dist (UNTRACKED): Removed 3 tracked dist files from git index
+- docs/PROOFS/wp43_build_artefact_hygiene_pass.md - Proof document
+
+**Commands:**
+```powershell
+# Untrack dist files
+git rm -r --cached work/marketplace-web/dist
+
+# Verify build does not pollute
+cd work/marketplace-web; npm run build; cd ../..
+git status --porcelain  # Should be clean
+
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:** docs/PROOFS/wp43_build_artefact_hygiene_pass.md
+
+**Acceptance:**
+- Dist files untracked (3 files removed from git index)
+- .gitignore updated (work/marketplace-web/dist/ added)
+- Build test: New dist files created but not tracked (ignored)
+- public_ready_check: PASS after commit (git status clean)
+- All gates PASS
+
+**Notes:**
+- **Minimal diff:** Only .gitignore update and dist untrack, no code changes
+- **No refactor:** Only hygiene fix
+- **No feature changes:** Only build artefact handling
+- **Deterministic:** Build artifacts are now consistently ignored
+
+---
 
 ## WP-40: Frontend Smoke v1 (No New Dependencies, Deterministic)
 
