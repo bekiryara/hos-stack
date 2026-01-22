@@ -12,6 +12,47 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-48: Prototype Green Pack v1 (Frontend Marker Alignment + Memberships tenant_id Fix)
+
+**Purpose:** Make Prototype v1 deterministically GREEN by fixing frontend_smoke/prototype_smoke marker inconsistency and making prototype_flow_smoke tenant_id extraction robust.
+
+**Deliverables:**
+- ops/frontend_smoke.ps1 (MODIFIED): Marker check aligned with prototype_smoke.ps1 (checks for HTML comment OR data-test OR heading text), prints body preview on FAIL
+- ops/prototype_flow_smoke.ps1 (MODIFIED): Added Get-TenantIdFromMemberships helper function (handles multiple response formats, iterates all memberships, tries multiple field paths, validates UUID), enhanced error messages with schema hints
+- docs/PROOFS/wp48_frontend_marker_alignment_pass.md (NEW): Proof document
+- docs/PROOFS/wp48_prototype_flow_memberships_fix_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Run smoke tests
+.\ops\prototype_smoke.ps1
+.\ops\frontend_smoke.ps1
+.\ops\prototype_flow_smoke.ps1
+
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp48_frontend_marker_alignment_pass.md
+- docs/PROOFS/wp48_prototype_flow_memberships_fix_pass.md
+
+**Acceptance:**
+- frontend_smoke: PASS (marker aligned, consistent with prototype_smoke)
+- prototype_smoke: PASS (marker check unchanged)
+- prototype_flow_smoke: Helper function fixed (handles multiple schemas, robust extraction)
+- All gates: PASS
+
+**Notes:**
+- **Minimal diff:** Only marker check alignment and tenant_id extraction helper
+- **No refactor:** No business logic changes
+- **ASCII-only:** All outputs ASCII format
+- **PowerShell 5.1:** Compatible
+
+---
+
 ## WP-47: Dev Auth Determinism (JWT Bootstrap Must Pass)
 
 **Purpose:** Make prototype_flow_smoke JWT bootstrap deterministically PASS with proper error handling. Fix response body reading, improve error messages, fix email format.

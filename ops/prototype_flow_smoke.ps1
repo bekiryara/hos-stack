@@ -58,6 +58,69 @@ if ($hasFailures) {
     exit 1
 }
 
+# Helper: Extract tenant_id robustly from memberships
+function Get-TenantIdFromMemberships {
+    param([object]$Memberships)
+    
+    if (-not $Memberships) {
+        return $null
+    }
+    
+    # Handle array or object with data/items property
+    $membershipsArray = $null
+    if ($Memberships -is [Array]) {
+        $membershipsArray = $Memberships
+    } elseif ($Memberships.data -is [Array]) {
+        $membershipsArray = $Memberships.data
+    } elseif ($Memberships.items -is [Array]) {
+        $membershipsArray = $Memberships.items
+    } elseif ($Memberships -is [PSCustomObject]) {
+        # Try common property names
+        if ($Memberships.PSObject.Properties['data'] -and $Memberships.data -is [Array]) {
+            $membershipsArray = $Memberships.data
+        } elseif ($Memberships.PSObject.Properties['items'] -and $Memberships.items -is [Array]) {
+            $membershipsArray = $Memberships.items
+        }
+    }
+    
+    if (-not $membershipsArray) {
+        return $null
+    }
+    
+    if ($membershipsArray.Count -eq 0) {
+        # Empty array - no memberships
+        return $null
+    }
+    
+    # Iterate all memberships (not just [0])
+    foreach ($membership in $membershipsArray) {
+        $tenantId = $null
+        
+        # Try different field paths in order
+        if ($membership.tenant_id) {
+            $tenantId = $membership.tenant_id
+        } elseif ($membership.tenant -and $membership.tenant.id) {
+            $tenantId = $membership.tenant.id
+        } elseif ($membership.tenant -and $membership.tenant.PSObject.Properties['id']) {
+            $tenantId = $membership.tenant.id
+        } elseif ($membership.tenantId) {
+            $tenantId = $membership.tenantId
+        } elseif ($membership.store_tenant_id) {
+            $tenantId = $membership.store_tenant_id
+        }
+        
+        # Validate UUID format
+        if ($tenantId) {
+            $guid = $null
+            if ([System.Guid]::TryParse($tenantId, [ref]$guid)) {
+                return $tenantId
+            }
+        }
+    }
+    
+    return $null
+}
+
 # Step 2: Get tenant_id from memberships
 Write-Host ""
 Write-Host "[2] Getting tenant_id from memberships..." -ForegroundColor Yellow
@@ -67,17 +130,55 @@ try {
         -TimeoutSec 5 `
         -ErrorAction Stop
     
-    if (-not $membershipsResponse -or $membershipsResponse.Count -eq 0) {
-        Write-Host "FAIL: No memberships found" -ForegroundColor Red
+    $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+    
+    if (-not $tenantId) {
+        Write-Host "FAIL: No valid tenant_id found in memberships" -ForegroundColor Red
+        
+        # Print schema hint for first 2 membership items
+        $membershipsArray = $null
+        if ($membershipsResponse -is [Array]) {
+            $membershipsArray = $membershipsResponse
+        } elseif ($membershipsResponse.data -is [Array]) {
+            $membershipsArray = $membershipsResponse.data
+        } elseif ($membershipsResponse.items -is [Array]) {
+            $membershipsArray = $membershipsResponse.items
+        } elseif ($membershipsResponse -is [PSCustomObject]) {
+            if ($membershipsResponse.PSObject.Properties['data'] -and $membershipsResponse.data -is [Array]) {
+                $membershipsArray = $membershipsResponse.data
+            } elseif ($membershipsResponse.PSObject.Properties['items'] -and $membershipsResponse.items -is [Array]) {
+                $membershipsArray = $membershipsResponse.items
+            }
+        }
+        
+        if ($membershipsArray -and $membershipsArray.Count -gt 0) {
+            Write-Host "  Schema hint (first 2 items):" -ForegroundColor Yellow
+            $maxItems = [Math]::Min(2, $membershipsArray.Count)
+            for ($i = 0; $i -lt $maxItems; $i++) {
+                $item = $membershipsArray[$i]
+                $keys = $item.PSObject.Properties.Name | ForEach-Object { Sanitize-Ascii $_ }
+                Write-Host "    Item $($i+1) top-level keys: $($keys -join ', ')" -ForegroundColor Gray
+                if ($item.tenant) {
+                    $tenantKeys = $item.tenant.PSObject.Properties.Name | ForEach-Object { Sanitize-Ascii $_ }
+                    Write-Host "      tenant object keys: $($tenantKeys -join ', ')" -ForegroundColor Gray
+                }
+            }
+        } elseif ($membershipsArray -and $membershipsArray.Count -eq 0) {
+            Write-Host "  Memberships array is empty (user has no memberships)" -ForegroundColor Yellow
+            Write-Host "  Remediation: User needs to be added to a tenant via HOS admin API" -ForegroundColor Gray
+        } else {
+            Write-Host "  No memberships array found in response" -ForegroundColor Yellow
+            $responseType = $membershipsResponse.GetType().Name
+            Write-Host "  Response type: $responseType" -ForegroundColor Gray
+            if ($membershipsResponse -is [PSCustomObject]) {
+                $responseKeys = $membershipsResponse.PSObject.Properties.Name | ForEach-Object { Sanitize-Ascii $_ }
+                Write-Host "  Response top-level keys: $($responseKeys -join ', ')" -ForegroundColor Gray
+            }
+        }
+        
         $hasFailures = $true
     } else {
-        $tenantId = $membershipsResponse[0].tenant_id
-        if (-not $tenantId) {
-            Write-Host "FAIL: First membership missing tenant_id" -ForegroundColor Red
-            $hasFailures = $true
-        } else {
-            Write-Host "PASS: tenant_id acquired: $tenantId" -ForegroundColor Green
-        }
+        Write-Host "PASS: tenant_id acquired: $tenantId" -ForegroundColor Green
     }
 } catch {
     Write-Sanitized "FAIL: Memberships request failed: $($_.Exception.Message)" "Red"

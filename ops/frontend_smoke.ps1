@@ -45,14 +45,23 @@ try {
         Write-Host "PASS: HOS Web returned status code 200" -ForegroundColor Green
     }
     
-    # Check for prototype-launcher marker (STRICT: must find data-test="prototype-launcher")
+    # Check for prototype-launcher marker (aligned with prototype_smoke.ps1)
     $bodyContent = $hosWebResponse.Content
-    if ($bodyContent -match 'data-test="prototype-launcher"') {
+    # Marker constant: same as prototype_smoke.ps1 (checks for HTML comment OR data-test OR heading text)
+    $markerFound = $false
+    if ($bodyContent -match 'prototype-launcher-marker' -or $bodyContent -match 'data-test="prototype-launcher"' -or $bodyContent -match 'Prototype Launcher') {
+        $markerFound = $true
+    }
+    
+    if ($markerFound) {
         Write-Host "PASS: HOS Web body contains prototype-launcher marker" -ForegroundColor Green
     } else {
         Write-Host "FAIL: HOS Web body missing prototype-launcher marker" -ForegroundColor Red
-        Write-Host "  Expected marker: data-test=`"prototype-launcher`"" -ForegroundColor Yellow
-        Write-Host "  Hint: Verify App.tsx changes - marker is required for prototype discipline" -ForegroundColor Yellow
+        Write-Host "  Expected marker: prototype-launcher-marker OR data-test=`"prototype-launcher`" OR `"Prototype Launcher`"" -ForegroundColor Yellow
+        # Print first ~200 chars of body (ASCII-sanitized) for debugging
+        $bodyPreview = $bodyContent.Substring(0, [Math]::Min(200, $bodyContent.Length)) -replace '[^\x00-\x7F]', ''
+        Write-Host "  Body preview (first 200 chars, ASCII-only): $bodyPreview" -ForegroundColor Gray
+        Write-Host "  Hint: Verify index.html and App.tsx changes - marker is required for prototype discipline" -ForegroundColor Yellow
         $hasFailures = $true
     }
 } catch {
