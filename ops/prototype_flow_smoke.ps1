@@ -530,8 +530,19 @@ if ($hasFailures) {
     exit 1
 } else {
     Write-Host "=== PROTOTYPE FLOW SMOKE: PASS ===" -ForegroundColor Green
-    # WP-51: Print RESULT line for demo orchestration
+    # WP-51: Print RESULT line for demo orchestration (human-friendly)
     Write-Host "RESULT: tenant_id=$tenantId listing_id=$listingId thread_id=$threadId" -ForegroundColor Cyan
+    # WP-52: Print machine-readable RESULT_JSON for deterministic capture
+    $messagingBaseUrl = if ($env:MESSAGING_PUBLIC_URL) { $env:MESSAGING_PUBLIC_URL } else { "http://localhost:8090" }
+    $pazarBaseUrl = "http://localhost:8080"
+    $resultJson = @{
+        tenant_id = $tenantId
+        listing_id = $listingId
+        thread_id = $threadId
+        listing_url = "$pazarBaseUrl/api/v1/listings/$listingId"
+        thread_url = "$messagingBaseUrl/api/v1/threads/by-context?context_type=listing&context_id=$listingId"
+    } | ConvertTo-Json -Compress
+    Write-Output "RESULT_JSON:$resultJson"
     exit 0
 }
 

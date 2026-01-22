@@ -144,26 +144,65 @@ try {
 # 3.2: Run prototype flow smoke (this creates listing + thread)
 Write-Host "  [3.2] Running prototype flow smoke..." -ForegroundColor Gray
 try {
-    # Capture all output including Write-Host
-    $flowOutput = & (Join-Path $PSScriptRoot "prototype_flow_smoke.ps1") 2>&1 | Out-String
+    # Capture all output (stdout + stderr) - Write-Output goes to stdout, Write-Host goes to host
+    $flowOutputLines = @()
+    & (Join-Path $PSScriptRoot "prototype_flow_smoke.ps1") 2>&1 | ForEach-Object {
+        $lineStr = if ($_ -is [string]) { $_ } else { $_.ToString() }
+        $flowOutputLines += $lineStr
+    }
     $flowExitCode = $LASTEXITCODE
     
-    # Extract RESULT line from output
-    $resultMatch = [regex]::Match($flowOutput, "RESULT:\s*tenant_id=([^\s]+)\s+listing_id=([^\s]+)\s+thread_id=([^\s]+)")
-    if ($resultMatch.Success) {
-        $tenantId = $resultMatch.Groups[1].Value
-        $listingId = $resultMatch.Groups[2].Value
-        $threadId = $resultMatch.Groups[3].Value
-        Write-Host "PASS: Prototype flow smoke PASS, artifacts extracted" -ForegroundColor Green
-        Write-Host "  tenant_id: $tenantId" -ForegroundColor Gray
-        Write-Host "  listing_id: $listingId" -ForegroundColor Gray
-        Write-Host "  thread_id: $threadId" -ForegroundColor Gray
-    } elseif ($flowExitCode -eq 0) {
-        Write-Host "WARN: Prototype flow smoke PASS but RESULT line not found in output" -ForegroundColor Yellow
-        Write-Host "  (This is OK if artifacts are not needed for demo)" -ForegroundColor Gray
-    } else {
+    if ($flowExitCode -ne 0) {
         Write-Host "FAIL: prototype_flow_smoke.ps1 returned exit code $flowExitCode" -ForegroundColor Red
         $hasFailures = $true
+    } else {
+        # WP-52: Extract RESULT_JSON line (machine-readable, deterministic)
+        $resultJsonLine = $flowOutputLines | Where-Object { $_ -match '^RESULT_JSON:' } | Select-Object -Last 1
+        
+        if ($resultJsonLine) {
+            # Extract JSON substring after 'RESULT_JSON:'
+            $jsonStr = $resultJsonLine -replace '^RESULT_JSON:', ''
+            try {
+                $resultObj = $jsonStr | ConvertFrom-Json
+                
+                # Validate artifacts
+                $tenantId = $resultObj.tenant_id
+                $listingId = $resultObj.listing_id
+                $threadId = $resultObj.thread_id
+                $listingUrl = $resultObj.listing_url
+                $threadUrl = $resultObj.thread_url
+                
+                # Validate tenant_id is UUID
+                $guidResult = [System.Guid]::Empty
+                if (-not $tenantId -or -not [System.Guid]::TryParse($tenantId, [ref]$guidResult)) {
+                    throw "tenant_id is not a valid UUID: $tenantId"
+                }
+                
+                # Validate listing_id and thread_id are non-empty
+                if (-not $listingId -or $listingId.Trim().Length -eq 0) {
+                    throw "listing_id is empty"
+                }
+                if (-not $threadId -or $threadId.Trim().Length -eq 0) {
+                    throw "thread_id is empty"
+                }
+                
+                Write-Host "PASS: Prototype flow smoke PASS, artifacts extracted" -ForegroundColor Green
+            } catch {
+                Write-Host "FAIL: Failed to parse or validate RESULT_JSON: $($_.Exception.Message)" -ForegroundColor Red
+                Write-Host "  JSON line: $($resultJsonLine.Substring(0, [Math]::Min(100, $resultJsonLine.Length)))" -ForegroundColor Gray
+                $hasFailures = $true
+            }
+        } else {
+            Write-Host "FAIL: prototype_flow_smoke did not emit RESULT_JSON" -ForegroundColor Red
+            Write-Host "  Ensure you are on WP-52 and the script PASSed" -ForegroundColor Yellow
+            Write-Host "  Last 20 lines of output (ASCII-sanitized):" -ForegroundColor Gray
+            $lastLines = $flowOutputLines | Select-Object -Last 20
+            foreach ($line in $lastLines) {
+                $sanitized = Sanitize-Ascii $line
+                Write-Host "    $sanitized" -ForegroundColor Gray
+            }
+            $hasFailures = $true
+        }
     }
 } catch {
     Write-Sanitized "FAIL: Prototype flow smoke failed: $($_.Exception.Message)" "Red"
@@ -192,43 +231,41 @@ if ($hasFailures) {
     exit 1
 }
 
-# Step 4: Print click targets and checklist
+# Step 4: Print demo artifacts and direct links
 Write-Host ""
-Write-Host "[4] CLICK TARGETS" -ForegroundColor Cyan
+Write-Host "[4] DEMO ARTIFACTS" -ForegroundColor Cyan
+if ($tenantId -and $listingId -and $threadId) {
+    Write-Host "  tenant_id: $tenantId" -ForegroundColor White
+    Write-Host "  listing_id: $listingId" -ForegroundColor White
+    Write-Host "  thread_id: $threadId" -ForegroundColor White
+} else {
+    Write-Host "  (Artifacts not available)" -ForegroundColor Gray
+}
+
+Write-Host ""
+Write-Host "[5] DIRECT LINKS" -ForegroundColor Cyan
 Write-Host "  HOS Web: $HosWebUrl" -ForegroundColor White
 Write-Host "  HOS Worlds: $HosApiUrl/v1/worlds" -ForegroundColor White
 Write-Host "  Pazar Status: $PazarUrl/api/world/status" -ForegroundColor White
 Write-Host "  Messaging Status: $MsgUrl/api/world/status" -ForegroundColor White
-if ($listingId) {
-    Write-Host "  Pazar Listing: $PazarUrl/api/v1/listings/$listingId" -ForegroundColor White
+if ($listingUrl) {
+    Write-Host "  Pazar Listing: $listingUrl" -ForegroundColor White
 }
-if ($threadId) {
-    Write-Host "  Messaging Thread: $MsgUrl/api/v1/threads/by-context?context_type=listing&context_id=$listingId" -ForegroundColor White
+if ($threadUrl) {
+    Write-Host "  Messaging Thread: $threadUrl" -ForegroundColor White
 }
 
 Write-Host ""
-Write-Host "[5] USER DEMO CHECKLIST" -ForegroundColor Cyan
+Write-Host "[6] USER DEMO CHECKLIST" -ForegroundColor Cyan
 Write-Host "  1. Open HOS Web ($HosWebUrl) and verify Prototype Launcher section is visible" -ForegroundColor White
 Write-Host "  2. Click 'HOS Worlds' link or navigate to $HosApiUrl/v1/worlds to verify world directory" -ForegroundColor White
 Write-Host "  3. Verify Pazar status at $PazarUrl/api/world/status (should show ONLINE)" -ForegroundColor White
 Write-Host "  4. Verify Messaging status at $MsgUrl/api/world/status (should show ONLINE)" -ForegroundColor White
-if ($listingId) {
-    Write-Host "  5. Verify listing exists: $PazarUrl/api/v1/listings/$listingId" -ForegroundColor White
-    Write-Host "  6. Verify messaging thread exists: $MsgUrl/api/v1/threads/by-context?context_type=listing&context_id=$listingId" -ForegroundColor White
-} else {
-    Write-Host "  5. (Listing ID not available - check prototype_flow_smoke output)" -ForegroundColor Gray
+if ($listingUrl) {
+    Write-Host "  5. Verify listing exists: $listingUrl" -ForegroundColor White
 }
-
-Write-Host ""
-if ($tenantId) {
-    Write-Host "Demo Artifacts:" -ForegroundColor Gray
-    Write-Host "  tenant_id: $tenantId" -ForegroundColor Gray
-    if ($listingId) {
-        Write-Host "  listing_id: $listingId" -ForegroundColor Gray
-    }
-    if ($threadId) {
-        Write-Host "  thread_id: $threadId" -ForegroundColor Gray
-    }
+if ($threadUrl) {
+    Write-Host "  6. Verify messaging thread exists: $threadUrl" -ForegroundColor White
 }
 
 # Step 5: Optional browser open

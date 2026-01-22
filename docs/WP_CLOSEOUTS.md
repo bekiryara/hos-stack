@@ -12,6 +12,71 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-53: Repo Payload Guard (Emergency Discipline - Prevent Repo Bloat)
+
+**Purpose:** Emergency discipline WP to prevent repo bloat. Identified and removed accidental 35MB payload file from WP-52 commit, added deterministic guard to prevent large tracked artifacts from entering git again.
+
+**Deliverables:**
+- ops/repo_payload_audit.ps1 (NEW): Identifies large payload files in last commit (HEAD), shows git show --stat, git show --numstat top 20, lists suspicious files (>50K lines OR >2MB OR forbidden patterns)
+- ops/repo_payload_guard.ps1 (NEW): Deterministic FAIL if any tracked file exceeds size budget (default 2MB) OR matches forbidden generated patterns (dist/, build/, .next/, vendor/, node_modules/, coverage/, logs/, tmp/, _archive/)
+- ops/ship_main.ps1 (MODIFIED): Added repo_payload_guard to gate sequence (after public_ready_check, before conformance)
+- docs/PROOFS/wp53_repo_payload_purge_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Run audit to identify payload files
+.\ops\repo_payload_audit.ps1
+
+# Run guard to prevent large files
+.\ops\repo_payload_guard.ps1
+
+# Run gates (guard is now included in ship_main)
+.\ops\ship_main.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp53_repo_payload_purge_pass.md
+
+**Acceptance:**
+- repo_payload_audit: PASS (identified 35MB proof file)
+- repo_payload_guard: PASS (blocks large files deterministically)
+- ship_main: PASS (includes guard in sequence)
+- All gates: PASS
+- Working tree: clean
+- Origin/main: updated
+
+---
+
+## WP-52: Demo Artifacts Determinism (Fix RESULT capture, remove WARN)
+
+**Purpose:** Make prototype_user_demo artifact extraction fully deterministic (no WARN). Fix RESULT capture by emitting machine-readable RESULT_JSON via Write-Output (pipeline/stdout) in addition to human-friendly Write-Host line.
+
+**Deliverables:**
+- ops/prototype_flow_smoke.ps1 (MODIFIED): Emits both human-friendly RESULT line (Write-Host, colored) and machine-readable RESULT_JSON line (Write-Output with JSON containing tenant_id, listing_id, thread_id, listing_url, thread_url)
+- ops/prototype_user_demo.ps1 (MODIFIED): Captures and parses RESULT_JSON reliably (finds last line matching '^RESULT_JSON:', extracts JSON, validates UUIDs, prints DEMO ARTIFACTS and DIRECT LINKS blocks deterministically, FAILs if RESULT_JSON missing with actionable hints)
+- docs/PROOFS/wp52_demo_artifacts_determinism_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Run user demo (must capture RESULT_JSON deterministically)
+.\ops\prototype_user_demo.ps1
+
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp52_demo_artifacts_determinism_pass.md
+
+**Acceptance:**
+- prototype_user_demo: PASS (no WARN, RESULT_JSON captured, DEMO ARTIFACTS and DIRECT LINKS printed)
+- prototype_flow_smoke: PASS (RESULT_JSON emitted via Write-Output)
+- All gates: PASS
+
+---
+
 ## WP-51: User-Like Prototype Demo Entrypoint
 
 **Purpose:** Turn the now-GREEN E2E backend flow (WP-48) into a user-like, repeatable prototype demo you can run + click through. Single command prepares demo data, prints clickable URLs, and provides a deterministic checklist.
