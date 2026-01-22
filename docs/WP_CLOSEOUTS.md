@@ -205,43 +205,51 @@ powershell -NoProfile -Command "$t=$null;$e=$null;[System.Management.Automation.
 
 ---
 
-## WP-46: Prototype Demo + Closeouts Rollover (one-command demo, zero duplication)
+## WP-46: Prototype V1 Runner + Closeouts Hygiene Gate (single-main)
 
-**Purpose:** Add tiny orchestrator for prototype demo (calls existing scripts only, no duplication). Fix WP_CLOSEOUTS growth by keeping last 8 entries and moving older entries to archive. Improve failure messaging for known flake (prototype_flow_smoke JWT/token failures).
+**Purpose:** Finalize Prototype v1 workflow with one-command local verification runner and closeouts hygiene gate to prevent WP_CLOSEOUTS.md from growing forever. Zero behavior change. Minimal diff. Ops+docs discipline only.
 
 **Deliverables:**
-- ops/prototype_demo.ps1 (NEW): Orchestrator that calls prototype_smoke and prototype_flow_smoke, prints click targets on PASS
-- ops/prototype_flow_smoke.ps1 (MODIFIED): Better error hinting around JWT/token acquisition (actionable hints on failure)
-- docs/WP_CLOSEOUTS.md (MODIFIED): Kept last 8 WP entries (WP-38 through WP-45), moved WP-27 through WP-37 to archive
-- docs/closeouts/WP_CLOSEOUTS_ARCHIVE_2026_B.md (NEW): Archive file containing WP-27 through WP-37
-- docs/PROOFS/wp46_prototype_demo_pass.md (NEW): Proof document
-- docs/PROOFS/wp46_closeouts_rollover_pass.md (NEW): Proof document
+- ops/prototype_v1.ps1 (NEW): One command runner that optionally starts stack, waits for endpoints, runs smokes in order, prints manual checks
+- ops/closeouts_size_gate.ps1 (NEW): Gate that fails if WP_CLOSEOUTS.md exceeds budget (1200 lines) or "keep last 8" policy
+- ops/closeouts_rollover.ps1 (NEW): Script that safely moves older WP sections to archive (preserves header, avoids duplicates)
+- ops/ship_main.ps1 (MODIFIED): Added closeouts_size_gate before conformance (early fail)
+- docs/PROOFS/wp46_prototype_v1_runner_pass.md (NEW): Proof document
 
 **Commands:**
 ```powershell
-# Run prototype demo
-.\ops\prototype_demo.ps1
+# Run prototype v1 runner
+.\ops\prototype_v1.ps1
+# Or with stack start:
+.\ops\prototype_v1.ps1 -StartStack
+
+# Run closeouts size gate
+.\ops\closeouts_size_gate.ps1
+
+# Run closeouts rollover (if needed)
+.\ops\closeouts_rollover.ps1 -Keep 8
 
 # Run gates
 .\ops\secret_scan.ps1
 .\ops\public_ready_check.ps1
+.\ops\closeouts_size_gate.ps1
 .\ops\conformance.ps1
 ```
 
-**Proof:** 
-- docs/PROOFS/wp46_prototype_demo_pass.md
-- docs/PROOFS/wp46_closeouts_rollover_pass.md
+**Proof:** docs/PROOFS/wp46_prototype_v1_runner_pass.md
 
 **Acceptance:**
-- Prototype demo orchestrator created (calls existing scripts, no duplication)
-- JWT failure hints improved (actionable remediation steps)
-- WP_CLOSEOUTS rollover complete (last 8 WP only, archive created)
+- Prototype v1 runner created (optionally starts stack, waits for endpoints, runs smokes, prints manual checks)
+- Closeouts size gate prevents growth (fails if > 8 WP sections or > 1200 lines)
+- Closeouts rollover script safely moves older sections to archive
+- Ship main includes closeouts gate (early fail before conformance)
 - All gates PASS
 
 **Notes:**
-- **Minimal diff:** Only orchestrator script, error hints, docs rollover
-- **No duplication:** Orchestrator only calls existing scripts
-- **ASCII-only:** All outputs ASCII format
+- **Minimal diff:** Only runner script, gates, rollover script, ship_main modification
+- **No duplication:** Runner orchestrates existing scripts only
+- **ASCII-only:** All outputs ASCII format, tokens masked
+- **PowerShell 5.1:** All scripts compatible
 
 ---
 
