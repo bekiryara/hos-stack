@@ -112,8 +112,41 @@ try {
                 Write-Host "  - $($world.world_key): $($world.availability) ($($world.phase), v$($world.version))" -ForegroundColor Gray
             }
             
-            # Debug: Check marketplace status specifically
+            # Availability rules validation (WP-37)
+            $coreWorld = $response | Where-Object { $_.world_key -eq "core" }
             $marketplaceWorld = $response | Where-Object { $_.world_key -eq "marketplace" }
+            $messagingWorld = $response | Where-Object { $_.world_key -eq "messaging" }
+            $socialWorld = $response | Where-Object { $_.world_key -eq "social" }
+
+            # Rule 1: core.availability MUST be "ONLINE"
+            if (-not $coreWorld -or $coreWorld.availability -ne "ONLINE") {
+                Write-Host "FAIL: core.availability MUST be 'ONLINE', got '$($coreWorld.availability)'" -ForegroundColor Red
+                $hasFailures = $true
+            }
+
+            # Rule 2: marketplace.availability MUST be "ONLINE"
+            if (-not $marketplaceWorld -or $marketplaceWorld.availability -ne "ONLINE") {
+                Write-Host "FAIL: marketplace.availability MUST be 'ONLINE', got '$($marketplaceWorld.availability)'" -ForegroundColor Red
+                Write-Host "  [DEBUG] Check PAZAR_STATUS_URL env var and pazar-app service" -ForegroundColor Yellow
+                Write-Host "  [DEBUG] Expected: http://pazar-app:80 (Docker Compose service name)" -ForegroundColor Gray
+                $hasFailures = $true
+            }
+
+            # Rule 3: messaging.availability MUST be "ONLINE"
+            if (-not $messagingWorld -or $messagingWorld.availability -ne "ONLINE") {
+                Write-Host "FAIL: messaging.availability MUST be 'ONLINE', got '$($messagingWorld.availability)'" -ForegroundColor Red
+                Write-Host "  [DEBUG] Check MESSAGING_STATUS_URL env var and messaging-api service" -ForegroundColor Yellow
+                Write-Host "  [DEBUG] Expected: http://messaging-api:3000 (Docker Compose service name)" -ForegroundColor Gray
+                $hasFailures = $true
+            }
+
+            # Rule 4: social.availability MUST be "DISABLED"
+            if (-not $socialWorld -or $socialWorld.availability -ne "DISABLED") {
+                Write-Host "FAIL: social.availability MUST be 'DISABLED', got '$($socialWorld.availability)'" -ForegroundColor Red
+                $hasFailures = $true
+            }
+
+            # Debug: Check marketplace status specifically
             if ($marketplaceWorld) {
                 Write-Host "  [DEBUG] Marketplace status from HOS: $($marketplaceWorld.availability)" -ForegroundColor Cyan
                 if ($marketplaceWorld.availability -eq "ONLINE") {
@@ -121,6 +154,17 @@ try {
                 } elseif ($marketplaceWorld.availability -eq "OFFLINE") {
                     Write-Host "  [DEBUG] WARN: HOS reports marketplace OFFLINE (check PAZAR_STATUS_URL env var)" -ForegroundColor Yellow
                     Write-Host "  [DEBUG] Expected: http://pazar-app:80 (Docker Compose service name)" -ForegroundColor Gray
+                }
+            }
+
+            # Debug: Check messaging status specifically
+            if ($messagingWorld) {
+                Write-Host "  [DEBUG] Messaging status from HOS: $($messagingWorld.availability)" -ForegroundColor Cyan
+                if ($messagingWorld.availability -eq "ONLINE") {
+                    Write-Host "  [DEBUG] HOS successfully pinged Messaging API (messaging ONLINE)" -ForegroundColor Green
+                } elseif ($messagingWorld.availability -eq "OFFLINE") {
+                    Write-Host "  [DEBUG] WARN: HOS reports messaging OFFLINE (check MESSAGING_STATUS_URL env var)" -ForegroundColor Yellow
+                    Write-Host "  [DEBUG] Expected: http://messaging-api:3000 (Docker Compose service name)" -ForegroundColor Gray
                 }
             }
         }

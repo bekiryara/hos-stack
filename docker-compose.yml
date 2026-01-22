@@ -32,6 +32,7 @@ services:
       HOS_API_KEY: "dev-api-key"
       OTEL_ENABLED: "false"
       PAZAR_STATUS_URL: "http://pazar-app:80"
+      MESSAGING_STATUS_URL: "http://messaging-api:3000"
       MESSAGING_PING_URL: "http://messaging-api:3000"
       DATABASE_URL_FILE: /run/secrets/database_url
       JWT_SECRET_FILE: /run/secrets/jwt_secret

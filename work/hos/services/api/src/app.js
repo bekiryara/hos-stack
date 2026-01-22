@@ -172,9 +172,36 @@ async function registerApiRoutes(app, { db, legacy = false }) {
       version: "1.4.0"
     });
 
+    // Ping messaging to determine availability
+    let messagingAvailability = "OFFLINE";
+    try {
+      // MESSAGING_STATUS_URL env var can be set to full URL (e.g., http://messaging-api:3000/api/world/status)
+      // or base URL (e.g., http://messaging-api:3000), we append /api/world/status if needed
+      let messagingUrl = process.env.MESSAGING_STATUS_URL || "http://localhost:8090";
+      if (!messagingUrl.includes("/api/world/status")) {
+        messagingUrl = messagingUrl.replace(/\/+$/, "") + "/api/world/status";
+      }
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 500);
+      const response = await fetch(messagingUrl, {
+        method: "GET",
+        signal: controller.signal,
+        headers: { "Accept": "application/json" }
+      });
+      clearTimeout(timeoutId);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.availability === "ONLINE") {
+          messagingAvailability = "ONLINE";
+        }
+      }
+    } catch (e) {
+      // Non-fatal: messaging unavailable, keep as OFFLINE
+    }
+
     worlds.push({
       world_key: "messaging",
-      availability: "ONLINE",
+      availability: messagingAvailability,
       phase: "GENESIS",
       version: "1.4.0"
     });
