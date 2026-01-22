@@ -2139,6 +2139,77 @@ Invoke-WebRequest http://localhost:3000/v1/worlds  # marketplace must be ONLINE
 
 ---
 
+## WP-42: GitHub Sync Safe Windows Compatibility (pwsh fallback + syntax fix)
+
+**Purpose:** Remove pwsh dependency from github_sync_safe.ps1 to make it runnable on Windows PowerShell 5.1 (pwsh optional).
+
+**Deliverables:**
+- ops/github_sync_safe.ps1 (MODIFIED): Removed `#!/usr/bin/env pwsh` shebang, added `Get-PowerShellExe` helper (checks for pwsh, falls back to powershell.exe), replaced all `& pwsh` invocations with `& $PowerShellExe`, fixed pre-existing syntax errors
+- docs/PROOFS/wp42_github_sync_safe_windows_pass.md - Proof document
+
+**Commands:**
+```powershell
+# Syntax check
+powershell -NoProfile -Command "$t=$null;$e=$null;[System.Management.Automation.Language.Parser]::ParseFile('ops/github_sync_safe.ps1',[ref]$t,[ref]$e) | Out-Null; $e.Count"
+# Expected: 0 (no syntax errors)
+
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+.\ops\github_sync_safe.ps1
+```
+
+**Proof:** docs/PROOFS/wp42_github_sync_safe_windows_pass.md
+
+**Acceptance:**
+- ✅ pwsh dependency removed (script works on Windows PowerShell 5.1)
+- ✅ Syntax errors fixed (PowerShell parser confirms 0 errors)
+- ✅ All gates PASS (secret_scan, public_ready_check, conformance, github_sync_safe)
+- ✅ Script runs without crash (exits early if not on default branch, expected behavior)
+
+**Notes:**
+- **Minimal diff:** Only pwsh fallback + syntax fixes, no refactor
+- **Windows compatible:** Works on PowerShell 5.1 without pwsh requirement
+- **ASCII-only:** All outputs ASCII format
+
+---
+
+## WP-41: Gates Restore (secret scan + conformance parser)
+
+**Purpose:** Restore WP-33-required gates (secret_scan.ps1), fix conformance false FAIL by making worlds_config.ps1 parse multiline PHP arrays, and track canonical files.
+
+**Deliverables:**
+- ops/secret_scan.ps1 (NEW): Scans tracked files for common secret patterns, skips binaries and allowlisted placeholders, ASCII-only output
+- ops/_lib/worlds_config.ps1 (FIX): Updated regex to handle multiline PHP arrays using `(?s)` Singleline option
+- ops/conformance.ps1 (FIX): Updated registry parser to use `(?s)` for multiline matching and `"`r?`n"` for line splitting
+- docs/MERGE_RECOVERY_PLAN.md (TRACKED): Added to git tracking
+- ops/_lib/test_auth.ps1 (TRACKED): Added to git tracking
+- docs/PROOFS/wp41_gates_restore_pass.md - Proof document
+
+**Commands:**
+```powershell
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:** docs/PROOFS/wp41_gates_restore_pass.md
+
+**Acceptance:**
+- ✅ Secret scan: 0 hits (PASS)
+- ✅ Conformance: All checks PASS (world registry drift fixed, multiline parser working)
+- ✅ Public ready: PASS after commit (canonical files tracked)
+- ✅ All gates PASS
+
+**Notes:**
+- **Minimal diff:** Only gate restoration + parser fixes, no feature work
+- **No refactor:** Only fixes needed to pass gates
+- **ASCII-only:** All outputs ASCII format
+
+---
+
 ## WP-44: Prototype Spine v1 (Runtime Smoke + Prototype Launcher + Deterministic Output)
 
 **Purpose:** Add definitive runtime smoke script and Prototype Launcher UI section. Make frontend_smoke.ps1 output deterministic (no silent/blank runs).

@@ -12,11 +12,12 @@ $hasFailures = $false
 # Section [1] Docker services
 Write-Host "[1] Checking Docker services..." -ForegroundColor Yellow
 try {
-    $dockerPsOutput = docker compose ps 2>&1
+    $dockerPsOutput = docker compose ps --format "table {{.Name}}`t{{.Service}}`t{{.State}}`t{{.Ports}}" 2>&1
     $dockerPsExitCode = $LASTEXITCODE
     if ($dockerPsExitCode -ne 0) {
+        $errorMsg = $dockerPsOutput -replace '[^\x00-\x7F]', ''
         Write-Host "FAIL: docker compose ps failed with exit code $dockerPsExitCode" -ForegroundColor Red
-        Write-Host "  Error: $dockerPsOutput" -ForegroundColor Yellow
+        Write-Host "  Error: $errorMsg" -ForegroundColor Yellow
         Write-Host "  Remediation: Ensure Docker is running and docker-compose.yml is valid" -ForegroundColor Yellow
         $hasFailures = $true
     } else {
@@ -27,11 +28,15 @@ try {
         } else {
             Write-Host "PASS: docker compose ps executed successfully" -ForegroundColor Green
             Write-Host "  Output (first 5 lines):" -ForegroundColor Gray
-            $dockerPsOutput | Select-Object -First 5 | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+            $dockerPsOutput | Select-Object -First 5 | ForEach-Object {
+                $sanitized = $_ -replace '[^\x00-\x7F]', ''
+                Write-Host "    $sanitized" -ForegroundColor Gray
+            }
         }
     }
 } catch {
-    Write-Host "FAIL: Error running docker compose ps: $($_.Exception.Message)" -ForegroundColor Red
+    $errorMsg = $_.Exception.Message -replace '[^\x00-\x7F]', ''
+    Write-Host "FAIL: Error running docker compose ps: $errorMsg" -ForegroundColor Red
     Write-Host "  Remediation: Ensure Docker is installed and running" -ForegroundColor Yellow
     $hasFailures = $true
 }

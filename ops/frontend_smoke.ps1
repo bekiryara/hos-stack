@@ -45,15 +45,14 @@ try {
         Write-Host "PASS: HOS Web returned status code 200" -ForegroundColor Green
     }
     
-    # Check for prototype-launcher marker (HTML comment or App.tsx renders data-test="prototype-launcher")
-    # React SPA renders client-side, so check for HTML comment marker or rendered content
+    # Check for prototype-launcher marker (STRICT: must find data-test="prototype-launcher")
     $bodyContent = $hosWebResponse.Content
-    if ($bodyContent -match 'prototype-launcher-marker' -or $bodyContent -match 'data-test="prototype-launcher"' -or $bodyContent -match 'Prototype Launcher') {
+    if ($bodyContent -match 'data-test="prototype-launcher"') {
         Write-Host "PASS: HOS Web body contains prototype-launcher marker" -ForegroundColor Green
     } else {
         Write-Host "FAIL: HOS Web body missing prototype-launcher marker" -ForegroundColor Red
-        Write-Host "  Expected marker: prototype-launcher-marker comment or data-test=`"prototype-launcher`"" -ForegroundColor Yellow
-        Write-Host "  Hint: Verify index.html and App.tsx changes - marker is required for prototype discipline" -ForegroundColor Yellow
+        Write-Host "  Expected marker: data-test=`"prototype-launcher`"" -ForegroundColor Yellow
+        Write-Host "  Hint: Verify App.tsx changes - marker is required for prototype discipline" -ForegroundColor Yellow
         $hasFailures = $true
     }
 } catch {
@@ -135,16 +134,9 @@ if (-not (Test-Path $marketplaceWebPath)) {
                 $buildExitCode = $LASTEXITCODE
                 if ($buildExitCode -ne 0) {
                     Write-Host "FAIL: marketplace-web build failed with exit code $buildExitCode" -ForegroundColor Red
-                    Write-Host "  Build output (last 10 lines):" -ForegroundColor Yellow
-                    $buildOutput | Select-Object -Last 10 | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
                     $hasFailures = $true
                 } else {
-                    Write-Host "PASS: marketplace-web build completed successfully" -ForegroundColor Green
-                    # Show summary line if available
-                    $summaryLine = $buildOutput | Select-String -Pattern "built in|dist/|vite.*build" | Select-Object -Last 1
-                    if ($summaryLine) {
-                        Write-Host "  Build summary: $($summaryLine.Line)" -ForegroundColor Gray
-                    }
+                    Write-Host "PASS: npm run build completed successfully" -ForegroundColor Green
                 }
             }
         } catch {
