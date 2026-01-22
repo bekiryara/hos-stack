@@ -87,11 +87,11 @@ try {
             $parts = $registryContent -split "### Enabled Worlds"
             if ($parts.Count -gt 1) {
                 $enabledSection = $parts[1]
-                # Extract only until "### Disabled Worlds" marker
-                if ($enabledSection -match '^(.*?)(?:### Disabled Worlds|$)') {
+                # Extract only until "### Disabled Worlds" marker (multiline-safe with (?s))
+                if ($enabledSection -match '(?s)^(.*?)(?:### Disabled Worlds|$)') {
                     $enabledContent = $matches[1]
                     # Extract bullet lines: "- <world_key>"
-                    $enabledLines = $enabledContent -split "`n" | Where-Object { $_ -match '^\s*-\s+([a-z0-9_]+)\s*$' }
+                    $enabledLines = $enabledContent -split "`r?`n" | Where-Object { $_ -match '^\s*-\s+([a-z0-9_]+)\s*$' }
                     if ($null -ne $enabledLines) {
                         foreach ($line in $enabledLines) {
                             if ($line -match '^\s*-\s+([a-z0-9_]+)\s*$') {
@@ -111,8 +111,8 @@ try {
             if ($parts.Count -gt 1) {
                 $disabledSection = $parts[1]
                 # Extract until EOF (no more sections after this)
-                # Extract bullet lines: "- <world_key>"
-                $disabledLines = $disabledSection -split "`n" | Where-Object { $_ -match '^\s*-\s+([a-z0-9_]+)\s*$' }
+                # Extract bullet lines: "- <world_key>" (multiline-safe)
+                $disabledLines = $disabledSection -split "`r?`n" | Where-Object { $_ -match '^\s*-\s+([a-z0-9_]+)\s*$' }
                 if ($null -ne $disabledLines) {
                     foreach ($line in $disabledLines) {
                         if ($line -match '^\s*-\s+([a-z0-9_]+)\s*$') {

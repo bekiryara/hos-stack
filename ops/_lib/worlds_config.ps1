@@ -43,9 +43,9 @@ function Get-WorldsConfig {
     # Remove multi-line comments (/* ... */)
     $content = $content -replace '/\*.*?\*/', ''
     
-    # Extract enabled array
+    # Extract enabled array (multiline-safe with (?s) flag)
     $enabled = @()
-    if ($content -match "'enabled'\s*=>\s*\[(.*?)\]") {
+    if ($content -match "(?s)'enabled'\s*=>\s*\[(.*?)\]") {
         $enabledContent = $matches[1]
         # Extract quoted strings (single or double quotes)
         $enabledMatches = [regex]::Matches($enabledContent, "['""]([a-z0-9_]+)['""]")
@@ -57,9 +57,9 @@ function Get-WorldsConfig {
         }
     }
     
-    # Extract disabled array
+    # Extract disabled array (multiline-safe with (?s) flag)
     $disabled = @()
-    if ($content -match "'disabled'\s*=>\s*\[(.*?)\]") {
+    if ($content -match "(?s)'disabled'\s*=>\s*\[(.*?)\]") {
         $disabledContent = $matches[1]
         # Extract quoted strings (single or double quotes)
         $disabledMatches = [regex]::Matches($disabledContent, "['""]([a-z0-9_]+)['""]")
