@@ -98,20 +98,50 @@ if (-not (Test-Path $marketplaceWebPath)) {
     if (-not $hasFailures) {
         try {
             Push-Location $marketplaceWebPath
-            Write-Host "  Running: npm run build" -ForegroundColor Gray
-            $buildOutput = npm run build 2>&1
-            $buildExitCode = $LASTEXITCODE
-            if ($buildExitCode -ne 0) {
-                Write-Host "FAIL: marketplace-web build failed with exit code $buildExitCode" -ForegroundColor Red
-                Write-Host "  Build output (last 10 lines):" -ForegroundColor Yellow
-                $buildOutput | Select-Object -Last 10 | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
-                $hasFailures = $true
+            
+            # Check for package-lock.json and run npm ci (deterministic install)
+            if (Test-Path "package-lock.json") {
+                Write-Host "  Found package-lock.json, running: npm ci" -ForegroundColor Gray
+                $ciOutput = npm ci 2>&1
+                $ciExitCode = $LASTEXITCODE
+                if ($ciExitCode -ne 0) {
+                    Write-Host "FAIL: npm ci failed with exit code $ciExitCode" -ForegroundColor Red
+                    Write-Host "  npm ci output (last 10 lines):" -ForegroundColor Yellow
+                    $ciOutput | Select-Object -Last 10 | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+                    $hasFailures = $true
+                } else {
+                    Write-Host "PASS: npm ci completed successfully" -ForegroundColor Green
+                }
             } else {
-                Write-Host "PASS: marketplace-web build completed successfully" -ForegroundColor Green
-                # Show summary line if available
-                $summaryLine = $buildOutput | Select-String -Pattern "built in|dist/|vite.*build" | Select-Object -Last 1
-                if ($summaryLine) {
-                    Write-Host "  Build summary: $($summaryLine.Line)" -ForegroundColor Gray
+                Write-Host "WARN: package-lock.json not found, running: npm install" -ForegroundColor Yellow
+                $installOutput = npm install 2>&1
+                $installExitCode = $LASTEXITCODE
+                if ($installExitCode -ne 0) {
+                    Write-Host "FAIL: npm install failed with exit code $installExitCode" -ForegroundColor Red
+                    Write-Host "  npm install output (last 10 lines):" -ForegroundColor Yellow
+                    $installOutput | Select-Object -Last 10 | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+                    $hasFailures = $true
+                } else {
+                    Write-Host "PASS: npm install completed successfully" -ForegroundColor Green
+                }
+            }
+            
+            if (-not $hasFailures) {
+                Write-Host "  Running: npm run build" -ForegroundColor Gray
+                $buildOutput = npm run build 2>&1
+                $buildExitCode = $LASTEXITCODE
+                if ($buildExitCode -ne 0) {
+                    Write-Host "FAIL: marketplace-web build failed with exit code $buildExitCode" -ForegroundColor Red
+                    Write-Host "  Build output (last 10 lines):" -ForegroundColor Yellow
+                    $buildOutput | Select-Object -Last 10 | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+                    $hasFailures = $true
+                } else {
+                    Write-Host "PASS: marketplace-web build completed successfully" -ForegroundColor Green
+                    # Show summary line if available
+                    $summaryLine = $buildOutput | Select-String -Pattern "built in|dist/|vite.*build" | Select-Object -Last 1
+                    if ($summaryLine) {
+                        Write-Host "  Build summary: $($summaryLine.Line)" -ForegroundColor Gray
+                    }
                 }
             }
         } catch {
