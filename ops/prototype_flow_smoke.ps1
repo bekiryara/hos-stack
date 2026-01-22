@@ -33,6 +33,11 @@ try {
     Write-Host "PASS: Token acquired" -ForegroundColor Green
 } catch {
     Write-Sanitized "FAIL: JWT token acquisition failed: $($_.Exception.Message)" "Red"
+    Write-Host ""
+    Write-Host "Hints:" -ForegroundColor Yellow
+    Write-Host "  - HOS may be down (check http://localhost:3000/v1/world/status)" -ForegroundColor Gray
+    Write-Host "  - Dev auth helper may fail; verify ops/_lib/test_auth.ps1 config" -ForegroundColor Gray
+    Write-Host "  - If docker not running, start stack: docker compose up -d" -ForegroundColor Gray
     $hasFailures = $true
     exit 1
 }
