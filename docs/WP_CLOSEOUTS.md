@@ -57,15 +57,16 @@ Only the last 8 WP entries are shown here.
 
 ---
 
-## WP-48: Prototype Green Pack v1 (Frontend Marker Alignment + Memberships tenant_id Fix)
+## WP-48: Prototype Green Pack v1 (Frontend Marker Alignment + Memberships tenant_id Fix + persona.scope Middleware Fix)
 
-**Purpose:** Make Prototype v1 deterministically GREEN by fixing frontend_smoke/prototype_smoke marker inconsistency and making prototype_flow_smoke tenant_id extraction robust.
+**Purpose:** Make Prototype v1 deterministically GREEN by fixing frontend_smoke/prototype_smoke marker inconsistency, making prototype_flow_smoke tenant_id extraction robust, and fixing Laravel terminate phase persona.scope middleware alias resolution issue.
 
 **Deliverables:**
 - ops/frontend_smoke.ps1 (MODIFIED): Marker check aligned with prototype_smoke.ps1 (checks for HTML comment OR data-test OR heading text), prints body preview on FAIL
 - ops/prototype_flow_smoke.ps1 (MODIFIED): Added Get-TenantIdFromMemberships helper function (handles multiple response formats, iterates all memberships, tries multiple field paths, validates UUID), enhanced error messages with schema hints
-- docs/PROOFS/wp48_frontend_marker_alignment_pass.md (NEW): Proof document
-- docs/PROOFS/wp48_prototype_flow_memberships_fix_pass.md (NEW): Proof document
+- work/pazar/routes/api/*.php (MODIFIED): Replaced middleware alias 'persona.scope:guest/store/personal' with full class name \App\Http\Middleware\PersonaScope::class . ':guest/store/personal' in all route files (fixes Laravel terminate phase "Target class [persona.scope] does not exist" error)
+- docs/PROOFS/wp48_frontend_marker_alignment_pass.md (UPDATED): Proof document with latest test results
+- docs/PROOFS/wp48_prototype_flow_memberships_fix_pass.md (UPDATED): Proof document with full end-to-end PASS results
 
 **Commands:**
 ```powershell
@@ -87,14 +88,15 @@ Only the last 8 WP entries are shown here.
 **Acceptance:**
 - frontend_smoke: PASS (marker aligned, consistent with prototype_smoke)
 - prototype_smoke: PASS (marker check unchanged)
-- prototype_flow_smoke: Helper function fixed (handles multiple schemas, robust extraction)
+- prototype_flow_smoke: PASS (full end-to-end: JWT → tenant_id → listing creation → listing publish → messaging thread → message posting)
 - All gates: PASS
 
 **Notes:**
-- **Minimal diff:** Only marker check alignment and tenant_id extraction helper
+- **Minimal diff:** Only marker check alignment, tenant_id extraction helper, and middleware alias fix
 - **No refactor:** No business logic changes
 - **ASCII-only:** All outputs ASCII format
 - **PowerShell 5.1:** Compatible
+- **persona.scope fix:** Resolves Laravel Kernel terminate phase alias resolution issue by using full class names
 
 ---
 

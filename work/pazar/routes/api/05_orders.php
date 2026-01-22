@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 // POST /v1/orders - Create order
 // WP-8: PERSONAL persona requires Authorization header (persona.scope:personal)
 // WP-29: Auth required via auth.any middleware
-Route::middleware(['persona.scope:personal', 'auth.any', 'auth.ctx'])->post('/v1/orders', function (\Illuminate\Http\Request $request) {
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth.any', 'auth.ctx'])->post('/v1/orders', function (\Illuminate\Http\Request $request) {
     // WP-13: AuthContext middleware handles JWT verification and sets requester_user_id
     
     // Require Idempotency-Key header

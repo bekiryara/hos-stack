@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 // POST /v1/reservations - Create reservation
 // WP-8: PERSONAL persona requires Authorization header (persona.scope:personal)
 // WP-29: Auth required via auth.any middleware
-Route::middleware(['persona.scope:personal', 'auth.any', 'auth.ctx'])->post('/v1/reservations', function (\Illuminate\Http\Request $request) {
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth.any', 'auth.ctx'])->post('/v1/reservations', function (\Illuminate\Http\Request $request) {
     // WP-4.1: Error normalization - wrap entire handler in try-catch
     try {
     // WP-13: AuthContext middleware handles JWT verification and sets requester_user_id
@@ -191,7 +191,7 @@ Route::middleware(['persona.scope:personal', 'auth.any', 'auth.ctx'])->post('/v1
 // WP-8: STORE persona requires X-Active-Tenant-Id header (persona.scope:store)
 // WP-26: Tenant scope enforced via tenant.scope middleware
 // WP-29: Auth required via auth.any middleware
-Route::middleware(['persona.scope:store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/reservations/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/reservations/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
     // WP-4.1: Error normalization - wrap entire handler in try-catch
     try {
     // WP-26: tenant_id is set by TenantScope middleware

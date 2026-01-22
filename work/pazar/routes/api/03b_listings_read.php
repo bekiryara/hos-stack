@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\DB;
 
 // GET /v1/listings - Search listings
 // WP-8: GUEST+ persona (no headers required for basic search, store scope requires X-Active-Tenant-Id)
-Route::middleware(['persona.scope:guest'])->get('/v1/listings', function (\Illuminate\Http\Request $request) {
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/listings', function (\Illuminate\Http\Request $request) {
     $query = DB::table('listings');
     
     // Filter by category_id if provided
@@ -98,7 +98,7 @@ Route::middleware(['persona.scope:guest'])->get('/v1/listings', function (\Illum
 
 // GET /v1/listings/{id} - Get single listing
 // WP-8: GUEST+ persona (no headers required)
-Route::middleware(['persona.scope:guest'])->get('/v1/listings/{id}', function ($id) {
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/listings/{id}', function ($id) {
     $listing = DB::table('listings')->where('id', $id)->first();
     
     if (!$listing) {
