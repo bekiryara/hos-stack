@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 // WP-8: STORE persona requires X-Active-Tenant-Id header (persona.scope:store)
 // WP-26: Tenant scope enforced via tenant.scope middleware
 // WP-29: Auth required via auth.any middleware
+// WP-50: AuthAny middleware now validates JWT tokens (allows user-like auth flow)
 Route::middleware(['persona.scope:store', 'auth.any', 'tenant.scope'])->post('/v1/listings', function (\Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     // WP-28: Guard against null tenant_id (fail-fast if middleware didn't run)
@@ -133,6 +134,7 @@ Route::middleware(['persona.scope:store', 'auth.any', 'tenant.scope'])->post('/v
 // WP-8: STORE persona requires X-Active-Tenant-Id header (persona.scope:store)
 // WP-26: Tenant scope enforced via tenant.scope middleware
 // WP-29: Auth required via auth.any middleware
+// WP-50: AuthAny middleware now validates JWT tokens (allows user-like auth flow)
 Route::middleware(['persona.scope:store', 'auth.any', 'tenant.scope'])->post('/v1/listings/{id}/publish', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     // WP-28: Guard against null tenant_id (fail-fast if middleware didn't run)

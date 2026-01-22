@@ -335,7 +335,64 @@ try {
         }
     }
 } catch {
-    Write-Sanitized "FAIL: Listing operation failed: $($_.Exception.Message)" "Red"
+    $statusCode = $null
+    $responseBody = $null
+    
+    # Extract status code and response body for better error reporting
+    if ($_.Exception.Response) {
+        $statusCode = [int]$_.Exception.Response.StatusCode.value__
+        try {
+            $responseStream = $_.Exception.Response.GetResponseStream()
+            if ($responseStream) {
+                $reader = New-Object System.IO.StreamReader($responseStream)
+                $responseBody = $reader.ReadToEnd()
+                $reader.Close()
+                $responseStream.Close()
+            }
+        } catch {
+            if ($_.ErrorDetails.Message) {
+                $responseBody = $_.ErrorDetails.Message
+            }
+        }
+    }
+    
+    Write-Host "FAIL: Listing operation failed" -ForegroundColor Red
+    if ($statusCode) {
+        Write-Host "  Status: $statusCode" -ForegroundColor Yellow
+    }
+    
+    # Enhanced 401 error reporting
+    if ($statusCode -eq 401) {
+        Write-Host "  Error: Authentication failed (401 Unauthorized)" -ForegroundColor Yellow
+        Write-Host "  Headers sent:" -ForegroundColor Gray
+        Write-Host "    - Authorization: Bearer ***" -ForegroundColor Gray
+        Write-Host "    - X-Active-Tenant-Id: $tenantId" -ForegroundColor Gray
+        Write-Host "    - Content-Type: application/json" -ForegroundColor Gray
+        
+        if ($responseBody) {
+            try {
+                $errorObj = $responseBody | ConvertFrom-Json
+                $errorMsg = if ($errorObj.message) { $errorObj.message } elseif ($errorObj.error_code) { $errorObj.error_code } else { $responseBody }
+                $sanitized = Sanitize-Ascii $errorMsg
+                $preview = if ($sanitized.Length -gt 200) { $sanitized.Substring(0, 200) + "..." } else { $sanitized }
+                Write-Host "  Response body (first 200 chars, ASCII-only): $preview" -ForegroundColor Gray
+            } catch {
+                $sanitized = Sanitize-Ascii $responseBody
+                $preview = if ($sanitized.Length -gt 200) { $sanitized.Substring(0, 200) + "..." } else { $sanitized }
+                Write-Host "  Response body (first 200 chars, ASCII-only): $preview" -ForegroundColor Gray
+            }
+        }
+        
+        Write-Host ""
+        Write-Host "  Remediation:" -ForegroundColor Yellow
+        Write-Host "    Check Pazar auth middleware/guards and required headers for write endpoints." -ForegroundColor Gray
+        Write-Host "    Verify JWT token is valid and HOS_JWT_SECRET is configured in Pazar." -ForegroundColor Gray
+    } else {
+        $errorMsg = $_.Exception.Message
+        $sanitized = Sanitize-Ascii $errorMsg
+        Write-Host "  Error: $sanitized" -ForegroundColor Yellow
+    }
+    
     $hasFailures = $true
 }
 
