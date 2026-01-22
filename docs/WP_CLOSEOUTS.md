@@ -2139,77 +2139,39 @@ Invoke-WebRequest http://localhost:3000/v1/worlds  # marketplace must be ONLINE
 
 ---
 
-## WP-42: GitHub Sync Safe Windows Compatibility (pwsh Fallback)
 
-**Status:** ✅ COMPLETE  
-**Purpose:** Remove `pwsh` dependency from `ops/github_sync_safe.ps1` to ensure it runs correctly on Windows PowerShell 5.1 environments where `pwsh` may not be installed.
+## WP-40: Frontend Smoke v1 (No New Dependencies, Deterministic)
 
-**Deliverables:**
-- `ops/github_sync_safe.ps1` (MODIFIED): Removed `#!/usr/bin/env pwsh` shebang, added `Get-PowerShellExe` helper function that checks for `pwsh` and falls back to `powershell.exe`, replaced all `& pwsh` invocations with `& $PowerShellExe`
-- `docs/PROOFS/wp42_github_sync_safe_windows_pass.md` - Proof document
-
-**Changes:**
-1. **Removed pwsh shebang:** Line 1 `#!/usr/bin/env pwsh` removed
-2. **Added PowerShell executable helper:** `Get-PowerShellExe` function that returns "pwsh" if available, else "powershell.exe"
-3. **Replaced pwsh calls:** Both `secret_scan.ps1` and `public_ready_check.ps1` invocations now use `$PowerShellExe` variable instead of hardcoded `pwsh`
-
-**Verification:**
-- ✅ `secret_scan.ps1`: PASS (0 hits)
-- ✅ `public_ready_check.ps1`: PASS (clean, no secrets, no vendor/node_modules)
-- ✅ `conformance.ps1`: PASS (world registry aligned, no drift)
-- ⚠️ `github_sync_safe.ps1`: Pre-existing syntax error (unrelated to WP-42, brace mismatch in original file)
-
-**Commands:**
-```powershell
-# Test script (should work without pwsh)
-.\ops\github_sync_safe.ps1
-
-# Run gates
-.\ops\secret_scan.ps1
-.\ops\public_ready_check.ps1
-.\ops\conformance.ps1
-```
-
-**PASS Evidence:**
-- Proof: `docs/PROOFS/wp42_github_sync_safe_windows_pass.md`
-- Script now compatible with Windows PowerShell 5.1 (no pwsh required)
-- Falls back gracefully if pwsh is not available
-
----
-
-## WP-41: Gates Restore v1 (Secret Scan + Conformance Parser Fix)
-
-**Purpose:** Restore WP-33-required gates (secret_scan.ps1), fix conformance false FAIL by making worlds_config.ps1 parse multiline PHP arrays, and track canonical files (MERGE_RECOVERY_PLAN.md, test_auth.ps1).
+**Purpose:** Establish frontend smoke test discipline for V1 prototype: omurga (worlds) must PASS before frontend test can PASS, HOS Web must be accessible and render World Directory, marketplace-web build must PASS.
 
 **Deliverables:**
-- `ops/secret_scan.ps1` (NEW): Scans tracked files for common secret patterns (private keys, GitHub tokens, AWS keys, Slack tokens, Google API keys, Stripe keys, Bearer tokens, DB connection strings)
-- `ops/_lib/worlds_config.ps1` (FIX): Updated regex to handle multiline PHP arrays using `(?s)` Singleline option
-- `ops/conformance.ps1` (FIX): Updated registry parser to use `(?s)` for multiline matching and `"`r?`n"` for line splitting
-- `docs/MERGE_RECOVERY_PLAN.md` (TRACKED): Added to git tracking
-- `ops/_lib/test_auth.ps1` (TRACKED): Added to git tracking
-- `docs/PROOFS/wp41_gates_restore_pass.md` - Proof document
+- ops/frontend_smoke.ps1 (NEW): Frontend smoke test script with worlds check dependency
+- docs/PROOFS/wp40_frontend_smoke_pass.md - Proof document
 
 **Commands:**
-```powershell
-# Run gates
-.\ops\secret_scan.ps1
-.\ops\public_ready_check.ps1
-.\ops\conformance.ps1
-```
+`powershell
+# Run frontend smoke test
+.\ops\frontend_smoke.ps1
 
-**Proof:** `docs/PROOFS/wp41_gates_restore_pass.md`
+# Individual checks
+.\ops\world_status_check.ps1  # Must PASS first
+Invoke-WebRequest http://localhost:3002  # HOS Web check
+cd work\marketplace-web; npm run build  # Build check
+`
+
+**Proof:** docs/PROOFS/wp40_frontend_smoke_pass.md
 
 **Acceptance:**
-- ✅ Secret scan: 0 hits (PASS)
-- ✅ Conformance: All checks PASS (world registry drift fixed)
-- ✅ Public ready: PASS after commit (only "git not clean" remains)
-- ✅ Multiline PHP arrays parsed correctly
-- ✅ Registry parser handles both Windows and Unix line endings
+-  Frontend smoke test script created (ops/frontend_smoke.ps1)
+-  Worlds check dependency enforced (fail-fast if worlds check fails)
+-  HOS Web accessibility verified (status 200, world directory marker found)
+-  marketplace-web build verified (npm run build PASS)
+-  All steps PASS, exit code 0
 
 **Notes:**
-- **Minimal diff:** Only gate scripts and parser fixes, no feature work
-- **No refactor:** Only fixes needed to pass gates
+- **No new dependencies:** Uses existing PowerShell, Invoke-WebRequest, npm
+- **Minimal diff:** Only script creation, no code changes
+- **Deterministic:** Fail-fast on worlds check failure (omurga broken)
 - **ASCII-only:** All outputs ASCII format
-- **Exit codes:** 0 (PASS) or 1 (FAIL) for all scripts
 
 ---
