@@ -42,13 +42,13 @@ This is a full-stack marketplace platform built with Laravel (backend), Vue.js (
 
 4. **Databases**
    - PostgreSQL (H-OS)
-   - MySQL (Pazar)
+   - PostgreSQL (Pazar)
 
 ### Tech Stack
 
 - **Backend:** Laravel (PHP), Node.js
 - **Frontend:** Vue.js, Vite
-- **Database:** PostgreSQL, MySQL
+- **Database:** PostgreSQL
 - **Infrastructure:** Docker, Docker Compose
 - **CI/CD:** GitHub Actions
 

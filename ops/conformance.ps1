@@ -367,6 +367,110 @@ try {
     Write-FailCheck "E" "Error checking secrets: $($_.Exception.Message)"
 }
 
+# F) Docs truth drift: DB engine alignment
+Write-Host "`n[F] Docs truth drift: DB engine alignment check..." -ForegroundColor Yellow
+try {
+    $composePath = "docker-compose.yml"
+    if (-not (Test-Path $composePath)) {
+        Write-Host "  [WARN] docker-compose.yml not found, skipping DB engine check" -ForegroundColor Yellow
+    } else {
+        $composeContent = Get-Content $composePath -Raw -ErrorAction Stop
+        if ($null -eq $composeContent -or $composeContent.Length -eq 0) {
+            Write-Host "  [WARN] docker-compose.yml is empty or unreadable, skipping DB engine check" -ForegroundColor Yellow
+        } else {
+            # Extract pazar-db image using multiline regex
+            $expectedDbLabel = $null
+            if ($composeContent -match '(?s)pazar-db:\s*\n\s*image:\s*([^\s\n]+)') {
+                $pazarDbImage = $matches[1].Trim()
+                if ($pazarDbImage -match 'postgres') {
+                    $expectedDbLabel = "PostgreSQL"
+                } elseif ($pazarDbImage -match '(mysql|mariadb)') {
+                    $expectedDbLabel = "MySQL"
+                }
+            }
+            
+            if ($null -eq $expectedDbLabel) {
+                Write-Host "  [WARN] Cannot detect DB engine from docker-compose.yml pazar-db image, skipping check" -ForegroundColor Yellow
+            } else {
+                # Check docs/index.md
+                $indexPath = "docs\index.md"
+                $indexFail = $false
+                if (-not (Test-Path $indexPath)) {
+                    Write-FailCheck "F" "docs/index.md not found" @($indexPath)
+                    $indexFail = $true
+                } else {
+                    $indexContent = Get-Content $indexPath -Raw -ErrorAction Stop
+                    if ($null -eq $indexContent) {
+                        Write-FailCheck "F" "docs/index.md is empty or unreadable" @($indexPath)
+                        $indexFail = $true
+                    } else {
+                        # Check if Pazar DB section contains expected label and does NOT contain opposite
+                        $oppositeLabel = if ($expectedDbLabel -eq "PostgreSQL") { "MySQL" } else { "PostgreSQL" }
+                        $hasExpected = $false
+                        $hasOpposite = $false
+                        
+                        # Look for Pazar DB description (case-insensitive)
+                        if ($indexContent -match '(?i)(?:Pazar|Databases).*?(?:Pazar|MySQL|PostgreSQL)') {
+                            $pazarSection = $matches[0]
+                            if ($pazarSection -match "(?i)$expectedDbLabel.*Pazar|Pazar.*$expectedDbLabel") {
+                                $hasExpected = $true
+                            }
+                            if ($pazarSection -match "(?i)$oppositeLabel.*Pazar|Pazar.*$oppositeLabel") {
+                                $hasOpposite = $true
+                            }
+                        }
+                        
+                        # Also check for explicit "MySQL (Pazar)" or "PostgreSQL (Pazar)" patterns
+                        if ($indexContent -match "(?i)$expectedDbLabel\s*\(Pazar\)") {
+                            $hasExpected = $true
+                        }
+                        if ($indexContent -match "(?i)$oppositeLabel\s*\(Pazar\)") {
+                            $hasOpposite = $true
+                        }
+                        
+                        if (-not $hasExpected -or $hasOpposite) {
+                            Write-FailCheck "F" "docs/index.md: Expected '$expectedDbLabel (Pazar)' but found '$oppositeLabel (Pazar)' or missing" @($indexPath)
+                            $indexFail = $true
+                        }
+                    }
+                }
+                
+                # Check docs/CODE_INDEX.md
+                $codeIndexPath = "docs\CODE_INDEX.md"
+                $codeIndexFail = $false
+                if (-not (Test-Path $codeIndexPath)) {
+                    Write-FailCheck "F" "docs/CODE_INDEX.md not found" @($codeIndexPath)
+                    $codeIndexFail = $true
+                } else {
+                    $codeIndexContent = Get-Content $codeIndexPath -Raw -ErrorAction Stop
+                    if ($null -eq $codeIndexContent) {
+                        Write-FailCheck "F" "docs/CODE_INDEX.md is empty or unreadable" @($codeIndexPath)
+                        $codeIndexFail = $true
+                    } else {
+                        # Check for "pazar-db - <expected DB label>" pattern
+                        $expectedPattern = "pazar-db.*$expectedDbLabel"
+                        $oppositePattern = "pazar-db.*$(if ($expectedDbLabel -eq 'PostgreSQL') { 'MySQL' } else { 'PostgreSQL' })"
+                        
+                        if (-not ($codeIndexContent -match "(?i)$expectedPattern")) {
+                            Write-FailCheck "F" "docs/CODE_INDEX.md: Expected 'pazar-db - $expectedDbLabel' but not found" @($codeIndexPath)
+                            $codeIndexFail = $true
+                        } elseif ($codeIndexContent -match "(?i)$oppositePattern") {
+                            Write-FailCheck "F" "docs/CODE_INDEX.md: Found 'pazar-db - $oppositeLabel' (wrong DB label)" @($codeIndexPath)
+                            $codeIndexFail = $true
+                        }
+                    }
+                }
+                
+                if (-not $indexFail -and -not $codeIndexFail) {
+                    Write-PassCheck "F" "Docs match docker-compose.yml: Pazar DB is $expectedDbLabel"
+                }
+            }
+        }
+    }
+} catch {
+    Write-FailCheck "F" "Error checking docs DB engine alignment: $($_.Exception.Message)"
+}
+
 # Summary
 Write-Host ""
 if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {

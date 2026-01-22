@@ -237,7 +237,7 @@
 - `hos-api` - H-OS API (Node.js) on port 3000
 - `hos-db` - PostgreSQL database for H-OS
 - `pazar-app` - Pazar API (Laravel) on port 8080
-- `pazar-db` - MySQL database for Pazar
+- `pazar-db` - PostgreSQL database for Pazar
 - `pazar-web` - Marketplace frontend (Vue.js/Vite) on port 5173
 - `messaging-api` - Messaging service (Node.js)
 

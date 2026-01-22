@@ -5,6 +5,57 @@
 
 ---
 
+## WP-35: Docs DB Truth Lock
+
+**Status:** ✅ COMPLETE  
+**SPEC Reference:** WP-35
+
+### Purpose
+Fix doc drift: Pazar DB engine description must match runtime truth (docker-compose.yml shows pazar-db uses PostgreSQL). Add a conformance guard to prevent reintroducing wrong DB references in docs.
+
+### Deliverables
+- `docs/index.md` (MOD): Fixed Pazar DB description from MySQL to PostgreSQL
+- `docs/CODE_INDEX.md` (MOD): Fixed pazar-db description from MySQL to PostgreSQL
+- `ops/conformance.ps1` (MOD): Added section F: Docs truth drift: DB engine alignment
+- `docs/PROOFS/wp35_docs_db_truth_lock_pass.md` - Proof document
+
+### Changes
+1. **Documentation Fix:**
+   - `docs/index.md`: Changed "MySQL (Pazar)" to "PostgreSQL (Pazar)" in Databases section
+   - `docs/index.md`: Changed Tech Stack from "PostgreSQL, MySQL" to "PostgreSQL"
+   - `docs/CODE_INDEX.md`: Changed "pazar-db - MySQL database for Pazar" to "pazar-db - PostgreSQL database for Pazar"
+
+2. **Conformance Guard (Section F):**
+   - Reads docker-compose.yml to extract pazar-db image
+   - Detects DB engine (PostgreSQL if image contains "postgres", MySQL if contains "mysql" or "mariadb")
+   - Asserts docs/index.md contains expected DB label for Pazar (and does NOT contain opposite label)
+   - Asserts docs/CODE_INDEX.md contains "pazar-db - <expected DB label>"
+   - On mismatch: prints FAIL message and exits 1
+   - On success: prints PASS and continues
+
+### Commands
+```powershell
+# Run conformance check (section F validates DB engine alignment)
+.\ops\conformance.ps1
+
+# Run public ready check
+.\ops\public_ready_check.ps1
+```
+
+### PASS Evidence
+- `docs/PROOFS/wp35_docs_db_truth_lock_pass.md` - Proof document with all test outputs
+- Conformance Section F: PASS - "Docs match docker-compose.yml: Pazar DB is PostgreSQL"
+- Docker Compose Truth: pazar-db uses `postgres:16-alpine` (confirmed)
+
+### Validation
+- Zero behavior change (docs only, no code changes)
+- Minimal diff (only touched 2 doc files + 1 conformance script)
+- Fail-fast guard prevents future drift
+- ASCII-only outputs (all messages ASCII)
+- Deterministic (all checks reproducible)
+
+---
+
 ## WP-33: Public Ready Pass + GitHub PR Sync v2
 
 **Status:** ✅ COMPLETE  
