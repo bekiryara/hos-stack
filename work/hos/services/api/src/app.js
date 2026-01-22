@@ -174,7 +174,7 @@ async function registerApiRoutes(app, { db, legacy = false }) {
 
     worlds.push({
       world_key: "messaging",
-      availability: "DISABLED",
+      availability: "ONLINE",
       phase: "GENESIS",
       version: "1.4.0"
     });
