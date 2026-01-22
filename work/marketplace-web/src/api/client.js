@@ -52,8 +52,10 @@ export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   
   // Merge headers: options.headers takes precedence over persona headers
+  // Add ngrok-skip-browser-warning header to bypass ngrok-free.dev "Visit Site" page
   const headers = {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
     ...options.headers,
   };
   
