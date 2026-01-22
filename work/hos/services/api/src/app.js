@@ -127,6 +127,54 @@ async function registerApiRoutes(app, { db, legacy = false }) {
     };
   });
 
+  // Shared helper: Ping world availability (WP-38: no duplication)
+  async function pingWorldAvailability(envKey, defaultBaseUrl, timeoutMs) {
+    let url = process.env[envKey] || defaultBaseUrl;
+    if (!url.includes("/api/world/status")) {
+      url = url.replace(/\/+$/, "") + "/api/world/status";
+    }
+
+    const attemptPing = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          signal: controller.signal,
+          headers: { "Accept": "application/json" }
+        });
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.availability === "ONLINE") {
+            return "ONLINE";
+          }
+        }
+        return "OFFLINE";
+      } catch (e) {
+        clearTimeout(timeoutId);
+        if (e.name === "AbortError") {
+          throw e; // Retry for timeout
+        }
+        return "OFFLINE";
+      }
+    };
+
+    try {
+      return await attemptPing();
+    } catch (e) {
+      // Retry once for timeout/AbortError only
+      if (e.name === "AbortError") {
+        try {
+          return await attemptPing();
+        } catch {
+          return "OFFLINE";
+        }
+      }
+      return "OFFLINE";
+    }
+  }
+
   // GET /v1/worlds - Returns directory of all worlds with availability
   app.get("/worlds", async () => {
     const worlds = [
@@ -138,32 +186,12 @@ async function registerApiRoutes(app, { db, legacy = false }) {
       }
     ];
 
-    // Ping marketplace (Pazar) to determine availability
-    let marketplaceAvailability = "OFFLINE";
-    try {
-      // PAZAR_STATUS_URL env var can be set to full URL (e.g., http://pazar-app:80/api/world/status)
-      // or base URL (e.g., http://pazar-app:80), we append /api/world/status if needed
-      let marketplaceUrl = process.env.PAZAR_STATUS_URL || "http://localhost:8080";
-      if (!marketplaceUrl.includes("/api/world/status")) {
-        marketplaceUrl = marketplaceUrl.replace(/\/+$/, "") + "/api/world/status";
-      }
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 500);
-      const response = await fetch(marketplaceUrl, {
-        method: "GET",
-        signal: controller.signal,
-        headers: { "Accept": "application/json" }
-      });
-      clearTimeout(timeoutId);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.availability === "ONLINE") {
-          marketplaceAvailability = "ONLINE";
-        }
-      }
-    } catch (e) {
-      // Non-fatal: marketplace unavailable, keep as OFFLINE
-    }
+    // Ping marketplace and messaging in parallel (WP-38: latency optimization)
+    const timeoutMs = parseInt(process.env.WORLD_PING_TIMEOUT_MS || "2000", 10);
+    const [marketplaceAvailability, messagingAvailability] = await Promise.all([
+      pingWorldAvailability("PAZAR_STATUS_URL", "http://pazar-app:80", timeoutMs),
+      pingWorldAvailability("MESSAGING_STATUS_URL", "http://messaging-api:3000", timeoutMs)
+    ]);
 
     worlds.push({
       world_key: "marketplace",
@@ -171,33 +199,6 @@ async function registerApiRoutes(app, { db, legacy = false }) {
       phase: "GENESIS",
       version: "1.4.0"
     });
-
-    // Ping messaging to determine availability
-    let messagingAvailability = "OFFLINE";
-    try {
-      // MESSAGING_STATUS_URL env var can be set to full URL (e.g., http://messaging-api:3000/api/world/status)
-      // or base URL (e.g., http://messaging-api:3000), we append /api/world/status if needed
-      let messagingUrl = process.env.MESSAGING_STATUS_URL || "http://localhost:8090";
-      if (!messagingUrl.includes("/api/world/status")) {
-        messagingUrl = messagingUrl.replace(/\/+$/, "") + "/api/world/status";
-      }
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 500);
-      const response = await fetch(messagingUrl, {
-        method: "GET",
-        signal: controller.signal,
-        headers: { "Accept": "application/json" }
-      });
-      clearTimeout(timeoutId);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.availability === "ONLINE") {
-          messagingAvailability = "ONLINE";
-        }
-      }
-    } catch (e) {
-      // Non-fatal: messaging unavailable, keep as OFFLINE
-    }
 
     worlds.push({
       world_key: "messaging",

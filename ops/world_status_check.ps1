@@ -129,6 +129,8 @@ try {
                 Write-Host "FAIL: marketplace.availability MUST be 'ONLINE', got '$($marketplaceWorld.availability)'" -ForegroundColor Red
                 Write-Host "  [DEBUG] Check PAZAR_STATUS_URL env var and pazar-app service" -ForegroundColor Yellow
                 Write-Host "  [DEBUG] Expected: http://pazar-app:80 (Docker Compose service name)" -ForegroundColor Gray
+                Write-Host "  [DEBUG] Ping endpoint: http://pazar-app:80/api/world/status" -ForegroundColor Gray
+                Write-Host "  [DEBUG] Timeout: WORLD_PING_TIMEOUT_MS (default: 2000ms)" -ForegroundColor Gray
                 $hasFailures = $true
             }
 
@@ -137,6 +139,8 @@ try {
                 Write-Host "FAIL: messaging.availability MUST be 'ONLINE', got '$($messagingWorld.availability)'" -ForegroundColor Red
                 Write-Host "  [DEBUG] Check MESSAGING_STATUS_URL env var and messaging-api service" -ForegroundColor Yellow
                 Write-Host "  [DEBUG] Expected: http://messaging-api:3000 (Docker Compose service name)" -ForegroundColor Gray
+                Write-Host "  [DEBUG] Ping endpoint: http://messaging-api:3000/api/world/status" -ForegroundColor Gray
+                Write-Host "  [DEBUG] Timeout: WORLD_PING_TIMEOUT_MS (default: 2000ms)" -ForegroundColor Gray
                 $hasFailures = $true
             }
 

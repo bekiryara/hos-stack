@@ -2625,3 +2625,41 @@ $tree = $buildTree($categories);
 
 ---
 
+## WP-38: Pazar Ping Reliability v1
+
+**Purpose:** Fix marketplace ping false-OFFLINE issue by increasing timeout, consolidating ping logic into shared helper, and using Docker network-friendly defaults.
+
+**Deliverables:**
+- `work/hos/services/api/src/app.js` - Shared `pingWorldAvailability()` helper, timeout 500ms→2000ms, parallel ping execution
+- `docker-compose.yml` - Added `WORLD_PING_TIMEOUT_MS: "2000"`
+- `ops/world_status_check.ps1` - Enhanced debug messages (timeout + endpoint info)
+- `docs/PROOFS/wp38_pazar_ping_reliability_pass.md` - Proof document
+
+**Commands:**
+```powershell
+docker compose build hos-api
+docker compose up -d hos-api
+.\ops\world_status_check.ps1  # Must PASS
+Invoke-WebRequest http://localhost:3000/v1/worlds  # marketplace must be ONLINE
+```
+
+**Proof:** `docs/PROOFS/wp38_pazar_ping_reliability_pass.md`
+
+**Acceptance:**
+- ✅ Marketplace ping returns ONLINE (was OFFLINE before)
+- ✅ Timeout increased to 2000ms (configurable via WORLD_PING_TIMEOUT_MS)
+- ✅ Code duplication eliminated (shared helper for marketplace + messaging)
+- ✅ Parallel ping execution (Promise.all) for latency optimization
+- ✅ Docker network default URLs (pazar-app:80, messaging-api:3000)
+- ✅ Ops test PASS (all availability rules satisfied)
+
+**Notes:**
+- **Minimal diff:** Only ping logic refactored, no other changes
+- **No duplication:** Single helper replaces 80+ lines of duplicated code
+- **Timeout configurable:** WORLD_PING_TIMEOUT_MS env var (default: 2000ms)
+- **Retry logic:** 1 retry on timeout/AbortError
+- **JSON shape preserved:** /v1/worlds response format unchanged
+- **ASCII-only:** All outputs ASCII format
+
+---
+
