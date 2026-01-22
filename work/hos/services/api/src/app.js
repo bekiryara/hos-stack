@@ -437,6 +437,63 @@ async function registerApiRoutes(app, { db, legacy = false }) {
     password: z.string().min(8).max(200).optional()
   });
 
+  // DEV/OPS bootstrap only: Admin endpoint to upsert membership (WP-49)
+  const adminUpsertMembershipBody = z.object({
+    tenantSlug: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/),
+    userEmail: z.string().email(),
+    role: z.enum(["member", "admin", "owner"]).optional()
+  });
+
+  app.post("/admin/memberships/upsert", async (req, reply) => {
+    if (!requireApiKey(req, reply)) return;
+
+    const parsed = adminUpsertMembershipBody.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+
+    const tenantSlug = parsed.data.tenantSlug;
+    const userEmail = String(parsed.data.userEmail || "").toLowerCase();
+    const role = parsed.data.role || "member";
+
+    // Get tenant by slug
+    const tenant = await db.query("select id, slug from tenants where slug = $1 limit 1", [tenantSlug]);
+    if (tenant.rowCount === 0) {
+      return reply.code(404).send({ error: "tenant_not_found", tenantSlug });
+    }
+    const tenantId = tenant.rows[0].id;
+
+    // Get user by email (must exist in any tenant for this to work)
+    const user = await db.query("select id, email from users where email = $1 limit 1", [userEmail]);
+    if (user.rowCount === 0) {
+      return reply.code(404).send({ error: "user_not_found", userEmail });
+    }
+    const userId = user.rows[0].id;
+
+    // Upsert membership (on conflict do nothing if exists)
+    try {
+      await db.query(
+        "insert into memberships (tenant_id, user_id, role, status) values ($1, $2, $3, $4) on conflict (tenant_id, user_id) do update set role = $3, status = $4",
+        [tenantId, userId, role, "active"]
+      );
+      await audit(db, {
+        action: "membership.upsert.admin",
+        tenantId,
+        actorUserId: userId,
+        metadata: { userEmail, role }
+      });
+
+      return reply.send({
+        tenant_id: tenantId,
+        tenant_slug: tenantSlug,
+        user_id: userId,
+        user_email: userEmail,
+        role,
+        status: "active"
+      });
+    } catch (e) {
+      return reply.code(500).send({ error: "membership_upsert_failed", message: String(e?.message || e) });
+    }
+  });
+
   app.post("/admin/users/upsert", async (req, reply) => {
     if (!requireApiKey(req, reply)) return;
 

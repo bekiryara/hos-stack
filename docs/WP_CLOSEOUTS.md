@@ -12,6 +12,51 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-49: Demo Membership Bootstrap (Make prototype_flow_smoke GREEN)
+
+**Purpose:** Make Prototype v1 "user-like" E2E flow deterministic by ensuring the test user always has a valid tenant membership. prototype_flow_smoke can now run without manual setup.
+
+**Deliverables:**
+- work/hos/services/api/src/app.js (MODIFIED): Added `POST /v1/admin/memberships/upsert` admin endpoint (DEV/OPS bootstrap only, requires x-hos-api-key, creates/updates membership linking user to tenant)
+- ops/ensure_demo_membership.ps1 (NEW): Bootstrap script that guarantees test user has membership with valid tenant UUID (acquires JWT, checks memberships, bootstraps if needed, verifies)
+- ops/prototype_flow_smoke.ps1 (MODIFIED): Automatically calls bootstrap if tenant_id is missing (retries memberships after bootstrap)
+- ops/ensure_demo_membership.ps1 (MODIFIED): Fixed UUID validation in Get-TenantIdFromMemberships helper (uses [System.Guid]::Empty instead of null)
+- docs/PROOFS/wp49_demo_membership_bootstrap_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Run bootstrap
+.\ops\ensure_demo_membership.ps1
+
+# Run smoke tests
+.\ops\prototype_smoke.ps1
+.\ops\frontend_smoke.ps1
+.\ops\prototype_flow_smoke.ps1
+
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp49_demo_membership_bootstrap_pass.md
+
+**Acceptance:**
+- ensure_demo_membership: PASS (membership bootstrap working, tenant_id extracted)
+- prototype_flow_smoke: PASS (tenant_id acquired successfully, bootstrap integration working)
+- prototype_smoke: PASS
+- frontend_smoke: PASS
+- All gates: PASS
+
+**Notes:**
+- **Minimal diff:** Only admin endpoint addition and bootstrap script
+- **No refactor:** Reuses existing test_auth.ps1 helper
+- **Security:** Admin endpoint requires x-hos-api-key, tokens masked
+- **Idempotent:** Bootstrap safe to run multiple times
+
+---
+
 ## WP-48: Prototype Green Pack v1 (Frontend Marker Alignment + Memberships tenant_id Fix)
 
 **Purpose:** Make Prototype v1 deterministically GREEN by fixing frontend_smoke/prototype_smoke marker inconsistency and making prototype_flow_smoke tenant_id extraction robust.

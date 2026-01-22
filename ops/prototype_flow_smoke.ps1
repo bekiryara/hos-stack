@@ -128,9 +128,9 @@ function Get-TenantIdFromMemberships {
         }
         
         # Validate UUID format
-        if ($tenantId) {
-            $guid = $null
-            if ([System.Guid]::TryParse($tenantId, [ref]$guid)) {
+        if ($tenantId -and $tenantId -is [string] -and $tenantId.Trim().Length -gt 0) {
+            $guidResult = [System.Guid]::Empty
+            if ([System.Guid]::TryParse($tenantId, [ref]$guidResult)) {
                 return $tenantId
             }
         }
@@ -149,6 +149,36 @@ try {
         -ErrorAction Stop
     
     $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+    
+    if (-not $tenantId) {
+        Write-Host "  No valid tenant_id found in memberships, attempting bootstrap..." -ForegroundColor Yellow
+        
+        # Try to bootstrap membership using ensure_demo_membership.ps1
+        try {
+            $bootstrapScript = Join-Path $PSScriptRoot "ensure_demo_membership.ps1"
+            if (Test-Path $bootstrapScript) {
+                Write-Host "  Running membership bootstrap..." -ForegroundColor Gray
+                $bootstrapResult = & $bootstrapScript -HosBaseUrl "http://localhost:3000" -TenantSlug "tenant-a" -Email "testuser@example.com" 2>&1
+                $bootstrapExitCode = $LASTEXITCODE
+                
+                if ($bootstrapExitCode -eq 0) {
+                    Write-Host "PASS: Membership bootstrapped successfully" -ForegroundColor Green
+                    # Retry memberships call
+                    $membershipsResponse = Invoke-RestMethod -Uri "http://localhost:3000/v1/me/memberships" `
+                        -Headers @{ "Authorization" = "Bearer $jwtToken" } `
+                        -TimeoutSec 5 `
+                        -ErrorAction Stop
+                    $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+                } else {
+                    Write-Host "  Bootstrap failed (exit code: $bootstrapExitCode), continuing with failure..." -ForegroundColor Yellow
+                }
+            } else {
+                Write-Host "  Bootstrap script not found: $bootstrapScript" -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Sanitized "  Bootstrap attempt failed: $($_.Exception.Message)" "Yellow"
+        }
+    }
     
     if (-not $tenantId) {
         Write-Host "FAIL: No valid tenant_id found in memberships" -ForegroundColor Red
