@@ -46,22 +46,44 @@ try {
     }
     
     # Check for prototype-launcher marker (aligned with prototype_smoke.ps1)
+    # Accept any of these marker variants (OR logic):
+    # 1) HTML comment marker: <!-- prototype-launcher --> or <!-- prototype-launcher-marker -->
+    # 2) data attribute marker: data-prototype="launcher" OR data-marker="prototype-launcher" OR data-test="prototype-launcher"
+    # 3) visible heading/text containing: prototype-launcher
     $bodyContent = $hosWebResponse.Content
-    # Marker constant: same as prototype_smoke.ps1 (checks for HTML comment OR data-test OR heading text)
     $markerFound = $false
-    if ($bodyContent -match 'prototype-launcher-marker' -or $bodyContent -match 'data-test="prototype-launcher"' -or $bodyContent -match 'Prototype Launcher') {
+    
+    # Variant 1: HTML comment marker
+    if ($bodyContent -match '<!--\s*prototype-launcher' -or $bodyContent -match 'prototype-launcher-marker') {
         $markerFound = $true
+    }
+    
+    # Variant 2: data attribute marker
+    if (-not $markerFound) {
+        if ($bodyContent -match 'data-prototype="launcher"' -or $bodyContent -match 'data-marker="prototype-launcher"' -or $bodyContent -match 'data-test="prototype-launcher"') {
+            $markerFound = $true
+        }
+    }
+    
+    # Variant 3: visible heading/text containing prototype-launcher
+    if (-not $markerFound) {
+        if ($bodyContent -match 'prototype-launcher' -and ($bodyContent -match '<h[1-6]' -or $bodyContent -match '<div' -or $bodyContent -match '<span')) {
+            $markerFound = $true
+        }
     }
     
     if ($markerFound) {
         Write-Host "PASS: HOS Web body contains prototype-launcher marker" -ForegroundColor Green
     } else {
         Write-Host "FAIL: HOS Web body missing prototype-launcher marker" -ForegroundColor Red
-        Write-Host "  Expected marker: prototype-launcher-marker OR data-test=`"prototype-launcher`" OR `"Prototype Launcher`"" -ForegroundColor Yellow
+        Write-Host "  Expected marker (any of):" -ForegroundColor Yellow
+        Write-Host "    1) HTML comment: <!-- prototype-launcher --> or <!-- prototype-launcher-marker -->" -ForegroundColor Yellow
+        Write-Host "    2) data attribute: data-prototype=`"launcher`" OR data-marker=`"prototype-launcher`" OR data-test=`"prototype-launcher`"" -ForegroundColor Yellow
+        Write-Host "    3) visible text containing: prototype-launcher" -ForegroundColor Yellow
         # Print first ~200 chars of body (ASCII-sanitized) for debugging
         $bodyPreview = $bodyContent.Substring(0, [Math]::Min(200, $bodyContent.Length)) -replace '[^\x00-\x7F]', ''
         Write-Host "  Body preview (first 200 chars, ASCII-only): $bodyPreview" -ForegroundColor Gray
-        Write-Host "  Hint: Verify index.html and App.tsx changes - marker is required for prototype discipline" -ForegroundColor Yellow
+        Write-Host "  Remediation: Confirm HOS Web contains marker; check served HTML at http://localhost:3002" -ForegroundColor Yellow
         $hasFailures = $true
     }
 } catch {

@@ -68,19 +68,28 @@ function Get-TenantIdFromMemberships {
     
     # Handle array or object with data/items property
     $membershipsArray = $null
+    
+    # First check if it's a direct array
     if ($Memberships -is [Array]) {
         $membershipsArray = $Memberships
-    } elseif ($Memberships.data -is [Array]) {
-        $membershipsArray = $Memberships.data
-    } elseif ($Memberships.items -is [Array]) {
-        $membershipsArray = $Memberships.items
-    } elseif ($Memberships -is [PSCustomObject]) {
-        # Try common property names
-        if ($Memberships.PSObject.Properties['data'] -and $Memberships.data -is [Array]) {
-            $membershipsArray = $Memberships.data
-        } elseif ($Memberships.PSObject.Properties['items'] -and $Memberships.items -is [Array]) {
+    }
+    # Then check for PSCustomObject with data/items properties
+    elseif ($Memberships -is [PSCustomObject]) {
+        # Try 'items' first (common HOS API response format)
+        if ($Memberships.PSObject.Properties['items'] -and $Memberships.items -is [Array]) {
             $membershipsArray = $Memberships.items
         }
+        # Then try 'data'
+        elseif ($Memberships.PSObject.Properties['data'] -and $Memberships.data -is [Array]) {
+            $membershipsArray = $Memberships.data
+        }
+    }
+    # Fallback: try direct property access (for dynamic objects)
+    elseif ($Memberships.items -is [Array]) {
+        $membershipsArray = $Memberships.items
+    }
+    elseif ($Memberships.data -is [Array]) {
+        $membershipsArray = $Memberships.data
     }
     
     if (-not $membershipsArray) {
@@ -96,16 +105,25 @@ function Get-TenantIdFromMemberships {
     foreach ($membership in $membershipsArray) {
         $tenantId = $null
         
-        # Try different field paths in order
+        # Try different field paths in order (as specified in requirements)
+        # 1) membership.tenant_id
         if ($membership.tenant_id) {
             $tenantId = $membership.tenant_id
-        } elseif ($membership.tenant -and $membership.tenant.id) {
+        }
+        # 2) membership.tenant.id (nested object)
+        elseif ($membership.tenant -and $membership.tenant.id) {
             $tenantId = $membership.tenant.id
-        } elseif ($membership.tenant -and $membership.tenant.PSObject.Properties['id']) {
+        }
+        # 3) membership.tenant.id (via PSObject.Properties for safety)
+        elseif ($membership.tenant -and $membership.tenant.PSObject.Properties['id']) {
             $tenantId = $membership.tenant.id
-        } elseif ($membership.tenantId) {
+        }
+        # 4) membership.tenantId
+        elseif ($membership.tenantId) {
             $tenantId = $membership.tenantId
-        } elseif ($membership.store_tenant_id) {
+        }
+        # 5) membership.store_tenant_id
+        elseif ($membership.store_tenant_id) {
             $tenantId = $membership.store_tenant_id
         }
         
@@ -135,20 +153,29 @@ try {
     if (-not $tenantId) {
         Write-Host "FAIL: No valid tenant_id found in memberships" -ForegroundColor Red
         
-        # Print schema hint for first 2 membership items
+        # Print schema hint (use same logic as helper function)
         $membershipsArray = $null
         if ($membershipsResponse -is [Array]) {
             $membershipsArray = $membershipsResponse
-        } elseif ($membershipsResponse.data -is [Array]) {
-            $membershipsArray = $membershipsResponse.data
-        } elseif ($membershipsResponse.items -is [Array]) {
-            $membershipsArray = $membershipsResponse.items
-        } elseif ($membershipsResponse -is [PSCustomObject]) {
-            if ($membershipsResponse.PSObject.Properties['data'] -and $membershipsResponse.data -is [Array]) {
-                $membershipsArray = $membershipsResponse.data
-            } elseif ($membershipsResponse.PSObject.Properties['items'] -and $membershipsResponse.items -is [Array]) {
-                $membershipsArray = $membershipsResponse.items
+        }
+        elseif ($membershipsResponse -is [PSCustomObject]) {
+            if ($membershipsResponse.PSObject.Properties['items']) {
+                if ($membershipsResponse.items -is [Array]) {
+                    $membershipsArray = $membershipsResponse.items
+                } else {
+                    Write-Host "  Expected tenant_id or tenant.id; got 'items' property but it is not an array" -ForegroundColor Yellow
+                    Write-Host "    items type: $($membershipsResponse.items.GetType().Name)" -ForegroundColor Gray
+                }
             }
+            if (-not $membershipsArray -and $membershipsResponse.PSObject.Properties['data'] -and $membershipsResponse.data -is [Array]) {
+                $membershipsArray = $membershipsResponse.data
+            }
+        }
+        elseif ($membershipsResponse.items -is [Array]) {
+            $membershipsArray = $membershipsResponse.items
+        }
+        elseif ($membershipsResponse.data -is [Array]) {
+            $membershipsArray = $membershipsResponse.data
         }
         
         if ($membershipsArray -and $membershipsArray.Count -gt 0) {
@@ -163,6 +190,11 @@ try {
                     Write-Host "      tenant object keys: $($tenantKeys -join ', ')" -ForegroundColor Gray
                 }
             }
+            Write-Host "  Expected tenant_id field paths (tried in order):" -ForegroundColor Yellow
+            Write-Host "    - membership.tenant_id" -ForegroundColor Gray
+            Write-Host "    - membership.tenant.id" -ForegroundColor Gray
+            Write-Host "    - membership.tenantId" -ForegroundColor Gray
+            Write-Host "    - membership.store_tenant_id" -ForegroundColor Gray
         } elseif ($membershipsArray -and $membershipsArray.Count -eq 0) {
             Write-Host "  Memberships array is empty (user has no memberships)" -ForegroundColor Yellow
             Write-Host "  Remediation: User needs to be added to a tenant via HOS admin API" -ForegroundColor Gray
@@ -173,6 +205,15 @@ try {
             if ($membershipsResponse -is [PSCustomObject]) {
                 $responseKeys = $membershipsResponse.PSObject.Properties.Name | ForEach-Object { Sanitize-Ascii $_ }
                 Write-Host "  Response top-level keys: $($responseKeys -join ', ')" -ForegroundColor Gray
+                # Check if items exists but is null/not array
+                if ($membershipsResponse.PSObject.Properties['items']) {
+                    $itemsValue = $membershipsResponse.items
+                    if ($null -eq $itemsValue) {
+                        Write-Host "    'items' property exists but is null" -ForegroundColor Gray
+                    } elseif ($itemsValue -isnot [Array]) {
+                        Write-Host "    'items' property exists but is not an array (type: $($itemsValue.GetType().Name))" -ForegroundColor Gray
+                    }
+                }
             }
         }
         
