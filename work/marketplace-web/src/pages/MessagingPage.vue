@@ -124,7 +124,17 @@ export default {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to create/get thread');
+          // Read error response body for better error message
+          let errorText = `HTTP ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData.message) errorText += `: ${errorData.message}`;
+            else if (errorData.error) errorText += `: ${errorData.error}`;
+          } catch {
+            // If response is not JSON, use status text
+            errorText += `: ${response.statusText}`;
+          }
+          throw new Error(`Failed to create/get thread (${errorText})`);
         }
 
         const data = await response.json();
@@ -147,7 +157,16 @@ export default {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to load messages');
+          // Read error response body for better error message
+          let errorText = `HTTP ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData.message) errorText += `: ${errorData.message}`;
+            else if (errorData.error) errorText += `: ${errorData.error}`;
+          } catch {
+            errorText += `: ${response.statusText}`;
+          }
+          throw new Error(`Failed to load messages (${errorText})`);
         }
 
         const data = await response.json();
@@ -186,7 +205,16 @@ export default {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to send message');
+          // Read error response body for better error message
+          let errorText = `HTTP ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData.message) errorText += `: ${errorData.message}`;
+            else if (errorData.error) errorText += `: ${errorData.error}`;
+          } catch {
+            errorText += `: ${response.statusText}`;
+          }
+          throw new Error(`Failed to send message (${errorText})`);
         }
 
         // Reload messages

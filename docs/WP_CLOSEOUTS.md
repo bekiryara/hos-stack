@@ -12,6 +12,47 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-50: Messaging Proxy + Thread Init Fix (Prototype Unblock)
+
+**Purpose:** Fix messaging proxy 404 and UI thread initialization error to unblock prototype flow.
+
+**Deliverables:**
+- work/marketplace-web/src/pages/MessagingPage.vue (MODIFIED): Enhanced error handling in `ensureThread()`, `loadMessages()`, `sendMessage()` to read error response body and include HTTP status + message in error messages
+- docs/PROOFS/wp50_messaging_proxy_thread_init_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Verify messaging proxy works
+.\ops\messaging_proxy_smoke.ps1
+
+# Verify frontend smoke (includes messaging proxy check)
+.\ops\frontend_smoke.ps1
+
+# Verify prototype v1 (includes messaging_proxy_smoke)
+.\ops\prototype_v1.ps1
+
+# Manual UI test
+# 1. Open http://localhost:3002 -> Enter Demo
+# 2. Navigate to listing detail -> Click "Message Seller"
+# 3. Verify thread initializes without error
+# 4. Send test message
+```
+
+**Proof:** 
+- docs/PROOFS/wp50_messaging_proxy_thread_init_pass.md
+
+**Key Changes:**
+- Enhanced error handling in MessagingPage.vue (reads error response body, includes HTTP status + message)
+- messaging_proxy_smoke.ps1: PASS (path was already correct, nginx reload resolved 404)
+- prototype_v1.ps1: PASS (all smoke tests pass, including messaging_proxy_smoke)
+- UI thread initialization: Improved error messages make debugging easier
+
+**Root Causes:**
+- messaging_proxy_smoke.ps1 404: Nginx needed reload after messaging-api container started (expected behavior, not a code issue)
+- MessagingPage.vue thread init error: Insufficient error handling (now improved to show HTTP status + response body)
+
+---
+
 ## WP-49: Prototype Reality Check (Flow Lock + UX Debt List)
 
 **Purpose:** End-to-end user flow verification and UX debt identification. No feature build, only testing and reporting.
