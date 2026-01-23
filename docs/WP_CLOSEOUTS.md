@@ -12,6 +12,51 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-56: Messaging Same-Origin Proxy (3002) — Fix Demo "Message Seller"
+
+**Purpose:** Eliminate UI messaging CORS blocker by proxying Messaging API through HOS Web (nginx @ 3002). Fixes "Message Seller" flow blocked by cross-origin request from 3002 to 8090.
+
+**Deliverables:**
+- work/hos/services/web/nginx.conf (MODIFIED): Added `/api/messaging/` location block before generic `/api/` location, proxies to `messaging-api:3000`, rewrites `/api/messaging/` prefix
+- work/marketplace-web/src/pages/MessagingPage.vue (MODIFIED): Replaced hardcoded `http://localhost:8090` with `/api/messaging` in ensureThread(), loadMessages(), sendMessage()
+- ops/messaging_proxy_smoke.ps1 (NEW): Smoke test for messaging proxy verification
+- ops/prototype_v1.ps1 (MODIFIED): Added messaging_proxy_smoke to execution sequence
+- docs/PROOFS/wp56_messaging_same_origin_proxy_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Rebuild hos-web with nginx proxy config
+docker compose build hos-web
+
+# Start services
+docker compose up -d
+
+# Test proxy
+.\ops\messaging_proxy_smoke.ps1
+
+# Browser test
+# http://localhost:3002 -> Enter Demo -> Message Seller
+```
+
+**Proof:** 
+- docs/PROOFS/wp56_messaging_same_origin_proxy_pass.md
+
+**Key URLs:**
+- Messaging Proxy: http://localhost:3002/api/messaging/api/v1/threads/upsert
+- Messaging Proxy Status: http://localhost:3002/api/messaging/api/world/status
+- Messaging Direct (internal): http://localhost:8090 (CORS blocked from 3002)
+
+**Acceptance:**
+- Proxy works: /api/messaging/api/world/status returns 200
+- No CORS errors: All messaging requests use same origin (3002)
+- Thread upsert succeeds: POST /api/messaging/api/v1/threads/upsert works
+- Messages load: GET /api/messaging/api/v1/threads/:id works
+- Send message works: POST /api/messaging/api/v1/threads/:id/messages works
+- Smoke test: messaging_proxy_smoke.ps1 PASS
+- All gates: PASS
+
+---
+
 ## WP-55: Single-Origin Marketplace UI (Serve marketplace-web under HOS Web /marketplace/*)
 
 **Purpose:** Eliminate multi-origin (3002 vs 5173) token/storage mismatch by serving marketplace-web from the SAME origin as HOS Web: http://localhost:3002/marketplace/*. Fixes JWT token sharing issue (localStorage is origin-scoped).

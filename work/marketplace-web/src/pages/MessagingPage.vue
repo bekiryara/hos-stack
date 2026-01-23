@@ -99,7 +99,7 @@ export default {
       }
     },
     async ensureThread() {
-      const messagingBaseUrl = 'http://localhost:8090';
+      const messagingBaseUrl = '/api/messaging';
       const token = localStorage.getItem('demo_auth_token');
       
       try {
@@ -133,7 +133,7 @@ export default {
     async loadMessages() {
       if (!this.threadId) return;
 
-      const messagingBaseUrl = 'http://localhost:8090';
+      const messagingBaseUrl = '/api/messaging';
       const token = localStorage.getItem('demo_auth_token');
 
       try {
@@ -161,7 +161,7 @@ export default {
       const messageBody = this.newMessage.trim();
       this.newMessage = '';
 
-      const messagingBaseUrl = 'http://localhost:8090';
+      const messagingBaseUrl = '/api/messaging';
       const token = localStorage.getItem('demo_auth_token');
 
       try {

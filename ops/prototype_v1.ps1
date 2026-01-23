@@ -132,6 +132,7 @@ if (Test-Path "$scriptDir\world_status_check.ps1") {
 
 $smokeScripts += @(
     "$scriptDir\frontend_smoke.ps1",
+    "$scriptDir\messaging_proxy_smoke.ps1",
     "$scriptDir\prototype_smoke.ps1",
     "$scriptDir\prototype_flow_smoke.ps1"
 )
