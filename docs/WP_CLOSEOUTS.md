@@ -3,6 +3,49 @@
 **Last Updated:** 2026-01-24  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
 
+---
+
+## WP-49: Demo Seed 4/4 Determinism (Fix Bando Presto 422)
+
+**Purpose:** Fix the 422 error for "Bando Presto (4 kişi)" in `demo_seed_root_listings.ps1` to achieve 4/4 successful showcase listings.
+
+**Deliverables:**
+- `ops/demo_seed_root_listings.ps1` (MODIFIED): Changed `Invoke-RestMethod` to `Invoke-WebRequest` with explicit UTF-8 encoding for listing creation
+- `docs/PROOFS/wp49_demo_seed_4of4_pass.md` (NEW): Proof document with verification results
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): WP-49 entry
+- `CHANGELOG.md` (MODIFIED): WP-49 entry
+
+**Commands:**
+```powershell
+# Run demo seed (should create 4/4 listings)
+.\ops\demo_seed_root_listings.ps1
+
+# Verify idempotency (re-run should show all EXISTS)
+.\ops\demo_seed_root_listings.ps1
+
+# Verification gates
+.\ops\catalog_contract_check.ps1
+.\ops\listing_contract_check.ps1
+.\ops\frontend_smoke.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp49_demo_seed_4of4_pass.md
+
+**Key Findings:**
+- Root cause: `Invoke-RestMethod` was not sending JSON body correctly to Laravel (422: required fields missing)
+- Solution: Use `Invoke-WebRequest` with explicit UTF-8 encoding (`[System.Text.Encoding]::UTF8.GetBytes($createBody)`)
+- Result: All 4 showcase listings now seed successfully (Bando Presto, Ruyam Tekne, Mercedes, Adana Kebap)
+- Idempotency: Verified (re-run shows all EXISTS, no duplicates)
+
+**Acceptance Criteria:**
+✅ Bando Presto listing created successfully (no 422 error)
+✅ All 4 showcase listings seed (4/4 CREATED/EXISTS)
+✅ Script is idempotent (re-run shows EXISTS, no duplicates)
+✅ All gates PASS (catalog_contract_check, listing_contract_check, frontend_smoke)
+
+---
+
 **Archive:** Older WP entries have been moved to archive files to keep this index small:
 - [docs/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md](closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md)
 - [docs/closeouts/WP_CLOSEOUTS_ARCHIVE_2026_B.md](closeouts/WP_CLOSEOUTS_ARCHIVE_2026_B.md)

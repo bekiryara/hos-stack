@@ -409,27 +409,33 @@ foreach ($showcase in $showcaseListings) {
                 attributes = @{}
             }
             
-            # Add capacity_max for wedding-hall/events/restaurant categories
+            # WP-49: Add capacity_max for wedding-hall/events/restaurant categories
             if ($categorySlug -match "wedding-hall|events|restaurant|food") {
-                $listingBody.attributes["capacity_max"] = 100
+                # Ensure capacity_max is an integer (not string) for backend validation
+                $listingBody.attributes["capacity_max"] = [int]100
             }
             
-            $createBody = $listingBody | ConvertTo-Json
+            # WP-49: Use -Compress to avoid whitespace issues that might confuse Laravel validation
+            $createBody = $listingBody | ConvertTo-Json -Depth 3 -Compress
             
             # Generate idempotency key from title+tenant+category
             $idempotencyKey = ($title + $tenantId + $categoryId).GetHashCode().ToString()
             
-            $createResponse = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings" `
+            # WP-49: Use Invoke-WebRequest with explicit UTF-8 encoding to ensure Laravel receives the body correctly
+            $createBodyBytes = [System.Text.Encoding]::UTF8.GetBytes($createBody)
+            $webRequest = Invoke-WebRequest -Uri "$pazarBaseUrl/api/v1/listings" `
                 -Method Post `
                 -Headers @{
                     "Authorization" = "Bearer $jwtToken"
                     "X-Active-Tenant-Id" = $tenantId
-                    "Content-Type" = "application/json"
                     "Idempotency-Key" = $idempotencyKey
                 } `
-                -Body $createBody `
+                -Body $createBodyBytes `
+                -ContentType "application/json; charset=utf-8" `
                 -TimeoutSec 10 `
                 -ErrorAction Stop
+            
+            $createResponse = $webRequest.Content | ConvertFrom-Json
             
             $listingId = $createResponse.id
             
@@ -448,7 +454,51 @@ foreach ($showcase in $showcaseListings) {
             Write-Host "    CREATED: Listing created and published (id: $listingId)" -ForegroundColor Green
             $existingListingId = $listingId
         } catch {
-            Write-Host "    FAIL: Could not create listing: $($_.Exception.Message)" -ForegroundColor Red
+            # WP-49: Enhanced error handling to show 422 response details
+            $errorMsg = $_.Exception.Message
+            $statusCode = $null
+            $errorDetails = ""
+            
+            if ($_.Exception.Response) {
+                $statusCode = $_.Exception.Response.StatusCode.value__
+                try {
+                    $stream = $_.Exception.Response.GetResponseStream()
+                    $reader = New-Object System.IO.StreamReader($stream)
+                    $errorBody = $reader.ReadToEnd()
+                    $reader.Close()
+                    $stream.Close()
+                    
+                    if ($errorBody) {
+                        try {
+                            $errorJson = $errorBody | ConvertFrom-Json
+                            if ($errorJson.message) {
+                                $errorDetails = " (${statusCode}: $($errorJson.message))"
+                            } elseif ($errorJson.error) {
+                                $errorDetails = " (${statusCode}: $($errorJson.error))"
+                            } elseif ($errorJson.required_attributes) {
+                                $errorDetails = " (${statusCode}: missing required attributes: $($errorJson.required_attributes -join ', '))"
+                            } else {
+                                $errorDetails = " (${statusCode}: $($errorBody.Substring(0, [Math]::Min(150, $errorBody.Length))))"
+                            }
+                            # WP-49: Print full error response for 422 debugging
+                            if ($statusCode -eq 422) {
+                                Write-Host "    DEBUG: Full 422 error response: $errorBody" -ForegroundColor Yellow
+                            }
+                        } catch {
+                            $errorDetails = " (${statusCode}: response body not JSON: $($errorBody.Substring(0, [Math]::Min(100, $errorBody.Length))))"
+                            if ($statusCode -eq 422) {
+                                Write-Host "    DEBUG: Raw 422 response: $errorBody" -ForegroundColor Yellow
+                            }
+                        }
+                    }
+                } catch {
+                    if ($statusCode) {
+                        $errorDetails = " (HTTP $statusCode)"
+                    }
+                }
+            }
+            
+            Write-Host "    FAIL: Could not create listing: $errorMsg$errorDetails" -ForegroundColor Red
             $hasFailures = $true
             continue
         }
