@@ -242,6 +242,8 @@ export default {
 
 .tenant-section {
   margin-bottom: 1rem;
+  display: block; /* Ensure it's visible */
+  min-height: 50px; /* Ensure it takes space even if empty */
 }
 
 .tenant-info {
