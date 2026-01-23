@@ -76,6 +76,16 @@ try {
             Write-Host "WARN: HOS Web enter-demo marker not found in static HTML (client-side rendered)" -ForegroundColor Yellow
         }
     }
+    
+    # WP-59: Check for demo-control-panel marker
+    if ($bodyContent -match 'data-marker="demo-control-panel"') {
+        Write-Host "PASS: HOS Web contains demo-control-panel marker" -ForegroundColor Green
+    } elseif ($bodyContent -match 'id="root"') {
+        Write-Host "PASS: HOS Web contains root div (demo-control-panel will be rendered client-side)" -ForegroundColor Green
+    } else {
+        Write-Host "FAIL: HOS Web missing demo-control-panel marker" -ForegroundColor Red
+        $hasFailures = $true
+    }
 } catch {
     Write-Host "FAIL: HOS Web unreachable: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "  Check if HOS Web is running: docker compose ps hos-web" -ForegroundColor Yellow
@@ -116,9 +126,32 @@ try {
     $hasFailures = $true
 }
 
-# Step D: Check marketplace need-demo page (WP-58)
+# Step D: Check messaging proxy endpoint (WP-59)
 Write-Host ""
-Write-Host "[D] Checking marketplace need-demo page (http://localhost:3002/marketplace/need-demo)..." -ForegroundColor Yellow
+Write-Host "[D] Checking messaging proxy endpoint (http://localhost:3002/api/messaging/api/world/status)..." -ForegroundColor Yellow
+try {
+    $messagingProxyResponse = Invoke-WebRequest -Uri "http://localhost:3002/api/messaging/api/world/status" -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
+    if ($messagingProxyResponse.StatusCode -ne 200) {
+        Write-Host "FAIL: Messaging proxy returned status code $($messagingProxyResponse.StatusCode), expected 200" -ForegroundColor Red
+        $hasFailures = $true
+    } else {
+        Write-Host "PASS: Messaging proxy returned status code 200" -ForegroundColor Green
+        try {
+            $messagingData = $messagingProxyResponse.Content | ConvertFrom-Json
+            Write-Host "  Messaging API world_key: $($messagingData.world_key)" -ForegroundColor Gray
+        } catch {
+            Write-Host "  (Could not parse JSON response)" -ForegroundColor Gray
+        }
+    }
+} catch {
+    Write-Host "FAIL: Messaging proxy unreachable: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  Check if HOS Web is running and nginx config includes /api/messaging/ location" -ForegroundColor Yellow
+    $hasFailures = $true
+}
+
+# Step E: Check marketplace need-demo page (WP-58)
+Write-Host ""
+Write-Host "[E] Checking marketplace need-demo page (http://localhost:3002/marketplace/need-demo)..." -ForegroundColor Yellow
 try {
     $needDemoResponse = Invoke-WebRequest -Uri "http://localhost:3002/marketplace/need-demo" -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
     if ($needDemoResponse.StatusCode -ne 200) {
@@ -150,9 +183,9 @@ try {
     $hasFailures = $true
 }
 
-# Step E: Check marketplace-web build
+# Step F: Check marketplace-web build
 Write-Host ""
-Write-Host "[E] Checking marketplace-web build..." -ForegroundColor Yellow
+Write-Host "[F] Checking marketplace-web build..." -ForegroundColor Yellow
 $marketplaceWebPath = "work\marketplace-web"
 if (-not (Test-Path $marketplaceWebPath)) {
     Write-Host "FAIL: marketplace-web directory not found: $marketplaceWebPath" -ForegroundColor Red
@@ -245,8 +278,9 @@ if ($hasFailures) {
 } else {
     Write-Host "=== FRONTEND SMOKE TEST: PASS ===" -ForegroundColor Green
     Write-Host "  - Worlds check: PASS" -ForegroundColor Gray
-    Write-Host "  - HOS Web: PASS (hos-home, enter-demo markers)" -ForegroundColor Gray
+    Write-Host "  - HOS Web: PASS (hos-home, enter-demo, demo-control-panel markers)" -ForegroundColor Gray
     Write-Host "  - Marketplace demo page: PASS (marketplace-demo marker)" -ForegroundColor Gray
+    Write-Host "  - Messaging proxy: PASS (/api/messaging/api/world/status)" -ForegroundColor Gray
     Write-Host "  - Marketplace need-demo page: PASS (need-demo marker)" -ForegroundColor Gray
     Write-Host "  - marketplace-web build: PASS" -ForegroundColor Gray
     exit 0

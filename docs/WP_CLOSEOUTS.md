@@ -12,6 +12,44 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-59: Demo Control Panel v1 (Scriptless, Deterministic, Single-Origin)
+
+**Purpose:** Convert working prototype into "product-like" demo with a single UI panel showing system readiness and providing 1-click actions. No scripts required for normal demo.
+
+**Deliverables:**
+- work/hos/services/web/src/ui/App.tsx (MODIFIED): Added Demo Control Panel with 5 readiness checks, action buttons (Enter Demo, Reset Demo, Open Marketplace Demo, Open Messaging), listing fetch logic
+- ops/frontend_smoke.ps1 (MODIFIED): Added check for demo-control-panel marker, messaging proxy endpoint check
+- docs/PROOFS/wp59_demo_control_panel_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Rebuild hos-web with updated UI
+docker compose build hos-web
+
+# Start services
+docker compose up -d
+
+# Run smoke test
+.\ops\frontend_smoke.ps1
+
+# Browser test
+# http://localhost:3002 -> see Demo Control Panel with 5 checks
+# Click Reset Demo -> goes to /marketplace/need-demo
+# Click Enter Demo -> /marketplace/demo
+# Click Open Messaging -> opens /marketplace/listing/<id>/message
+```
+
+**Proof:** 
+- docs/PROOFS/wp59_demo_control_panel_pass.md
+
+**Key URLs:**
+- HOS Web Home: http://localhost:3002
+- Marketplace Demo: http://localhost:3002/marketplace/demo
+- Marketplace Need Demo: http://localhost:3002/marketplace/need-demo
+- Messaging Page: http://localhost:3002/marketplace/listing/:id/message
+
+---
+
 ## WP-58: Prototype UX Hardening v1 (Session Guard + Logout + Deep-link Resilience)
 
 **Purpose:** Harden prototype UX with session guards, logout functionality, and deep-link resilience. Users can enter demo, exit demo, refresh pages, and deep-link to protected routes without confusion.

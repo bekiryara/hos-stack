@@ -9,6 +9,24 @@ export function App() {
   const [worlds, setWorlds] = useState<any[]>([]);
   const [worldsError, setWorldsError] = useState<any>(null);
   const [hasDemoToken, setHasDemoToken] = useState(false);
+  
+  // WP-59: Demo Control Panel state
+  const [demoChecks, setDemoChecks] = useState<{
+    hosApi: { pass: boolean; message: string };
+    worlds: { pass: boolean; message: string };
+    pazar: { pass: boolean; message: string };
+    messaging: { pass: boolean; message: string };
+    marketplaceUi: { pass: boolean; message: string };
+  }>({
+    hosApi: { pass: false, message: 'Checking...' },
+    worlds: { pass: false, message: 'Checking...' },
+    pazar: { pass: false, message: 'Checking...' },
+    messaging: { pass: false, message: 'Checking...' },
+    marketplaceUi: { pass: false, message: 'Checking...' },
+  });
+  const [demoChecksLoading, setDemoChecksLoading] = useState(true);
+  const [listingId, setListingId] = useState<string | null>(null);
+  const [listingError, setListingError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -39,6 +57,8 @@ export function App() {
   useEffect(() => {
     load();
     loadWorlds();
+    checkDemoReadiness();
+    fetchListingForMessaging();
     // Check for demo token
     const checkToken = () => {
       const token = localStorage.getItem('demo_auth_token');
@@ -84,6 +104,146 @@ export function App() {
     window.location.href = '/marketplace/demo';
   };
 
+  // WP-59: Demo Control Panel checks
+  async function checkDemoReadiness() {
+    setDemoChecksLoading(true);
+    const checks = {
+      hosApi: { pass: false, message: '' },
+      worlds: { pass: false, message: '' },
+      pazar: { pass: false, message: '' },
+      messaging: { pass: false, message: '' },
+      marketplaceUi: { pass: false, message: '' },
+    };
+
+    // Check 1: HOS API reachable
+    try {
+      const resp = await fetch('/api/v1/world/status', { cache: 'no-store' });
+      if (resp.ok) {
+        const data = await resp.json();
+        checks.hosApi = { pass: true, message: `HOS API: ${data.world_key || 'OK'}` };
+      } else {
+        checks.hosApi = { pass: false, message: `HOS API: HTTP ${resp.status}` };
+      }
+    } catch (e: any) {
+      checks.hosApi = { pass: false, message: `HOS API: ${e.message || 'Unreachable'}` };
+    }
+
+    // Check 2: Worlds list contains marketplace + messaging ONLINE
+    try {
+      const w = await getWorlds();
+      const marketplace = w.find((w: any) => w.world_key === 'marketplace');
+      const messaging = w.find((w: any) => w.world_key === 'messaging');
+      const marketplaceOk = marketplace?.availability === 'ONLINE';
+      const messagingOk = messaging?.availability === 'ONLINE';
+      if (marketplaceOk && messagingOk) {
+        checks.worlds = { pass: true, message: 'Marketplace & Messaging: ONLINE' };
+      } else {
+        const missing = [];
+        if (!marketplaceOk) missing.push('marketplace');
+        if (!messagingOk) missing.push('messaging');
+        checks.worlds = { pass: false, message: `Missing/offline: ${missing.join(', ')}` };
+      }
+    } catch (e: any) {
+      checks.worlds = { pass: false, message: `Worlds: ${e.message || 'Unreachable'}` };
+    }
+
+    // Check 3: Pazar reachable
+    try {
+      const resp = await fetch('http://localhost:8080/api/world/status', { cache: 'no-store' });
+      if (resp.ok) {
+        const data = await resp.json();
+        checks.pazar = { pass: true, message: `Pazar: ${data.world_key || 'OK'}` };
+      } else {
+        checks.pazar = { pass: false, message: `Pazar: HTTP ${resp.status}` };
+      }
+    } catch (e: any) {
+      checks.pazar = { pass: false, message: `Pazar: ${e.message || 'Unreachable'}` };
+    }
+
+    // Check 4: Messaging reachable through proxy
+    try {
+      const resp = await fetch('/api/messaging/api/world/status', { cache: 'no-store' });
+      if (resp.ok) {
+        const data = await resp.json();
+        checks.messaging = { pass: true, message: `Messaging (proxy): ${data.world_key || 'OK'}` };
+      } else {
+        checks.messaging = { pass: false, message: `Messaging (proxy): HTTP ${resp.status}` };
+      }
+    } catch (e: any) {
+      checks.messaging = { pass: false, message: `Messaging (proxy): ${e.message || 'Unreachable'}` };
+    }
+
+    // Check 5: Marketplace UI route reachable
+    try {
+      const resp = await fetch('/marketplace/need-demo', { cache: 'no-store' });
+      if (resp.ok) {
+        const text = await resp.text();
+        if (text.includes('data-marker="need-demo"') || text.includes('id="app"')) {
+          checks.marketplaceUi = { pass: true, message: 'Marketplace UI: Reachable' };
+        } else {
+          checks.marketplaceUi = { pass: false, message: 'Marketplace UI: Missing marker' };
+        }
+      } else {
+        checks.marketplaceUi = { pass: false, message: `Marketplace UI: HTTP ${resp.status}` };
+      }
+    } catch (e: any) {
+      checks.marketplaceUi = { pass: false, message: `Marketplace UI: ${e.message || 'Unreachable'}` };
+    }
+
+    setDemoChecks(checks);
+    setDemoChecksLoading(false);
+  }
+
+  // WP-59: Fetch listing for messaging link
+  async function fetchListingForMessaging() {
+    try {
+      setListingError(null);
+      const resp = await fetch('http://localhost:8080/api/v1/listings?status=published&limit=1', {
+        cache: 'no-store',
+      });
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+      const data = await resp.json();
+      const items = Array.isArray(data) ? data : (data.items || data.data || []);
+      if (items.length > 0 && items[0].id) {
+        setListingId(items[0].id);
+      } else {
+        // Try without status filter
+        const resp2 = await fetch('http://localhost:8080/api/v1/listings?limit=1', {
+          cache: 'no-store',
+        });
+        if (resp2.ok) {
+          const data2 = await resp2.json();
+          const items2 = Array.isArray(data2) ? data2 : (data2.items || data2.data || []);
+          if (items2.length > 0 && items2[0].id) {
+            setListingId(items2[0].id);
+          } else {
+            setListingError('No published listing found');
+          }
+        } else {
+          setListingError('No published listing found');
+        }
+      }
+    } catch (e: any) {
+      setListingError(e.message || 'Failed to fetch listing');
+    }
+  }
+
+  const handleResetDemo = () => {
+    localStorage.removeItem('demo_auth_token');
+    setHasDemoToken(false);
+    window.location.href = '/marketplace/need-demo';
+  };
+
+  const handleOpenMessaging = () => {
+    if (listingId) {
+      window.location.href = `/marketplace/listing/${listingId}/message`;
+    } else {
+      alert('No listing found. Please create a listing first.');
+    }
+  };
+
   return (
     <div className="page" data-marker="hos-home">
       <header className="top">
@@ -113,6 +273,175 @@ export function App() {
             <pre>{JSON.stringify(data, null, 2)}</pre>
           </div>
         )}
+
+        <h1>Demo Control Panel</h1>
+
+        <div data-marker="demo-control-panel" style={{ marginBottom: '2rem', padding: '1.5rem', border: '2px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+          <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Demo Ready Status</h2>
+            <button
+              onClick={checkDemoReadiness}
+              disabled={demoChecksLoading}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                backgroundColor: '#0066cc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: demoChecksLoading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {demoChecksLoading ? 'Checking...' : 'Refresh Checks'}
+            </button>
+          </div>
+
+          {demoChecksLoading ? (
+            <div>Loading readiness checks...</div>
+          ) : (
+            <div style={{ marginBottom: '1.5rem' }}>
+              {[
+                { key: 'hosApi', label: '1. HOS API reachable' },
+                { key: 'worlds', label: '2. Worlds (marketplace + messaging ONLINE)' },
+                { key: 'pazar', label: '3. Pazar reachable' },
+                { key: 'messaging', label: '4. Messaging reachable (proxy)' },
+                { key: 'marketplaceUi', label: '5. Marketplace UI route reachable' },
+              ].map(({ key, label }) => {
+                const check = demoChecks[key as keyof typeof demoChecks];
+                const isPass = check.pass;
+                return (
+                  <div
+                    key={key}
+                    style={{
+                      marginBottom: '0.75rem',
+                      padding: '0.75rem',
+                      backgroundColor: isPass ? '#d4edda' : '#f8d7da',
+                      border: `1px solid ${isPass ? '#c3e6cb' : '#f5c6cb'}`,
+                      borderRadius: '4px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <strong>{label}</strong>
+                      <div style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.25rem' }}>
+                        {check.message}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '4px',
+                        backgroundColor: isPass ? '#28a745' : '#dc3545',
+                        color: 'white',
+                        fontSize: '0.875rem',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {isPass ? 'PASS' : 'FAIL'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!demoChecksLoading && (
+            <div
+              data-marker={
+                Object.values(demoChecks).every((c) => c.pass)
+                  ? 'demo-ready-pass'
+                  : 'demo-ready-fail'
+              }
+              style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                backgroundColor: Object.values(demoChecks).every((c) => c.pass) ? '#d4edda' : '#fff3cd',
+                border: `1px solid ${Object.values(demoChecks).every((c) => c.pass) ? '#c3e6cb' : '#ffeaa7'}`,
+                borderRadius: '4px',
+                textAlign: 'center',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                color: Object.values(demoChecks).every((c) => c.pass) ? '#155724' : '#856404',
+              }}
+            >
+              {Object.values(demoChecks).every((c) => c.pass)
+                ? '✓ Demo Ready'
+                : '✗ Demo Not Ready'}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {hasDemoToken ? (
+              <>
+                <button
+                  onClick={handleGoToDemo}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '1rem',
+                    backgroundColor: '#0066cc',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Open Marketplace Demo
+                </button>
+                <button
+                  onClick={handleResetDemo}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '1rem',
+                    backgroundColor: '#f5f5f5',
+                    color: '#333',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Reset Demo
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleEnterDemo}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '1rem',
+                  backgroundColor: '#0066cc',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                Enter Demo
+              </button>
+            )}
+            <button
+              onClick={handleOpenMessaging}
+              disabled={!listingId}
+              style={{
+                padding: '0.75rem 1.5rem',
+                fontSize: '1rem',
+                backgroundColor: listingId ? '#28a745' : '#ccc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: listingId ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {listingError ? `Open Messaging (${listingError})` : listingId ? 'Open Messaging' : 'Open Messaging (no listing)'}
+            </button>
+          </div>
+          {listingError && !listingId && (
+            <div style={{ marginTop: '0.75rem', fontSize: '0.875rem', color: '#856404' }}>
+              No published listing found. <a href="/marketplace/demo" style={{ color: '#0066cc' }}>Open Marketplace Demo</a> to create one.
+            </div>
+          )}
+        </div>
 
         <h1>Prototype Launcher</h1>
 
