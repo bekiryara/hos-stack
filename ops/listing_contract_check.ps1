@@ -17,9 +17,138 @@ Write-Host ""
 
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
-$tenantId = "tenant-demo"
+$hosBaseUrl = "http://localhost:3000"
+$tenantId = $null
+$authToken = $null
 $listingId = $null
 $weddingHallId = $null
+
+# Load test_auth helper
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\test_auth.ps1") {
+    . "${scriptDir}\_lib\test_auth.ps1"
+} else {
+    Write-Host "FAIL: test_auth.ps1 not found" -ForegroundColor Red
+    exit 1
+}
+
+# Helper: Extract tenant_id robustly from memberships
+function Get-TenantIdFromMemberships {
+    param([object]$Memberships)
+    
+    if (-not $Memberships) {
+        return $null
+    }
+    
+    $membershipsArray = $null
+    
+    if ($Memberships -is [Array]) {
+        $membershipsArray = $Memberships
+    }
+    elseif ($Memberships -is [PSCustomObject]) {
+        if ($Memberships.PSObject.Properties['items'] -and $Memberships.items -is [Array]) {
+            $membershipsArray = $Memberships.items
+        }
+        elseif ($Memberships.PSObject.Properties['data'] -and $Memberships.data -is [Array]) {
+            $membershipsArray = $Memberships.data
+        }
+    }
+    elseif ($Memberships.items -is [Array]) {
+        $membershipsArray = $Memberships.items
+    }
+    elseif ($Memberships.data -is [Array]) {
+        $membershipsArray = $Memberships.data
+    }
+    
+    if (-not $membershipsArray) {
+        return $null
+    }
+    
+    if ($membershipsArray.Count -eq 0) {
+        return $null
+    }
+    
+    foreach ($membership in $membershipsArray) {
+        $tid = $null
+        
+        if ($membership.tenant_id) {
+            $tid = $membership.tenant_id
+        }
+        elseif ($membership.tenant -and $membership.tenant.id) {
+            $tid = $membership.tenant.id
+        }
+        elseif ($membership.tenant -and $membership.tenant.PSObject.Properties['id']) {
+            $tid = $membership.tenant.id
+        }
+        elseif ($membership.tenantId) {
+            $tid = $membership.tenantId
+        }
+        elseif ($membership.store_tenant_id) {
+            $tid = $membership.store_tenant_id
+        }
+        
+        if ($tid -and $tid -is [string] -and $tid.Trim().Length -gt 0) {
+            $guidResult = [System.Guid]::Empty
+            if ([System.Guid]::TryParse($tid, [ref]$guidResult)) {
+                return $tid
+            }
+        }
+    }
+    
+    return $null
+}
+
+# Bootstrap JWT token and get tenant_id
+Write-Host "[0] Acquiring JWT token and tenant_id..." -ForegroundColor Yellow
+try {
+    $apiKey = $env:HOS_API_KEY
+    if (-not $apiKey) {
+        $apiKey = "dev-api-key"
+    }
+    $jwtToken = Get-DevTestJwtToken -HosApiKey $apiKey
+    if (-not $jwtToken) {
+        throw "Failed to obtain JWT token"
+    }
+    $authToken = "Bearer $jwtToken"
+    $tokenMask = if ($jwtToken.Length -gt 6) { "***" + $jwtToken.Substring($jwtToken.Length - 6) } else { "***" }
+    Write-Host "PASS: Token acquired ($tokenMask)" -ForegroundColor Green
+    
+    # Get tenant_id from memberships
+    $membershipsResponse = Invoke-RestMethod -Uri "$hosBaseUrl/v1/me/memberships" `
+        -Headers @{ "Authorization" = $authToken } `
+        -TimeoutSec 5 `
+        -ErrorAction Stop
+    
+    $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+    
+    if (-not $tenantId) {
+        Write-Host "  No valid tenant_id found, attempting bootstrap..." -ForegroundColor Yellow
+        $bootstrapScript = Join-Path $scriptDir "ensure_demo_membership.ps1"
+        if (Test-Path $bootstrapScript) {
+            & $bootstrapScript -HosBaseUrl $hosBaseUrl -TenantSlug "tenant-a" -Email "testuser@example.com" 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                $membershipsResponse = Invoke-RestMethod -Uri "$hosBaseUrl/v1/me/memberships" `
+                    -Headers @{ "Authorization" = $authToken } `
+                    -TimeoutSec 5 `
+                    -ErrorAction Stop
+                $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+            }
+        }
+    }
+    
+    if (-not $tenantId) {
+        Write-Host "FAIL: No valid tenant_id found in memberships. HOS not running or login failed." -ForegroundColor Red
+        exit 1
+    }
+    
+    Write-Host "PASS: tenant_id acquired: $tenantId" -ForegroundColor Green
+} catch {
+    Write-Host "FAIL: JWT token or tenant_id acquisition failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  Remediation: Ensure H-OS service is running: docker compose ps" -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host ""
 
 # Test 1: GET /api/v1/categories (must be non-empty)
 Write-Host "[1] Testing GET /api/v1/categories..." -ForegroundColor Yellow
@@ -63,12 +192,106 @@ try {
 
 Write-Host ""
 
-# Test 2: POST /api/v1/listings (create DRAFT listing)
+# Test 2: Negative - POST /api/v1/listings without Authorization header (expect 401)
 if (-not $weddingHallId) {
-    Write-Host "[2] SKIP: Cannot test create listing (wedding-hall category ID not available)" -ForegroundColor Yellow
+    Write-Host "[2] SKIP: Cannot test negative case (wedding-hall category ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
 } else {
-    Write-Host "[2] Testing POST /api/v1/listings (create DRAFT)..." -ForegroundColor Yellow
+    Write-Host "[2] Testing POST /api/v1/listings without Authorization header (negative test)..." -ForegroundColor Yellow
+    $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
+    $listingBody = @{
+        category_id = $weddingHallId
+        title = "Test Without Auth"
+        transaction_modes = @("reservation")
+    } | ConvertTo-Json
+
+    try {
+        $headers = @{
+            "Content-Type" = "application/json"
+            "X-Active-Tenant-Id" = $tenantId
+            # No Authorization header
+        }
+        $negativeResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
+        Write-Host "FAIL: Request without Authorization should have failed, but succeeded" -ForegroundColor Red
+        $hasFailures = $true
+    } catch {
+        $statusCode = $null
+        $errorResponse = $null
+        if ($_.Exception.Response) {
+            try {
+                $statusCode = $_.Exception.Response.StatusCode.value__
+                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                $responseBody = $reader.ReadToEnd()
+                $reader.Close()
+                try {
+                    $errorResponse = $responseBody | ConvertFrom-Json
+                } catch {
+                }
+            } catch {
+            }
+        }
+        if ($statusCode -eq 401) {
+            if ($errorResponse -and $errorResponse.error_code -eq "AUTH_REQUIRED") {
+                Write-Host "PASS: Request without Authorization correctly rejected (status: 401, AUTH_REQUIRED)" -ForegroundColor Green
+            } else {
+                Write-Host "PASS: Request without Authorization correctly rejected (status: 401)" -ForegroundColor Green
+            }
+        } else {
+            Write-Host "FAIL: Expected 401 AUTH_REQUIRED, got status: $statusCode" -ForegroundColor Red
+            $hasFailures = $true
+        }
+    }
+}
+
+Write-Host ""
+
+# Test 3: Negative - POST /api/v1/listings with Authorization but missing X-Active-Tenant-Id (expect 400)
+if (-not $weddingHallId) {
+    Write-Host "[3] SKIP: Cannot test negative case (wedding-hall category ID not available)" -ForegroundColor Yellow
+    $hasFailures = $true
+} else {
+    Write-Host "[3] Testing POST /api/v1/listings with Authorization but missing X-Active-Tenant-Id (negative test)..." -ForegroundColor Yellow
+    $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
+    $listingBody = @{
+        category_id = $weddingHallId
+        title = "Test Without Tenant Header"
+        transaction_modes = @("reservation")
+    } | ConvertTo-Json
+
+    try {
+        $headers = @{
+            "Content-Type" = "application/json"
+            "Authorization" = $authToken
+            # No X-Active-Tenant-Id header
+        }
+        $negativeResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
+        Write-Host "FAIL: Request without X-Active-Tenant-Id should have failed, but succeeded" -ForegroundColor Red
+        $hasFailures = $true
+    } catch {
+        $statusCode = $null
+        if ($_.Exception.Response) {
+            try {
+                $statusCode = $_.Exception.Response.StatusCode.value__
+            } catch {
+            }
+        }
+        if ($statusCode -eq 400 -or $statusCode -eq 403) {
+            Write-Host "PASS: Request without X-Active-Tenant-Id correctly rejected (status: $statusCode)" -ForegroundColor Green
+        } else {
+            Write-Host "FAIL: Expected 400/403, got status: $statusCode" -ForegroundColor Red
+            $hasFailures = $true
+        }
+    }
+}
+
+Write-Host ""
+
+# Test 4: POST /api/v1/listings (create DRAFT listing) - success path
+if (-not $weddingHallId) {
+    Write-Host "[4] SKIP: Cannot test create listing (wedding-hall category ID not available)" -ForegroundColor Yellow
+    $hasFailures = $true
+} else {
+    Write-Host "[4] Testing POST /api/v1/listings (create DRAFT)..." -ForegroundColor Yellow
     $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
     $listingBody = @{
         category_id = $weddingHallId
@@ -83,6 +306,7 @@ if (-not $weddingHallId) {
     try {
         $headers = @{
             "Content-Type" = "application/json"
+            "Authorization" = $authToken
             "X-Active-Tenant-Id" = $tenantId
         }
         $createResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
@@ -133,12 +357,13 @@ if (-not $weddingHallId) {
 
 Write-Host ""
 
-# Test 3: POST /api/v1/listings/{id}/publish
+# Test 5: POST /api/v1/listings/{id}/publish
 if ($listingId) {
-    Write-Host "[3] Testing POST /api/v1/listings/$listingId/publish..." -ForegroundColor Yellow
+    Write-Host "[5] Testing POST /api/v1/listings/$listingId/publish..." -ForegroundColor Yellow
     $publishUrl = "${pazarBaseUrl}/api/v1/listings/${listingId}/publish"
     try {
         $headers = @{
+            "Authorization" = $authToken
             "X-Active-Tenant-Id" = $tenantId
         }
         $publishResponse = Invoke-RestMethod -Uri $publishUrl -Method Post -Headers $headers -TimeoutSec 10 -ErrorAction Stop
@@ -165,15 +390,15 @@ if ($listingId) {
         $hasFailures = $true
     }
 } else {
-    Write-Host "[3] SKIP: Cannot test publish (listing ID not available)" -ForegroundColor Yellow
+    Write-Host "[5] SKIP: Cannot test publish (listing ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
 }
 
 Write-Host ""
 
-# Test 4: GET /api/v1/listings/{id}
+# Test 6: GET /api/v1/listings/{id}
 if ($listingId) {
-    Write-Host "[4] Testing GET /api/v1/listings/$listingId..." -ForegroundColor Yellow
+    Write-Host "[6] Testing GET /api/v1/listings/$listingId..." -ForegroundColor Yellow
     $getListingUrl = "${pazarBaseUrl}/api/v1/listings/${listingId}"
     try {
         $getResponse = Invoke-RestMethod -Uri $getListingUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
@@ -194,18 +419,18 @@ if ($listingId) {
         $hasFailures = $true
     }
 } else {
-    Write-Host "[4] SKIP: Cannot test get listing (listing ID not available)" -ForegroundColor Yellow
+    Write-Host "[6] SKIP: Cannot test get listing (listing ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
 }
 
 Write-Host ""
 
-# Test 5: GET /api/v1/listings?category_id={weddingHallId}
+# Test 7: GET /api/v1/listings?category_id={weddingHallId}
 if (-not $weddingHallId) {
-    Write-Host "[5] SKIP: Cannot test search listings (wedding-hall category ID not available)" -ForegroundColor Yellow
+    Write-Host "[7] SKIP: Cannot test search listings (wedding-hall category ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
 } else {
-    Write-Host "[5] Testing GET /api/v1/listings?category_id=$weddingHallId..." -ForegroundColor Yellow
+    Write-Host "[7] Testing GET /api/v1/listings?category_id=$weddingHallId..." -ForegroundColor Yellow
     $searchUrl = "${pazarBaseUrl}/api/v1/listings?category_id=$weddingHallId"
     try {
         $searchResponse = Invoke-RestMethod -Uri $searchUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
@@ -232,44 +457,6 @@ if (-not $weddingHallId) {
     }
 }
 
-Write-Host ""
-
-# Test 6: Negative - POST /api/v1/listings without header
-if (-not $weddingHallId) {
-    Write-Host "[6] SKIP: Cannot test negative case (wedding-hall category ID not available)" -ForegroundColor Yellow
-    $hasFailures = $true
-} else {
-    Write-Host "[6] Testing POST /api/v1/listings without X-Active-Tenant-Id header (negative test)..." -ForegroundColor Yellow
-    $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
-    $listingBody = @{
-        category_id = $weddingHallId
-        title = "Test Without Header"
-        transaction_modes = @("reservation")
-    } | ConvertTo-Json
-
-    try {
-        $headers = @{
-            "Content-Type" = "application/json"
-        }
-        $negativeResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
-        Write-Host "FAIL: Request without header should have failed, but succeeded" -ForegroundColor Red
-        $hasFailures = $true
-    } catch {
-        $statusCode = $null
-        if ($_.Exception.Response) {
-            try {
-                $statusCode = $_.Exception.Response.StatusCode.value__
-            } catch {
-            }
-        }
-        if ($statusCode -eq 400 -or $statusCode -eq 403) {
-            Write-Host "PASS: Request without header correctly rejected (status: $statusCode)" -ForegroundColor Green
-        } else {
-            Write-Host "FAIL: Expected 400/403, got status: $statusCode" -ForegroundColor Red
-            $hasFailures = $true
-        }
-    }
-}
 
 Write-Host ""
 

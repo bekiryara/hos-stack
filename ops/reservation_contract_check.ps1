@@ -17,9 +17,138 @@ Write-Host ""
 
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
-$tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo
+$hosBaseUrl = "http://localhost:3000"
+$tenantId = $null
+$authToken = $null
 $listingId = $null
 $reservationId = $null
+
+# Load test_auth helper
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path "${scriptDir}\_lib\test_auth.ps1") {
+    . "${scriptDir}\_lib\test_auth.ps1"
+} else {
+    Write-Host "FAIL: test_auth.ps1 not found" -ForegroundColor Red
+    exit 1
+}
+
+# Helper: Extract tenant_id robustly from memberships
+function Get-TenantIdFromMemberships {
+    param([object]$Memberships)
+    
+    if (-not $Memberships) {
+        return $null
+    }
+    
+    $membershipsArray = $null
+    
+    if ($Memberships -is [Array]) {
+        $membershipsArray = $Memberships
+    }
+    elseif ($Memberships -is [PSCustomObject]) {
+        if ($Memberships.PSObject.Properties['items'] -and $Memberships.items -is [Array]) {
+            $membershipsArray = $Memberships.items
+        }
+        elseif ($Memberships.PSObject.Properties['data'] -and $Memberships.data -is [Array]) {
+            $membershipsArray = $Memberships.data
+        }
+    }
+    elseif ($Memberships.items -is [Array]) {
+        $membershipsArray = $Memberships.items
+    }
+    elseif ($Memberships.data -is [Array]) {
+        $membershipsArray = $Memberships.data
+    }
+    
+    if (-not $membershipsArray) {
+        return $null
+    }
+    
+    if ($membershipsArray.Count -eq 0) {
+        return $null
+    }
+    
+    foreach ($membership in $membershipsArray) {
+        $tid = $null
+        
+        if ($membership.tenant_id) {
+            $tid = $membership.tenant_id
+        }
+        elseif ($membership.tenant -and $membership.tenant.id) {
+            $tid = $membership.tenant.id
+        }
+        elseif ($membership.tenant -and $membership.tenant.PSObject.Properties['id']) {
+            $tid = $membership.tenant.id
+        }
+        elseif ($membership.tenantId) {
+            $tid = $membership.tenantId
+        }
+        elseif ($membership.store_tenant_id) {
+            $tid = $membership.store_tenant_id
+        }
+        
+        if ($tid -and $tid -is [string] -and $tid.Trim().Length -gt 0) {
+            $guidResult = [System.Guid]::Empty
+            if ([System.Guid]::TryParse($tid, [ref]$guidResult)) {
+                return $tid
+            }
+        }
+    }
+    
+    return $null
+}
+
+# Bootstrap JWT token and get tenant_id
+Write-Host "[PREP] Acquiring JWT token and tenant_id..." -ForegroundColor Yellow
+try {
+    $apiKey = $env:HOS_API_KEY
+    if (-not $apiKey) {
+        $apiKey = "dev-api-key"
+    }
+    $jwtToken = Get-DevTestJwtToken -HosApiKey $apiKey
+    if (-not $jwtToken) {
+        throw "Failed to obtain JWT token"
+    }
+    $authToken = "Bearer $jwtToken"
+    $tokenMask = if ($jwtToken.Length -gt 6) { "***" + $jwtToken.Substring($jwtToken.Length - 6) } else { "***" }
+    Write-Host "PASS: Token acquired ($tokenMask)" -ForegroundColor Green
+    
+    # Get tenant_id from memberships (for listing creation)
+    $membershipsResponse = Invoke-RestMethod -Uri "$hosBaseUrl/v1/me/memberships" `
+        -Headers @{ "Authorization" = $authToken } `
+        -TimeoutSec 5 `
+        -ErrorAction Stop
+    
+    $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+    
+    if (-not $tenantId) {
+        Write-Host "  No valid tenant_id found, attempting bootstrap..." -ForegroundColor Yellow
+        $bootstrapScript = Join-Path $scriptDir "ensure_demo_membership.ps1"
+        if (Test-Path $bootstrapScript) {
+            & $bootstrapScript -HosBaseUrl $hosBaseUrl -TenantSlug "tenant-a" -Email "testuser@example.com" 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                $membershipsResponse = Invoke-RestMethod -Uri "$hosBaseUrl/v1/me/memberships" `
+                    -Headers @{ "Authorization" = $authToken } `
+                    -TimeoutSec 5 `
+                    -ErrorAction Stop
+                $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+            }
+        }
+    }
+    
+    if (-not $tenantId) {
+        Write-Host "FAIL: No valid tenant_id found in memberships. HOS not running or login failed." -ForegroundColor Red
+        exit 1
+    }
+    
+    Write-Host "PASS: tenant_id acquired: $tenantId" -ForegroundColor Green
+} catch {
+    Write-Host "FAIL: JWT token or tenant_id acquisition failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  Remediation: Ensure H-OS service is running: docker compose ps" -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host ""
 
 # Generate deterministic idempotency key based on timestamp
 # Include milliseconds to ensure uniqueness across back-to-back runs
@@ -108,6 +237,7 @@ try {
         } | ConvertTo-Json -Compress
         
         $listingHeaders = @{
+            "Authorization" = $authToken
             "X-Active-Tenant-Id" = $tenantId
             "Content-Type" = "application/json"
         }
@@ -126,7 +256,11 @@ try {
             
             # Publish the listing
             $publishUrl = "${pazarBaseUrl}/api/v1/listings/${listingId}/publish"
-            Invoke-RestMethod -Uri $publishUrl -Method Post -Headers $listingHeaders -TimeoutSec 10 -ErrorAction Stop | Out-Null
+            $publishHeaders = @{
+                "Authorization" = $authToken
+                "X-Active-Tenant-Id" = $tenantId
+            }
+            Invoke-RestMethod -Uri $publishUrl -Method Post -Headers $publishHeaders -TimeoutSec 10 -ErrorAction Stop | Out-Null
             
             Write-Host "PASS: Created and published listing: $listingId" -ForegroundColor Green
         } catch {
@@ -186,6 +320,7 @@ $reservationBody = @{
 try {
     $headers = @{
         "Content-Type" = "application/json"
+        "Authorization" = $authToken
         "Idempotency-Key" = $idempotencyKey
     }
     $createResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $reservationBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
@@ -258,6 +393,7 @@ if ($reservationId) {
     try {
         $headers = @{
             "Content-Type" = "application/json"
+            "Authorization" = $authToken
             "Idempotency-Key" = $idempotencyKey
         }
         $replayResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $reservationBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
@@ -296,6 +432,7 @@ $conflictBody = @{
 try {
     $headers = @{
         "Content-Type" = "application/json"
+        "Authorization" = $authToken
         "Idempotency-Key" = $conflictIdempotencyKey
     }
     $conflictResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $conflictBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
@@ -340,6 +477,7 @@ $invalidBody = @{
 try {
     $headers = @{
         "Content-Type" = "application/json"
+        "Authorization" = $authToken
         "Idempotency-Key" = $invalidIdempotencyKey
     }
     $invalidResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $invalidBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
@@ -399,6 +537,7 @@ if ($listingId) {
         # Create reservation for accept test
         $acceptTestHeaders = @{
             "Content-Type" = "application/json"
+            "Authorization" = $authToken
             "Idempotency-Key" = $acceptTestIdempotencyKey
         }
         $acceptTestCreateResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $acceptTestReservationBody -Headers $acceptTestHeaders -TimeoutSec 10 -ErrorAction Stop
@@ -412,6 +551,7 @@ if ($listingId) {
         $providerTenantId = $listingResponse.tenant_id
         
         $acceptHeaders = @{
+            "Authorization" = $authToken
             "X-Active-Tenant-Id" = $providerTenantId
         }
         $acceptResponse = Invoke-RestMethod -Uri $acceptUrl -Method Post -Headers $acceptHeaders -TimeoutSec 10 -ErrorAction Stop
@@ -471,6 +611,7 @@ if ($listingId) {
         # Create reservation for reject test
         $rejectTestHeaders = @{
             "Content-Type" = "application/json"
+            "Authorization" = $authToken
             "Idempotency-Key" = $rejectTestIdempotencyKey
         }
         $rejectTestCreateResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $rejectTestReservationBody -Headers $rejectTestHeaders -TimeoutSec 10 -ErrorAction Stop
