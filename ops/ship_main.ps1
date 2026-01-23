@@ -51,6 +51,7 @@ Write-Host "[GATES] Running quality gates..." -ForegroundColor Yellow
 $gateScripts = @(
     ".\ops\secret_scan.ps1",
     ".\ops\public_ready_check.ps1",
+    ".\ops\repo_payload_guard.ps1",
     ".\ops\closeouts_size_gate.ps1",
     ".\ops\conformance.ps1",
     ".\ops\frontend_smoke.ps1",
