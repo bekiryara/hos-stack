@@ -5,24 +5,26 @@
       <button @click="exitDemo" class="exit-demo-button" data-marker="exit-demo">Exit Demo</button>
     </div>
     <div class="tenant-section">
-      <!-- Debug: Always show tenant section -->
-      <div v-if="activeTenantId" class="tenant-info">
-        <strong>Active Tenant ID:</strong>
-        <code class="tenant-id">{{ activeTenantId }}</code>
-        <button @click="copyTenantId" class="copy-button" title="Copy to clipboard">Copy</button>
-        <button @click="showMembershipSelector = !showMembershipSelector" class="change-tenant-button">
-          {{ showMembershipSelector ? 'Cancel' : 'Change Tenant' }}
-        </button>
+      <!-- Always visible tenant section -->
+      <div class="tenant-info">
+        <template v-if="activeTenantId">
+          <strong>Active Tenant ID:</strong>
+          <code class="tenant-id">{{ activeTenantId }}</code>
+          <button @click="copyTenantId" class="copy-button" title="Copy to clipboard">Copy</button>
+          <button @click="showMembershipSelector = !showMembershipSelector" class="change-tenant-button">
+            {{ showMembershipSelector ? 'Cancel' : 'Change Tenant' }}
+          </button>
+        </template>
+        <template v-else>
+          <strong>No Active Tenant</strong>
+          <button @click="loadMemberships" class="load-memberships-button" :disabled="loadingMemberships">
+            {{ loadingMemberships ? 'Loading...' : 'Load Memberships' }}
+          </button>
+        </template>
       </div>
-      <div v-else class="tenant-info">
-        <strong>No Active Tenant</strong>
-        <button @click="loadMemberships" class="load-memberships-button" :disabled="loadingMemberships">
-          {{ loadingMemberships ? 'Loading...' : 'Load Memberships' }}
-        </button>
-      </div>
-      <!-- Debug info -->
-      <div style="font-size: 0.8rem; color: #666; margin-top: 0.5rem;">
-        Debug: activeTenantId = {{ activeTenantId || 'null' }}, loadingMemberships = {{ loadingMemberships }}
+      <!-- Debug info - always visible -->
+      <div class="debug-info" style="font-size: 0.8rem; color: #666; margin-top: 0.5rem; padding: 0.5rem; background: #f0f0f0; border-radius: 4px;">
+        <strong>Debug:</strong> activeTenantId = {{ activeTenantId || 'null' }}, loadingMemberships = {{ loadingMemberships }}, memberships = {{ memberships ? memberships.length : 0 }}
       </div>
       
       <!-- WP-62: Tenant selector -->
