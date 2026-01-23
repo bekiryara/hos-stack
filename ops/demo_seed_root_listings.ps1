@@ -327,7 +327,143 @@ foreach ($category in $rootCategories) {
     }
 }
 
-# Step 6: Print summary
+# Step 6: WP-48 - Seed showcase listings (deterministic demo data)
+Write-Host ""
+Write-Host "[6] Seeding showcase listings (WP-48)..." -ForegroundColor Yellow
+$showcaseListings = @(
+    @{ Title = "Bando Presto (4 kişi)"; Slug = "events"; FallbackSlug = "wedding-hall" }
+    @{ Title = "Ruyam Tekne Kiralık"; Slug = "vehicle"; FallbackSlug = "real-estate" }
+    @{ Title = "Mercedes (Kiralık)"; Slug = "car-rental"; FallbackSlug = "car" }
+    @{ Title = "Adana Kebap"; Slug = "restaurant"; FallbackSlug = "food" }
+)
+
+$showcaseResults = @()
+
+foreach ($showcase in $showcaseListings) {
+    $title = $showcase.Title
+    $slug = $showcase.Slug
+    $fallbackSlug = $showcase.FallbackSlug
+    
+    Write-Host ""
+    Write-Host "  Showcase: $title (target slug: $slug)" -ForegroundColor Cyan
+    
+    # Find category by slug (try primary, then fallback)
+    $category = Find-CategoryBySlug -Tree $categories -Slug $slug
+    if (-not $category) {
+        $category = Find-CategoryBySlug -Tree $categories -Slug $fallbackSlug
+    }
+    
+    if (-not $category) {
+        Write-Host "    SKIP: Category not found (slug: $slug, fallback: $fallbackSlug)" -ForegroundColor Yellow
+        continue
+    }
+    
+    $categoryId = $category.id
+    $categorySlug = $category.slug
+    
+    # Check if listing already exists (idempotent: by title + tenant + category)
+    $listingExists = $false
+    $existingListingId = $null
+    
+    try {
+        $listingsResponse = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings?category_id=$categoryId&status=published" `
+            -TimeoutSec 10 `
+            -ErrorAction Stop
+        
+        $listings = $null
+        if ($listingsResponse -is [Array]) {
+            $listings = $listingsResponse
+        } elseif ($listingsResponse.data) {
+            $listings = $listingsResponse.data
+        } elseif ($listingsResponse.items) {
+            $listings = $listingsResponse.items
+        } else {
+            $listings = @($listingsResponse)
+        }
+        
+        if ($listings) {
+            $matchingListing = $listings | Where-Object { 
+                $_.title -eq $title -and $_.tenant_id -eq $tenantId 
+            }
+            if ($matchingListing) {
+                $listingExists = $true
+                $existingListingId = $matchingListing[0].id
+                Write-Host "    EXISTS: Listing found (id: $existingListingId)" -ForegroundColor Green
+            }
+        }
+    } catch {
+        Write-Host "    WARN: Could not check existing listings: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+    
+    # Create listing if not exists
+    if (-not $listingExists) {
+        try {
+            Write-Host "    Creating listing..." -ForegroundColor Gray
+            
+            # Build listing body
+            $listingBody = @{
+                category_id = $categoryId
+                title = $title
+                description = "WP-48 showcase listing"
+                transaction_modes = @("reservation", "rental")
+                attributes = @{}
+            }
+            
+            # Add capacity_max for wedding-hall/events/restaurant categories
+            if ($categorySlug -match "wedding-hall|events|restaurant|food") {
+                $listingBody.attributes["capacity_max"] = 100
+            }
+            
+            $createBody = $listingBody | ConvertTo-Json
+            
+            # Generate idempotency key from title+tenant+category
+            $idempotencyKey = ($title + $tenantId + $categoryId).GetHashCode().ToString()
+            
+            $createResponse = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings" `
+                -Method Post `
+                -Headers @{
+                    "Authorization" = "Bearer $jwtToken"
+                    "X-Active-Tenant-Id" = $tenantId
+                    "Content-Type" = "application/json"
+                    "Idempotency-Key" = $idempotencyKey
+                } `
+                -Body $createBody `
+                -TimeoutSec 10 `
+                -ErrorAction Stop
+            
+            $listingId = $createResponse.id
+            
+            # Publish listing if not already published
+            if ($createResponse.status -ne "published") {
+                $publishResponse = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings/$listingId/publish" `
+                    -Method Post `
+                    -Headers @{
+                        "Authorization" = "Bearer $jwtToken"
+                        "X-Active-Tenant-Id" = $tenantId
+                    } `
+                    -TimeoutSec 10 `
+                    -ErrorAction Stop
+            }
+            
+            Write-Host "    CREATED: Listing created and published (id: $listingId)" -ForegroundColor Green
+            $existingListingId = $listingId
+        } catch {
+            Write-Host "    FAIL: Could not create listing: $($_.Exception.Message)" -ForegroundColor Red
+            $hasFailures = $true
+            continue
+        }
+    }
+    
+    $showcaseResults += @{
+        Title = $title
+        CategoryId = $categoryId
+        CategorySlug = $categorySlug
+        ListingId = $existingListingId
+        Status = if ($listingExists) { "EXISTS" } else { "CREATED" }
+    }
+}
+
+# Step 7: Print summary
 Write-Host ""
 Write-Host "=== DEMO SEED ROOT LISTINGS SUMMARY ===" -ForegroundColor Cyan
 Write-Host ""
@@ -341,6 +477,21 @@ foreach ($result in $results) {
     }
     Write-Host "  Search URL: http://localhost:3002/marketplace/search/$($result.CategoryId)" -ForegroundColor Gray
     Write-Host ""
+}
+
+if ($showcaseResults.Count -gt 0) {
+    Write-Host "=== SHOWCASE LISTINGS (WP-48) ===" -ForegroundColor Cyan
+    Write-Host ""
+    foreach ($showcase in $showcaseResults) {
+        $statusColor = if ($showcase.Status -eq "EXISTS") { "Green" } else { "Yellow" }
+        Write-Host "[$($showcase.Status)] $($showcase.Title)" -ForegroundColor $statusColor
+        Write-Host "  Category: $($showcase.CategorySlug) (id: $($showcase.CategoryId))" -ForegroundColor Gray
+        if ($showcase.ListingId) {
+            Write-Host "  Listing ID: $($showcase.ListingId)" -ForegroundColor Gray
+            Write-Host "  Search URL: http://localhost:3002/marketplace/search/$($showcase.CategoryId)" -ForegroundColor Gray
+        }
+        Write-Host ""
+    }
 }
 
 if ($hasFailures) {

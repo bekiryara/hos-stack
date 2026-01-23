@@ -4,6 +4,11 @@
       <h2>Demo Dashboard</h2>
       <button @click="exitDemo" class="exit-demo-button" data-marker="exit-demo">Exit Demo</button>
     </div>
+    <div v-if="activeTenantId" class="tenant-info">
+      <strong>Active Tenant ID:</strong>
+      <code class="tenant-id">{{ activeTenantId }}</code>
+      <button @click="copyTenantId" class="copy-button" title="Copy to clipboard">Copy</button>
+    </div>
     <div v-if="loading" class="loading">Loading demo listing...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="listing" class="demo-listing">
@@ -20,7 +25,7 @@
 
 <script>
 import { api } from '../api/client';
-import { clearToken, enterDemoUrl } from '../lib/demoSession.js';
+import { clearToken, enterDemoUrl, getToken } from '../lib/demoSession.js';
 
 export default {
   name: 'DemoDashboardPage',
@@ -29,15 +34,56 @@ export default {
       listing: null,
       loading: true,
       error: null,
+      activeTenantId: null,
     };
   },
   async mounted() {
+    await this.loadActiveTenantId();
     await this.ensureDemoListing();
   },
   methods: {
     exitDemo() {
       clearToken();
       window.location.href = enterDemoUrl;
+    },
+    async loadActiveTenantId() {
+      // WP-48: Load active tenant ID from localStorage or fetch from memberships
+      const storedTenantId = localStorage.getItem('active_tenant_id');
+      if (storedTenantId) {
+        this.activeTenantId = storedTenantId;
+        return;
+      }
+      
+      // Fetch from HOS API if demo token exists
+      const demoToken = getToken();
+      if (demoToken) {
+        try {
+          const memberships = await api.getMyMemberships(demoToken);
+          const items = memberships.items || memberships.data || (Array.isArray(memberships) ? memberships : []);
+          if (items.length > 0) {
+            // Prefer admin role, else first membership
+            const adminMembership = items.find(m => m.role === 'admin' || m.role === 'owner');
+            const selectedMembership = adminMembership || items[0];
+            const tenantId = selectedMembership.tenant_id || selectedMembership.tenant?.id;
+            if (tenantId) {
+              this.activeTenantId = tenantId;
+              localStorage.setItem('active_tenant_id', tenantId);
+            }
+          }
+        } catch (err) {
+          console.warn('Could not fetch memberships for tenant ID:', err);
+        }
+      }
+    },
+    copyTenantId() {
+      if (this.activeTenantId) {
+        navigator.clipboard.writeText(this.activeTenantId).then(() => {
+          // Visual feedback could be added here
+          alert('Tenant ID copied to clipboard!');
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+        });
+      }
     },
     async ensureDemoListing() {
       try {
@@ -139,6 +185,38 @@ export default {
 
 .action-button:hover {
   background: #0052a3;
+}
+
+.tenant-info {
+  padding: 1rem;
+  background: #e3f2fd;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tenant-id {
+  font-family: monospace;
+  background: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.9rem;
+}
+
+.copy-button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #1976d2;
+  border-radius: 3px;
+  background: #1976d2;
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.copy-button:hover {
+  background: #1565c0;
 }
 </style>
 

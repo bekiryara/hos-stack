@@ -26,7 +26,12 @@
             required
             placeholder="e.g., 951ba4eb-9062-40c4-9228-f8d2cfc2f426"
             class="form-input"
+            :readonly="!!formData.tenantId"
+            style="background-color: #f5f5f5;"
           />
+          <small v-if="formData.tenantId" style="color: #666; display: block; margin-top: 0.25rem;">
+            Auto-filled from active membership (WP-48)
+          </small>
         </label>
       </div>
       
@@ -181,6 +186,36 @@ export default {
   async mounted() {
     try {
       this.categories = await api.getCategories();
+      
+      // WP-48: Auto-fill tenant ID from localStorage or fetch from memberships
+      if (!this.formData.tenantId) {
+        // Try localStorage first
+        const storedTenantId = localStorage.getItem('active_tenant_id');
+        if (storedTenantId) {
+          this.formData.tenantId = storedTenantId;
+        } else {
+          // Fetch from HOS API if demo token exists
+          const demoToken = localStorage.getItem('demo_auth_token');
+          if (demoToken) {
+            try {
+              const memberships = await api.getMyMemberships(demoToken);
+              const items = memberships.items || memberships.data || (Array.isArray(memberships) ? memberships : []);
+              if (items.length > 0) {
+                // Prefer admin role, else first membership
+                const adminMembership = items.find(m => m.role === 'admin' || m.role === 'owner');
+                const selectedMembership = adminMembership || items[0];
+                const tenantId = selectedMembership.tenant_id || selectedMembership.tenant?.id;
+                if (tenantId) {
+                  this.formData.tenantId = tenantId;
+                  localStorage.setItem('active_tenant_id', tenantId);
+                }
+              }
+            } catch (err) {
+              console.warn('Could not fetch memberships for tenant ID:', err);
+            }
+          }
+        }
+      }
     } catch (err) {
       this.error = err;
     }

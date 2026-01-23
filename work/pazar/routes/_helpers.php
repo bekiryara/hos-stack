@@ -42,3 +42,25 @@ if (!function_exists('pazar_build_tree')) {
     }
 }
 
+// Helper function to get all descendant category IDs recursively (WP-48)
+// Returns array of category IDs including the root category and all its descendants
+if (!function_exists('pazar_category_descendant_ids')) {
+    function pazar_category_descendant_ids(int $rootId): array {
+        $categoryIds = [$rootId];
+        
+        // Get direct children
+        $children = DB::table('categories')
+            ->where('parent_id', $rootId)
+            ->where('status', 'active')
+            ->pluck('id')
+            ->toArray();
+        
+        // Recursively get descendants
+        foreach ($children as $childId) {
+            $categoryIds = array_merge($categoryIds, pazar_category_descendant_ids($childId));
+        }
+        
+        return array_unique($categoryIds);
+    }
+}
+

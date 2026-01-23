@@ -116,6 +116,37 @@ function generateIdempotencyKey() {
   });
 }
 
+// HOS API helper (WP-48: same-origin proxy via nginx)
+// Calls HOS API through /api/* proxy (nginx routes to hos-api:3000)
+async function hosApiRequest(endpoint, options = {}) {
+  const url = `/api${endpoint}`; // nginx proxies /api/* to HOS API
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = { error: 'unknown', message: response.statusText };
+    }
+    const error = new Error(errorData.message || `API request failed: ${response.status}`);
+    error.status = response.status;
+    error.errorCode = errorData.error;
+    error.data = errorData;
+    throw error;
+  }
+
+  return response.json();
+}
+
 export const api = {
   // GUEST persona: No headers required (SPEC §5.3)
   getCategories: () => apiRequest('/api/v1/categories'),
@@ -125,6 +156,13 @@ export const api = {
     return apiRequest(`/api/v1/listings?${queryString}`);
   },
   getListing: (id) => apiRequest(`/api/v1/listings/${id}`),
+  
+  // HOS API (WP-48: tenant ID resolution)
+  // PERSONAL persona: Authorization header required
+  getMyMemberships: (authToken) => {
+    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
+    return hosApiRequest('/v1/me/memberships', { headers });
+  },
   
   // Account Portal - Personal scope (WP-32, WP-8)
   // PERSONAL persona: Authorization header required (SPEC §5.2)

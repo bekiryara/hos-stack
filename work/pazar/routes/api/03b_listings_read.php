@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\DB;
 Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/listings', function (\Illuminate\Http\Request $request) {
     $query = DB::table('listings');
     
-    // Filter by category_id if provided
+    // Filter by category_id if provided (WP-48: recursive - include all descendant categories)
     if ($request->has('category_id')) {
-        $query->where('category_id', $request->input('category_id'));
+        $categoryId = (int) $request->input('category_id');
+        $categoryIds = pazar_category_descendant_ids($categoryId);
+        $query->whereIn('category_id', $categoryIds);
     }
     
     // Filter by status (default: published)

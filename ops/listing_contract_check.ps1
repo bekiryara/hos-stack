@@ -460,6 +460,73 @@ if (-not $weddingHallId) {
 
 Write-Host ""
 
+# Test 8: WP-48 - Recursive category search (parent category includes child listings)
+if (-not $listingId -or -not $weddingHallId) {
+    Write-Host "[8] SKIP: Cannot test recursive category search (listing ID or wedding-hall category ID not available)" -ForegroundColor Yellow
+    $hasFailures = $true
+} else {
+    Write-Host "[8] Testing recursive category search (WP-48)..." -ForegroundColor Yellow
+    Write-Host "  Created listing is in wedding-hall category (child of service root)" -ForegroundColor Gray
+    Write-Host "  Testing if service root category search includes wedding-hall listings..." -ForegroundColor Gray
+    
+    # Helper function to find category ID in tree by slug
+    function FindCategoryInTree($tree, $slug) {
+        foreach ($item in $tree) {
+            if ($item.slug -eq $slug) {
+                return $item.id
+            }
+            if ($item.children) {
+                $foundId = FindCategoryInTree $item.children $slug
+                if ($foundId) { return $foundId }
+            }
+        }
+        return $null
+    }
+    
+    # Get categories tree to find service root category
+    $categoriesUrl = "${pazarBaseUrl}/api/v1/categories"
+    try {
+        $categoriesResponse = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+        $serviceRootId = FindCategoryInTree $categoriesResponse "service"
+        
+        if (-not $serviceRootId) {
+            Write-Host "  WARN: service root category not found, skipping recursive test" -ForegroundColor Yellow
+        } else {
+            Write-Host "  Found service root category ID: $serviceRootId" -ForegroundColor Gray
+            
+            # Search listings with service root category_id
+            $recursiveSearchUrl = "${pazarBaseUrl}/api/v1/listings?category_id=$serviceRootId&status=published"
+            try {
+                $recursiveSearchResponse = Invoke-RestMethod -Uri $recursiveSearchUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+                
+                if (-not ($recursiveSearchResponse -is [Array])) {
+                    Write-Host "FAIL: Recursive search returned non-array response" -ForegroundColor Red
+                    $hasFailures = $true
+                } else {
+                    $foundListing = $recursiveSearchResponse | Where-Object { $_.id -eq $listingId }
+                    if ($foundListing) {
+                        Write-Host "PASS: Recursive category search works - wedding-hall listing found under service root" -ForegroundColor Green
+                        Write-Host "  Service root search returned $($recursiveSearchResponse.Count) listings" -ForegroundColor Gray
+                        Write-Host "  Created listing (ID: $listingId) found in results" -ForegroundColor Gray
+                    } else {
+                        Write-Host "FAIL: Recursive category search failed - wedding-hall listing NOT found under service root" -ForegroundColor Red
+                        Write-Host "  Service root search returned $($recursiveSearchResponse.Count) listings" -ForegroundColor Yellow
+                        Write-Host "  Expected listing ID: $listingId" -ForegroundColor Yellow
+                        $hasFailures = $true
+                    }
+                }
+            } catch {
+                Write-Host "FAIL: Recursive search request failed: $($_.Exception.Message)" -ForegroundColor Red
+                $hasFailures = $true
+            }
+        }
+    } catch {
+        Write-Host "  WARN: Could not get categories tree for recursive test: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
+
+Write-Host ""
+
 # Summary
 if ($hasFailures) {
     Write-Host "=== LISTING CONTRACT CHECK: FAIL ===" -ForegroundColor Red
