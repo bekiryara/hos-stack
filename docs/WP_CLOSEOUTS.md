@@ -12,6 +12,88 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-49: Prototype Reality Check (Flow Lock + UX Debt List)
+
+**Purpose:** End-to-end user flow verification and UX debt identification. No feature build, only testing and reporting.
+
+**Deliverables:**
+- docs/PROOFS/wp49_reality_check_report.md (NEW): Comprehensive reality check report with flow checklist, UX debt list, and WP-50 candidates
+
+**Commands:**
+```powershell
+# Run preflight checks
+.\ops\catalog_contract_check.ps1
+.\ops\listing_contract_check.ps1
+.\ops\frontend_smoke.ps1
+.\ops\prototype_v1.ps1
+
+# Manual browser flow test (7 steps documented in report)
+# 1. Demo Dashboard
+# 2. Categories Page
+# 3. Search (Recursive)
+# 4. Create Listing
+# 5. Listing Detail
+# 6. Messaging
+# 7. Dashboard Readiness
+```
+
+**Proof:** 
+- docs/PROOFS/wp49_reality_check_report.md
+
+**Key Findings:**
+- P0: 1 issue (Messaging thread initialization error - frontend)
+- P1: 3 issues (async loading states, messaging proxy)
+- P2: 3 issues (cosmetic improvements)
+- All critical flows functional (except messaging frontend error)
+- Recursive search confirmed working
+- No-hardcode compliance: PASS
+
+**WP-50 Candidates:**
+1. Tenant ID Loading States (UI loading indicators)
+2. Search Results Loading Indicator (UI spinner)
+3. Messaging Frontend Thread Initialization Fix
+
+---
+
+## WP-48: Recursive Category Search + Tenant ID UX + Showcase Demo Listings
+
+**Purpose:** Fix recursive category search behavior (parent categories include child listings), improve tenant ID UX visibility (auto-fill and display), and add deterministic showcase listings for better prototyping.
+
+**Deliverables:**
+- work/pazar/routes/_helpers.php (MODIFIED): Added `pazar_category_descendant_ids()` helper function
+- work/pazar/routes/api/03b_listings_read.php (MODIFIED): Updated GET /v1/listings to use recursive category search (whereIn instead of where)
+- ops/listing_contract_check.ps1 (MODIFIED): Added Test 8 - recursive category search verification
+- work/marketplace-web/src/api/client.js (MODIFIED): Added `hosApiRequest()` helper and `getMyMemberships()` method
+- work/marketplace-web/src/pages/CreateListingPage.vue (MODIFIED): Auto-fill tenant ID from localStorage/memberships, read-only display
+- work/marketplace-web/src/pages/DemoDashboardPage.vue (MODIFIED): Display active tenant ID with copy button
+- ops/demo_seed_root_listings.ps1 (MODIFIED): Added Step 6 - showcase listings seeding (4 deterministic listings)
+- docs/PROOFS/wp48_recursive_category_tenantux_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Test catalog contract
+.\ops\catalog_contract_check.ps1
+
+# Test listing contract (includes recursive test)
+.\ops\listing_contract_check.ps1
+
+# Seed showcase listings
+.\ops\demo_seed_root_listings.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp48_recursive_category_tenantux_pass.md
+
+**Key Changes:**
+- Recursive category search: parent categories now include all descendant listings
+- No hardcoded category IDs (all resolved by slug)
+- No hardcoded tenant IDs (all resolved from memberships)
+- Tenant ID auto-filled in Create Listing page
+- Tenant ID displayed in Demo Dashboard with copy button
+- 4 showcase listings seeded deterministically (idempotent)
+
+---
+
 ## WP-61: Contract Check Auth Fix + Frontend Smoke Messaging Proxy Fix
 
 **Purpose:** Restore deterministic PASS for ops gates by fixing authentication bootstrap in contract checks and messaging proxy check in frontend smoke.
