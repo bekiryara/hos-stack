@@ -12,6 +12,55 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-55: Single-Origin Marketplace UI (Serve marketplace-web under HOS Web /marketplace/*)
+
+**Purpose:** Eliminate multi-origin (3002 vs 5173) token/storage mismatch by serving marketplace-web from the SAME origin as HOS Web: http://localhost:3002/marketplace/*. Fixes JWT token sharing issue (localStorage is origin-scoped).
+
+**Deliverables:**
+- work/marketplace-web/vite.config.js (MODIFIED): Changed base from `/hos-stack/marketplace/` to `/marketplace/`
+- work/marketplace-web/src/router.js (MODIFIED): Already uses `import.meta.env.BASE_URL` (automatically uses `/marketplace/`)
+- work/marketplace-web/src/pages/DemoDashboardPage.vue (MODIFIED): Added `data-test="demo-dashboard"` marker for smoke test
+- work/hos/services/web/Dockerfile (MODIFIED): Added multi-stage build for marketplace-web, copies dist to `/usr/share/nginx/html/marketplace/`
+- work/hos/services/web/nginx.conf (MODIFIED): Added `/marketplace/` location block with SPA fallback
+- work/hos/services/web/src/ui/App.tsx (MODIFIED): Changed "Enter Demo" redirect from `http://localhost:5173/demo` to `/marketplace/demo` (relative URL)
+- docker-compose.yml (MODIFIED): Changed hos-web build context from `./work/hos` to `./work` to allow copying marketplace-web
+- ops/frontend_smoke.ps1 (MODIFIED): Added check for `/marketplace/demo` endpoint (Step C)
+- docs/PROOFS/wp55_single_origin_marketplace_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Rebuild hos-web with marketplace-web included
+docker compose build hos-web
+
+# Start services
+docker compose up -d
+
+# Verify URLs
+curl http://localhost:3002
+curl http://localhost:3002/marketplace/demo
+
+# Run smoke test
+.\ops\frontend_smoke.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp55_single_origin_marketplace_pass.md
+
+**Key URLs:**
+- HOS Web: http://localhost:3002
+- Marketplace Demo: http://localhost:3002/marketplace/demo
+- Marketplace Listing: http://localhost:3002/marketplace/listing/:id
+- Marketplace Messaging: http://localhost:3002/marketplace/listing/:id/message
+
+**Acceptance:**
+- Single origin: All UI served from http://localhost:3002 (no port confusion)
+- Marketplace demo: http://localhost:3002/marketplace/demo returns 200
+- Messaging works: JWT token from localStorage accessible (same origin)
+- No dev server: No "npm run dev" requirement, docker up then click
+- All gates: PASS (secret_scan, conformance, frontend_smoke)
+
+---
+
 ## WP-53: Repo Payload Guard (Emergency Discipline - Prevent Repo Bloat)
 
 **Purpose:** Emergency discipline WP to prevent repo bloat. Identified and removed accidental 35MB payload file from WP-52 commit, added deterministic guard to prevent large tracked artifacts from entering git again.
