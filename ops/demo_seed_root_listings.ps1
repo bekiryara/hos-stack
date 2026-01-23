@@ -331,7 +331,7 @@ foreach ($category in $rootCategories) {
 Write-Host ""
 Write-Host "[6] Seeding showcase listings (WP-48)..." -ForegroundColor Yellow
 $showcaseListings = @(
-    @{ Title = "Bando Presto (4 kişi)"; Slug = "events"; FallbackSlug = "wedding-hall" }
+    @{ Title = "Bando Presto (4 kişi)"; Slug = "wedding-hall"; FallbackSlug = "events" }  # WP-62: Use leaf category directly
     @{ Title = "Ruyam Tekne Kiralık"; Slug = "vehicle"; FallbackSlug = "real-estate" }
     @{ Title = "Mercedes (Kiralık)"; Slug = "car-rental"; FallbackSlug = "car" }
     @{ Title = "Adana Kebap"; Slug = "restaurant"; FallbackSlug = "food" }

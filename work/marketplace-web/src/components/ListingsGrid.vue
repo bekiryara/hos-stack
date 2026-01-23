@@ -8,7 +8,11 @@
         @click="goToDetail(listing.id)"
       >
         <h4>{{ listing.title || 'Untitled' }}</h4>
-        <p class="listing-id">ID: {{ listing.id }}</p>
+        <p class="listing-id">
+          ID: {{ listing.id }}
+          <button @click.stop="copyListingId(listing.id)" class="copy-id-btn" title="Copy listing ID">Copy</button>
+        </p>
+        <p v-if="listing.category_id" class="listing-category">Category ID: {{ listing.category_id }}</p>
         <p class="listing-status">Status: {{ listing.status }}</p>
         <div v-if="listing.attributes" class="attributes-summary">
           <span
@@ -37,6 +41,33 @@ export default {
   methods: {
     goToDetail(id) {
       this.$router.push(`/listing/${id}`);
+    },
+    copyListingId(id) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(id).then(() => {
+          // Optional: Show brief feedback (minimal UI change)
+          const btn = event.target;
+          const originalText = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 1000);
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+        });
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = id;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback copy failed:', err);
+        }
+        document.body.removeChild(textArea);
+      }
     },
   },
 };
@@ -72,6 +103,30 @@ export default {
 }
 
 .listing-id {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-id-btn {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #f5f5f5;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.copy-id-btn:hover {
+  background: #e5e5e5;
+}
+
+.listing-category {
   font-size: 0.85rem;
   color: #666;
   margin-bottom: 0.25rem;
