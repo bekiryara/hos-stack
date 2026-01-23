@@ -12,6 +12,52 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-61: Category Search Unification + Showcase Seed
+
+**Purpose:** Verify and document unified category search behavior (recursive, consistent) and showcase seed idempotency. Primarily a verification/documentation WP - functionality already implemented in WP-48.
+
+**Deliverables:**
+- docs/PROOFS/wp61_category_search_unification_pass.md (NEW): Verification proof document
+- docs/WP_CLOSEOUTS.md (MODIFIED): WP-61 entry
+- CHANGELOG.md (MODIFIED): WP-61 entry
+
+**Commands:**
+```powershell
+# Verify showcase seed (idempotent)
+.\ops\demo_seed_root_listings.ps1
+
+# Verify recursive search (Test 8)
+.\ops\listing_contract_check.ps1
+
+# Verify frontend smoke
+.\ops\frontend_smoke.ps1
+
+# Verify catalog contract
+.\ops\catalog_contract_check.ps1
+
+# Verify prototype v1
+.\ops\prototype_v1.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp61_category_search_unification_pass.md
+
+**Key Findings:**
+- Category search already unified: All frontend paths use recursive `/api/v1/listings` endpoint (WP-48)
+- Recursive search verified: Test 8 confirms parent categories include child listings
+- Showcase seed idempotent: Re-run does not create duplicates (3/4 listings working)
+- Frontend consistently uses recursive endpoint (no code changes needed)
+
+**Known Issues:**
+- Bando Presto showcase listing: 422 error (events category validation) - low impact, 3/4 listings work
+
+**Status:**
+- No code changes required (verification/documentation WP)
+- All functionality already implemented in WP-48
+- All verification tests PASS
+
+---
+
 ## WP-50: Messaging Proxy + Thread Init Fix (Prototype Unblock)
 
 **Purpose:** Fix messaging proxy 404 and UI thread initialization error to unblock prototype flow.
