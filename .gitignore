@@ -30,6 +30,10 @@ _verify_output*.txt
 ops/*.backup
 ops/diffs/
 
+# Test results and temporary JSON files
+*_tests_results.json
+ops_gates_output.json
+
 # Temp files
 _temp_*.txt
 
