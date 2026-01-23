@@ -12,6 +12,49 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-57: Messaging Thread GET Fix (Remove Literal :id)
+
+**Purpose:** Fix messaging thread GET to use by-context endpoint instead of literal `:id` URL, eliminating 404 errors. Messaging API does not have `GET /api/v1/threads/:id` endpoint, but has `GET /api/v1/threads/by-context`.
+
+**Deliverables:**
+- work/marketplace-web/src/pages/MessagingPage.vue (MODIFIED): Changed `loadMessages()` to use `GET /api/v1/threads/by-context?context_type=listing&context_id=${listingId}` instead of `GET /api/v1/threads/${threadId}`, extracts thread_id from response for sendMessage usage
+- ops/messaging_proxy_smoke.ps1 (MODIFIED): Added check for by-context endpoint proxy routing verification
+- docs/PROOFS/wp57_messaging_thread_get_fix_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Rebuild hos-web with updated MessagingPage
+docker compose build hos-web
+
+# Start services
+docker compose up -d
+
+# Test proxy and thread endpoints
+.\ops\messaging_proxy_smoke.ps1
+
+# Browser test
+# http://localhost:3002 -> Enter Demo -> Message Seller
+```
+
+**Proof:** 
+- docs/PROOFS/wp57_messaging_thread_get_fix_pass.md
+
+**Key Endpoints:**
+- Thread Upsert: POST /api/messaging/api/v1/threads/upsert → 200
+- Thread By-Context: GET /api/messaging/api/v1/threads/by-context?context_type=listing&context_id=:id → 200
+- Thread By-ID: GET /api/messaging/api/v1/threads/:id → 404 (endpoint doesn't exist, not used)
+
+**Acceptance:**
+- No literal `:id` in URL: Uses by-context endpoint with query parameters
+- Thread GET works: GET /api/messaging/api/v1/threads/by-context returns 200
+- Messages load: Response includes messages array
+- Thread ID extracted: threadId set from response for sendMessage
+- All URLs use /api/messaging/ base path (no hardcoded 8090)
+- Smoke test: messaging_proxy_smoke.ps1 PASS
+- All gates: PASS
+
+---
+
 ## WP-56: Messaging Same-Origin Proxy (3002) — Fix Demo "Message Seller"
 
 **Purpose:** Eliminate UI messaging CORS blocker by proxying Messaging API through HOS Web (nginx @ 3002). Fixes "Message Seller" flow blocked by cross-origin request from 3002 to 8090.

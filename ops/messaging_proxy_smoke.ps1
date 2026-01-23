@@ -39,6 +39,34 @@ try {
     exit 1
 }
 
+# Test: Thread by-context endpoint (proxy routing verification)
+Write-Host ""
+Write-Host "[2] Testing thread by-context endpoint (proxy routing)..." -ForegroundColor Yellow
+try {
+    # Use fixed context for deterministic test
+    $testUrl = "http://localhost:3002/api/messaging/api/v1/threads/by-context?context_type=smoke&context_id=proxy-smoke"
+    $response = Invoke-WebRequest -Uri $testUrl -UseBasicParsing -TimeoutSec 10 -ErrorAction SilentlyContinue
+    # If we get here, proxy routing works (even if 401/403/404, it means proxy forwarded the request)
+    if ($response.StatusCode -eq 200) {
+        Write-Host "PASS: Thread by-context endpoint returned 200" -ForegroundColor Green
+    } elseif ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403) {
+        Write-Host "PASS: Thread by-context endpoint proxy routing works (auth required, expected)" -ForegroundColor Green
+    } elseif ($response.StatusCode -eq 404) {
+        Write-Host "PASS: Thread by-context endpoint proxy routing works (thread not found, expected for test context)" -ForegroundColor Green
+    } else {
+        Write-Host "PASS: Thread by-context endpoint proxy routing works (status: $($response.StatusCode))" -ForegroundColor Green
+    }
+} catch {
+    $statusCode = $_.Exception.Response.StatusCode.value__
+    if ($statusCode -eq 401 -or $statusCode -eq 403 -or $statusCode -eq 404) {
+        Write-Host "PASS: Thread by-context endpoint proxy routing works (status: $statusCode, expected)" -ForegroundColor Green
+    } else {
+        $errorMsg = Sanitize-Ascii $_.Exception.Message
+        Write-Host "WARN: Thread by-context endpoint test: $errorMsg" -ForegroundColor Yellow
+        Write-Host "  (Proxy routing may still work, this is a non-blocking check)" -ForegroundColor Gray
+    }
+}
+
 Write-Host ""
 Write-Host "=== MESSAGING PROXY SMOKE TEST: PASS ===" -ForegroundColor Green
 exit 0

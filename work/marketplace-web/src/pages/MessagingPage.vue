@@ -87,10 +87,10 @@ export default {
         }
         this.userId = payload.sub;
 
-        // Get or create thread
+        // Get or create thread (upsert ensures thread exists)
         await this.ensureThread();
 
-        // Load messages
+        // Load messages (by-context, will also set threadId from response)
         await this.loadMessages();
         this.loading = false;
       } catch (err) {
@@ -131,13 +131,12 @@ export default {
       }
     },
     async loadMessages() {
-      if (!this.threadId) return;
-
       const messagingBaseUrl = '/api/messaging';
       const token = localStorage.getItem('demo_auth_token');
 
       try {
-        const response = await fetch(`${messagingBaseUrl}/api/v1/threads/${this.threadId}`, {
+        // Use by-context endpoint (more reliable than by-id)
+        const response = await fetch(`${messagingBaseUrl}/api/v1/threads/by-context?context_type=listing&context_id=${this.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'messaging-api-key': 'dev-messaging-key',
@@ -149,6 +148,10 @@ export default {
         }
 
         const data = await response.json();
+        // Store thread_id from response for sendMessage
+        if (data.thread_id) {
+          this.threadId = data.thread_id;
+        }
         this.messages = data.messages || [];
       } catch (err) {
         throw new Error('Failed to load messages: ' + err.message);
