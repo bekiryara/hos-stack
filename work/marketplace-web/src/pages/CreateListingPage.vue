@@ -27,10 +27,15 @@
             placeholder="e.g., 951ba4eb-9062-40c4-9228-f8d2cfc2f426"
             class="form-input"
             :readonly="!!formData.tenantId"
-            style="background-color: #f5f5f5;"
+            :class="{ 'auto-filled': !!formData.tenantId }"
           />
-          <small v-if="formData.tenantId" style="color: #666; display: block; margin-top: 0.25rem;">
-            Auto-filled from active membership (WP-48)
+          <small v-if="formData.tenantId" class="auto-fill-note">
+            Auto-filled from active membership (WP-51)
+          </small>
+          <small v-else-if="tenantIdLoadError" class="tenant-id-warning">
+            <strong>Note:</strong> Could not auto-load tenant ID. Please enter it manually.
+            <br />
+            To get your tenant ID, run: <code>.\ops\demo_seed_root_listings.ps1</code> and check the output.
           </small>
         </label>
       </div>
@@ -181,13 +186,14 @@ export default {
       loading: false,
       error: null,
       success: null,
+      tenantIdLoadError: false, // WP-51: Track if tenant ID auto-load failed
     };
   },
   async mounted() {
     try {
       this.categories = await api.getCategories();
       
-      // WP-48: Auto-fill tenant ID from localStorage or fetch from memberships
+      // WP-51: Auto-fill tenant ID from localStorage or fetch from memberships
       if (!this.formData.tenantId) {
         // Try localStorage first
         const storedTenantId = localStorage.getItem('active_tenant_id');
@@ -208,11 +214,22 @@ export default {
                 if (tenantId) {
                   this.formData.tenantId = tenantId;
                   localStorage.setItem('active_tenant_id', tenantId);
+                } else {
+                  // No tenant_id found in memberships
+                  this.tenantIdLoadError = true;
                 }
+              } else {
+                // No memberships found
+                this.tenantIdLoadError = true;
               }
             } catch (err) {
+              // WP-51: Show actionable error message in UI
               console.warn('Could not fetch memberships for tenant ID:', err);
+              this.tenantIdLoadError = true;
             }
+          } else {
+            // No demo token - user not logged in
+            this.tenantIdLoadError = true;
           }
         }
       }
@@ -400,6 +417,37 @@ export default {
 .success a {
   color: #0066cc;
   text-decoration: underline;
+}
+
+.auto-filled {
+  background-color: #f5f5f5 !important;
+  cursor: not-allowed;
+}
+
+.auto-fill-note {
+  color: #666;
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.tenant-id-warning {
+  color: #f57c00;
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  background: #fff3e0;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border-left: 3px solid #ff9800;
+}
+
+.tenant-id-warning code {
+  background: #f5f5f5;
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
 }
 </style>
 

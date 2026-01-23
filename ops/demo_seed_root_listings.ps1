@@ -416,13 +416,17 @@ foreach ($showcase in $showcaseListings) {
             }
             
             # WP-49: Use -Compress to avoid whitespace issues that might confuse Laravel validation
+            # Fix encoding: Set output encoding to UTF-8 before ConvertTo-Json to prevent Turkish character corruption
+            $oldOutputEncoding = $OutputEncoding
+            $OutputEncoding = [System.Text.Encoding]::UTF8
             $createBody = $listingBody | ConvertTo-Json -Depth 3 -Compress
+            $OutputEncoding = $oldOutputEncoding
+            
+            # Convert JSON string to UTF-8 bytes (PowerShell strings are Unicode/UTF-16, convert to UTF-8 for API)
+            $createBodyBytes = [System.Text.Encoding]::UTF8.GetBytes($createBody)
             
             # Generate idempotency key from title+tenant+category
             $idempotencyKey = ($title + $tenantId + $categoryId).GetHashCode().ToString()
-            
-            # WP-49: Use Invoke-WebRequest with explicit UTF-8 encoding to ensure Laravel receives the body correctly
-            $createBodyBytes = [System.Text.Encoding]::UTF8.GetBytes($createBody)
             $webRequest = Invoke-WebRequest -Uri "$pazarBaseUrl/api/v1/listings" `
                 -Method Post `
                 -Headers @{

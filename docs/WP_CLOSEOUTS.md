@@ -5,6 +5,46 @@
 
 ---
 
+## WP-51: Demo UX - Auto-fill Tenant ID on Create Listing
+
+**Purpose:** Remove demo friction by improving tenant ID auto-fill UX on Create Listing page. Enhanced existing WP-48 implementation with better error handling and actionable messages.
+
+**Deliverables:**
+- `work/marketplace-web/src/pages/CreateListingPage.vue` (MODIFIED): Added `tenantIdLoadError` state and UI warning message
+- `docs/PROOFS/wp51_tenant_id_autofill_pass.md` (NEW): Proof document with verification results
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): WP-51 entry
+- `CHANGELOG.md` (MODIFIED): WP-51 entry
+
+**Commands:**
+```powershell
+# Verification
+.\ops\frontend_smoke.ps1
+
+# Manual test
+# Open: http://localhost:3002/marketplace/create-listing
+# With demo token: tenant ID should auto-fill
+# Without demo token: warning message should appear
+```
+
+**Proof:** 
+- docs/PROOFS/wp51_tenant_id_autofill_pass.md
+
+**Key Findings:**
+- Auto-fill functionality already existed (WP-48)
+- Enhanced with better error handling and UI feedback
+- Clear actionable message when auto-load fails
+- No regression: all existing functionality preserved
+
+**Acceptance Criteria:**
+✅ Tenant ID auto-fills in normal demo flow (from localStorage or memberships API)
+✅ Clear warning message when memberships unavailable
+✅ Actionable instructions for manual entry (points to ops script)
+✅ No hardcode, minimal diff, all checks PASS
+
+---
+
+---
+
 ## WP-49: Demo Seed 4/4 Determinism (Fix Bando Presto 422)
 
 **Purpose:** Fix the 422 error for "Bando Presto (4 kişi)" in `demo_seed_root_listings.ps1` to achieve 4/4 successful showcase listings.
