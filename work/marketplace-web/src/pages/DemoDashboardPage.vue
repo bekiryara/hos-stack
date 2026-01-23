@@ -240,6 +240,10 @@ export default {
   background: #0052a3;
 }
 
+.tenant-section {
+  margin-bottom: 1rem;
+}
+
 .tenant-info {
   padding: 1rem;
   background: #e3f2fd;
@@ -248,6 +252,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .tenant-id {

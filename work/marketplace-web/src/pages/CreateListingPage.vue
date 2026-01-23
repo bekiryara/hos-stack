@@ -168,6 +168,7 @@
 
 <script>
 import { api } from '../api/client';
+import { getToken } from '../lib/demoSession';
 
 export default {
   name: 'CreateListingPage',
@@ -201,7 +202,7 @@ export default {
           this.formData.tenantId = activeTenantId;
         } else {
           // Fetch from HOS API if demo token exists
-          const demoToken = localStorage.getItem('demo_auth_token');
+          const demoToken = getToken(); // Use helper instead of direct localStorage
           if (demoToken) {
             try {
               const memberships = await api.getMyMemberships(demoToken);
