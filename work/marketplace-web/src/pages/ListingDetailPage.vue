@@ -19,6 +19,7 @@
         <pre class="full-json">{{ JSON.stringify(listing, null, 2) }}</pre>
       </div>
       <div class="actions">
+        <button @click="openMessaging" class="action-button">Message Seller</button>
         <router-link to="/reservation/create" class="action-button">Create Reservation</router-link>
         <router-link to="/rental/create" class="action-button">Create Rental</router-link>
         <button disabled class="action-button">Satın Al (Coming Next)</button>
@@ -69,6 +70,9 @@ export default {
     },
     handlePublished(updatedListing) {
       this.listing = updatedListing;
+    },
+    openMessaging() {
+      this.$router.push(`/listing/${this.id}/message`);
     },
   },
 };

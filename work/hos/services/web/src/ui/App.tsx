@@ -73,6 +73,48 @@ export function App() {
         <h1>Prototype Launcher</h1>
 
         <div data-test="prototype-launcher">
+          <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
+            <div style={{ marginBottom: '1rem', fontWeight: 'bold', fontSize: '1.1rem' }}>Demo Login</div>
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      tenantSlug: 'tenant-a',
+                      email: 'testuser@example.com',
+                      password: 'Passw0rd!',
+                    }),
+                  });
+                  if (!response.ok) {
+                    throw new Error('Login failed');
+                  }
+                  const data = await response.json();
+                  if (data.token) {
+                    localStorage.setItem('demo_auth_token', data.token);
+                    window.location.href = 'http://localhost:8080/demo';
+                  }
+                } catch (err) {
+                  alert('Demo login failed: ' + (err as Error).message);
+                }
+              }}
+              style={{
+                padding: '0.75rem 1.5rem',
+                fontSize: '1rem',
+                backgroundColor: '#0066cc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Enter Demo
+            </button>
+            <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
+              Authenticates as demo user and opens marketplace
+            </div>
+          </div>
           <div style={{ marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}>
             <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>Quick Links</div>
             <div style={{ fontSize: '0.875rem' }}>
