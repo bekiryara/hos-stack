@@ -57,8 +57,8 @@ services:
 
   hos-web:
     build:
-      context: ./work/hos
-      dockerfile: services/web/Dockerfile
+      context: ./work
+      dockerfile: hos/services/web/Dockerfile
     ports:
       - "127.0.0.1:3002:80"
     depends_on:

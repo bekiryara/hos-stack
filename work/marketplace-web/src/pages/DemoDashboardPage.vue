@@ -1,5 +1,5 @@
 <template>
-  <div class="demo-dashboard-page">
+  <div class="demo-dashboard-page" data-test="demo-dashboard">
     <h2>Demo Dashboard</h2>
     <div v-if="loading" class="loading">Loading demo listing...</div>
     <div v-else-if="error" class="error">{{ error }}</div>

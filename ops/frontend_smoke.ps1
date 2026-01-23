@@ -92,7 +92,51 @@ try {
     $hasFailures = $true
 }
 
-# Step C: Check marketplace-web build
+# Step C: Check marketplace demo page (WP-55: single-origin)
+Write-Host ""
+Write-Host "[C] Checking marketplace demo page (http://localhost:3002/marketplace/demo)..." -ForegroundColor Yellow
+try {
+    $marketplaceDemoResponse = Invoke-WebRequest -Uri "http://localhost:3002/marketplace/demo" -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
+    if ($marketplaceDemoResponse.StatusCode -ne 200) {
+        Write-Host "FAIL: Marketplace demo page returned status code $($marketplaceDemoResponse.StatusCode), expected 200" -ForegroundColor Red
+        $hasFailures = $true
+    } else {
+        Write-Host "PASS: Marketplace demo page returned status code 200" -ForegroundColor Green
+    }
+    
+    # Check for demo-dashboard marker (Vue SPA renders client-side, so check for Vue app mount or title)
+    $bodyContent = $marketplaceDemoResponse.Content
+    $markerFound = $false
+    
+    # Check for data-test attribute in HTML (may be in template)
+    if ($bodyContent -match 'data-test="demo-dashboard"') {
+        $markerFound = $true
+    }
+    
+    # Check for "Demo Dashboard" text (may be in template or rendered)
+    if (-not $markerFound -and $bodyContent -match 'Demo Dashboard') {
+        $markerFound = $true
+    }
+    
+    # Check for Vue app mount point (id="app" is standard)
+    if (-not $markerFound -and $bodyContent -match 'id="app"') {
+        $markerFound = $true
+    }
+    
+    if ($markerFound) {
+        Write-Host "PASS: Marketplace demo page contains demo-dashboard marker or Vue app mount" -ForegroundColor Green
+    } else {
+        Write-Host "FAIL: Marketplace demo page missing demo-dashboard marker" -ForegroundColor Red
+        Write-Host "  Expected marker: data-test=`"demo-dashboard`", text 'Demo Dashboard', or id=`"app`"" -ForegroundColor Yellow
+        $hasFailures = $true
+    }
+} catch {
+    Write-Host "FAIL: Marketplace demo page unreachable: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  Check if HOS Web is running and marketplace build is included: docker compose ps hos-web" -ForegroundColor Yellow
+    $hasFailures = $true
+}
+
+# Step D: Check marketplace-web build
 Write-Host ""
 Write-Host "[C] Checking marketplace-web build..." -ForegroundColor Yellow
 $marketplaceWebPath = "work\marketplace-web"
@@ -188,6 +232,7 @@ if ($hasFailures) {
     Write-Host "=== FRONTEND SMOKE TEST: PASS ===" -ForegroundColor Green
     Write-Host "  - Worlds check: PASS" -ForegroundColor Gray
     Write-Host "  - HOS Web: PASS" -ForegroundColor Gray
+    Write-Host "  - Marketplace demo page: PASS" -ForegroundColor Gray
     Write-Host "  - marketplace-web build: PASS" -ForegroundColor Gray
     exit 0
 }

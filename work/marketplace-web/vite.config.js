@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/hos-stack/marketplace/', // GitHub Pages için doğru path (marketplace alt klasörü)
+  base: '/marketplace/', // Served under HOS Web at /marketplace/*
   server: {
     port: 5173,
     host: true

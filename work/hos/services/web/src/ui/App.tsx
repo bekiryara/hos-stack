@@ -93,7 +93,7 @@ export function App() {
                   const data = await response.json();
                   if (data.token) {
                     localStorage.setItem('demo_auth_token', data.token);
-                    window.location.href = 'http://localhost:8080/demo';
+                    window.location.href = '/marketplace/demo';
                   }
                 } catch (err) {
                   alert('Demo login failed: ' + (err as Error).message);
