@@ -10,7 +10,8 @@
     />
     <div v-if="loadingListings" class="loading">Searching listings...</div>
     <div v-else-if="errorListings" class="error">{{ errorListings }}</div>
-    <ListingsGrid v-else :listings="listings" />
+    <ListingsGrid v-else-if="initialSearchDone" :listings="listings" />
+    <div v-else class="loading">Ready to search...</div>
   </div>
 </template>
 
@@ -39,6 +40,7 @@ export default {
       loadingListings: false,
       errorFilters: null,
       errorListings: null,
+      initialSearchDone: false, // WP-60: Guard to prevent infinite loops
     };
   },
   async mounted() {
@@ -64,6 +66,12 @@ export default {
         const schema = await api.getFilterSchema(this.categoryId);
         this.filters = schema.filters || [];
         this.loadingFilters = false;
+        
+        // WP-60: Auto-run initial search after filters load (once only)
+        if (!this.initialSearchDone) {
+          this.initialSearchDone = true;
+          await this.handleSearch({});
+        }
       } catch (err) {
         this.errorFilters = err.message;
         this.loadingFilters = false;

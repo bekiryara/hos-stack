@@ -12,6 +12,40 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-60: Demo UX Stabilization + Deterministic Demo Data
+
+**Purpose:** Make prototype demo usable like a real product: user lands on search and sees results automatically, and demo data is deterministic across all root categories.
+
+**Deliverables:**
+- work/marketplace-web/src/pages/ListingsSearchPage.vue (MODIFIED): Added auto-run initial search after filters load (guarded by initialSearchDone flag)
+- ops/demo_seed.ps1 (NEW): Deterministic demo seed script ensuring at least 1 published listing per root category
+- ops/prototype_v1.ps1 (MODIFIED): Added -SeedDemo switch to optionally run demo seed before smokes
+- docs/PROOFS/wp60_demo_ux_seed_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Run demo seed to ensure listings in all categories
+.\ops\demo_seed.ps1
+
+# Run prototype v1 with demo seed
+.\ops\prototype_v1.ps1 -SeedDemo
+
+# Browser test
+# http://localhost:3002/marketplace/search/1 -> listings appear automatically
+# http://localhost:3002/marketplace/search/4 -> listings appear automatically
+# http://localhost:3002/marketplace/search/5 -> listings appear automatically
+```
+
+**Proof:** 
+- docs/PROOFS/wp60_demo_ux_seed_pass.md
+
+**Key URLs:**
+- Marketplace Search (Services): http://localhost:3002/marketplace/search/1
+- Marketplace Search (Vehicle): http://localhost:3002/marketplace/search/4
+- Marketplace Search (Real Estate): http://localhost:3002/marketplace/search/5
+
+---
+
 ## WP-59: Demo Control Panel v1 (Scriptless, Deterministic, Single-Origin)
 
 **Purpose:** Convert working prototype into "product-like" demo with a single UI panel showing system readiness and providing 1-click actions. No scripts required for normal demo.

@@ -3,6 +3,7 @@
 
 param(
     [switch]$StartStack = $false,
+    [switch]$SeedDemo = $false,  # WP-60: Optional demo seed before smokes
     [int]$WaitSec = 90,
     [string]$HosBaseUrl = "http://localhost:3000",
     [string]$PazarBaseUrl = "http://localhost:8080",
@@ -119,8 +120,35 @@ if (-not ($hosReady -and $pazarReady)) {
 
 Write-Host ""
 
-# Step 3: Run existing smokes in order
-Write-Host "[3] Running smoke tests..." -ForegroundColor Yellow
+# Step 3: Optionally run demo seed (WP-60)
+if ($SeedDemo) {
+    Write-Host "[3] Running demo seed..." -ForegroundColor Yellow
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $seedScript = "$scriptDir\demo_seed.ps1"
+    
+    if (Test-Path $seedScript) {
+        try {
+            $output = & $seedScript 2>&1
+            $exitCode = $LASTEXITCODE
+            if ($exitCode -ne 0) {
+                Write-Host "FAIL: demo_seed.ps1 returned exit code $exitCode" -ForegroundColor Red
+                $hasFailures = $true
+            } else {
+                Write-Host "PASS: demo_seed.ps1" -ForegroundColor Green
+            }
+        } catch {
+            Write-Sanitized "FAIL: demo_seed.ps1 failed: $($_.Exception.Message)" "Red"
+            $hasFailures = $true
+        }
+    } else {
+        Write-Host "SKIP: demo_seed.ps1 not found" -ForegroundColor Yellow
+    }
+    Write-Host ""
+}
+
+# Step 4: Run existing smokes in order
+$stepNumber = if ($SeedDemo) { 4 } else { 3 }
+Write-Host "[$stepNumber] Running smoke tests..." -ForegroundColor Yellow
 
 $smokeScripts = @()
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -138,7 +166,6 @@ $smokeScripts += @(
 )
 
 $smokeIndex = 1
-$hasFailures = $false
 
 foreach ($script in $smokeScripts) {
     $scriptName = Split-Path $script -Leaf
@@ -175,7 +202,7 @@ if ($hasFailures) {
 Write-Host ""
 Write-Host "PASS: All smoke tests completed" -ForegroundColor Green
 
-# Step 4: Print manual checks
+# Step 5: Print manual checks
 Write-Host ""
 Write-Host "=== NEXT MANUAL CHECKS ===" -ForegroundColor Cyan
 Write-Host "  HOS Web UI: http://localhost:3002" -ForegroundColor Gray
