@@ -12,32 +12,33 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
-## WP-60: Demo UX Stabilization + Deterministic Demo Data
+## WP-60: Prototype Integration v1 (Search Empty-Filters Fix + Deterministic Demo Seed + Stable Routing)
 
-**Purpose:** Make prototype demo usable like a real product: user lands on search and sees results automatically, and demo data is deterministic across all root categories.
+**Purpose:** Integrate prototype into "works every time" unified experience. Fix empty filters state handling, ensure deterministic demo seed for root categories, add stable routing markers.
 
 **Deliverables:**
-- work/marketplace-web/src/pages/ListingsSearchPage.vue (MODIFIED): Added auto-run initial search after filters load (guarded by initialSearchDone flag)
-- ops/demo_seed.ps1 (NEW): Deterministic demo seed script ensuring at least 1 published listing per root category
-- ops/prototype_v1.ps1 (MODIFIED): Added -SeedDemo switch to optionally run demo seed before smokes
-- docs/PROOFS/wp60_demo_ux_seed_pass.md (NEW): Proof document
+- work/marketplace-web/src/pages/ListingsSearchPage.vue (MODIFIED): Fixed empty filters state handling (filtersLoaded, searchExecuted), added markers
+- work/marketplace-web/src/components/FiltersPanel.vue (MODIFIED): Added filtersLoaded prop, empty state with Search button, filters-empty marker
+- ops/demo_seed_root_listings.ps1 (NEW): Deterministic demo seed script ensuring at least 1 published listing per ROOT category
+- ops/prototype_v1.ps1 (MODIFIED): Updated -SeedDemo switch to use demo_seed_root_listings.ps1
+- ops/frontend_smoke.ps1 (MODIFIED): Added marketplace search page check with new markers
+- docs/PROOFS/wp60_integration_pass.md (NEW): Proof document
 
 **Commands:**
 ```powershell
-# Run demo seed to ensure listings in all categories
-.\ops\demo_seed.ps1
+# Run demo seed root listings
+.\ops\demo_seed_root_listings.ps1
 
 # Run prototype v1 with demo seed
 .\ops\prototype_v1.ps1 -SeedDemo
 
 # Browser test
-# http://localhost:3002/marketplace/search/1 -> listings appear automatically
-# http://localhost:3002/marketplace/search/4 -> listings appear automatically
-# http://localhost:3002/marketplace/search/5 -> listings appear automatically
+# http://localhost:3002 -> Enter Demo -> Marketplace -> Service category
+# Verify: No infinite "Loading filters...", empty filters show "No filters" + Search button, listings appear
 ```
 
 **Proof:** 
-- docs/PROOFS/wp60_demo_ux_seed_pass.md
+- docs/PROOFS/wp60_integration_pass.md
 
 **Key URLs:**
 - Marketplace Search (Services): http://localhost:3002/marketplace/search/1

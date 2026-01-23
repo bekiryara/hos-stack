@@ -122,26 +122,26 @@ Write-Host ""
 
 # Step 3: Optionally run demo seed (WP-60)
 if ($SeedDemo) {
-    Write-Host "[3] Running demo seed..." -ForegroundColor Yellow
+    Write-Host "[3] Running demo seed root listings..." -ForegroundColor Yellow
     $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $seedScript = "$scriptDir\demo_seed.ps1"
+    $seedScript = "$scriptDir\demo_seed_root_listings.ps1"
     
     if (Test-Path $seedScript) {
         try {
             $output = & $seedScript 2>&1
             $exitCode = $LASTEXITCODE
             if ($exitCode -ne 0) {
-                Write-Host "FAIL: demo_seed.ps1 returned exit code $exitCode" -ForegroundColor Red
+                Write-Host "FAIL: demo_seed_root_listings.ps1 returned exit code $exitCode" -ForegroundColor Red
                 $hasFailures = $true
             } else {
-                Write-Host "PASS: demo_seed.ps1" -ForegroundColor Green
+                Write-Host "PASS: demo_seed_root_listings.ps1" -ForegroundColor Green
             }
         } catch {
-            Write-Sanitized "FAIL: demo_seed.ps1 failed: $($_.Exception.Message)" "Red"
+            Write-Sanitized "FAIL: demo_seed_root_listings.ps1 failed: $($_.Exception.Message)" "Red"
             $hasFailures = $true
         }
     } else {
-        Write-Host "SKIP: demo_seed.ps1 not found" -ForegroundColor Yellow
+        Write-Host "SKIP: demo_seed_root_listings.ps1 not found" -ForegroundColor Yellow
     }
     Write-Host ""
 }

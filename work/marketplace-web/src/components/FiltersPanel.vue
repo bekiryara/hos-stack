@@ -44,6 +44,10 @@
       </div>
       <button type="submit" class="search-button">Search</button>
     </form>
+    <div v-else-if="filtersLoaded" data-marker="filters-empty" class="empty-state">
+      <p>No filters for this category</p>
+      <button type="button" class="search-button" @click="handleSubmit">Search</button>
+    </div>
     <div v-else class="loading">Loading filters...</div>
   </div>
 </template>
@@ -55,6 +59,10 @@ export default {
     filters: {
       type: Array,
       default: () => [],
+    },
+    filtersLoaded: {
+      type: Boolean,
+      default: false,
     },
   },
   emits: ['search'],
@@ -145,6 +153,16 @@ export default {
 
 .search-button:hover {
   background: #0052a3;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 1rem;
+  color: #666;
+}
+
+.empty-state p {
+  margin-bottom: 1rem;
 }
 </style>
 
