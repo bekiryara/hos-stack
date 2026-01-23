@@ -55,7 +55,14 @@ export default {
   },
   watch: {
     categoryId: {
-      handler: 'loadFilters',
+      handler(newVal, oldVal) {
+        // WP-48: Reset initialSearchDone when categoryId changes
+        if (newVal !== oldVal) {
+          this.initialSearchDone = false;
+          this.searchExecuted = false;
+        }
+        this.loadFilters();
+      },
       immediate: true,
     },
   },

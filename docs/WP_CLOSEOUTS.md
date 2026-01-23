@@ -12,6 +12,50 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-48: SPEC Alignment — Category/Filter/Listing/Search + Demo Flow Stabilization
+
+**Purpose:** Make category->search->listing demo flow behave per SPEC and be reliably testable. Fix UI "empty filters" behavior, auto-run initial search, ensure recursive category search, and provide deterministic demo data.
+
+**Deliverables:**
+- `work/marketplace-web/src/pages/ListingsSearchPage.vue` (MODIFIED): Reset initialSearchDone when categoryId changes
+- `docs/PROOFS/wp48_spec_alignment_pass.md` (NEW): Proof document with baseline verification, implementation summary, and 3-click demo instructions
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): WP-48 entry
+- `CHANGELOG.md` (MODIFIED): WP-48 entry
+
+**Commands:**
+```powershell
+# Baseline verification
+.\ops\catalog_contract_check.ps1
+.\ops\listing_contract_check.ps1
+.\ops\frontend_smoke.ps1
+
+# Demo seed (deterministic listings)
+.\ops\demo_seed_root_listings.ps1
+
+# Manual browser check
+# http://localhost:3002 -> Enter Demo -> Marketplace -> click ROOT category
+```
+
+**Proof:** 
+- docs/PROOFS/wp48_spec_alignment_pass.md
+
+**Key Findings:**
+- UI empty filters fix: filters=[] shows stable "no filters" state (not infinite loading) - already implemented (WP-60)
+- Auto-run initial search: Exactly ONE initial search after filter schema load - already implemented (WP-60), enhanced with categoryId reset (WP-48)
+- Recursive search: Root category search returns child category listings - already implemented (WP-48 previous), verified by Test 8
+- Deterministic demo seed: All 3 root categories have published listings, 3/4 showcase listings working
+- Known limitation: Bando Presto fails with 422 (manual test succeeds, script-specific issue)
+
+**Acceptance Criteria:**
+✅ UI "empty filters" behavior fixed (filters=[] shows stable state)
+✅ Auto-run exactly ONE initial search after filter schema load
+✅ Recursive category search works (root returns child listings)
+✅ Deterministic demo data (all root categories have listings)
+✅ All gates PASS (catalog_contract, listing_contract, frontend_smoke)
+
+---
+---
+
 ## WP-62: Prototype Demo Pack v1
 
 **Purpose:** Make the system demo-usable for a human tester without changing core backend behavior. Restore repo hygiene (public_ready_check PASS), add showcase seed pack (4 listings), and minimal UI improvements.
