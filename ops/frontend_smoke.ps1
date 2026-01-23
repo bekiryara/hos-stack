@@ -45,45 +45,26 @@ try {
         Write-Host "PASS: HOS Web returned status code 200" -ForegroundColor Green
     }
     
-    # Check for prototype-launcher marker (aligned with prototype_smoke.ps1)
-    # Accept any of these marker variants (OR logic):
-    # 1) HTML comment marker: <!-- prototype-launcher --> or <!-- prototype-launcher-marker -->
-    # 2) data attribute marker: data-prototype="launcher" OR data-marker="prototype-launcher" OR data-test="prototype-launcher"
-    # 3) visible heading/text containing: prototype-launcher
+    # WP-58: Check for hos-home marker
     $bodyContent = $hosWebResponse.Content
-    $markerFound = $false
+    $hosHomeMarkerFound = $false
+    $enterDemoMarkerFound = $false
     
-    # Variant 1: HTML comment marker
-    if ($bodyContent -match '<!--\s*prototype-launcher' -or $bodyContent -match 'prototype-launcher-marker') {
-        $markerFound = $true
-    }
-    
-    # Variant 2: data attribute marker
-    if (-not $markerFound) {
-        if ($bodyContent -match 'data-prototype="launcher"' -or $bodyContent -match 'data-marker="prototype-launcher"' -or $bodyContent -match 'data-test="prototype-launcher"') {
-            $markerFound = $true
-        }
-    }
-    
-    # Variant 3: visible heading/text containing prototype-launcher
-    if (-not $markerFound) {
-        if ($bodyContent -match 'prototype-launcher' -and ($bodyContent -match '<h[1-6]' -or $bodyContent -match '<div' -or $bodyContent -match '<span')) {
-            $markerFound = $true
-        }
-    }
-    
-    if ($markerFound) {
-        Write-Host "PASS: HOS Web body contains prototype-launcher marker" -ForegroundColor Green
+    # Check for data-marker="hos-home"
+    if ($bodyContent -match 'data-marker="hos-home"') {
+        $hosHomeMarkerFound = $true
+        Write-Host "PASS: HOS Web contains hos-home marker" -ForegroundColor Green
     } else {
-        Write-Host "FAIL: HOS Web body missing prototype-launcher marker" -ForegroundColor Red
-        Write-Host "  Expected marker (any of):" -ForegroundColor Yellow
-        Write-Host "    1) HTML comment: <!-- prototype-launcher --> or <!-- prototype-launcher-marker -->" -ForegroundColor Yellow
-        Write-Host "    2) data attribute: data-prototype=`"launcher`" OR data-marker=`"prototype-launcher`" OR data-test=`"prototype-launcher`"" -ForegroundColor Yellow
-        Write-Host "    3) visible text containing: prototype-launcher" -ForegroundColor Yellow
-        # Print first ~200 chars of body (ASCII-sanitized) for debugging
-        $bodyPreview = $bodyContent.Substring(0, [Math]::Min(200, $bodyContent.Length)) -replace '[^\x00-\x7F]', ''
-        Write-Host "  Body preview (first 200 chars, ASCII-only): $bodyPreview" -ForegroundColor Gray
-        Write-Host "  Remediation: Confirm HOS Web contains marker; check served HTML at http://localhost:3002" -ForegroundColor Yellow
+        Write-Host "FAIL: HOS Web missing hos-home marker (data-marker=`"hos-home`")" -ForegroundColor Red
+        $hasFailures = $true
+    }
+    
+    # Check for data-marker="enter-demo" button
+    if ($bodyContent -match 'data-marker="enter-demo"') {
+        $enterDemoMarkerFound = $true
+        Write-Host "PASS: HOS Web contains enter-demo marker" -ForegroundColor Green
+    } else {
+        Write-Host "FAIL: HOS Web missing enter-demo marker (data-marker=`"enter-demo`")" -ForegroundColor Red
         $hasFailures = $true
     }
 } catch {
@@ -104,30 +85,16 @@ try {
         Write-Host "PASS: Marketplace demo page returned status code 200" -ForegroundColor Green
     }
     
-    # Check for demo-dashboard marker (Vue SPA renders client-side, so check for Vue app mount or title)
+    # WP-58: Check for marketplace-demo marker
     $bodyContent = $marketplaceDemoResponse.Content
-    $markerFound = $false
+    $marketplaceDemoMarkerFound = $false
     
-    # Check for data-test attribute in HTML (may be in template)
-    if ($bodyContent -match 'data-test="demo-dashboard"') {
-        $markerFound = $true
-    }
-    
-    # Check for "Demo Dashboard" text (may be in template or rendered)
-    if (-not $markerFound -and $bodyContent -match 'Demo Dashboard') {
-        $markerFound = $true
-    }
-    
-    # Check for Vue app mount point (id="app" is standard)
-    if (-not $markerFound -and $bodyContent -match 'id="app"') {
-        $markerFound = $true
-    }
-    
-    if ($markerFound) {
-        Write-Host "PASS: Marketplace demo page contains demo-dashboard marker or Vue app mount" -ForegroundColor Green
+    # Check for data-marker="marketplace-demo"
+    if ($bodyContent -match 'data-marker="marketplace-demo"') {
+        $marketplaceDemoMarkerFound = $true
+        Write-Host "PASS: Marketplace demo page contains marketplace-demo marker" -ForegroundColor Green
     } else {
-        Write-Host "FAIL: Marketplace demo page missing demo-dashboard marker" -ForegroundColor Red
-        Write-Host "  Expected marker: data-test=`"demo-dashboard`", text 'Demo Dashboard', or id=`"app`"" -ForegroundColor Yellow
+        Write-Host "FAIL: Marketplace demo page missing marketplace-demo marker (data-marker=`"marketplace-demo`")" -ForegroundColor Red
         $hasFailures = $true
     }
 } catch {
@@ -136,9 +103,39 @@ try {
     $hasFailures = $true
 }
 
-# Step D: Check marketplace-web build
+# Step D: Check marketplace need-demo page (WP-58)
 Write-Host ""
-Write-Host "[C] Checking marketplace-web build..." -ForegroundColor Yellow
+Write-Host "[D] Checking marketplace need-demo page (http://localhost:3002/marketplace/need-demo)..." -ForegroundColor Yellow
+try {
+    $needDemoResponse = Invoke-WebRequest -Uri "http://localhost:3002/marketplace/need-demo" -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
+    if ($needDemoResponse.StatusCode -ne 200) {
+        Write-Host "FAIL: Marketplace need-demo page returned status code $($needDemoResponse.StatusCode), expected 200" -ForegroundColor Red
+        $hasFailures = $true
+    } else {
+        Write-Host "PASS: Marketplace need-demo page returned status code 200" -ForegroundColor Green
+    }
+    
+    # WP-58: Check for need-demo marker
+    $bodyContent = $needDemoResponse.Content
+    $needDemoMarkerFound = $false
+    
+    # Check for data-marker="need-demo"
+    if ($bodyContent -match 'data-marker="need-demo"') {
+        $needDemoMarkerFound = $true
+        Write-Host "PASS: Marketplace need-demo page contains need-demo marker" -ForegroundColor Green
+    } else {
+        Write-Host "FAIL: Marketplace need-demo page missing need-demo marker (data-marker=`"need-demo`")" -ForegroundColor Red
+        $hasFailures = $true
+    }
+} catch {
+    Write-Host "FAIL: Marketplace need-demo page unreachable: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  Check if HOS Web is running and marketplace build is included: docker compose ps hos-web" -ForegroundColor Yellow
+    $hasFailures = $true
+}
+
+# Step E: Check marketplace-web build
+Write-Host ""
+Write-Host "[E] Checking marketplace-web build..." -ForegroundColor Yellow
 $marketplaceWebPath = "work\marketplace-web"
 if (-not (Test-Path $marketplaceWebPath)) {
     Write-Host "FAIL: marketplace-web directory not found: $marketplaceWebPath" -ForegroundColor Red
@@ -231,8 +228,9 @@ if ($hasFailures) {
 } else {
     Write-Host "=== FRONTEND SMOKE TEST: PASS ===" -ForegroundColor Green
     Write-Host "  - Worlds check: PASS" -ForegroundColor Gray
-    Write-Host "  - HOS Web: PASS" -ForegroundColor Gray
-    Write-Host "  - Marketplace demo page: PASS" -ForegroundColor Gray
+    Write-Host "  - HOS Web: PASS (hos-home, enter-demo markers)" -ForegroundColor Gray
+    Write-Host "  - Marketplace demo page: PASS (marketplace-demo marker)" -ForegroundColor Gray
+    Write-Host "  - Marketplace need-demo page: PASS (need-demo marker)" -ForegroundColor Gray
     Write-Host "  - marketplace-web build: PASS" -ForegroundColor Gray
     exit 0
 }

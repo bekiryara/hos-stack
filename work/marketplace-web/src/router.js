@@ -8,21 +8,39 @@ import CreateRentalPage from './pages/CreateRentalPage.vue';
 import AccountPortalPage from './pages/AccountPortalPage.vue';
 import DemoDashboardPage from './pages/DemoDashboardPage.vue';
 import MessagingPage from './pages/MessagingPage.vue';
+import NeedDemoPage from './pages/NeedDemoPage.vue';
+import { isTokenPresent } from './lib/demoSession.js';
 
 const routes = [
   { path: '/', component: CategoriesPage },
-  { path: '/demo', component: DemoDashboardPage },
+  { path: '/demo', component: DemoDashboardPage, meta: { requiresAuth: true } },
+  { path: '/need-demo', component: NeedDemoPage },
   { path: '/search/:categoryId?', component: ListingsSearchPage, props: true },
   { path: '/listing/:id', component: ListingDetailPage, props: true },
-  { path: '/listing/:id/message', component: MessagingPage, props: true },
+  { path: '/listing/:id/message', component: MessagingPage, props: true, meta: { requiresAuth: true } },
   { path: '/listing/create', component: CreateListingPage },
   { path: '/reservation/create', component: CreateReservationPage },
   { path: '/rental/create', component: CreateRentalPage },
   { path: '/account', component: AccountPortalPage },
 ];
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 });
+
+// Router guard for auth-required routes (WP-58)
+router.beforeEach((to, from, next) => {
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!isTokenPresent()) {
+      next('/need-demo');
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
+});
+
+export default router;
 

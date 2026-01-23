@@ -3,6 +3,7 @@
     <div class="header">
       <button @click="$router.back()" class="back-button">← Back</button>
       <h2>Message Seller</h2>
+      <button @click="exitDemo" class="exit-demo-button" data-marker="exit-demo">Exit Demo</button>
     </div>
     <div v-if="loading" class="loading">Loading conversation...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
@@ -34,6 +35,8 @@
 </template>
 
 <script>
+import { clearToken, enterDemoUrl } from '../lib/demoSession.js';
+
 // Simple JWT decode (no verification needed for demo)
 function decodeJWT(token) {
   try {
@@ -201,6 +204,10 @@ export default {
       const date = new Date(timestamp);
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     },
+    exitDemo() {
+      clearToken();
+      window.location.href = enterDemoUrl;
+    },
   },
 };
 </script>
@@ -214,7 +221,22 @@ export default {
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 1.5rem;
+}
+
+.exit-demo-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f5f5f5;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.exit-demo-button:hover {
+  background: #e5e5e5;
 }
 
 .back-button {

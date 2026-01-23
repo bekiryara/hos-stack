@@ -12,6 +12,55 @@ Only the last 8 WP entries are shown here.
 ---
 ---
 
+## WP-58: Prototype UX Hardening v1 (Session Guard + Logout + Deep-link Resilience)
+
+**Purpose:** Harden prototype UX with session guards, logout functionality, and deep-link resilience. Users can enter demo, exit demo, refresh pages, and deep-link to protected routes without confusion.
+
+**Deliverables:**
+- work/marketplace-web/src/lib/demoSession.ts (NEW): Token management helpers
+- work/marketplace-web/src/pages/NeedDemoPage.vue (NEW): "Demo Session Required" page with Enter Demo CTA
+- work/marketplace-web/src/router.js (MODIFIED): Router guard for auth-required routes
+- work/marketplace-web/src/pages/DemoDashboardPage.vue (MODIFIED): Added Exit Demo button
+- work/marketplace-web/src/pages/MessagingPage.vue (MODIFIED): Added Exit Demo button
+- work/hos/services/web/src/ui/App.tsx (MODIFIED): Added markers, state management for demo token
+- ops/frontend_smoke.ps1 (MODIFIED): Added marker checks for hos-home, enter-demo, marketplace-demo, need-demo
+- docs/PROOFS/wp58_prototype_ux_hardening_pass.md (NEW): Proof document
+
+**Commands:**
+```powershell
+# Rebuild hos-web with updated UI
+docker compose build hos-web
+
+# Start services
+docker compose up -d
+
+# Run smoke test
+.\ops\frontend_smoke.ps1
+
+# Browser test
+# http://localhost:3002 -> Enter Demo -> /marketplace/demo
+# Click Exit Demo -> returns to /
+# Open /marketplace/demo in fresh browser -> redirects to /marketplace/need-demo
+# Refresh (F5) on /marketplace/demo -> still works
+```
+
+**Proof:** 
+- docs/PROOFS/wp58_prototype_ux_hardening_pass.md
+
+**Key URLs:**
+- HOS Web Home: http://localhost:3002 (marker: hos-home, enter-demo)
+- Marketplace Demo: http://localhost:3002/marketplace/demo (marker: marketplace-demo)
+- Marketplace Need Demo: http://localhost:3002/marketplace/need-demo (marker: need-demo)
+
+**Acceptance:**
+- Session guard: Router guard protects /demo and /listing/:id/message routes
+- Logout: Exit Demo button clears token and redirects to HOS Web home
+- Deep-link safe: Users can refresh or deep-link to protected routes
+- Graceful failure: No token = clear CTA to "Enter Demo" on need-demo page
+- Deterministic markers: All key pages have stable markers for smoke tests
+
+---
+
 ## WP-57: Messaging Thread GET Fix (Remove Literal :id)
 
 **Purpose:** Fix messaging thread GET to use by-context endpoint instead of literal `:id` URL, eliminating 404 errors. Messaging API does not have `GET /api/v1/threads/:id` endpoint, but has `GET /api/v1/threads/by-context`.

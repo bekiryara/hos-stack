@@ -1,6 +1,9 @@
 <template>
-  <div class="demo-dashboard-page" data-test="demo-dashboard">
-    <h2>Demo Dashboard</h2>
+  <div class="demo-dashboard-page" data-test="demo-dashboard" data-marker="marketplace-demo">
+    <div class="header">
+      <h2>Demo Dashboard</h2>
+      <button @click="exitDemo" class="exit-demo-button" data-marker="exit-demo">Exit Demo</button>
+    </div>
     <div v-if="loading" class="loading">Loading demo listing...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="listing" class="demo-listing">
@@ -17,6 +20,7 @@
 
 <script>
 import { api } from '../api/client';
+import { clearToken, enterDemoUrl } from '../lib/demoSession.js';
 
 export default {
   name: 'DemoDashboardPage',
@@ -31,6 +35,10 @@ export default {
     await this.ensureDemoListing();
   },
   methods: {
+    exitDemo() {
+      clearToken();
+      window.location.href = enterDemoUrl;
+    },
     async ensureDemoListing() {
       try {
         // Try to get existing published listings
@@ -75,9 +83,30 @@ export default {
   max-width: 900px;
 }
 
-.demo-dashboard-page h2 {
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1.5rem;
+}
+
+.demo-dashboard-page h2 {
+  margin: 0;
   font-size: 2rem;
+}
+
+.exit-demo-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f5f5f5;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.exit-demo-button:hover {
+  background: #e5e5e5;
 }
 
 .demo-listing {

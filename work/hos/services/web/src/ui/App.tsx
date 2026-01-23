@@ -8,6 +8,7 @@ export function App() {
   const [worldsLoading, setWorldsLoading] = useState(true);
   const [worlds, setWorlds] = useState<any[]>([]);
   const [worldsError, setWorldsError] = useState<any>(null);
+  const [hasDemoToken, setHasDemoToken] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -38,10 +39,53 @@ export function App() {
   useEffect(() => {
     load();
     loadWorlds();
+    // Check for demo token
+    const checkToken = () => {
+      const token = localStorage.getItem('demo_auth_token');
+      setHasDemoToken(!!token);
+    };
+    checkToken();
+    // Listen for storage changes (e.g., from other tabs)
+    window.addEventListener('storage', checkToken);
+    return () => window.removeEventListener('storage', checkToken);
   }, []);
 
+  const handleEnterDemo = async () => {
+    try {
+      const response = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantSlug: 'tenant-a',
+          email: 'testuser@example.com',
+          password: 'Passw0rd!',
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+      const data = await response.json();
+      if (data.token) {
+        localStorage.setItem('demo_auth_token', data.token);
+        window.location.href = '/marketplace/demo';
+      }
+    } catch (err) {
+      alert('Demo login failed: ' + (err as Error).message);
+    }
+  };
+
+  const handleExitDemo = () => {
+    localStorage.removeItem('demo_auth_token');
+    setHasDemoToken(false);
+    window.location.reload();
+  };
+
+  const handleGoToDemo = () => {
+    window.location.href = '/marketplace/demo';
+  };
+
   return (
-    <div className="page">
+    <div className="page" data-marker="hos-home">
       <header className="top">
         <div className="brand">H-OS Admin</div>
         <div className="actions">
@@ -75,45 +119,64 @@ export function App() {
         <div data-test="prototype-launcher">
           <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
             <div style={{ marginBottom: '1rem', fontWeight: 'bold', fontSize: '1.1rem' }}>Demo Login</div>
-            <button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/v1/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      tenantSlug: 'tenant-a',
-                      email: 'testuser@example.com',
-                      password: 'Passw0rd!',
-                    }),
-                  });
-                  if (!response.ok) {
-                    throw new Error('Login failed');
-                  }
-                  const data = await response.json();
-                  if (data.token) {
-                    localStorage.setItem('demo_auth_token', data.token);
-                    window.location.href = '/marketplace/demo';
-                  }
-                } catch (err) {
-                  alert('Demo login failed: ' + (err as Error).message);
-                }
-              }}
-              style={{
-                padding: '0.75rem 1.5rem',
-                fontSize: '1rem',
-                backgroundColor: '#0066cc',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              Enter Demo
-            </button>
-            <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
-              Authenticates as demo user and opens marketplace
-            </div>
+            {hasDemoToken ? (
+              <div>
+                <button
+                  onClick={handleGoToDemo}
+                  data-marker="enter-demo"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '1rem',
+                    backgroundColor: '#0066cc',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    marginRight: '0.5rem',
+                  }}
+                >
+                  Go to Demo
+                </button>
+                <button
+                  onClick={handleExitDemo}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '1rem',
+                    backgroundColor: '#f5f5f5',
+                    color: '#333',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Exit Demo
+                </button>
+                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
+                  Demo session active
+                </div>
+              </div>
+            ) : (
+              <div>
+                <button
+                  onClick={handleEnterDemo}
+                  data-marker="enter-demo"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '1rem',
+                    backgroundColor: '#0066cc',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Enter Demo
+                </button>
+                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
+                  Authenticates as demo user and opens marketplace
+                </div>
+              </div>
+            )}
           </div>
           <div style={{ marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}>
             <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>Quick Links</div>
