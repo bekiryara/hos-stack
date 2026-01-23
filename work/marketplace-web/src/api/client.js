@@ -164,6 +164,18 @@ export const api = {
     return hosApiRequest('/v1/me/memberships', { headers });
   },
   
+  // WP-62: Active Tenant helpers (single source of truth)
+  getActiveTenantId: () => {
+    return localStorage.getItem('active_tenant_id');
+  },
+  setActiveTenantId: (tenantId) => {
+    if (tenantId) {
+      localStorage.setItem('active_tenant_id', tenantId);
+    } else {
+      localStorage.removeItem('active_tenant_id');
+    }
+  },
+  
   // Account Portal - Personal scope (WP-32, WP-8)
   // PERSONAL persona: Authorization header required (SPEC §5.2)
   getMyOrders: (userId, authToken) => {

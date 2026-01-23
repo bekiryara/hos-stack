@@ -4,10 +4,33 @@
       <h2>Demo Dashboard</h2>
       <button @click="exitDemo" class="exit-demo-button" data-marker="exit-demo">Exit Demo</button>
     </div>
-    <div v-if="activeTenantId" class="tenant-info">
-      <strong>Active Tenant ID:</strong>
-      <code class="tenant-id">{{ activeTenantId }}</code>
-      <button @click="copyTenantId" class="copy-button" title="Copy to clipboard">Copy</button>
+    <div class="tenant-section">
+      <div v-if="activeTenantId" class="tenant-info">
+        <strong>Active Tenant ID:</strong>
+        <code class="tenant-id">{{ activeTenantId }}</code>
+        <button @click="copyTenantId" class="copy-button" title="Copy to clipboard">Copy</button>
+        <button @click="showMembershipSelector = !showMembershipSelector" class="change-tenant-button">
+          {{ showMembershipSelector ? 'Cancel' : 'Change Tenant' }}
+        </button>
+      </div>
+      <div v-else class="tenant-info">
+        <strong>No Active Tenant</strong>
+        <button @click="loadMemberships" class="load-memberships-button" :disabled="loadingMemberships">
+          {{ loadingMemberships ? 'Loading...' : 'Load Memberships' }}
+        </button>
+      </div>
+      
+      <!-- WP-62: Tenant selector -->
+      <div v-if="showMembershipSelector && memberships" class="membership-selector">
+        <h4>Select Active Tenant:</h4>
+        <div v-for="membership in memberships" :key="membership.tenant_id || membership.tenant?.id" class="membership-item">
+          <button @click="setActiveTenant(membership)" class="tenant-select-button">
+            <strong>{{ membership.tenant?.name || membership.tenant_id || 'Unknown' }}</strong>
+            <span class="tenant-id-small">{{ membership.tenant_id || membership.tenant?.id }}</span>
+            <span v-if="membership.role" class="role-badge">{{ membership.role }}</span>
+          </button>
+        </div>
+      </div>
     </div>
     <div v-if="loading" class="loading">Loading demo listing...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
@@ -35,6 +58,9 @@ export default {
       loading: true,
       error: null,
       activeTenantId: null,
+      memberships: null, // WP-62: Store memberships for tenant selection
+      loadingMemberships: false, // WP-62: Track loading state
+      showMembershipSelector: false, // WP-62: Show/hide tenant selector
     };
   },
   async mounted() {
@@ -47,32 +73,59 @@ export default {
       window.location.href = enterDemoUrl;
     },
     async loadActiveTenantId() {
-      // WP-48: Load active tenant ID from localStorage or fetch from memberships
-      const storedTenantId = localStorage.getItem('active_tenant_id');
+      // WP-62: Use client.js helper (single source of truth)
+      const storedTenantId = api.getActiveTenantId();
       if (storedTenantId) {
         this.activeTenantId = storedTenantId;
         return;
       }
       
-      // Fetch from HOS API if demo token exists
+      // Auto-load from memberships if demo token exists
       const demoToken = getToken();
       if (demoToken) {
-        try {
-          const memberships = await api.getMyMemberships(demoToken);
-          const items = memberships.items || memberships.data || (Array.isArray(memberships) ? memberships : []);
-          if (items.length > 0) {
-            // Prefer admin role, else first membership
-            const adminMembership = items.find(m => m.role === 'admin' || m.role === 'owner');
-            const selectedMembership = adminMembership || items[0];
-            const tenantId = selectedMembership.tenant_id || selectedMembership.tenant?.id;
-            if (tenantId) {
-              this.activeTenantId = tenantId;
-              localStorage.setItem('active_tenant_id', tenantId);
-            }
+        await this.loadMemberships(true); // Auto-select first/admin
+      }
+    },
+    async loadMemberships(autoSelect = false) {
+      // WP-62: Load memberships and optionally auto-select tenant
+      const demoToken = getToken();
+      if (!demoToken) {
+        this.error = 'No demo token found. Please enter demo first.';
+        return;
+      }
+      
+      this.loadingMemberships = true;
+      try {
+        const membershipsResponse = await api.getMyMemberships(demoToken);
+        const items = membershipsResponse.items || membershipsResponse.data || (Array.isArray(membershipsResponse) ? membershipsResponse : []);
+        this.memberships = items;
+        
+        if (autoSelect && items.length > 0) {
+          // Prefer admin role, else first membership
+          const adminMembership = items.find(m => m.role === 'admin' || m.role === 'owner');
+          const selectedMembership = adminMembership || items[0];
+          const tenantId = selectedMembership.tenant_id || selectedMembership.tenant?.id;
+          if (tenantId) {
+            this.setActiveTenant(selectedMembership);
           }
-        } catch (err) {
-          console.warn('Could not fetch memberships for tenant ID:', err);
+        } else if (items.length > 0) {
+          // Show selector if not auto-selecting
+          this.showMembershipSelector = true;
         }
+      } catch (err) {
+        console.error('Could not fetch memberships:', err);
+        this.error = 'Failed to load memberships. Please try again.';
+      } finally {
+        this.loadingMemberships = false;
+      }
+    },
+    setActiveTenant(membership) {
+      // WP-62: Set active tenant using client.js helper
+      const tenantId = membership.tenant_id || membership.tenant?.id;
+      if (tenantId) {
+        api.setActiveTenantId(tenantId);
+        this.activeTenantId = tenantId;
+        this.showMembershipSelector = false;
       }
     },
     copyTenantId() {

@@ -193,12 +193,12 @@ export default {
     try {
       this.categories = await api.getCategories();
       
-      // WP-51: Auto-fill tenant ID from localStorage or fetch from memberships
+      // WP-62: Auto-fill tenant ID using client.js helper (single source of truth)
       if (!this.formData.tenantId) {
-        // Try localStorage first
-        const storedTenantId = localStorage.getItem('active_tenant_id');
-        if (storedTenantId) {
-          this.formData.tenantId = storedTenantId;
+        // Try active tenant from localStorage first
+        const activeTenantId = api.getActiveTenantId();
+        if (activeTenantId) {
+          this.formData.tenantId = activeTenantId;
         } else {
           // Fetch from HOS API if demo token exists
           const demoToken = localStorage.getItem('demo_auth_token');
@@ -212,8 +212,9 @@ export default {
                 const selectedMembership = adminMembership || items[0];
                 const tenantId = selectedMembership.tenant_id || selectedMembership.tenant?.id;
                 if (tenantId) {
+                  // WP-62: Use client.js helper to set active tenant
+                  api.setActiveTenantId(tenantId);
                   this.formData.tenantId = tenantId;
-                  localStorage.setItem('active_tenant_id', tenantId);
                 } else {
                   // No tenant_id found in memberships
                   this.tenantIdLoadError = true;

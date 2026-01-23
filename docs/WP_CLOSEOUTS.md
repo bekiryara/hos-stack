@@ -5,6 +5,56 @@
 
 ---
 
+## WP-62: Prototype Polish + Repo Hygiene (Active Tenant UX + Clean Gates)
+
+**Purpose:** Make prototype "user-like" usable without manual tenant_id copy/paste, and make repo pass public_ready_check by eliminating untracked artifacts and duplicate reports.
+
+**Deliverables:**
+- `work/marketplace-web/src/api/client.js` (MODIFIED): Added `getActiveTenantId()` and `setActiveTenantId()` helpers
+- `work/marketplace-web/src/pages/DemoDashboardPage.vue` (MODIFIED): Added "Load Memberships" button and tenant selector
+- `work/marketplace-web/src/pages/CreateListingPage.vue` (MODIFIED): Updated to use client.js helpers
+- `docs/REPORTS/contract_check_report_20260123.md` (DELETED - duplicate)
+- `docs/REPORTS/state_report_20260123.md` (DELETED - duplicate)
+- `docs/PROOFS/wp62_prototype_polish_pass.md` (NEW): Proof document
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): WP-62 entry
+- `CHANGELOG.md` (MODIFIED): WP-62 entry
+
+**Commands:**
+```powershell
+# Verification gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+.\ops\catalog_contract_check.ps1
+.\ops\listing_contract_check.ps1
+.\ops\frontend_smoke.ps1
+.\ops\prototype_v1.ps1
+
+# Manual flow test
+# 1. Open http://localhost:3002/marketplace/demo
+# 2. Click "Load Memberships" -> select tenant
+# 3. Navigate to Create Listing -> tenant ID auto-filled
+# 4. Create draft listing -> publish -> search -> open -> messaging
+```
+
+**Proof:** 
+- docs/PROOFS/wp62_prototype_polish_pass.md
+
+**Key Findings:**
+- Repo hygiene: Removed duplicate reports, verified .gitignore patterns
+- Active Tenant UX: Single source of truth (client.js helpers), no manual UUID required
+- DemoDashboardPage: Tenant selector with role badges
+- CreateListingPage: Auto-fills from Active Tenant (read-only when set)
+
+**Acceptance Criteria:**
+✅ Repo passes public_ready_check (after commit)
+✅ Active Tenant can be selected from memberships list
+✅ Create Listing auto-fills tenant ID (no manual copy/paste)
+✅ All gates PASS (secret_scan, conformance, catalog, listing, frontend, prototype)
+✅ No hardcode, minimal diff, no regression
+
+---
+
 ## WP-51: Demo UX - Auto-fill Tenant ID on Create Listing
 
 **Purpose:** Remove demo friction by improving tenant ID auto-fill UX on Create Listing page. Enhanced existing WP-48 implementation with better error handling and actionable messages.
