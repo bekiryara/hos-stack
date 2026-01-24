@@ -7,20 +7,20 @@
     <div class="tenant-section">
       <!-- Always visible tenant section -->
       <div class="tenant-info">
-        <template v-if="activeTenantId">
+        <div v-if="activeTenantId">
           <strong>Active Tenant ID:</strong>
           <code class="tenant-id">{{ activeTenantId }}</code>
           <button @click="copyTenantId" class="copy-button" title="Copy to clipboard">Copy</button>
           <button @click="showMembershipSelector = !showMembershipSelector" class="change-tenant-button">
             {{ showMembershipSelector ? 'Cancel' : 'Change Tenant' }}
           </button>
-        </template>
-        <template v-else>
+        </div>
+        <div v-else>
           <strong>No Active Tenant</strong>
           <button @click="loadMemberships" class="load-memberships-button" :disabled="loadingMemberships">
             {{ loadingMemberships ? 'Loading...' : 'Load Memberships' }}
           </button>
-        </template>
+        </div>
       </div>
       
       <!-- WP-62: Tenant selector -->
