@@ -18,9 +18,9 @@ const routes = [
   { path: '/search/:categoryId?', component: ListingsSearchPage, props: true },
   { path: '/listing/:id', component: ListingDetailPage, props: true },
   { path: '/listing/:id/message', component: MessagingPage, props: true, meta: { requiresAuth: true } },
-  { path: '/listing/create', component: CreateListingPage },
-  { path: '/reservation/create', component: CreateReservationPage },
-  { path: '/rental/create', component: CreateRentalPage },
+  { path: '/listing/create', component: CreateListingPage, meta: { requiresAuth: true } },
+  { path: '/reservation/create', component: CreateReservationPage, meta: { requiresAuth: true } },
+  { path: '/rental/create', component: CreateRentalPage, meta: { requiresAuth: true } },
   { path: '/account', component: AccountPortalPage },
 ];
 

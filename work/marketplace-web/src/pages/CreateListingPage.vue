@@ -304,8 +304,16 @@ export default {
           attributes: Object.keys(attributes).length > 0 ? attributes : null,
         };
         
+        // WP-61: Get demo token for Authorization header
+        const demoToken = getToken();
+        if (!demoToken) {
+          this.error = { message: 'Demo session yok. /demo sayfasından oturum başlat.', status: 401 };
+          this.loading = false;
+          return;
+        }
+        
         // API client will auto-use activeTenantId if tenantId not provided
-        const result = await api.createListing(payload, this.formData.tenantId || null);
+        const result = await api.createListing(payload, this.formData.tenantId || null, demoToken);
         this.success = result;
       } catch (err) {
         this.error = err;

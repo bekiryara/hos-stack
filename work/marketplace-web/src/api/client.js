@@ -213,11 +213,11 @@ export const api = {
   // Write operations (WP-8: Persona-based headers)
   // STORE persona: X-Active-Tenant-Id required
   // WP: Auto-use activeTenantId from localStorage if tenantId not provided
-  createListing: (data, tenantId) => {
+  createListing: (data, tenantId, authToken) => {
     const idempotencyKey = generateIdempotencyKey();
     // Auto-use activeTenantId if tenantId not provided
     const activeTenantId = tenantId || api.getActiveTenantId();
-    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: activeTenantId });
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: activeTenantId, authToken });
     headers['Idempotency-Key'] = idempotencyKey;
     return apiRequest('/api/v1/listings', {
       method: 'POST',

@@ -5,7 +5,50 @@
 
 ---
 
-## WP-61: Pazar CORS Allow Store Headers (Create Listing Unblock)
+## WP-61: Marketplace Create Listing Auth Wiring (CORS + Auth Fix)
+
+**Purpose:** Fix 401 Unauthorized by wiring demo token to Create Listing POST request. Completes WP-61 CORS fix by adding Authorization header.
+
+**Deliverables:**
+- `work/marketplace-web/src/api/client.js` (MODIFIED): Extended `createListing()` to accept `authToken` parameter, passes to `buildPersonaHeaders()`
+- `work/marketplace-web/src/pages/CreateListingPage.vue` (MODIFIED): Reads demo token via `getToken()`, passes to `createListing()`, shows error if token missing
+- `work/marketplace-web/src/router.js` (MODIFIED): Added `meta: { requiresAuth: true }` to `/listing/create`, `/reservation/create`, `/rental/create` routes
+- `docs/PROOFS/wp61_create_listing_ui_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Manual UI test
+# 1. Open: http://localhost:3002/demo (start demo session)
+# 2. Go to: http://localhost:3002/marketplace/listing/create
+# 3. Create listing → Must succeed (no 401)
+
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+.\ops\frontend_smoke.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp61_create_listing_ui_pass.md
+- docs/PROOFS/wp61_pazar_cors_allow_store_headers_pass.md (CORS fix)
+
+**Key Findings:**
+- `createListing()` now accepts `authToken` and sets `Authorization: Bearer <token>` header
+- Router guard redirects to `/need-demo` if token missing (consistent UX)
+- UI shows clear error if token missing: "Demo session yok. /demo sayfasından oturum başlat."
+- Backend `auth.any` middleware now receives Authorization header → 201 Created
+
+**Acceptance Criteria:**
+✅ Create Listing POST includes Authorization header
+✅ No 401 Unauthorized error
+✅ Router guard protects write routes
+✅ All gates PASS (secret_scan, public_ready_check, conformance, frontend_smoke)
+✅ Proof + closeout + changelog updated
+
+---
+
+## WP-61 (Part 1): Pazar CORS Allow Store Headers (Create Listing Unblock)
 
 **Purpose:** Fix CORS preflight to allow `X-Active-Tenant-Id` and `Idempotency-Key` headers for store-scope write operations, unblocking Marketplace UI Create Listing.
 
