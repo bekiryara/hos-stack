@@ -14,6 +14,16 @@
         </p>
         <p v-if="listing.category_id" class="listing-category">Category ID: {{ listing.category_id }}</p>
         <p class="listing-status">Status: {{ listing.status }}</p>
+        <div v-if="listing.transaction_modes && listing.transaction_modes.length > 0" class="transaction-modes-summary">
+          <span
+            v-for="mode in listing.transaction_modes"
+            :key="mode"
+            class="transaction-badge"
+            :class="`transaction-badge-${mode}`"
+          >
+            {{ mode.charAt(0).toUpperCase() + mode.slice(1) }}
+          </span>
+        </div>
         <div v-if="listing.attributes" class="attributes-summary">
           <span
             v-for="(value, key) in listing.attributes"
@@ -151,6 +161,37 @@ export default {
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
   font-size: 0.85rem;
+}
+
+.transaction-modes-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.transaction-badge {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.transaction-badge-reservation {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.transaction-badge-rental {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.transaction-badge-sale {
+  background: #e8f5e9;
+  color: #388e3c;
 }
 
 .no-results {

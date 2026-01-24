@@ -5,6 +5,44 @@
 
 ---
 
+## WP-63: Transaction Mode Proof (Listing → Search → View)
+
+**Purpose:** Prove that listing transaction_modes (sale / rental / reservation) are correctly propagated and rendered across listing creation, detail page, and search result cards. Frontend rendering only.
+
+**Deliverables:**
+- `work/marketplace-web/src/pages/ListingDetailPage.vue` (MODIFIED): Added transaction mode badges in Basic Info section
+- `work/marketplace-web/src/components/ListingsGrid.vue` (MODIFIED): Added transaction mode badges on listing cards
+- `ops/demo_seed_transaction_modes.ps1` (NEW): Creates 3 test listings with different transaction mode combinations
+- `docs/PROOFS/wp63_transaction_modes_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Create test listings
+.\ops\demo_seed_transaction_modes.ps1
+
+# Browser test
+# 1. View: http://localhost:3002/marketplace/listing/fbfad7e8-c3c9-419c-8569-511d8f7b70d0
+# 2. Search: http://localhost:3002/marketplace/search/1
+# 3. Verify: Transaction mode badges visible on both pages
+```
+
+**Proof:**
+- docs/PROOFS/wp63_transaction_modes_pass.md
+
+**Key Findings:**
+- Transaction modes correctly rendered as colored badges (Reservation: blue, Rental: purple, Sale: green)
+- Badges visible on detail page (Basic Info section) and search result cards
+- No backend changes: Uses existing `transaction_modes` array from API response
+- No contract changes: No new endpoints, no new fields
+
+**Acceptance Criteria:**
+✅ User can visually confirm supported transaction modes
+✅ No contract changes (no new endpoints/fields)
+✅ No CORS/auth regression (single-origin proxy maintained)
+✅ Existing tests remain green (frontend-only changes)
+
+---
+
 ## WP-62: Create -> View -> Search Loop Closure (Single-Origin)
 
 **Purpose:** Close the loop for listing creation flow: users can create, view, and find listings via search. All API calls use single-origin proxy.

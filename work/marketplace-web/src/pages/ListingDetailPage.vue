@@ -9,6 +9,19 @@
         <p><strong>ID:</strong> {{ listing.id }}</p>
         <p><strong>Status:</strong> {{ listing.status }}</p>
         <p v-if="listing.category_id"><strong>Category ID:</strong> {{ listing.category_id }}</p>
+        <div v-if="listing.transaction_modes && listing.transaction_modes.length > 0" class="transaction-modes">
+          <strong>Transaction Modes:</strong>
+          <div class="transaction-badges">
+            <span
+              v-for="mode in listing.transaction_modes"
+              :key="mode"
+              class="transaction-badge"
+              :class="`transaction-badge-${mode}`"
+            >
+              {{ mode.charAt(0).toUpperCase() + mode.slice(1) }}
+            </span>
+          </div>
+        </div>
       </div>
       <div v-if="listing.attributes" class="detail-section">
         <h3>Attributes</h3>
@@ -159,6 +172,46 @@ export default {
 
 .publish-section h3 {
   margin-bottom: 1rem;
+}
+
+.transaction-modes {
+  margin-top: 1rem;
+}
+
+.transaction-modes strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.transaction-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.transaction-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.transaction-badge-reservation {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.transaction-badge-rental {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.transaction-badge-sale {
+  background: #e8f5e9;
+  color: #388e3c;
 }
 </style>
 
