@@ -212,9 +212,12 @@ export const api = {
   
   // Write operations (WP-8: Persona-based headers)
   // STORE persona: X-Active-Tenant-Id required
+  // WP: Auto-use activeTenantId from localStorage if tenantId not provided
   createListing: (data, tenantId) => {
     const idempotencyKey = generateIdempotencyKey();
-    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId });
+    // Auto-use activeTenantId if tenantId not provided
+    const activeTenantId = tenantId || api.getActiveTenantId();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: activeTenantId });
     headers['Idempotency-Key'] = idempotencyKey;
     return apiRequest('/api/v1/listings', {
       method: 'POST',
@@ -224,7 +227,9 @@ export const api = {
   },
   
   publishListing: (id, tenantId) => {
-    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId });
+    // Auto-use activeTenantId if tenantId not provided
+    const activeTenantId = tenantId || api.getActiveTenantId();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: activeTenantId });
     return apiRequest(`/api/v1/listings/${id}/publish`, {
       method: 'POST',
       headers,

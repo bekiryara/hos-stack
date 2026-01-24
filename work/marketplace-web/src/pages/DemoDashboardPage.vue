@@ -22,10 +22,6 @@
           </button>
         </template>
       </div>
-      <!-- Debug info - always visible -->
-      <div class="debug-info" style="font-size: 0.8rem; color: #666; margin-top: 0.5rem; padding: 0.5rem; background: #f0f0f0; border-radius: 4px;">
-        <strong>Debug:</strong> activeTenantId = {{ activeTenantId || 'null' }}, loadingMemberships = {{ loadingMemberships }}, memberships = {{ memberships ? memberships.length : 0 }}
-      </div>
       
       <!-- WP-62: Tenant selector -->
       <div v-if="showMembershipSelector && memberships" class="membership-selector">

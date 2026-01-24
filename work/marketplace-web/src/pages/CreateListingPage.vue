@@ -10,33 +10,44 @@
     
     <div v-if="success" class="success">
       <strong>Success!</strong> Listing created with ID: {{ success.id }}
+      <button @click="copyListingId(success.id)" class="copy-id-btn" title="Copy listing ID">Copy ID</button>
       <br />
       Status: {{ success.status }}
       <br />
-      <router-link :to="`/listing/${success.id}`">View Listing</router-link>
+      <div class="success-actions">
+        <router-link :to="`/listing/${success.id}`" class="action-link">View Listing</router-link>
+        <button v-if="success.category_id" @click="goToCategorySearch(success.category_id)" class="action-button">Go to Search</button>
+      </div>
     </div>
     
     <form v-if="!success" @submit.prevent="handleSubmit" class="listing-form">
       <div class="form-group">
         <label>
           Tenant ID (UUID) <span class="required">*</span>
-          <input
-            v-model="formData.tenantId"
-            type="text"
-            required
-            placeholder="e.g., 951ba4eb-9062-40c4-9228-f8d2cfc2f426"
-            class="form-input"
-            :readonly="!!formData.tenantId"
-            :class="{ 'auto-filled': !!formData.tenantId }"
-          />
-          <small v-if="formData.tenantId" class="auto-fill-note">
-            Auto-filled from active membership (WP-51)
-          </small>
-          <small v-else-if="tenantIdLoadError" class="tenant-id-warning">
-            <strong>Note:</strong> Could not auto-load tenant ID. Please enter it manually.
-            <br />
-            To get your tenant ID, run: <code>.\ops\demo_seed_root_listings.ps1</code> and check the output.
-          </small>
+          <div v-if="formData.tenantId" class="tenant-id-display">
+            <input
+              v-model="formData.tenantId"
+              type="text"
+              required
+              readonly
+              class="form-input auto-filled"
+            />
+            <small class="auto-fill-note">Auto-filled from active tenant</small>
+          </div>
+          <div v-else class="tenant-id-missing">
+            <router-link to="/demo" class="tenant-picker-link">Select Active Tenant</router-link>
+            <span class="or-text">or</span>
+            <input
+              v-model="formData.tenantId"
+              type="text"
+              required
+              placeholder="Enter tenant ID manually"
+              class="form-input"
+            />
+            <small v-if="tenantIdLoadError" class="tenant-id-warning">
+              <strong>Note:</strong> Could not auto-load tenant ID. Please select from Demo page or enter manually.
+            </small>
+          </div>
         </label>
       </div>
       
@@ -293,13 +304,39 @@ export default {
           attributes: Object.keys(attributes).length > 0 ? attributes : null,
         };
         
-        const result = await api.createListing(payload, this.formData.tenantId);
+        // API client will auto-use activeTenantId if tenantId not provided
+        const result = await api.createListing(payload, this.formData.tenantId || null);
         this.success = result;
       } catch (err) {
         this.error = err;
       } finally {
         this.loading = false;
       }
+    },
+    copyListingId(id) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(id).then(() => {
+          alert('Listing ID copied to clipboard!');
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+        });
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = id;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          alert('Listing ID copied to clipboard!');
+        } catch (err) {
+          console.error('Fallback copy failed:', err);
+        }
+        document.body.removeChild(textArea);
+      }
+    },
+    goToCategorySearch(categoryId) {
+      this.$router.push(`/search/${categoryId}`);
     },
   },
 };
@@ -416,9 +453,70 @@ export default {
   margin-bottom: 1rem;
 }
 
-.success a {
+.success-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.success a,
+.action-link {
   color: #0066cc;
   text-decoration: underline;
+}
+
+.action-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #28a745;
+  border-radius: 4px;
+  background: #28a745;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.action-button:hover {
+  background: #218838;
+}
+
+.copy-id-btn {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #2e7d32;
+  border-radius: 3px;
+  background: #2e7d32;
+  color: white;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+.copy-id-btn:hover {
+  background: #1b5e20;
+}
+
+.tenant-id-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tenant-id-missing {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tenant-picker-link {
+  color: #0066cc;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.or-text {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
 }
 
 .auto-filled {
