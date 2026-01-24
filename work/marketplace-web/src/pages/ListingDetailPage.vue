@@ -64,7 +64,14 @@ export default {
         this.listing = await api.getListing(this.id);
         this.loading = false;
       } catch (err) {
-        this.error = err.message;
+        // WP-62: Better error handling for 404 and other errors
+        if (err.status === 404) {
+          this.error = `Listing not found (ID: ${this.id})`;
+        } else if (err.status) {
+          this.error = `Error ${err.status}: ${err.message || 'Unknown error'}`;
+        } else {
+          this.error = err.message || 'Failed to load listing';
+        }
         this.loading = false;
       }
     },

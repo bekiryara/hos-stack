@@ -5,6 +5,45 @@
 
 ---
 
+## WP-62: Create -> View -> Search Loop Closure (Single-Origin)
+
+**Purpose:** Close the loop for listing creation flow: users can create, view, and find listings via search. All API calls use single-origin proxy.
+
+**Deliverables:**
+- `work/marketplace-web/src/pages/ListingDetailPage.vue` (MODIFIED): Enhanced error handling (404, clear messages)
+- `work/marketplace-web/src/pages/CreateListingPage.vue` (MODIFIED): Conditional "Go to Search" button (only for published), draft listing note
+- `docs/PROOFS/wp62_create_view_search_loop_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Browser test flow
+# 1. Create listing: http://localhost:3002/marketplace/listing/create
+# 2. Click "View Listing" → Should load detail page (HTTP 200)
+# 3. Publish listing (if draft)
+# 4. Click "Go to Search" → Should navigate to search with listing visible
+# 5. Check DevTools Network: All calls to /api/marketplace/* (no 8080)
+
+# Run gates
+.\ops\frontend_smoke.ps1
+```
+
+**Proof:**
+- docs/PROOFS/wp62_create_view_search_loop_pass.md
+
+**Key Findings:**
+- View Listing works: Detail page loads successfully with proper error handling
+- Search integration: "Go to Search" button only shown for published listings (draft listings show note)
+- Single-origin verified: All API calls go through `/api/marketplace` proxy (no direct 8080 calls)
+- UX improvements: Clear error messages, conditional search button based on status
+
+**Acceptance Criteria:**
+✅ View Listing works (HTTP 200, shows id + status + fields)
+✅ Search finds published listings (category pre-applied, listing appears)
+✅ Single-origin proof (all calls to `/api/marketplace/*`, no 8080)
+✅ Error handling improved (404 shows clear message)
+
+---
+
 ## WP-61: Single-Origin Marketplace API Proxy + GENESIS Store Listing Auth Alignment
 
 **Purpose:** Enforce single-origin for Marketplace API calls (eliminate CORS) and ensure Create Listing works end-to-end in GENESIS mode via proxy.

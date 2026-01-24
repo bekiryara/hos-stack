@@ -16,7 +16,8 @@
       <br />
       <div class="success-actions">
         <router-link :to="`/listing/${success.id}`" class="action-link">View Listing</router-link>
-        <button v-if="success.category_id" @click="goToCategorySearch(success.category_id)" class="action-button">Go to Search</button>
+        <button v-if="success.category_id && success.status === 'published'" @click="goToCategorySearch(success.category_id)" class="action-button">Go to Search</button>
+        <span v-else-if="success.status === 'draft'" class="draft-note">(Draft listings are not shown in search. Publish to make them visible.)</span>
       </div>
     </div>
     
@@ -556,6 +557,13 @@ export default {
   border-radius: 2px;
   font-family: 'Courier New', monospace;
   font-size: 0.8rem;
+}
+
+.draft-note {
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin-left: 1rem;
 }
 </style>
 
