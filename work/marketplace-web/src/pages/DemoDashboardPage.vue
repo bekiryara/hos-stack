@@ -28,8 +28,8 @@
         <h4>Select Active Tenant:</h4>
         <div v-for="membership in memberships" :key="membership.tenant_id || membership.tenant?.id" class="membership-item">
           <button @click="setActiveTenant(membership)" class="tenant-select-button">
-            <strong>{{ membership.tenant?.name || membership.tenant_id || 'Unknown' }}</strong>
-            <span class="tenant-id-small">{{ membership.tenant_id || membership.tenant?.id }}</span>
+            <strong>{{ getTenantDisplayName(membership) }}</strong>
+            <span class="tenant-id-small">{{ shortenTenantId(membership.tenant_id || membership.tenant?.id) }}</span>
             <span v-if="membership.role" class="role-badge">{{ membership.role }}</span>
           </button>
         </div>
@@ -141,6 +141,23 @@ export default {
         });
       }
     },
+    getTenantDisplayName(membership) {
+      // WP: Show name/slug if present, else tenant_id shortened
+      if (membership.tenant?.name) {
+        return membership.tenant.name;
+      }
+      if (membership.tenant?.slug) {
+        return membership.tenant.slug;
+      }
+      return this.shortenTenantId(membership.tenant_id || membership.tenant?.id || 'Unknown');
+    },
+    shortenTenantId(tenantId) {
+      // Show first 8 chars + ... + last 4 chars
+      if (!tenantId || tenantId.length <= 12) {
+        return tenantId || '';
+      }
+      return `${tenantId.substring(0, 8)}...${tenantId.substring(tenantId.length - 4)}`;
+    },
     async ensureDemoListing() {
       try {
         // Try to get existing published listings
@@ -244,9 +261,11 @@ export default {
 }
 
 .tenant-section {
-  margin-bottom: 1rem;
-  display: block; /* Ensure it's visible */
-  min-height: 50px; /* Ensure it takes space even if empty */
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+  border: 1px solid #ddd;
 }
 
 .tenant-info {
@@ -258,6 +277,7 @@ export default {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  min-height: 50px;
 }
 
 .tenant-id {
@@ -280,6 +300,96 @@ export default {
 
 .copy-button:hover {
   background: #1565c0;
+}
+
+.change-tenant-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  background: white;
+  color: #1976d2;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.change-tenant-button:hover {
+  background: #e3f2fd;
+}
+
+.load-memberships-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  background: #1976d2;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.load-memberships-button:hover:not(:disabled) {
+  background: #1565c0;
+}
+
+.load-memberships-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.membership-selector {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.membership-selector h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+}
+
+.membership-item {
+  margin-bottom: 0.5rem;
+}
+
+.tenant-select-button {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tenant-select-button:hover {
+  background: #f5f5f5;
+  border-color: #1976d2;
+}
+
+.tenant-select-button strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.tenant-id-small {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #666;
+  display: block;
+}
+
+.role-badge {
+  padding: 0.25rem 0.5rem;
+  background: #e3f2fd;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  color: #1976d2;
+  margin-left: auto;
 }
 </style>
 
