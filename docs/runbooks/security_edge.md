@@ -25,7 +25,7 @@ CORS_ALLOWED_ORIGINS=https://example.com,https://app.example.com
 - `Access-Control-Allow-Origin`: Set based on origin (if allowed)
 - `Access-Control-Allow-Credentials`: `false` (no credentials needed)
 - `Access-Control-Allow-Methods`: `GET,POST,PUT,PATCH,DELETE,OPTIONS`
-- `Access-Control-Allow-Headers`: `Content-Type, Authorization, X-Request-Id, X-Requested-With, Accept`
+- `Access-Control-Allow-Headers`: `Content-Type, Authorization, X-Request-Id, X-Requested-With, Accept, X-Active-Tenant-Id, Idempotency-Key`
 - `Access-Control-Max-Age`: `86400` (24 hours)
 
 ### Testing CORS
@@ -40,7 +40,7 @@ curl.exe -i -X OPTIONS http://localhost:8080/api/non-existent-endpoint \
 Expected headers:
 - `Access-Control-Allow-Origin: http://localhost:5173` (if allowed)
 - `Access-Control-Allow-Methods: GET,POST,PUT,PATCH,DELETE,OPTIONS`
-- `Access-Control-Allow-Headers: Content-Type, Authorization, X-Request-Id, X-Requested-With, Accept`
+- `Access-Control-Allow-Headers: Content-Type, Authorization, X-Request-Id, X-Requested-With, Accept, X-Active-Tenant-Id, Idempotency-Key`
 
 ## Security Headers
 

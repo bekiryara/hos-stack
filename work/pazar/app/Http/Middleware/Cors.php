@@ -13,6 +13,9 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class Cors
 {
+    // WP-61: Store-scope headers for CORS (deterministic ordering)
+    protected const ALLOWED_HEADERS = 'Content-Type, Authorization, X-Request-Id, X-Requested-With, Accept, X-Active-Tenant-Id, Idempotency-Key';
+
     public function handle(Request $request, Closure $next): Response
     {
         // Handle preflight OPTIONS requests
@@ -34,7 +37,7 @@ class Cors
             
             $response->headers->set('Access-Control-Allow-Credentials', 'false');
             $response->headers->set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-            $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-Id, X-Requested-With, Accept');
+            $response->headers->set('Access-Control-Allow-Headers', self::ALLOWED_HEADERS);
             $response->headers->set('Access-Control-Max-Age', '86400');
         }
 
@@ -57,7 +60,7 @@ class Cors
         
         $headers->set('Access-Control-Allow-Credentials', 'false');
         $headers->set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-        $headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-Id, X-Requested-With, Accept');
+        $headers->set('Access-Control-Allow-Headers', self::ALLOWED_HEADERS);
         $headers->set('Access-Control-Max-Age', '86400');
 
         return response('', 204, $headers->all());

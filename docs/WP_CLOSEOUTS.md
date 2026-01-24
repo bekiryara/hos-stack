@@ -5,6 +5,50 @@
 
 ---
 
+## WP-61: Pazar CORS Allow Store Headers (Create Listing Unblock)
+
+**Purpose:** Fix CORS preflight to allow `X-Active-Tenant-Id` and `Idempotency-Key` headers for store-scope write operations, unblocking Marketplace UI Create Listing.
+
+**Deliverables:**
+- `work/pazar/app/Http/Middleware/Cors.php` (MODIFIED): Added `X-Active-Tenant-Id` and `Idempotency-Key` to `Access-Control-Allow-Headers` (both normal response and preflight)
+- `docs/runbooks/security_edge.md` (MODIFIED): Updated CORS headers documentation
+- `docs/PROOFS/wp61_pazar_cors_allow_store_headers_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Restart pazar services
+docker compose restart pazar-app
+
+# Test preflight
+curl.exe -i -X OPTIONS "http://localhost:8080/api/v1/listings" -H "Origin: http://localhost:3002" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: content-type,x-active-tenant-id"
+
+# Manual UI test
+# Open: http://localhost:3002/marketplace/listing/create
+# Submit draft listing → No CORS error
+
+# Run gates
+.\ops\secret_scan.ps1
+.\ops\public_ready_check.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp61_pazar_cors_allow_store_headers_pass.md
+
+**Key Findings:**
+- CORS preflight now allows `X-Active-Tenant-Id` header (required for store-scope write)
+- CORS preflight now allows `Idempotency-Key` header (used by reservations)
+- UI Create Listing no longer blocked by CORS
+- Minimal diff: Single constant definition reused in both handlers
+
+**Acceptance Criteria:**
+✅ Preflight passes (allow x-active-tenant-id)
+✅ UI Create Listing no longer fails with CORS
+✅ All gates PASS (secret_scan, public_ready_check, conformance)
+✅ Proof + closeout + changelog updated
+
+---
+
 ## WP-60: Demo UX Stabilization (Empty Filters + One-Shot Auto-Search)
 
 **Purpose:** Make demo flow "works on first click" by fixing empty filters state handling and ensuring one-shot auto-search. UX alignment only, no new features.
@@ -30,6 +74,7 @@
 
 **Proof:** 
 - docs/PROOFS/wp60_demo_ux_seed_pass.md
+- docs/REPORTS/wp60_create_listing_network_analysis.md (Network analysis: POST /api/v1/listings headers/response)
 
 **Key Findings:**
 - Empty filters state: `filters: []` now shows stable "No filters for this category" (not infinite loading)
