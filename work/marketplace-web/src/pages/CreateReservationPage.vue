@@ -2,10 +2,21 @@
   <div class="create-reservation-page">
     <h2>Create Reservation</h2>
     
-    <div v-if="error" class="error">
-      <strong>Error ({{ error.status }}):</strong> {{ error.errorCode || 'unknown' }}
+    <div v-if="authError" class="error">
+      <strong>Authentication Required</strong>
       <br />
-      {{ error.message }}
+      {{ authError }}
+      <br />
+      <router-link to="/marketplace/demo" class="action-link">Go to Demo Dashboard</router-link>
+    </div>
+    
+    <div v-if="error && !authError" class="error">
+      <strong>Error ({{ error.status || 'N/A' }}):</strong> {{ error.errorCode || 'unknown' }}
+      <br />
+      {{ error.message || 'Unknown error' }}
+      <div v-if="error.hint" class="error-hint" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-left: 3px solid #dc3545; font-style: italic;">
+        <strong>Hint:</strong> {{ error.hint }}
+      </div>
       <div v-if="error.data && error.data.conflicting_reservation_id" class="conflict-info">
         Conflicting Reservation ID: {{ error.data.conflicting_reservation_id }}
       </div>
@@ -13,34 +24,38 @@
     
     <div v-if="success" class="success">
       <strong>Success!</strong> Reservation created with ID: {{ success.id }}
+      <button @click="copyReservationId(success.id)" class="copy-id-btn" title="Copy reservation ID">Copy ID</button>
       <br />
       Status: {{ success.status }}
       <br />
-      <router-link :to="`/listing/${success.listing_id}`">View Listing</router-link>
+      <div class="success-actions">
+        <router-link v-if="success.listing_id" :to="`/listing/${success.listing_id}`" class="action-link">View Listing</router-link>
+        <router-link v-if="listingCategoryId" :to="`/search/${listingCategoryId}`" class="action-link">Go to Search</router-link>
+        <router-link to="/demo" class="action-link">Back to Dashboard</router-link>
+      </div>
     </div>
     
-    <form v-if="!success" @submit.prevent="handleSubmit" class="reservation-form">
+    <form v-if="!success && !authError" @submit.prevent="handleSubmit" class="reservation-form">
       <div class="form-group">
         <label>
-          Authorization Token (Bearer) <span class="required">*</span>
+          Authorization Token (Demo) <span class="auto-fill-note">(Auto-filled from demo session)</span>
           <input
             v-model="formData.authToken"
             type="text"
-            required
-            placeholder="Bearer your-token-here"
-            class="form-input"
+            readonly
+            class="form-input readonly"
           />
         </label>
       </div>
       
       <div class="form-group">
         <label>
-          User ID (optional)
+          User ID (Demo) <span class="auto-fill-note">(Auto-filled from demo session)</span>
           <input
             v-model="formData.userId"
             type="text"
-            placeholder="User ID for X-Requester-User-Id header"
-            class="form-input"
+            readonly
+            class="form-input readonly"
           />
         </label>
       </div>
@@ -104,6 +119,19 @@
 
 <script>
 import { api } from '../api/client';
+import { getToken } from '../lib/demoSession';
+
+// Simple JWT decode (no verification needed for demo)
+function decodeJWT(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return payload;
+  } catch {
+    return null;
+  }
+}
 
 export default {
   name: 'CreateReservationPage',
@@ -119,10 +147,48 @@ export default {
       },
       loading: false,
       error: null,
+      authError: null,
       success: null,
+      listingCategoryId: null,
     };
   },
+  mounted() {
+    // Load demo session data
+    const token = getToken();
+    if (!token) {
+      this.authError = 'No demo session found. Please enter demo first.';
+      return;
+    }
+    
+    const payload = decodeJWT(token);
+    if (!payload || !payload.sub) {
+      this.authError = 'Invalid demo token. Please enter demo again.';
+      return;
+    }
+    
+    this.formData.authToken = token;
+    this.formData.userId = payload.sub;
+    
+    // Get listing_id from query params
+    const listingId = this.$route.query.listing_id;
+    if (listingId) {
+      this.formData.listing_id = listingId;
+      // Try to load listing to get category_id for success screen
+      this.loadListingCategory(listingId);
+    }
+  },
   methods: {
+    async loadListingCategory(listingId) {
+      try {
+        const listing = await api.getListing(listingId);
+        if (listing && listing.category_id) {
+          this.listingCategoryId = listing.category_id;
+        }
+      } catch (err) {
+        // Non-fatal: just won't show category in success screen
+        console.warn('Could not load listing category:', err);
+      }
+    },
     async handleSubmit() {
       if (!this.formData.authToken || !this.formData.listing_id || !this.formData.slot_start || !this.formData.slot_end || !this.formData.party_size) {
         this.error = { message: 'Please fill all required fields', status: 400 };
@@ -155,10 +221,36 @@ export default {
           this.formData.userId || null
         );
         this.success = result;
+        
+        // Load category if not already loaded
+        if (result.listing_id && !this.listingCategoryId) {
+          await this.loadListingCategory(result.listing_id);
+        }
       } catch (err) {
-        this.error = err;
+        // Improve error display with hint
+        const hint = err.status === 401 ? '401 → Token missing or invalid. Check Authorization Token.' : 
+                     err.status === 404 ? '404 → Listing not found. Check Listing ID.' :
+                     err.status === 422 ? '422 → Validation error. Check all required fields.' : null;
+        this.error = {
+          ...err,
+          hint: hint || (err.message || 'Unknown error'),
+        };
       } finally {
         this.loading = false;
+      }
+    },
+    copyReservationId(id) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(id).then(() => {
+          const btn = event.target;
+          const originalText = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 1000);
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+        });
       }
     },
   },
@@ -241,6 +333,46 @@ export default {
 .success a {
   color: #0066cc;
   text-decoration: underline;
+}
+
+.auto-fill-note {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+.readonly {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.copy-id-btn {
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  margin-left: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #f5f5f5;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.copy-id-btn:hover {
+  background: #e5e5e5;
+}
+
+.success-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.action-link {
+  color: #0066cc;
+  text-decoration: underline;
+  font-weight: 500;
 }
 </style>
 

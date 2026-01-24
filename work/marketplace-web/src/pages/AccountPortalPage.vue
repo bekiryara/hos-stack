@@ -9,7 +9,13 @@
       <div class="form-row">
         <label>
           Base URL:
-          <input v-model="baseUrl" type="text" placeholder="http://localhost:8080" @blur="saveToLocalStorage" />
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <input v-model="baseUrl" type="text" placeholder="http://localhost:8080" @blur="onBaseUrlBlur" style="flex: 1;" />
+            <button @click="resetBaseUrl" class="reset-btn" type="button">Reset</button>
+          </div>
+          <div v-if="baseUrlWarning" class="warning-box" style="margin-top: 0.5rem; padding: 0.5rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; color: #856404;">
+            {{ baseUrlWarning }}
+          </div>
         </label>
       </div>
       
@@ -22,6 +28,7 @@
               :type="showToken ? 'text' : 'password'" 
               placeholder="Bearer ..." 
               @blur="saveToLocalStorage"
+              style="width: 100%;"
             />
             <button @click="showToken = !showToken" class="toggle-btn">
               {{ showToken ? 'Hide' : 'Show' }}
@@ -73,8 +80,12 @@
         <h3>Error</h3>
         <div class="error-details">
           <div><strong>Status:</strong> {{ error.status || 'N/A' }}</div>
+          <div v-if="error.endpoint"><strong>Endpoint:</strong> {{ error.endpoint }}</div>
           <div v-if="error.errorCode"><strong>Error Code:</strong> {{ error.errorCode }}</div>
           <div><strong>Message:</strong> {{ error.message || 'Unknown error' }}</div>
+          <div v-if="error.hint" class="error-hint" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-left: 3px solid #dc3545; font-style: italic;">
+            <strong>Hint:</strong> {{ error.hint }}
+          </div>
         </div>
       </div>
       
@@ -287,7 +298,27 @@
 </template>
 
 <script>
-import { api, normalizeListResponse } from '../api/client.js';
+import { personalApi, storeApi, normalizeToken } from '../lib/pazarApi.js';
+import { getToken } from '../lib/demoSession.js';
+
+// Normalize Pazar host URL
+function normalizePazarHost(baseUrl) {
+  if (!baseUrl) return 'http://localhost:8080';
+  
+  let normalized = baseUrl.trim();
+  
+  // Remove trailing slash
+  if (normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1);
+  }
+  
+  // Check if contains /api segment (likely HOS proxy, not Pazar host)
+  if (normalized.includes('/api')) {
+    return null; // Invalid - indicates proxy URL
+  }
+  
+  return normalized;
+}
 
 export default {
   name: 'AccountPortalPage',
@@ -299,6 +330,7 @@ export default {
       userId: '',
       tenantId: '',
       showToken: false,
+      baseUrlWarning: null,
       
       // Data
       personalOrders: [],
@@ -316,11 +348,63 @@ export default {
   },
   mounted() {
     this.loadFromLocalStorage();
+    this.checkBaseUrl();
+    this.autoFillFromDemo();
   },
   methods: {
+    checkBaseUrl() {
+      const normalized = normalizePazarHost(this.baseUrl);
+      if (normalized === null) {
+        this.baseUrlWarning = 'This points to HOS API proxy. Pazar host should be http://localhost:8080';
+        // Auto-switch to default
+        this.baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+        this.saveToLocalStorage();
+      } else {
+        this.baseUrl = normalized;
+        this.baseUrlWarning = null;
+      }
+    },
+    resetBaseUrl() {
+      this.baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      this.baseUrlWarning = null;
+      this.saveToLocalStorage();
+    },
+    autoFillFromDemo() {
+      // Auto-fill token from demo session if empty, whitespace, or incomplete
+      const currentToken = this.authToken ? this.authToken.trim() : '';
+      // JWT token should have 3 parts separated by dots (header.payload.signature)
+      const isTokenIncomplete = currentToken && currentToken.split('.').length !== 3;
+      
+      if (!currentToken || isTokenIncomplete) {
+        const demoToken = getToken();
+        if (demoToken && demoToken.trim()) {
+          this.authToken = demoToken.trim();
+          this.saveToLocalStorage(); // Save immediately
+        }
+      }
+      
+      // Auto-fill userId from localStorage if empty
+      if (!this.userId && this.mode === 'personal') {
+        const savedUserId = localStorage.getItem('accountPortal_userId');
+        if (savedUserId) {
+          this.userId = savedUserId;
+        }
+      }
+      
+      // Auto-fill tenantId from active tenant if empty
+      if (!this.tenantId && this.mode === 'store') {
+        const activeTenantId = localStorage.getItem('active_tenant_id');
+        if (activeTenantId) {
+          this.tenantId = activeTenantId;
+        }
+      }
+    },
     saveToLocalStorage() {
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('accountPortal_baseUrl', this.baseUrl);
+        const normalized = normalizePazarHost(this.baseUrl);
+        if (normalized) {
+          localStorage.setItem('accountPortal_baseUrl', normalized);
+        }
         localStorage.setItem('accountPortal_authToken', this.authToken);
         localStorage.setItem('accountPortal_mode', this.mode);
         localStorage.setItem('accountPortal_userId', this.userId);
@@ -330,11 +414,17 @@ export default {
     loadFromLocalStorage() {
       if (typeof localStorage !== 'undefined') {
         this.baseUrl = localStorage.getItem('accountPortal_baseUrl') || this.baseUrl;
-        this.authToken = localStorage.getItem('accountPortal_authToken') || '';
+        const savedToken = localStorage.getItem('accountPortal_authToken');
+        // Only use saved token if it's not empty/whitespace
+        this.authToken = (savedToken && savedToken.trim()) ? savedToken : '';
         this.mode = localStorage.getItem('accountPortal_mode') || 'personal';
         this.userId = localStorage.getItem('accountPortal_userId') || '';
         this.tenantId = localStorage.getItem('accountPortal_tenantId') || '';
       }
+    },
+    onBaseUrlBlur() {
+      this.checkBaseUrl();
+      this.saveToLocalStorage();
     },
     formatDate(dateStr) {
       if (!dateStr) return 'N/A';
@@ -344,9 +434,59 @@ export default {
         return dateStr;
       }
     },
+    getErrorHint(status, endpoint) {
+      if (status === 401) {
+        return '401 → Token missing or invalid. Check Authorization Token field.';
+      }
+      if (status === 403) {
+        return '403 → Forbidden. Check tenant_id/user_id matches your token.';
+      }
+      if (status === 404) {
+        return `404 → Endpoint not found: ${endpoint}`;
+      }
+      if (status === 0) {
+        return 'Network error. Check Base URL and ensure Pazar service is running.';
+      }
+      return null;
+    },
     async refreshAll() {
       this.loading = true;
       this.error = null;
+      
+      // Validate baseUrl
+      const normalized = normalizePazarHost(this.baseUrl);
+      if (normalized === null) {
+        this.error = {
+          status: 0,
+          message: 'Invalid Base URL: contains /api segment (likely HOS proxy, not Pazar host)',
+          hint: 'Reset Base URL to http://localhost:8080',
+        };
+        this.loading = false;
+        return;
+      }
+      
+      // Normalize token (check if token exists and is valid)
+      let normalizedToken = null;
+      if (this.authToken && this.authToken.trim()) {
+        normalizedToken = normalizeToken(this.authToken);
+        // If token is incomplete (JWT should have 3 parts), try demo token
+        if (!normalizedToken || normalizedToken.split('.').length !== 3) {
+          const demoToken = getToken();
+          if (demoToken && demoToken.trim()) {
+            normalizedToken = normalizeToken(demoToken);
+            this.authToken = demoToken; // Update UI
+            this.saveToLocalStorage(); // Save for next time
+          }
+        }
+      } else {
+        // No token, try demo token
+        const demoToken = getToken();
+        if (demoToken && demoToken.trim()) {
+          normalizedToken = normalizeToken(demoToken);
+          this.authToken = demoToken; // Update UI
+          this.saveToLocalStorage(); // Save for next time
+        }
+      }
       
       // Clear previous data
       this.personalOrders = [];
@@ -359,114 +499,124 @@ export default {
       
       try {
         if (this.mode === 'personal') {
-          // Personal scope: parallel loads
+          // Personal scope: require token
           if (!this.userId) {
             throw new Error('User ID is required for personal scope');
           }
+          if (!normalizedToken) {
+            throw new Error('Authorization Token is required for personal scope');
+          }
           
           const [ordersResp, rentalsResp, reservationsResp] = await Promise.all([
-            api.getMyOrders(this.userId, this.authToken || null).catch(e => e),
-            api.getMyRentals(this.userId, this.authToken || null).catch(e => e),
-            api.getMyReservations(this.userId, this.authToken || null).catch(e => e),
+            personalApi.getOrders(normalized, this.userId, normalizedToken),
+            personalApi.getRentals(normalized, this.userId, normalizedToken),
+            personalApi.getReservations(normalized, this.userId, normalizedToken),
           ]);
           
           // Check for errors
-          if (ordersResp instanceof Error) {
+          if (!ordersResp.ok) {
             this.error = {
               status: ordersResp.status,
-              errorCode: ordersResp.errorCode,
               message: ordersResp.message,
+              endpoint: `${normalized}/api/v1/orders?buyer_user_id=${this.userId}`,
+              hint: this.getErrorHint(ordersResp.status, '/v1/orders'),
             };
             return;
           }
-          if (rentalsResp instanceof Error) {
+          if (!rentalsResp.ok) {
             this.error = {
               status: rentalsResp.status,
-              errorCode: rentalsResp.errorCode,
               message: rentalsResp.message,
+              endpoint: `${normalized}/api/v1/rentals?renter_user_id=${this.userId}`,
+              hint: this.getErrorHint(rentalsResp.status, '/v1/rentals'),
             };
             return;
           }
-          if (reservationsResp instanceof Error) {
+          if (!reservationsResp.ok) {
             this.error = {
               status: reservationsResp.status,
-              errorCode: reservationsResp.errorCode,
               message: reservationsResp.message,
+              endpoint: `${normalized}/api/v1/reservations?requester_user_id=${this.userId}`,
+              hint: this.getErrorHint(reservationsResp.status, '/v1/reservations'),
             };
             return;
           }
           
-          // Normalize responses
-          const ordersNorm = normalizeListResponse(ordersResp);
-          const rentalsNorm = normalizeListResponse(rentalsResp);
-          const reservationsNorm = normalizeListResponse(reservationsResp);
+          // Extract data (pazarApi returns { ok: true, data: ... })
+          const ordersData = Array.isArray(ordersResp.data) ? ordersResp.data : [];
+          const rentalsData = Array.isArray(rentalsResp.data) ? rentalsResp.data : [];
+          const reservationsData = Array.isArray(reservationsResp.data) ? reservationsResp.data : [];
           
-          this.personalOrders = ordersNorm.items || [];
-          this.personalRentals = rentalsNorm.items || [];
-          this.personalReservations = reservationsNorm.items || [];
+          this.personalOrders = ordersData;
+          this.personalRentals = rentalsData;
+          this.personalReservations = reservationsData;
         } else {
-          // Store scope: parallel loads
+          // Store scope: require tenantId
           if (!this.tenantId) {
             throw new Error('Tenant ID is required for store scope');
           }
           
           const [listingsResp, ordersResp, rentalsResp, reservationsResp] = await Promise.all([
-            api.getStoreListings(this.tenantId, this.authToken || null).catch(e => e),
-            api.getStoreOrders(this.tenantId, this.authToken || null).catch(e => e),
-            api.getStoreRentals(this.tenantId, this.authToken || null).catch(e => e),
-            api.getStoreReservations(this.tenantId, this.authToken || null).catch(e => e),
+            storeApi.getListings(normalized, this.tenantId, normalizedToken),
+            storeApi.getOrders(normalized, this.tenantId, normalizedToken),
+            storeApi.getRentals(normalized, this.tenantId, normalizedToken),
+            storeApi.getReservations(normalized, this.tenantId, normalizedToken),
           ]);
           
           // Check for errors
-          if (listingsResp instanceof Error) {
+          if (!listingsResp.ok) {
             this.error = {
               status: listingsResp.status,
-              errorCode: listingsResp.errorCode,
               message: listingsResp.message,
+              endpoint: `${normalized}/api/v1/listings?tenant_id=${this.tenantId}`,
+              hint: this.getErrorHint(listingsResp.status, '/v1/listings'),
             };
             return;
           }
-          if (ordersResp instanceof Error) {
+          if (!ordersResp.ok) {
             this.error = {
               status: ordersResp.status,
-              errorCode: ordersResp.errorCode,
               message: ordersResp.message,
+              endpoint: `${normalized}/api/v1/orders?seller_tenant_id=${this.tenantId}`,
+              hint: this.getErrorHint(ordersResp.status, '/v1/orders'),
             };
             return;
           }
-          if (rentalsResp instanceof Error) {
+          if (!rentalsResp.ok) {
             this.error = {
               status: rentalsResp.status,
-              errorCode: rentalsResp.errorCode,
               message: rentalsResp.message,
+              endpoint: `${normalized}/api/v1/rentals?provider_tenant_id=${this.tenantId}`,
+              hint: this.getErrorHint(rentalsResp.status, '/v1/rentals'),
             };
             return;
           }
-          if (reservationsResp instanceof Error) {
+          if (!reservationsResp.ok) {
             this.error = {
               status: reservationsResp.status,
-              errorCode: reservationsResp.errorCode,
               message: reservationsResp.message,
+              endpoint: `${normalized}/api/v1/reservations?provider_tenant_id=${this.tenantId}`,
+              hint: this.getErrorHint(reservationsResp.status, '/v1/reservations'),
             };
             return;
           }
           
-          // Normalize responses
-          const listingsNorm = normalizeListResponse(listingsResp);
-          const ordersNorm = normalizeListResponse(ordersResp);
-          const rentalsNorm = normalizeListResponse(rentalsResp);
-          const reservationsNorm = normalizeListResponse(reservationsResp);
+          // Extract data
+          const listingsData = Array.isArray(listingsResp.data) ? listingsResp.data : [];
+          const ordersData = Array.isArray(ordersResp.data) ? ordersResp.data : [];
+          const rentalsData = Array.isArray(rentalsResp.data) ? rentalsResp.data : [];
+          const reservationsData = Array.isArray(reservationsResp.data) ? reservationsResp.data : [];
           
-          this.storeListings = listingsNorm.items || [];
-          this.storeOrders = ordersNorm.items || [];
-          this.storeRentals = rentalsNorm.items || [];
-          this.storeReservations = reservationsNorm.items || [];
+          this.storeListings = listingsData;
+          this.storeOrders = ordersData;
+          this.storeRentals = rentalsData;
+          this.storeReservations = reservationsData;
         }
       } catch (error) {
         this.error = {
           status: error.status || 0,
-          errorCode: error.errorCode,
           message: error.message || 'Unknown error',
+          hint: this.getErrorHint(error.status || 0, 'unknown'),
         };
       } finally {
         this.loading = false;
@@ -537,6 +687,25 @@ export default {
 
 .toggle-btn:hover {
   background: #555;
+}
+
+.reset-btn {
+  padding: 0.5rem 1rem;
+  background: #666;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.reset-btn:hover {
+  background: #555;
+}
+
+.warning-box {
+  font-size: 0.875rem;
 }
 
 .button-group {

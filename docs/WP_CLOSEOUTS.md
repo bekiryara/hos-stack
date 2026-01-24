@@ -5,6 +5,147 @@
 
 ---
 
+## WP-65: Account Portal 401 Fix + Base URL/Auth Normalize
+
+**Purpose:** Fix Account Portal 401 error by normalizing Base URL (detect HOS proxy URLs like `/api/marketplace`) and ensuring correct Pazar host usage (`http://localhost:8080`). Improve error messages with actionable hints. Add auto-fill from demo session.
+
+**Deliverables:**
+- `work/marketplace-web/src/pages/AccountPortalPage.vue` (MODIFIED): Base URL normalization, auto-fill, improved errors, switched to pazarApi, "Reset Base URL" button
+- `work/marketplace-web/src/lib/pazarApi.js` (MODIFIED): Added baseHost parameter, exported normalizeToken, uses VITE_API_BASE_URL
+- `work/marketplace-web/src/pages/CreateReservationPage.vue` (MODIFIED): Improved error messages with hints
+- `work/marketplace-web/src/pages/CreateRentalPage.vue` (MODIFIED): Improved error messages with hints
+- `docs/PROOFS/wp65_account_portal_401_fix_pass.md` (NEW): Proof document with before/after evidence
+
+**Commands:**
+```powershell
+# Build frontend
+cd work/marketplace-web; npm run build
+
+# Browser test
+# 1. Open: http://localhost:3002/marketplace/account
+# 2. Set baseUrl to "/api/marketplace" → confirm warning + auto-recovery
+# 3. Set baseUrl to "http://localhost:8080" → confirm Refresh works
+# 4. Enter token + userId (Personal) or tenantId (Store)
+# 5. Click Refresh → Should return 200 or show empty-state (not 401)
+```
+
+**Proof:**
+- docs/PROOFS/wp65_account_portal_401_fix_pass.md
+
+**Key Findings:**
+- Base URL normalization detects `/api` segments (HOS proxy) and warns user ✅
+- Auto-switches to default `http://localhost:8080` if proxy URL detected ✅
+- "Reset Base URL" button added for manual correction ✅
+- Token normalization accepts raw JWT or "Bearer <token>" (never double-prefixes) ✅
+- Auto-fill token from demo session, userId/tenantId from localStorage ✅
+- Error messages show endpoint + status + actionable hints (401 → token missing, etc.) ✅
+- Account Portal now uses pazarApi (direct Pazar calls at `${baseHost}/api/v1/...`) ✅
+- Only normalized host saved to localStorage (never `/api/...` paths) ✅
+- No regression: Create Listing / Publish / Search still work ✅
+
+**Acceptance Criteria:**
+✅ Account Portal Refresh no longer returns 401 if token is present and baseUrl is correct  
+✅ Base URL normalization detects HOS proxy URLs (`/api/marketplace`) and warns user  
+✅ Auto-fill token/userId/tenantId from demo session  
+✅ Error messages show endpoint + status + actionable hints  
+✅ Personal mode requires token, sends Authorization header  
+✅ Store mode requires tenantId, sends X-Active-Tenant-Id header  
+✅ Token input supports both "Bearer ..." and raw JWT reliably  
+✅ Only normalized host saved to localStorage (never `/api/...` paths)  
+✅ No regression in Create Listing / Publish / Search flows  
+✅ Build passes without errors (`npm run build`)  
+
+---
+
+## WP-65: Listing Discovery Completion (Spec-aligned)
+
+**Purpose:** Complete the prototype by making published listings discoverable via category and search, strictly aligned with existing SPEC and contracts. No new domain, no new schema.
+
+**Deliverables:**
+- `ops/listing_discovery_proof.ps1` (NEW): Proof script that creates listing, publishes it, and verifies it appears in search + category listing
+- `docs/PROOFS/wp65_listing_discovery_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Run proof script
+.\ops\listing_discovery_proof.ps1
+
+# Verify endpoints
+curl.exe http://localhost:8080/api/v1/listings
+curl.exe http://localhost:8080/api/v1/listings?status=published
+curl.exe http://localhost:8080/api/v1/search?category_id=4
+```
+
+**Proof:**
+- docs/PROOFS/wp65_listing_discovery_pass.md
+
+**Key Findings:**
+- GET /v1/listings defaults to `status=published` ✅
+- GET /v1/search hardcodes `status='published'` ✅
+- Draft listings correctly excluded from published search ✅
+- Published listings appear in GET /v1/listings (default and explicit) ✅
+- Published listings excluded from status=draft filter ✅
+- Empty filters return published listings array (not null) ✅
+- No schema changes: Uses existing `listings.status` column ✅
+- No new endpoints: Uses existing endpoints per spec ✅
+
+**Acceptance Criteria:**
+✅ GET /v1/listings defaults to status=published  
+✅ GET /v1/search returns only published listings  
+✅ Draft listings excluded from published search  
+✅ Empty filters return published listings array  
+✅ No new tables or columns  
+✅ No new filters beyond existing spec  
+✅ Proof script PASS  
+✅ Spec-aligned behavior confirmed  
+
+---
+
+## WP-65: Marketplace Demo v1 — "Publish → Search → Reserve/Rent" End-to-End
+
+**Purpose:** Complete end-to-end user flow for Marketplace Demo v1: Create Listing (draft) → Publish → Search → Reserve/Rent. All transaction actions (Reserve/Rent) are accessible from listing cards based on `transaction_modes`. CreateReservationPage and CreateRentalPage integrated with demo session.
+
+**Deliverables:**
+- `work/marketplace-web/src/pages/CreateReservationPage.vue` (MODIFIED): Demo session integration, listing_id from query, success panel
+- `work/marketplace-web/src/pages/CreateRentalPage.vue` (MODIFIED): Demo session integration, listing_id from query, success panel
+- `work/marketplace-web/src/components/ListingsGrid.vue` (MODIFIED): Reserve/Rent action buttons based on transaction_modes
+- `docs/PROOFS/wp65_marketplace_transaction_flow_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Ops status check
+.\ops\ops_status.ps1
+
+# Frontend smoke test
+.\ops\frontend_smoke.ps1
+```
+
+**Proof:**
+- docs/PROOFS/wp65_marketplace_transaction_flow_pass.md
+
+**Key Findings:**
+- CreateReservationPage and CreateRentalPage auto-fill token/user from demo session
+- `listing_id` pre-filled from query parameter
+- Success panels include Copy ID, View Listing, Go to Search, Back to Dashboard
+- ListingsGrid shows Reserve/Rent buttons based on `transaction_modes`
+- Publish → Search flow works correctly
+- Single-origin proxy maintained (all requests via /api/marketplace/*)
+- No hardcoded tenant IDs (uses active tenant session)
+
+**Acceptance Criteria:**
+✅ CreateReservationPage integrated with demo session (auto-fill token/user)  
+✅ CreateRentalPage integrated with demo session (auto-fill token/user)  
+✅ `listing_id` pre-filled from query parameter  
+✅ Success panels include Copy ID, View Listing, Go to Search, Back to Dashboard  
+✅ ListingsGrid shows Reserve/Rent buttons based on `transaction_modes`  
+✅ Publish → Search flow works correctly  
+✅ Single-origin proxy maintained  
+✅ No hardcoded tenant IDs  
+✅ Auth error handling with demo dashboard link  
+✅ Ops smoke tests PASS  
+
+---
+
 ## WP-64: Create Listing Publish CTA + Strict Draft/Search UX
 
 **Purpose:** Improve Create Listing success panel with "Publish now" button for draft listings. After publishing, status updates to "published" and "Go to Search" button becomes available. Maintains strict draft/published UX.
