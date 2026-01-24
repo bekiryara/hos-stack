@@ -12,9 +12,11 @@
     <div v-if="loadingListings" class="loading">Searching listings...</div>
     <div v-else-if="errorListings" class="error">{{ errorListings }}</div>
     <div v-else-if="searchExecuted" data-marker="search-executed">
-      <ListingsGrid :listings="listings" />
+      <ListingsGrid v-if="listings && listings.length > 0" :listings="listings" />
+      <div v-else class="empty-state">
+        <p>No listings found</p>
+      </div>
     </div>
-    <div v-else-if="filtersLoaded" class="loading">Ready to search...</div>
   </div>
 </template>
 
@@ -78,7 +80,8 @@ export default {
         this.filtersLoaded = false;
         this.errorFilters = null;
         const schema = await api.getFilterSchema(this.categoryId);
-        this.filters = schema.filters || [];
+        // WP-60: Normalize filters to [] if undefined/null
+        this.filters = (schema && schema.filters) ? schema.filters : [];
         this.loadingFilters = false;
         this.filtersLoaded = true; // WP-60: Mark as loaded even if filters array is empty
         
@@ -91,6 +94,8 @@ export default {
         this.errorFilters = err.message;
         this.loadingFilters = false;
         this.filtersLoaded = true; // WP-60: Mark as loaded even on error
+        // WP-60: Normalize filters to [] on error
+        this.filters = [];
       }
     },
     async handleSearch(attrs) {

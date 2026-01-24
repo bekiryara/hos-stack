@@ -148,14 +148,21 @@ try {
             Write-Host "WARN: Marketplace search page missing marketplace-search marker" -ForegroundColor Yellow
         }
         
-        # Check for filters-empty marker (if filters are empty, should NOT show "Loading filters..." forever)
+        # WP-60: Check for filters-empty marker (if filters are empty, should NOT show "Loading filters..." forever)
         if ($bodyContent -match 'data-marker="filters-empty"') {
             Write-Host "PASS: Marketplace search page contains filters-empty marker (empty filters handled correctly)" -ForegroundColor Green
         } elseif ($bodyContent -match 'Loading filters\.\.\.') {
-            # If "Loading filters..." appears in static HTML, it might be stuck (client-side should handle this)
-            Write-Host "WARN: Marketplace search page shows 'Loading filters...' in static HTML (may be client-side rendered)" -ForegroundColor Yellow
+            # WP-60: If "Loading filters..." appears in static HTML, it might be stuck (client-side should handle this)
+            # This is a warning, not a failure, because Vue will handle it client-side
+            Write-Host "WARN: Marketplace search page shows 'Loading filters...' in static HTML (client-side will handle empty state)" -ForegroundColor Yellow
         } else {
             Write-Host "INFO: Marketplace search page filters state (client-side rendered, will be checked in browser)" -ForegroundColor Gray
+        }
+        
+        # WP-60: Ensure page is NOT stuck showing only "Loading filters..." (must have marketplace-search marker)
+        if (-not ($bodyContent -match 'data-marker="marketplace-search"') -and -not ($bodyContent -match 'id="app"')) {
+            Write-Host "FAIL: Marketplace search page missing marketplace-search marker AND Vue app mount" -ForegroundColor Red
+            $hasFailures = $true
         }
     }
 } catch {

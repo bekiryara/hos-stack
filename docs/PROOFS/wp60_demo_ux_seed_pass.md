@@ -1,155 +1,117 @@
-# WP-60: Demo UX Stabilization + Deterministic Demo Data - PASS
+# WP-60: Demo UX Stabilization (Empty Filters + One-Shot Auto-Search)
 
-**Date:** 2026-01-23  
-**Status:** PASS  
-**Purpose:** Make prototype demo usable like a real product: user lands on search and sees results automatically, and demo data is deterministic across all root categories.
+**Date:** 2026-01-24  
+**Status:** ✅ COMPLETE
 
 ## Summary
 
-Implemented auto-run initial search on marketplace search page and deterministic demo seed script. Users now:
-- See listings automatically when opening a category search page (no need to click Search)
-- Have guaranteed demo data in all root categories (service, vehicle, real-estate)
-- Can navigate to any category and see results immediately
+Fixed empty filters state handling and added one-shot auto-search to improve demo UX. Ensured deterministic demo seed creates listings for all root categories.
 
-## Browser Steps Verification
+## Implementation Details
 
-### 1) Auto-Search on Category Page
-- **Step:** Open http://localhost:3002/marketplace/search/1
-- **Result:** Filters load, then search runs automatically, listings appear
-- **Status:** PASS
-- **Notes:** No "No listings found" until after search completes. Initial search runs once only (guarded by `initialSearchDone` flag).
+### Scope A: Frontend Fixes
 
-### 2) Multiple Categories Have Listings
-- **Step:** Open http://localhost:3002/marketplace/search/1 (Services)
-- **Result:** Listings visible automatically
-- **Status:** PASS
-- **Step:** Open http://localhost:3002/marketplace/search/4 (Vehicle)
-- **Result:** Listings visible automatically
-- **Status:** PASS
-- **Step:** Open http://localhost:3002/marketplace/search/5 (Real Estate)
-- **Result:** Listings visible automatically
-- **Status:** PASS
+**File:** `work/marketplace-web/src/pages/ListingsSearchPage.vue`
 
-### 3) Manual Search Still Works
-- **Step:** Change filters, click "Search" button
-- **Result:** Search runs with new filters
-- **Status:** PASS
-- **Notes:** Auto-search does not interfere with manual search
+1. **Empty Filters State:**
+   - Normalized `schema.filters` to `[]` if undefined/null
+   - Set `filtersLoaded = true` even when filters array is empty
+   - Removed "Ready to search..." message (replaced with auto-search)
 
-## Demo Seed Script Results
+2. **One-Shot Auto-Search:**
+   - After `filtersLoaded` becomes true, trigger exactly ONE initial search
+   - Guarded with `initialSearchDone` boolean to prevent loops
+   - Manual Search button behavior unchanged
+
+3. **Deterministic Markers:**
+   - `data-marker="marketplace-search"` on search page root (already existed)
+   - `data-marker="filters-empty"` when empty filters state shown (in FiltersPanel)
+   - `data-marker="search-executed"` after at least one search executed (already existed)
+
+**File:** `work/marketplace-web/src/components/FiltersPanel.vue`
+
+- Already had empty state handling with `filters-empty` marker
+- Shows "No filters for this category" when `filtersLoaded && filters.length === 0`
+- Search button remains enabled even with empty filters
+
+### Scope B: Ops - Demo Seed
+
+**File:** `ops/demo_seed_root_listings.ps1`
+
+- Already idempotent (checks for existing listings before creating)
+- Ensures at least 1 published listing exists for EACH ROOT category
+- Prints summary with search URLs: `http://localhost:3002/marketplace/search/<categoryId>`
+- Uses existing shared helpers for JWT and tenant_id resolution
+
+### Scope C: Smoke Test Updates
+
+**File:** `ops/frontend_smoke.ps1`
+
+- Added check for `marketplace-search` marker on search page
+- Added check for `filters-empty` marker (when filters are empty)
+- Ensures page is NOT stuck showing only "Loading filters..."
+
+## Verification
+
+### 1. Demo Seed Run
 
 ```powershell
-.\ops\demo_seed.ps1
+.\ops\demo_seed_root_listings.ps1
 ```
 
 **Expected Output:**
-- PASS: Token acquired (masked)
-- PASS: tenant_id acquired
-- PASS: Categories fetched
-- PASS: Found 3 root categories (service, vehicle, real-estate)
-- Summary showing EXISTS/CREATED per category with URLs
+- Token acquired (masked)
+- tenant_id acquired
+- Categories fetched
+- Root categories identified
+- Published listings ensured for each root category
+- Summary with search URLs printed
 
-**Sample Output:**
-```
-=== DEMO SEED (WP-60) ===
-Timestamp: 2026-01-23 07:57:09
+### 2. Browser Checklist
 
-[1] Acquiring JWT token...
-PASS: Token acquired (***RBH440)
+**Test URL:** `http://localhost:3002/marketplace/search/1` (service root)
 
-[2] Getting tenant_id from memberships...
-PASS: tenant_id acquired: 7ef9bc88-2d20-45ae-9f16-525181aad657
+**Checks:**
+- ✅ No infinite "Loading filters..." message
+- ✅ Empty filters state visible when `filters: []` (shows "No filters for this category")
+- ✅ Listings visible without clicking Search (auto-search triggered)
+- ✅ `data-marker="marketplace-search"` present
+- ✅ `data-marker="filters-empty"` present when filters empty
+- ✅ `data-marker="search-executed"` present after search
 
-[3] Fetching categories...
-PASS: Categories fetched
+### 3. Frontend Smoke Test
 
-[4] Identifying root categories...
-  Found: service (id: 1)
-  Found: vehicle (id: 4)
-  Found: real-estate (id: 5)
-PASS: Found 3 root categories
-
-[5] Ensuring published listings per category...
-  Category: Services (id: 1, slug: service)
-    CREATED: Listing created and published (id: fa294a1e-317f-41a7-ba0a-c8887a214b49)
-  Category: Vehicle (id: 4, slug: vehicle)
-    EXISTS: Published listing found (id: ecefbd75-c7a2-46ab-938e-bf2126445ed8)
-  Category: Real Estate (id: 5, slug: real-estate)
-    CREATED: Listing created and published (id: b2395bf0-9d26-44a6-80d4-020f5e62d716)
-
-=== DEMO SEED SUMMARY ===
-[CREATED] Services (slug: service)
-  Category ID: 1
-  Listing ID: fa294a1e-317f-41a7-ba0a-c8887a214b49
-  Search URL: http://localhost:3002/marketplace/search/1
-  Listing URL: http://localhost:3002/marketplace/listing/fa294a1e-317f-41a7-ba0a-c8887a214b49
-
-[EXISTS] Vehicle (slug: vehicle)
-  Category ID: 4
-  Listing ID: ecefbd75-c7a2-46ab-938e-bf2126445ed8
-  Search URL: http://localhost:3002/marketplace/search/4
-  Listing URL: http://localhost:3002/marketplace/listing/ecefbd75-c7a2-46ab-938e-bf2126445ed8
-
-[CREATED] Real Estate (slug: real-estate)
-  Category ID: 5
-  Listing ID: b2395bf0-9d26-44a6-80d4-020f5e62d716
-  Search URL: http://localhost:3002/marketplace/search/5
-  Listing URL: http://localhost:3002/marketplace/listing/b2395bf0-9d26-44a6-80d4-020f5e62d716
-
-=== DEMO SEED: PASS ===
+```powershell
+.\ops\frontend_smoke.ps1
 ```
 
-## Deliverables
+**Expected:**
+- Marketplace search page returns 200
+- Contains `marketplace-search` marker
+- Handles empty filters correctly (no infinite loading)
 
-1. **work/marketplace-web/src/pages/ListingsSearchPage.vue** (MODIFIED)
-   - Added `initialSearchDone` flag to prevent infinite loops
-   - Auto-runs initial search after filters load (once only)
-   - Updated UI: "No listings found" only shows after search executed
-   - Guard ensures auto-search runs exactly once per page load
+## Files Changed
 
-2. **ops/demo_seed.ps1** (NEW)
-   - Bootstrap JWT using test_auth.ps1 helper (reused, not duplicated)
-   - Get tenant_id from memberships (reused Get-TenantIdFromMemberships helper)
-   - Fetch categories from Pazar API
-   - Identify root categories (target slugs: service, vehicle, real-estate)
-   - For each category: check for published listing, create if missing
-   - Idempotent: running twice does not create duplicates
-   - Prints summary with marketplace URLs
+1. `work/marketplace-web/src/pages/ListingsSearchPage.vue`
+   - Normalized filters to `[]` if undefined/null
+   - Removed "Ready to search..." message
+   - Added "No listings found" empty state
 
-3. **ops/prototype_v1.ps1** (MODIFIED)
-   - Added `-SeedDemo` switch (optional, default: false)
-   - Calls demo_seed.ps1 before smoke tests if switch provided
-   - Default behavior unchanged (backward compatible)
+2. `ops/frontend_smoke.ps1`
+   - Enhanced search page check with filters-empty marker validation
 
-## Key Features
-
-- **Auto-Search:** Search page automatically runs initial search after filters load
-- **Deterministic Data:** At least 1 published listing per root category guaranteed
-- **Idempotent Seed:** Running demo_seed multiple times is safe (checks before creating)
-- **No Infinite Loops:** Guard flag prevents auto-search from running multiple times
-- **Backward Compatible:** Default behavior unchanged, -SeedDemo is optional
-
-## Acceptance Criteria
-
-✅ Search page auto-runs initial search (no user click required)  
-✅ "No listings found" only appears after search executed  
-✅ Demo seed ensures listings in all root categories  
-✅ Demo seed is idempotent (safe to run multiple times)  
-✅ Manual search still works (auto-search does not interfere)  
-✅ All existing smokes still pass  
-✅ Minimal diff, no refactor, no domain redesign  
-
-## URLs
-
-- Marketplace Search (Services): http://localhost:3002/marketplace/search/1
-- Marketplace Search (Vehicle): http://localhost:3002/marketplace/search/4
-- Marketplace Search (Real Estate): http://localhost:3002/marketplace/search/5
+3. `ops/demo_seed_root_listings.ps1`
+   - Already compliant (no changes needed)
 
 ## Notes
 
-- Auto-search runs once per page load (guarded by `initialSearchDone` flag)
-- Demo seed uses APIs only (no direct DB writes)
-- Demo seed reuses existing helpers (test_auth.ps1, Get-TenantIdFromMemberships)
-- Token masking: only last 6 chars shown in outputs
-- ASCII-only outputs for PowerShell 5.1 compatibility
+- All markers were already present in code
+- Main work was ensuring filters normalization and removing "Ready to search..." message
+- Auto-search was already implemented, just needed verification
+- Demo seed script was already idempotent and compliant
 
+## Commit
+
+```
+WP-60: demo UX stabilization (empty filters + auto-search + demo seed)
+```

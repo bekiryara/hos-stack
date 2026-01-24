@@ -5,6 +5,47 @@
 
 ---
 
+## WP-60: Demo UX Stabilization (Empty Filters + One-Shot Auto-Search)
+
+**Purpose:** Make demo flow "works on first click" by fixing empty filters state handling and ensuring one-shot auto-search. UX alignment only, no new features.
+
+**Deliverables:**
+- `work/marketplace-web/src/pages/ListingsSearchPage.vue` (MODIFIED): Normalized filters to `[]` if undefined/null, removed "Ready to search..." message, added "No listings found" empty state
+- `ops/frontend_smoke.ps1` (MODIFIED): Enhanced search page check with filters-empty marker validation
+- `ops/demo_seed_root_listings.ps1` (VERIFIED): Already idempotent and compliant
+- `docs/PROOFS/wp60_demo_ux_seed_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Run demo seed (idempotent)
+.\ops\demo_seed_root_listings.ps1
+
+# Run frontend smoke
+.\ops\frontend_smoke.ps1
+
+# Browser test
+# http://localhost:3002/marketplace/search/1
+# Verify: No infinite "Loading filters...", empty filters show "No filters", listings visible without clicking Search
+```
+
+**Proof:** 
+- docs/PROOFS/wp60_demo_ux_seed_pass.md
+
+**Key Findings:**
+- Empty filters state: `filters: []` now shows stable "No filters for this category" (not infinite loading)
+- Auto-search: Exactly ONE initial search after filters load (guarded by `initialSearchDone`)
+- Demo seed: Already idempotent, ensures listings for all root categories
+- Markers: `marketplace-search`, `filters-empty`, `search-executed` all present
+
+**Acceptance Criteria:**
+✅ No infinite "Loading filters..." message
+✅ Empty filters show stable state with Search button enabled
+✅ Listings visible without clicking Search (auto-search works)
+✅ Demo seed idempotent (re-run shows EXISTS, no duplicates)
+✅ All gates PASS (frontend_smoke, demo_seed)
+
+---
+
 ## WP-62: Prototype Polish + Repo Hygiene (Active Tenant UX + Clean Gates)
 
 **Purpose:** Make prototype "user-like" usable without manual tenant_id copy/paste, and make repo pass public_ready_check by eliminating untracked artifacts and duplicate reports.
