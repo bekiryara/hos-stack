@@ -5,6 +5,42 @@
 
 ---
 
+## WP-64: Create Listing Publish CTA + Strict Draft/Search UX
+
+**Purpose:** Improve Create Listing success panel with "Publish now" button for draft listings. After publishing, status updates to "published" and "Go to Search" button becomes available. Maintains strict draft/published UX.
+
+**Deliverables:**
+- `work/marketplace-web/src/pages/CreateListingPage.vue` (MODIFIED): Added "Publish now" button and publish handler
+- `docs/PROOFS/wp64_create_publish_search_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Manual browser test
+# 1. Create listing → Verify "Publish now" button
+# 2. Click "Publish now" → Verify status updates to published
+# 3. Click "Go to Search" → Verify listing in results
+```
+
+**Proof:**
+- docs/PROOFS/wp64_create_publish_search_pass.md
+
+**Key Findings:**
+- "Publish now" button appears for draft listings
+- Publish updates local state to "published"
+- "Go to Search" button only shown for published listings
+- Single-origin proxy maintained (all requests via /api/marketplace/*)
+- No hardcoded tenant IDs (uses active tenant session)
+
+**Acceptance Criteria:**
+✅ Create Listing success panel shows "Publish now" for draft listings
+✅ Publish updates local state to published
+✅ "Go to Search" only shown for published listings
+✅ Single-origin proxy maintained
+✅ No hardcoded tenant IDs
+✅ ListingDetailPage publish component still works
+
+---
+
 ## WP-63: Transaction Mode Proof (Listing → Search → View)
 
 **Purpose:** Prove that listing transaction_modes (sale / rental / reservation) are correctly propagated and rendered across listing creation, detail page, and search result cards. Frontend rendering only.

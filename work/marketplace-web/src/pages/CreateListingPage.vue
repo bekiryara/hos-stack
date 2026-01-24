@@ -16,8 +16,13 @@
       <br />
       <div class="success-actions">
         <router-link :to="`/listing/${success.id}`" class="action-link">View Listing</router-link>
-        <button v-if="success.category_id && success.status === 'published'" @click="goToCategorySearch(success.category_id)" class="action-button">Go to Search</button>
-        <span v-else-if="success.status === 'draft'" class="draft-note">(Draft listings are not shown in search. Publish to make them visible.)</span>
+        <button v-if="success.status === 'draft'" @click="handlePublish" :disabled="publishing" class="action-button publish-button">
+          {{ publishing ? 'Publishing...' : 'Publish now' }}
+        </button>
+        <button v-if="success.status === 'published' && success.category_id" @click="goToCategorySearch(success.category_id)" class="action-button">Go to Search</button>
+      </div>
+      <div v-if="publishError" class="publish-error">
+        <strong>Publish Error:</strong> {{ publishError.message }}
       </div>
     </div>
     
@@ -200,6 +205,8 @@ export default {
       error: null,
       success: null,
       tenantIdLoadError: false, // WP-51: Track if tenant ID auto-load failed
+      publishing: false, // WP-64: Track publish operation
+      publishError: null, // WP-64: Track publish errors
     };
   },
   async mounted() {
@@ -346,6 +353,37 @@ export default {
     },
     goToCategorySearch(categoryId) {
       this.$router.push(`/search/${categoryId}`);
+    },
+    async handlePublish() {
+      if (!this.success || !this.success.id) {
+        this.publishError = { message: 'No listing to publish' };
+        return;
+      }
+      
+      this.publishing = true;
+      this.publishError = null;
+      
+      try {
+        // WP-64: Use existing publish endpoint with current tenant strategy
+        const tenantId = this.formData.tenantId || api.getActiveTenantId();
+        if (!tenantId) {
+          this.publishError = { message: 'Tenant ID required. Please set active tenant.' };
+          this.publishing = false;
+          return;
+        }
+        
+        const result = await api.publishListing(this.success.id, tenantId);
+        
+        // WP-64: Update local state to published
+        this.success = {
+          ...this.success,
+          status: 'published',
+        };
+      } catch (err) {
+        this.publishError = err;
+      } finally {
+        this.publishing = false;
+      }
     },
   },
 };
@@ -564,6 +602,31 @@ export default {
   font-size: 0.9rem;
   font-style: italic;
   margin-left: 1rem;
+}
+
+.publish-button {
+  background: #4caf50;
+  border-color: #4caf50;
+}
+
+.publish-button:hover:not(:disabled) {
+  background: #45a049;
+  border-color: #45a049;
+}
+
+.publish-button:disabled {
+  background: #ccc;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
+
+.publish-error {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #ffebee;
+  color: #d32f2f;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 </style>
 
