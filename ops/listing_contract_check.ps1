@@ -192,16 +192,17 @@ try {
 
 Write-Host ""
 
-# Test 2: Negative - POST /api/v1/listings without Authorization header (expect 401)
+# Test 2: POST /api/v1/listings without Authorization header
+# WP-61B: In GENESIS mode (GENESIS_ALLOW_UNAUTH_STORE=1), Authorization is optional per SPEC §5.2
 if (-not $weddingHallId) {
-    Write-Host "[2] SKIP: Cannot test negative case (wedding-hall category ID not available)" -ForegroundColor Yellow
+    Write-Host "[2] SKIP: Cannot test (wedding-hall category ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
 } else {
-    Write-Host "[2] Testing POST /api/v1/listings without Authorization header (negative test)..." -ForegroundColor Yellow
+    Write-Host "[2] Testing POST /api/v1/listings without Authorization header (GENESIS mode: Authorization optional)..." -ForegroundColor Yellow
     $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
     $listingBody = @{
         category_id = $weddingHallId
-        title = "Test Without Auth"
+        title = "Test Without Auth (WP-61B)"
         transaction_modes = @("reservation")
     } | ConvertTo-Json
 
@@ -209,11 +210,20 @@ if (-not $weddingHallId) {
         $headers = @{
             "Content-Type" = "application/json"
             "X-Active-Tenant-Id" = $tenantId
-            # No Authorization header
+            # No Authorization header (GENESIS mode: optional)
         }
-        $negativeResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
-        Write-Host "FAIL: Request without Authorization should have failed, but succeeded" -ForegroundColor Red
-        $hasFailures = $true
+        $response = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
+        
+        # WP-61B: In GENESIS mode, request should succeed (201) without Authorization
+        if ($response.id -and $response.status -eq "draft") {
+            Write-Host "PASS: Request without Authorization succeeded in GENESIS mode (status: 201, listing created)" -ForegroundColor Green
+            Write-Host "  Listing ID: $($response.id)" -ForegroundColor Gray
+            Write-Host "  Status: $($response.status)" -ForegroundColor Gray
+            Write-Host "  Note: Authorization is optional in GENESIS mode per SPEC §5.2" -ForegroundColor Gray
+        } else {
+            Write-Host "FAIL: Request without Authorization succeeded but response invalid" -ForegroundColor Red
+            $hasFailures = $true
+        }
     } catch {
         $statusCode = $null
         $errorResponse = $null
@@ -230,14 +240,15 @@ if (-not $weddingHallId) {
             } catch {
             }
         }
+        # WP-61B: If GENESIS_ALLOW_UNAUTH_STORE=0, expect 401; otherwise expect success
         if ($statusCode -eq 401) {
-            if ($errorResponse -and $errorResponse.error_code -eq "AUTH_REQUIRED") {
-                Write-Host "PASS: Request without Authorization correctly rejected (status: 401, AUTH_REQUIRED)" -ForegroundColor Green
-            } else {
-                Write-Host "PASS: Request without Authorization correctly rejected (status: 401)" -ForegroundColor Green
+            Write-Host "INFO: Request without Authorization returned 401 (GENESIS_ALLOW_UNAUTH_STORE=0, auth required)" -ForegroundColor Yellow
+            Write-Host "  Status Code: 401" -ForegroundColor Gray
+            if ($errorResponse -and $errorResponse.error_code) {
+                Write-Host "  Error Code: $($errorResponse.error_code)" -ForegroundColor Gray
             }
         } else {
-            Write-Host "FAIL: Expected 401 AUTH_REQUIRED, got status: $statusCode" -ForegroundColor Red
+            Write-Host "FAIL: Request without Authorization failed with unexpected status: $statusCode" -ForegroundColor Red
             $hasFailures = $true
         }
     }

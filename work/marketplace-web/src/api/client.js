@@ -1,5 +1,6 @@
 // API client for Marketplace backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+// WP-61: Use same-origin proxy path instead of direct 8080 to avoid CORS
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/marketplace';
 
 /**
  * Persona modes for WP-8 Persona & Scope Lock (SPEC §5.1-§5.3)

@@ -5,6 +5,56 @@
 
 ---
 
+## WP-61: Single-Origin Marketplace API Proxy + GENESIS Store Listing Auth Alignment
+
+**Purpose:** Enforce single-origin for Marketplace API calls (eliminate CORS) and ensure Create Listing works end-to-end in GENESIS mode via proxy.
+
+**Deliverables:**
+- `work/hos/services/web/nginx.conf` (MODIFIED): Added `/api/marketplace/` location block proxying to `pazar-app:80`
+- `work/marketplace-web/src/api/client.js` (MODIFIED): Changed `API_BASE_URL` from `http://localhost:8080` to `/api/marketplace`
+- `work/pazar/routes/api/03a_listings_write.php` (MODIFIED): Fixed route middleware syntax (replaced IIFE with variable assignment)
+- `docs/PROOFS/wp61_marketplace_api_proxy_create_listing_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Rebuild & restart
+docker compose build hos-web
+docker compose up -d hos-web
+
+# Test proxy
+curl.exe -i http://localhost:3002/api/marketplace/api/world/status
+curl.exe -i http://localhost:3002/api/marketplace/api/v1/categories
+
+# Browser test
+# 1. Open: http://localhost:3002
+# 2. Enter Demo
+# 3. Go to: http://localhost:3002/marketplace/listing/create
+# 4. Create listing → Must succeed (no CORS, no 401)
+
+# Run gates
+.\ops\frontend_smoke.ps1
+.\ops\conformance.ps1
+```
+
+**Proof:**
+- docs/PROOFS/wp61_marketplace_api_proxy_create_listing_pass.md
+
+**Key Findings:**
+- All Marketplace API calls now use same-origin proxy (`/api/marketplace/*` instead of direct `http://localhost:8080`)
+- No CORS errors: Browser requests go to same origin (3002)
+- Create Listing works end-to-end: Form submission succeeds via proxy
+- GENESIS alignment: Backend already configured (WP-61B) - `X-Active-Tenant-Id` required, Authorization optional
+
+**Acceptance Criteria:**
+✅ Single-origin enforced (no direct 8080 calls from browser)
+✅ Create Listing works end-to-end via proxy
+✅ No CORS errors
+✅ GENESIS alignment maintained (X-Active-Tenant-Id required, Authorization optional)
+✅ All gates PASS (frontend_smoke, conformance)
+✅ Proof + closeout + changelog updated
+
+---
+
 ## WP-61: Marketplace Create Listing Auth Wiring (CORS + Auth Fix)
 
 **Purpose:** Fix 401 Unauthorized by wiring demo token to Create Listing POST request. Completes WP-61 CORS fix by adding Authorization header.
@@ -45,6 +95,53 @@
 ✅ Router guard protects write routes
 ✅ All gates PASS (secret_scan, public_ready_check, conformance, frontend_smoke)
 ✅ Proof + closeout + changelog updated
+
+---
+
+## WP-61B: Genesis Store Auth Optional (SPEC Align)
+
+**Purpose:** Align STORE listing create/publish endpoints with SPEC §5.2: make Authorization optional in GENESIS mode. Unblocks Create Listing UI that was failing with 401.
+
+**Deliverables:**
+- `work/pazar/routes/api/03a_listings_write.php` (MODIFIED): Conditionally include `auth.any` middleware based on `GENESIS_ALLOW_UNAUTH_STORE` env flag (default: "1")
+- `work/pazar/app/Http/Middleware/TenantScope.php` (MODIFIED): Skip membership validation when `GENESIS_ALLOW_UNAUTH_STORE=1` and request is unauthenticated
+- `ops/listing_contract_check.ps1` (MODIFIED): Updated Test 2 to expect success (201) when Authorization is missing in GENESIS mode
+- `docs/PROOFS/wp61b_genesis_store_auth_optional_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Test without Authorization (GENESIS mode)
+$tenantId = "7ef9bc88-2d20-45ae-9f16-525181aad657"
+curl.exe -i -X POST "http://localhost:8080/api/v1/listings" `
+  -H "Content-Type: application/json" `
+  -H "X-Active-Tenant-Id: $tenantId" `
+  --data '{"category_id":1,"title":"WP-61B Listing","description":"genesis","transaction_modes":["reservation"],"attributes":{}}'
+
+# Expected: HTTP 201 Created (not 401)
+
+# Browser test
+# 1. Open: http://localhost:3002/marketplace/listing/create
+# 2. Fill form and submit
+# 3. Expected: Success (no 401 error)
+```
+
+**Proof:**
+- docs/PROOFS/wp61b_genesis_store_auth_optional_pass.md
+
+**Key Findings:**
+- SPEC §5.2: STORE ops require `X-Active-Tenant-Id`; Authorization is OPTIONAL in GENESIS
+- `GENESIS_ALLOW_UNAUTH_STORE` env flag (default: "1") controls behavior
+- When enabled: `auth.any` middleware skipped, membership validation skipped for unauthenticated requests
+- When disabled: `auth.any` required (future strict mode)
+- Requests with Authorization header still work (backward compatible)
+
+**Acceptance Criteria:**
+✅ `/marketplace/listing/create` no longer fails with 401 in GENESIS mode
+✅ STORE listing create/publish match SPEC: `X-Active-Tenant-Id` required; Authorization optional in GENESIS
+✅ Requests without Authorization succeed (201) when `GENESIS_ALLOW_UNAUTH_STORE=1`
+✅ Requests with Authorization still work (backward compatible)
+✅ Minimal diff: Only route middleware and TenantScope updated
+✅ Proof + closeout updated
 
 ---
 
