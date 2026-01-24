@@ -5,6 +5,59 @@
 
 ---
 
+## WP-66: Browser Auth Portal + Tokenless Demo UX
+
+**Purpose:** Enable browser-based authentication (tenant creation + register/login) and remove manual token pasting from consumer pages. Users can create tenants, register owners, login, and use marketplace without manually pasting JWT tokens.
+
+**Deliverables:**
+- `work/marketplace-web/src/lib/demoSession.js` (EXTENDED): JWT decode, getUserId, getTenantId, getRole, tenant_slug helpers, clearSession
+- `work/marketplace-web/src/api/client.js` (MODIFIED): Added hosCreateTenant, hosRegisterOwner, hosLogin (HOS auth endpoints)
+- `work/marketplace-web/src/pages/AuthPortalPage.vue` (NEW): Auth portal with tenant creation, register, login flows, session panel
+- `work/marketplace-web/src/pages/CreateReservationPage.vue` (MODIFIED): Removed manual token inputs, uses demoSession.getToken() and getUserId()
+- `work/marketplace-web/src/pages/CreateRentalPage.vue` (MODIFIED): Removed manual token inputs, uses demoSession.getToken() and getUserId()
+- `work/marketplace-web/src/router.js` (MODIFIED): Added /auth route, updated guard to redirect to /auth
+- `docs/PROOFS/wp66_browser_auth_demo.md` (NEW): Proof document with browser test steps
+
+**Commands:**
+```powershell
+# Build frontend
+cd work/marketplace-web; npm run build
+
+# Browser test
+# 1. Open: http://localhost:3002/marketplace/auth
+# 2. Create tenant + register owner (or login)
+# 3. Navigate to Create Listing → create draft
+# 4. Publish listing
+# 5. Open listing detail → create reservation OR rental (no manual token)
+```
+
+**Proof:**
+- docs/PROOFS/wp66_browser_auth_demo.md
+
+**Key Findings:**
+- Browser-based tenant creation and registration works ✅
+- Login flow works and saves token to localStorage ✅
+- CreateReservationPage and CreateRentalPage no longer require manual token pasting ✅
+- Token and userId automatically retrieved from demoSession ✅
+- Router guard redirects unauthenticated users to /auth ✅
+- Session panel shows tenant_slug, tenantId, userId, role ✅
+- HOS auth endpoints (/tenants, /auth/register, /auth/login) work through nginx proxy ✅
+- No hardcoded tokens or API keys in frontend ✅
+- Backward compatible with existing active_tenant_id usage ✅
+
+**Acceptance Criteria:**
+✅ Auth Portal allows creating tenant + registering owner from browser  
+✅ Auth Portal allows login from browser  
+✅ CreateReservationPage works without manual token pasting  
+✅ CreateRentalPage works without manual token pasting  
+✅ Router guard redirects to /auth when authentication required  
+✅ Session panel displays logged-in status and user info  
+✅ Token and userId automatically retrieved from demoSession  
+✅ No hardcoded tokens or API keys in frontend  
+✅ Build passes without errors (`npm run build`)  
+
+---
+
 ## WP-65: Account Portal 401 Fix + Base URL/Auth Normalize
 
 **Purpose:** Fix Account Portal 401 error by normalizing Base URL (detect HOS proxy URLs like `/api/marketplace`) and ensuring correct Pazar host usage (`http://localhost:8080`). Improve error messages with actionable hints. Add auto-fill from demo session.

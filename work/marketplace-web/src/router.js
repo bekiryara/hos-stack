@@ -9,6 +9,7 @@ import AccountPortalPage from './pages/AccountPortalPage.vue';
 import DemoDashboardPage from './pages/DemoDashboardPage.vue';
 import MessagingPage from './pages/MessagingPage.vue';
 import NeedDemoPage from './pages/NeedDemoPage.vue';
+import AuthPortalPage from './pages/AuthPortalPage.vue';
 import { isTokenPresent } from './lib/demoSession.js';
 
 const routes = [
@@ -22,6 +23,7 @@ const routes = [
   { path: '/reservation/create', component: CreateReservationPage, meta: { requiresAuth: true } },
   { path: '/rental/create', component: CreateRentalPage, meta: { requiresAuth: true } },
   { path: '/account', component: AccountPortalPage },
+  { path: '/auth', component: AuthPortalPage },
 ];
 
 const router = createRouter({
@@ -29,11 +31,12 @@ const router = createRouter({
   routes,
 });
 
-// Router guard for auth-required routes (WP-58)
+// Router guard for auth-required routes (WP-58, WP-66)
 router.beforeEach((to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!isTokenPresent()) {
-      next('/need-demo');
+      // WP-66: Redirect to Auth Portal instead of NeedDemoPage
+      next('/auth');
     } else {
       next();
     }

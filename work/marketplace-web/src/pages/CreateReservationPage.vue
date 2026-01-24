@@ -7,7 +7,7 @@
       <br />
       {{ authError }}
       <br />
-      <router-link to="/marketplace/demo" class="action-link">Go to Demo Dashboard</router-link>
+      <router-link to="/auth" class="action-link">Go to Auth Portal</router-link>
     </div>
     
     <div v-if="error && !authError" class="error">
@@ -36,30 +36,6 @@
     </div>
     
     <form v-if="!success && !authError" @submit.prevent="handleSubmit" class="reservation-form">
-      <div class="form-group">
-        <label>
-          Authorization Token (Demo) <span class="auto-fill-note">(Auto-filled from demo session)</span>
-          <input
-            v-model="formData.authToken"
-            type="text"
-            readonly
-            class="form-input readonly"
-          />
-        </label>
-      </div>
-      
-      <div class="form-group">
-        <label>
-          User ID (Demo) <span class="auto-fill-note">(Auto-filled from demo session)</span>
-          <input
-            v-model="formData.userId"
-            type="text"
-            readonly
-            class="form-input readonly"
-          />
-        </label>
-      </div>
-      
       <div class="form-group">
         <label>
           Listing ID (UUID) <span class="required">*</span>
@@ -138,8 +114,6 @@ export default {
   data() {
     return {
       formData: {
-        authToken: '',
-        userId: '',
         listing_id: '',
         slot_start: '',
         slot_end: '',
@@ -153,21 +127,18 @@ export default {
     };
   },
   mounted() {
-    // Load demo session data
+    // WP-66: Check authentication (token from demoSession)
     const token = getToken();
     if (!token) {
-      this.authError = 'No demo session found. Please enter demo first.';
+      this.authError = 'No authentication token found. Please login or create a tenant first.';
       return;
     }
     
-    const payload = decodeJWT(token);
+    const payload = decodeJwtPayload(token);
     if (!payload || !payload.sub) {
-      this.authError = 'Invalid demo token. Please enter demo again.';
+      this.authError = 'Invalid authentication token. Please login again.';
       return;
     }
-    
-    this.formData.authToken = token;
-    this.formData.userId = payload.sub;
     
     // Get listing_id from query params
     const listingId = this.$route.query.listing_id;
@@ -190,7 +161,16 @@ export default {
       }
     },
     async handleSubmit() {
-      if (!this.formData.authToken || !this.formData.listing_id || !this.formData.slot_start || !this.formData.slot_end || !this.formData.party_size) {
+      // WP-66: Get token and userId from demoSession
+      const token = getToken();
+      const userId = getUserId();
+      
+      if (!token) {
+        this.authError = 'No authentication token found. Please login first.';
+        return;
+      }
+      
+      if (!this.formData.listing_id || !this.formData.slot_start || !this.formData.slot_end || !this.formData.party_size) {
         this.error = { message: 'Please fill all required fields', status: 400 };
         return;
       }
@@ -206,6 +186,7 @@ export default {
       
       this.loading = true;
       this.error = null;
+      this.authError = null;
       
       try {
         const payload = {
@@ -217,8 +198,8 @@ export default {
         
         const result = await api.createReservation(
           payload,
-          this.formData.authToken,
-          this.formData.userId || null
+          token,
+          userId || null
         );
         this.success = result;
         

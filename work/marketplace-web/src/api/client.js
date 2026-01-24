@@ -165,6 +165,29 @@ export const api = {
     return hosApiRequest('/v1/me/memberships', { headers });
   },
   
+  // HOS Auth API (WP-66: browser auth flows)
+  // NOTE: These endpoints are NOT under /v1
+  hosCreateTenant: ({ slug, name }) => {
+    return hosApiRequest('/tenants', {
+      method: 'POST',
+      body: JSON.stringify({ slug, name }),
+    });
+  },
+  
+  hosRegisterOwner: ({ tenantSlug, email, password }) => {
+    return hosApiRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ tenantSlug, email, password }),
+    });
+  },
+  
+  hosLogin: ({ tenantSlug, email, password }) => {
+    return hosApiRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ tenantSlug, email, password }),
+    });
+  },
+  
   // WP-62: Active Tenant helpers (single source of truth)
   getActiveTenantId: () => {
     return localStorage.getItem('active_tenant_id');
