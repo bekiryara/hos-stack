@@ -166,11 +166,11 @@ export const api = {
   },
   
   // HOS Auth API (WP-66: browser auth flows)
-  // NOTE: These endpoints are NOT under /v1
+  // NOTE: These endpoints are under /v1 prefix
   hosCreateTenant: ({ slug, name }) => {
-    return hosApiRequest('/tenants', {
+    return hosApiRequest('/v1/tenants/v2', {
       method: 'POST',
-      body: JSON.stringify({ slug, name }),
+      body: JSON.stringify({ slug, display_name: name }),
     });
   },
   
