@@ -33,6 +33,23 @@
             {{ key }}: {{ value }}
           </span>
         </div>
+        <div class="listing-actions" @click.stop>
+          <button @click="goToDetail(listing.id)" class="action-btn view-btn">View</button>
+          <button
+            v-if="listing.transaction_modes && listing.transaction_modes.includes('reservation')"
+            @click="goToReservation(listing.id)"
+            class="action-btn reserve-btn"
+          >
+            Reserve
+          </button>
+          <button
+            v-if="listing.transaction_modes && listing.transaction_modes.includes('rental')"
+            @click="goToRental(listing.id)"
+            class="action-btn rent-btn"
+          >
+            Rent
+          </button>
+        </div>
       </div>
     </div>
     <div v-else class="no-results">No listings found</div>
@@ -51,6 +68,12 @@ export default {
   methods: {
     goToDetail(id) {
       this.$router.push(`/listing/${id}`);
+    },
+    goToReservation(listingId) {
+      this.$router.push(`/marketplace/reservation/create?listing_id=${listingId}`);
+    },
+    goToRental(listingId) {
+      this.$router.push(`/marketplace/rental/create?listing_id=${listingId}`);
     },
     copyListingId(id) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -192,6 +215,62 @@ export default {
 .transaction-badge-sale {
   background: #e8f5e9;
   color: #388e3c;
+}
+
+.listing-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.view-btn {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
+}
+
+.view-btn:hover {
+  background: #0052a3;
+  border-color: #0052a3;
+}
+
+.reserve-btn {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+.reserve-btn:hover {
+  background: #1565c0;
+  border-color: #1565c0;
+}
+
+.rent-btn {
+  background: #7b1fa2;
+  color: white;
+  border-color: #7b1fa2;
+}
+
+.rent-btn:hover {
+  background: #6a1b9a;
+  border-color: #6a1b9a;
 }
 
 .no-results {
