@@ -33,9 +33,27 @@
       </div>
       <div class="actions">
         <button @click="openMessaging" class="action-button">Message Seller</button>
-        <router-link to="/reservation/create" class="action-button">Create Reservation</router-link>
-        <router-link to="/rental/create" class="action-button">Create Rental</router-link>
-        <button disabled class="action-button">Satın Al (Coming Next)</button>
+        <button
+          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('reservation')"
+          @click="goToReservation"
+          class="action-button"
+        >
+          Create Reservation
+        </button>
+        <button
+          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('rental')"
+          @click="goToRental"
+          class="action-button"
+        >
+          Create Rental
+        </button>
+        <button
+          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('sale')"
+          @click="goToOrder"
+          class="action-button"
+        >
+          Buy
+        </button>
       </div>
       
       <div v-if="listing && listing.status === 'draft'" class="publish-section">
@@ -93,6 +111,15 @@ export default {
     },
     openMessaging() {
       this.$router.push(`/listing/${this.id}/message`);
+    },
+    goToReservation() {
+      this.$router.push({ path: '/reservation/create', query: { listing_id: this.id } });
+    },
+    goToRental() {
+      this.$router.push({ path: '/rental/create', query: { listing_id: this.id } });
+    },
+    goToOrder() {
+      this.$router.push({ path: '/order/create', query: { listing_id: this.id } });
     },
   },
 };

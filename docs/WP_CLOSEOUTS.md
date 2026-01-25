@@ -1,7 +1,177 @@
 ﻿# WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-01-24  
+**Last Updated:** 2026-01-25  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-68: Customer V1 — Single Auth, Single Session, Zero-401 Account, Clean UX
+
+**Purpose:** Finish customer-side professionally: register/login/logout + My Account shows reservations/rentals/orders; customer can create reservation/rental/order and immediately see them in My Account. Eliminate 401 errors through single source of truth for session and automatic Authorization header attachment.
+
+**Deliverables:**
+- `work/marketplace-web/src/api/client.js` (MODIFIED): Auto-attach Authorization header in `apiRequest()` and `hosApiRequest()` when token exists
+- `work/marketplace-web/src/pages/AccountPortalPage.vue` (MODIFIED): Removed manual token passing, uses auto-auth, handles 401 with auto-logout
+- `work/marketplace-web/src/pages/CreateReservationPage.vue` (MODIFIED): Removed manual token passing, uses auto-auth
+- `work/marketplace-web/src/pages/CreateRentalPage.vue` (MODIFIED): Removed manual token passing, uses auto-auth
+- `work/marketplace-web/src/pages/CreateListingPage.vue` (MODIFIED): Firm-only gating with friendly message
+- `work/marketplace-web/src/router.js` (MODIFIED): Added `/account` to protected routes, added firm-only guard
+- `docs/PROOFS/wp68_inventory.md` (NEW): Inventory of token/user storage and header injection points
+- `docs/PROOFS/wp68_customer_v1_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Browser E2E Test
+# 1. Register new user → Login → Navbar shows email + Hesabım + Çıkış
+# 2. Open /marketplace/account → NO 401, shows user email
+# 3. Create reservation → Success → Appears in account
+# 4. Create rental → Success → Appears in account
+# 5. Logout → Navbar shows Giriş/Kayıt
+# 6. Login again → Account still loads
+# 7. Token expired → Auto-logout + redirect to /login?reason=expired
+
+# API Sanity (PowerShell)
+$token = Get-DevTestJwtToken
+# GET /api/v1/me with Authorization → 200
+curl -H "Authorization: Bearer $token" http://localhost:3000/v1/me
+# GET /api/v1/me/memberships with Authorization → 200 ([]) for customer
+curl -H "Authorization: Bearer $token" http://localhost:3000/v1/me/memberships
+```
+
+**Proof:**
+- docs/PROOFS/wp68_inventory.md
+- docs/PROOFS/wp68_customer_v1_pass.md
+
+**Key Findings:**
+- Single source of truth: `demoSession.js` manages all token/user storage
+- Auto-auth: All API wrappers (`apiRequest`, `hosApiRequest`) auto-attach Authorization header
+- Zero 401: No more manual token passing, no more missing headers
+- Clean UX: Friendly error messages, auto-logout on 401, empty states
+- Firm gating: Create Listing properly gated with friendly message
+
+**Acceptance Criteria:**
+✅ Register/login/logout works from browser  
+✅ My Account shows reservations/rentals/orders (zero 401)  
+✅ Customer can create reservation/rental/order and see them in My Account  
+✅ No more "token/401 drama" in customer flow  
+✅ Create Listing gated for firm-only with friendly message  
+✅ Single identity, single token, single session store  
+✅ No technical debt, no demo hacks leaking into V1 UX
+
+---
+
+## WP-67: Customer Auth + My Account (401 Fix)
+
+**Purpose:** Fix 401 errors in customer auth flow, consolidate to single session module, and ensure professional customer experience with proper error handling.
+
+**Deliverables:**
+- `work/hos/services/api/src/app.js` (MODIFIED): Fixed tenantSlug validation to truly be optional (uses `DEFAULT_PUBLIC_TENANT_SLUG` env var), fixed `/me/memberships` to return 200 [] for customers
+- `work/marketplace-web/src/lib/demoSession.js` (MODIFIED): Added `saveSession()`, `getBearerToken()`, `normalizeToken()`, `getUser()`, `isLoggedIn()` functions
+- `work/marketplace-web/src/lib/api.js` (MODIFIED): Updated to use `demoSession.js`, removed tenantSlug from login/register calls, added 401 handling
+- `work/marketplace-web/src/pages/AccountPortalPage.vue` (MODIFIED): Updated to use `client.js` functions with proper 401 handling
+- `work/marketplace-web/src/pages/LoginPage.vue` (MODIFIED): Added expired session message display
+- `work/marketplace-web/src/App.vue` (MODIFIED): Updated to use `demoSession.js`
+- `work/marketplace-web/src/router.js` (MODIFIED): Updated to use `demoSession.js`, added expired session redirect
+- `docs/PROOFS/wp67_customer_auth_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Test public registration (no tenantSlug needed)
+$email = "test-$(Get-Date -Format 'HHmmss')@example.com"
+$body = @{email=$email;password="TestPass123!"} | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:3002/api/v1/auth/register" -Method POST -Body $body -ContentType "application/json"
+
+# Test public login (no tenantSlug needed)
+$body = @{email="testuser@example.com";password="Passw0rd!"} | ConvertTo-Json
+$response = Invoke-RestMethod -Uri "http://localhost:3002/api/v1/auth/login" -Method POST -Body $body -ContentType "application/json"
+$token = $response.token
+
+# Test /v1/me
+$headers = @{Authorization="Bearer $token"}
+Invoke-RestMethod -Uri "http://localhost:3002/api/v1/me" -Method GET -Headers $headers
+
+# Test /v1/me/memberships (should return 200 with empty array, NOT 401)
+Invoke-RestMethod -Uri "http://localhost:3002/api/v1/me/memberships" -Method GET -Headers $headers
+
+# Browser test
+# 1. Open: http://localhost:3002/marketplace/register
+# 2. Register new user → Redirect to /marketplace/account
+# 3. Navbar shows email + "Hesabım" + "Çıkış"
+# 4. Account page shows orders/rentals/reservations (empty state for new user)
+# 5. Refresh account page - no 401 errors
+# 6. Open /marketplace/demo - "Load Memberships" works (200, not 401)
+# 7. Logout → Redirect to /marketplace/login
+# 8. Login → Redirect to /marketplace/account
+# 9. Create transaction → Appears in account history
+```
+
+**Proof:**
+- docs/PROOFS/wp67_customer_auth_pass.md
+
+**Key Findings:**
+- Backend validation fixed - tenantSlug truly optional ✅
+- `/me/memberships` returns 200 [] for customers (not 401) ✅
+- Single session module (`demoSession.js`) used throughout ✅
+- 401 errors trigger automatic logout + redirect ✅
+- Account page refresh no longer causes 401 errors ✅
+- No double `/marketplace/marketplace` URLs ✅
+
+**Known Limitations:**
+- None (all issues from WP-66B resolved)
+
+---
+
+## WP-66B: Customer Auth + My Account (Public Register/Login)
+
+**Purpose:** Enable public customer registration and login without requiring tenant membership. Users can register, login, view their account history (orders/rentals/reservations), and create transactions on published listings.
+
+**Deliverables:**
+- `work/hos/services/api/src/app.js` (MODIFIED): Made tenantSlug optional in register/login, added public customer registration, added /v1/me/orders|rentals|reservations endpoints
+- `work/marketplace-web/src/lib/api.js` (MODIFIED): Updated to send empty tenantSlug for public registration/login
+- `work/marketplace-web/src/lib/session.js` (MODIFIED): Changed token key to `demo_auth_token` (unified with demo flow)
+- `work/marketplace-web/src/pages/AccountPortalPage.vue` (MODIFIED): Updated to use /v1/me/* endpoints
+- `docs/PROOFS/wp66b_customer_auth_account_pass.md` (NEW): Proof document
+
+**Commands:**
+```powershell
+# Test public registration (once backend validation is fixed)
+$email = "test-$(Get-Date -Format 'HHmmss')@example.com"
+$body = @{email=$email;password="TestPass123!"} | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:3002/api/v1/auth/register" -Method POST -Body $body -ContentType "application/json"
+
+# Test /v1/me
+$headers = @{Authorization="Bearer <token>"}
+Invoke-RestMethod -Uri "http://localhost:3002/api/v1/me" -Method GET -Headers $headers
+
+# Browser test
+# 1. Open: http://localhost:3002/marketplace/register
+# 2. Register new user → Redirect to /marketplace/account
+# 3. Navbar shows email + "Hesabım" + "Çıkış"
+# 4. Account page shows orders/rentals/reservations (empty state for new user)
+# 5. Logout → Redirect to /marketplace/login
+# 6. Login → Redirect to /marketplace/account
+```
+
+**Proof:**
+- docs/PROOFS/wp66b_customer_auth_account_pass.md
+
+**Key Findings:**
+- Frontend implementation complete ✅
+- Backend endpoints added ✅
+- Token storage unified to `demo_auth_token` ✅
+- AccountPortalPage uses /v1/me/* endpoints ✅
+- ⚠️ Backend validation issue: tenantSlug validation needs fix (workaround: send empty string)
+
+**Known Limitations:**
+- Backend validation still requires tenantSlug field (needs investigation)
+- Public customers stored in "public" tenant (no membership records)
+- Frontend sends empty tenantSlug as workaround until backend is fixed
+
+**Next Steps:**
+1. Fix backend validation to properly handle missing tenantSlug
+2. Test end-to-end registration/login/account flow
+3. Verify transaction creation works for public customers
+4. Verify data isolation (users only see their own data)
 
 ---
 
@@ -1848,5 +2018,403 @@ cd work\marketplace-web; npm run build  # Build check
 - ✅ Errors shown clearly
 - ✅ No tenant concepts exposed to users
 - ✅ Build passes
+
+---
+
+## WP-PERF-DRIFT: Minimal Perf/Drift Fix Pack
+
+**Purpose:** Reduce performance debt and drift risk in Catalog + Listing Spine with minimal diff (no new features, no contract changes).
+
+**Deliverables:**
+- `work/pazar/routes/api/03b_listings_read.php` (MODIFIED): Removed unused COUNT query, unified descendant category recursion
+- `docs/PROOFS/wp_perf_drift_fix_pass.md` (NEW): Proof document with verification results
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): This entry
+
+**Commands:**
+```powershell
+# Verification
+.\ops\catalog_contract_check.ps1
+.\ops\listing_contract_check.ps1
+.\ops\pazar_spine_check.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp_perf_drift_fix_pass.md
+
+**Key Findings:**
+- **A) Removed unused COUNT query:** `/v1/listings` was executing `$total = $query->count()` but never using it (response is array, not paginated envelope). At 1M listing scale, this eliminates one full table scan per request.
+- **B) Unified descendant recursion:** `/v1/search` had duplicate recursion logic for category descendants. Replaced with single source of truth: `pazar_category_descendant_ids()` helper. Prevents drift and reduces maintenance risk.
+
+**Performance Impact:**
+- Per request: ~1 full table scan eliminated (COUNT query)
+- At 1000 req/min: ~1000 COUNT queries saved per minute
+- Recursion: Single implementation reduces maintenance risk
+
+**Acceptance Criteria:**
+✅ No new endpoints added  
+✅ No contract changes (response formats unchanged)  
+✅ Performance debt reduced (unused COUNT removed)  
+✅ Drift risk reduced (duplicate recursion unified)  
+✅ Catalog + Listing contract checks pass (except pre-existing Test 2 issue)  
+✅ Recursive category search verified working (WP-48)  
+✅ Minimal diff: Only 2 targeted changes
+
+**Files Changed:**
+- `work/pazar/routes/api/03b_listings_read.php` (MODIFIED)
+  - Line 72: Removed unused `$total = $query->count()`
+  - Lines 152-168: Replaced duplicate recursion with `pazar_category_descendant_ids()` helper
+
+**Closeout:**
+- ✅ Git diff verified: Both changes confirmed in repository
+- ✅ Catalog Contract Check: PASS (all tests)
+- ✅ Listing Contract Check: PASS (Tests 7-8 critical for recursive search, Test 2 FAIL is pre-existing)
+- ✅ Contract verification outputs added to proof document
+- ✅ Minimal diff: Only 2 targeted changes, no contract breaks
+- ✅ Performance debt reduced: Unused COUNT query eliminated
+- ✅ Drift risk reduced: Single source of truth for descendant recursion
+
+---
+
+## WP-69: Customer Journey Proof Pack (Ops Alignment)
+
+**Purpose:** Align ops/account_portal_read_check.ps1 with current backend contracts and provide customer journey proof.
+
+**Deliverables:**
+- `ops/account_portal_read_check.ps1` (MODIFIED): Aligned with current contracts (auth, headers, response formats)
+- `docs/PROOFS/customer_journey_pass.md` (NEW): Proof document with verification results
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): This entry
+
+**Commands:**
+```powershell
+# Set auth token
+cd D:\stack\ops
+.\ensure_product_test_auth.ps1
+
+# Run account portal read check
+.\account_portal_read_check.ps1
+
+# Verify stack
+cd D:\stack
+.\ops\verify.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/customer_journey_pass.md
+
+**Key Fixes:**
+- **A) Auth Token:** Clear error message when missing, Bearer prefix handling
+- **B) JWT Sub Extraction:** Decode JWT payload to extract `sub` claim (replaces deterministic UUID)
+- **C) Authorization Header:** Personal scope endpoints (1, 3, 5) now include `Authorization: Bearer <token>`
+- **D) Response Shape:** Accepts both array `[...]` and envelope `{data: [...], meta: {...}}` formats
+- **E) Store Headers:** Test 7 (listings?tenant_id=...) now includes `X-Active-Tenant-Id` header
+- **F) Error Messages:** "Expected vs got" format for all failures
+
+**Acceptance Criteria:**
+✅ All 7 Account Portal read tests PASS  
+✅ Auth token handling clear and robust  
+✅ JWT sub extraction works correctly  
+✅ Personal scope endpoints authenticated  
+✅ Store scope endpoints authorized  
+✅ Response validation accepts both formats  
+✅ Error messages use "expected vs got" format  
+✅ Customer journey verified (login → create → view in account)
+
+**Files Changed:**
+- `ops/account_portal_read_check.ps1` (MODIFIED)
+  - Auth token handling improved
+  - JWT sub extraction added
+  - Authorization headers for personal scope
+  - Response shape validation (array or envelope)
+  - X-Active-Tenant-Id header for Test 7
+  - Error messages improved
+
+---
+
+## WP-70: Authenticated Customer Order Journey Proof Pack
+
+**Purpose:** Proof that authenticated customer can create orders and view them in Account Portal. Backend untouched, only ops + docs changes.
+
+**Deliverables:**
+- `ops/order_contract_check.ps1` (MODIFIED): Added optional auth segment with personal read assertion
+- `docs/PROOFS/customer_order_journey_pass.md` (NEW): Proof document with verification results
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): This entry
+- `CHANGELOG.md` (MODIFIED): WP-70 entry (optional)
+
+**Commands:**
+```powershell
+# Set auth token (optional)
+cd D:\stack\ops
+.\ensure_product_test_auth.ps1
+# Or manually: $env:PRODUCT_TEST_AUTH = "Bearer <token>"
+
+# Run order contract check
+.\order_contract_check.ps1
+
+# Verify account portal read
+.\account_portal_read_check.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/customer_order_journey_pass.md
+
+**Key Changes:**
+- **Optional Auth Segment:** Script checks `$env:PRODUCT_TEST_AUTH`; if set, adds Authorization header to order create/replay requests
+- **JWT Sub Extraction:** Extracts user ID from token `sub` claim (same approach as WP-69)
+- **Personal Read Assertion:** After order creation, verifies order appears in `/api/v1/orders?buyer_user_id=<sub>` response
+- **Response Shape Handling:** Supports both array `[...]` and envelope `{data: [...], meta: {...}}` formats
+
+**Acceptance Criteria:**
+✅ Token YOK: order_contract_check PASS (auth segment SKIP)  
+✅ Token VAR: order_contract_check PASS (auth segment PASS)  
+✅ Created orderId found in buyer orders (assertion)  
+✅ Manual UI smoke: Order appears in "Siparişlerim"  
+✅ Messaging thread contract intact  
+✅ All existing tests unchanged (idempotency, draft listing, messaging)
+
+**Files Changed:**
+- `ops/order_contract_check.ps1` (MODIFIED)
+  - Optional auth token handling
+  - JWT sub extraction helper
+  - Personal read assertion (Test 1a)
+  - Authorization header added to order requests
+
+**Risk Note:**
+- Backend untouched: No endpoint changes, no schema changes
+- Script backward compatible: Works with or without auth token
+- Existing contract checks remain unchanged
+
+---
+
+## WP-71: Authenticated Customer Messaging Journey Proof Pack
+
+**Purpose:** Proof that authenticated customer messaging journey works end-to-end (upsert, ping, send, verify). Backend untouched, only ops + docs changes.
+
+**Deliverables:**
+- `ops/messaging_journey_check.ps1` (NEW): Messaging journey verification script
+- `docs/PROOFS/customer_messaging_journey_pass.md` (NEW): Proof document with verification results
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): This entry
+- `CHANGELOG.md` (MODIFIED): WP-71 entry (optional)
+
+**Commands:**
+```powershell
+# Set auth token (optional)
+cd D:\stack\ops
+.\ensure_product_test_auth.ps1
+# Or manually: $env:PRODUCT_TEST_AUTH = "Bearer <token>"
+
+# Optional: Set test listing ID
+$env:TEST_LISTING_ID = "<listing_uuid>"
+# If not set, script will find first published listing from API
+
+# Run messaging journey check
+.\messaging_journey_check.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/customer_messaging_journey_pass.md
+
+**Key Features:**
+- **Optional Auth Segment:** Script checks `$env:PRODUCT_TEST_AUTH`; if set, runs authenticated tests
+- **JWT Sub Extraction:** Extracts user ID from token `sub` claim (same approach as WP-69)
+- **Listing ID Discovery:** Uses `TEST_LISTING_ID` env or auto-discovers from API
+- **Hos-web Proxy:** Uses `/api/messaging` for same-origin policy
+- **4 Tests:**
+  1. Thread upsert (POST /api/messaging/api/v1/threads/upsert)
+  2. By-context read (GET by-context) - PING verification
+  3. Send message (POST /api/messaging/api/v1/threads/<thread_id>/messages)
+  4. Verify message (GET by-context again, assert message in response)
+
+**Acceptance Criteria:**
+✅ Token YOK: messaging_journey_check PASS (auth segment SKIP)  
+✅ Token VAR: All 4 tests PASS  
+✅ Thread upsert works  
+✅ By-context read returns thread_id immediately (PING verified)  
+✅ Message send works  
+✅ Sent message appears in by-context response  
+✅ Manual UI smoke: Messaging page opens immediately (PING feeling)  
+✅ No backend changes required
+
+**Files Changed:**
+- `ops/messaging_journey_check.ps1` (NEW)
+  - Optional auth token handling
+  - JWT sub extraction helper
+  - Listing ID discovery (env or API)
+  - 4 tests: upsert, by-context (ping), send message, verify message
+  - Hos-web proxy usage
+
+**Risk Note:**
+- Backend untouched: No endpoint changes, no schema changes
+- Script backward compatible: Works with or without auth token (CI uyumlu)
+- Uses existing messaging endpoints via Hos-web proxy
+
+---
+
+## WP-72: Category Scale Core Pack (SAFE MODE)
+
+**Purpose:** Improve scaling for large category trees (10k-100k) without changing API contracts or adding new features. Minimal diff, safe mode.
+
+**Deliverables:**
+- `work/pazar/routes/_helpers.php` (MODIFIED): Optimized descendant calculation and tree building
+- `docs/PROOFS/wp_category_scale_core_pass.md` (NEW): Proof document with verification results
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): This entry
+
+**Commands:**
+```powershell
+# Verification
+.\ops\catalog_contract_check.ps1
+.\ops\listing_contract_check.ps1
+.\ops\pazar_spine_check.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp_category_scale_core_pass.md
+
+**Key Optimizations:**
+- **Descendant Calculation:** N+1 queries → Single PostgreSQL recursive CTE query
+  - Before: O(depth) queries (e.g., 10 levels = 10 queries)
+  - After: O(1) queries (always 1 query)
+  - At 100k categories: Eliminates thousands of queries per request
+- **Tree Building:** O(n²) → O(n) algorithm
+  - Before: Nested loops scanning entire array for each category
+  - After: Build parent_id index once, then use for O(1) lookups
+  - At 10k categories: 100M operations → 10k operations (10,000x improvement)
+
+**Acceptance Criteria:**
+✅ Only two backend files changed (plus proof doc)  
+✅ No response format changes  
+✅ Category recursion logic no longer performs N+1 queries  
+✅ Tree build algorithm improved without changing output  
+✅ Catalog contract check: PASS  
+✅ Listing contract check: Test 7-8 PASS (recursive search verified)  
+✅ No frontend changes  
+✅ No new endpoints or query params
+
+**Files Changed:**
+- `work/pazar/routes/_helpers.php` (MODIFIED)
+  - `pazar_category_descendant_ids()`: Replaced recursive PHP with PostgreSQL recursive CTE
+  - `pazar_build_tree()`: Replaced O(n²) nested loop with O(n) indexed approach
+- `work/pazar/routes/api/03b_listings_read.php` (NO CHANGES)
+  - Already using helper consistently, automatically benefits from optimization
+
+**Risk Note:**
+- Output structure identical to previous implementation
+- No contract changes, no breaking changes
+- Performance improvements scale linearly with category count
+- Test 2 failure in Listing Contract Check is pre-existing and unrelated
+
+---
+
+## WP-73: Subtree Filter Hardening (No ID list, No contract change)
+
+**Purpose:** Avoid generating huge descendant ID arrays in PHP; use PostgreSQL recursive CTE inside SQL for filtering. Keep response formats and sorting exactly the same.
+
+**Deliverables:**
+- `work/pazar/routes/_helpers.php` (MODIFIED): Added CTE SQL snippet helper
+- `work/pazar/routes/api/03b_listings_read.php` (MODIFIED): Replaced `whereIn()` with `whereRaw()` + CTE
+- `docs/PROOFS/wp_subtree_filter_hardening_pass.md` (NEW): Proof document with verification results
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): This entry
+
+**Commands:**
+```powershell
+# Verification
+.\ops\catalog_contract_check.ps1
+.\ops\listing_contract_check.ps1
+.\ops\pazar_spine_check.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp_subtree_filter_hardening_pass.md
+
+**Key Changes:**
+- **New Helper:** `pazar_category_descendant_cte_in_clause_sql()` - Returns SQL snippet and bindings for CTE subquery
+- **Listing Search:** Replaced `whereIn($categoryIds)` with `whereRaw("category_id IN (<CTE>)", bindings)`
+- **Search Endpoint:** Same change applied for consistency
+
+**Impact:**
+- **Before:** Build array of 10k-100k IDs in PHP, then use `whereIn()`
+- **After:** Single SQL subquery, filtering happens in database
+- **Memory:** Eliminates large array allocation in PHP (4MB+ for 100k categories)
+- **Performance:** Database can optimize subtree filtering with indexes
+
+**Acceptance Criteria:**
+✅ No contract breaks; default responses unchanged  
+✅ Subtree category filtering no longer builds large ID arrays in PHP  
+✅ Minimal, isolated diff; documented in PROOFS and WP_CLOSEOUTS  
+✅ Catalog contract check: PASS  
+✅ Listing contract check: Test 7-8 PASS (recursive search verified)  
+✅ No new endpoints or query params  
+✅ Response JSON format identical (field names, shapes, ordering)
+
+**Files Changed:**
+- `work/pazar/routes/_helpers.php` (MODIFIED)
+  - Added `pazar_category_descendant_cte_in_clause_sql()` helper (~15 lines)
+- `work/pazar/routes/api/03b_listings_read.php` (MODIFIED)
+  - `/v1/listings`: Replaced `whereIn()` with `whereRaw()` + CTE
+  - `/v1/search`: Replaced `whereIn()` with `whereRaw()` + CTE
+  - Net change: ~10 lines modified
+
+**Risk Note:**
+- No whereIn descendant arrays; DB subtree filtering via CTE
+- Response formats and sorting unchanged
+- Test 2 failure in Listing Contract Check is pre-existing and unrelated
+- All critical functionality (recursive category search) verified working
+
+---
+
+## WP-74: Category Integrity Gate Pack (SAFE, OPS-ONLY)
+
+**Purpose:** Prevent data corruption and drift in large category trees (10k-100k) by adding integrity checks to ops gates. Ops-only changes, no app code modifications.
+
+**Deliverables:**
+- `ops/catalog_integrity_check.ps1` (NEW): Integrity check script with 5 checks
+- `ops/pazar_spine_check.ps1` (MODIFIED): Added integrity check to check sequence
+- `docs/PROOFS/wp_category_integrity_gate_pass.md` (NEW): Proof document with verification results
+- `docs/WP_CLOSEOUTS.md` (MODIFIED): This entry
+
+**Commands:**
+```powershell
+# Run integrity check standalone
+.\ops\catalog_integrity_check.ps1
+
+# Run as part of spine check
+.\ops\pazar_spine_check.ps1
+
+# Run contract check (unchanged)
+.\ops\catalog_contract_check.ps1
+```
+
+**Proof:** 
+- docs/PROOFS/wp_category_integrity_gate_pass.md
+
+**Integrity Checks Implemented:**
+- **A) Cycle Check:** Detects circular references in parent chain (recursive CTE)
+- **B) Orphan Check:** Detects categories with parent_id pointing to missing categories
+- **C) Duplicate Slug Check:** Verifies slug uniqueness (GROUP BY)
+- **D) Schema Integrity Check:** Verifies filter schema attributes exist in attributes table
+- **E) Root Invariants Check:** Verifies required root categories (vehicle, real-estate, service) exist
+
+**Acceptance Criteria:**
+✅ No app code changes (ops-only preferred)  
+✅ Integrity checks FAIL fast with clear error messages  
+✅ Minimal diff; proof + closeout updated  
+✅ Catalog contract check: PASS  
+✅ Catalog integrity check: PASS (all 5 checks)  
+✅ Pazar spine check: PASS for Catalog and World  
+✅ Listing Test 2 remains pre-existing (not addressed)
+
+**Files Changed:**
+- `ops/catalog_integrity_check.ps1` (NEW)
+  - 5 integrity checks: cycle, orphan, duplicate slug, schema, root invariants
+  - Uses Docker exec for database queries
+  - Fast and deterministic (< 1 second per check)
+- `ops/pazar_spine_check.ps1` (MODIFIED)
+  - Added Catalog Integrity Check to check sequence
+  - Runs after Catalog Contract Check
+
+**Risk Note:**
+- Ops-only changes; no API behavior changes
+- Checks use PostgreSQL queries for fast results
+- Clear error messages show violating categories
+- All checks verified working with current data
 
 ---

@@ -1,7 +1,8 @@
-// Demo session helper (WP-58, WP-66)
-// Manages demo authentication token in localStorage
+// WP-67: Single session module (unified customer auth + demo)
+// Manages authentication token in localStorage
 
 const TOKEN_KEY = 'demo_auth_token';
+const USER_KEY = 'demo_user'; // WP-67: Store user info { email, id? }
 const TENANT_SLUG_KEY = 'tenant_slug';
 const ACTIVE_TENANT_ID_KEY = 'active_tenant_id';
 
@@ -9,8 +10,48 @@ export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+/**
+ * WP-67: Normalize token (remove "Bearer " prefix if present)
+ * @param {string} input - Token with or without "Bearer " prefix
+ * @returns {string} Raw token
+ */
+export function normalizeToken(input) {
+  if (!input) return '';
+  const trimmed = String(input).trim();
+  // Case-insensitive check for "Bearer " prefix
+  if (trimmed.toLowerCase().startsWith('bearer ')) {
+    return trimmed.slice(7).trim();
+  }
+  return trimmed;
+}
+
+/**
+ * WP-67: Save session (token + user)
+ * @param {string} token - Raw JWT token (will be normalized)
+ * @param {object} user - User info { email, id? }
+ */
+export function saveSession(token, user) {
+  const rawToken = normalizeToken(token);
+  if (rawToken) {
+    localStorage.setItem(TOKEN_KEY, rawToken);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+  
+  if (user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(USER_KEY);
+  }
+}
+
 export function setToken(token) {
-  localStorage.setItem(TOKEN_KEY, token);
+  const rawToken = normalizeToken(token);
+  if (rawToken) {
+    localStorage.setItem(TOKEN_KEY, rawToken);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
 }
 
 export function clearToken() {
@@ -44,6 +85,16 @@ export function decodeJwtPayload(token) {
 }
 
 /**
+ * WP-67: Get Bearer token for Authorization header
+ * @returns {string} "Bearer <raw_token>" or empty string
+ */
+export function getBearerToken() {
+  const token = getToken();
+  if (!token) return '';
+  return `Bearer ${token}`;
+}
+
+/**
  * Get user ID from token payload (sub claim)
  * @returns {string|null} User ID or null
  */
@@ -52,6 +103,43 @@ export function getUserId() {
   if (!token) return null;
   const payload = decodeJwtPayload(token);
   return payload?.sub || null;
+}
+
+/**
+ * WP-67: Get user info from localStorage or token
+ * @returns {object|null} { email, id? } or null
+ */
+export function getUser() {
+  const userStr = localStorage.getItem(USER_KEY);
+  if (userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch {
+      // Fallback: try to get from token
+    }
+  }
+  
+  // Fallback: decode from token
+  const token = getToken();
+  if (token) {
+    const payload = decodeJwtPayload(token);
+    if (payload?.sub) {
+      return {
+        email: payload.email || payload.preferred_username || null,
+        id: payload.sub
+      };
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * WP-67: Check if user is logged in
+ * @returns {boolean}
+ */
+export function isLoggedIn() {
+  return getToken() !== null && getToken().length > 0;
 }
 
 /**
@@ -131,10 +219,11 @@ export function getActiveTenantId() {
 }
 
 /**
- * Clear all session data
+ * WP-67: Clear all session data
  */
 export function clearSession() {
   clearToken();
+  localStorage.removeItem(USER_KEY); // WP-67: Clear user info
   localStorage.removeItem(TENANT_SLUG_KEY);
   localStorage.removeItem(ACTIVE_TENANT_ID_KEY);
   localStorage.removeItem('demo_user_id'); // Clear userId if stored separately

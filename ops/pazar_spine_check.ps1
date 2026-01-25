@@ -18,13 +18,15 @@ Write-Host ""
 Write-Host "Running all Marketplace spine contract checks in order:" -ForegroundColor Yellow
 Write-Host "  1. World Status Check (WP-1.2)" -ForegroundColor Gray
 Write-Host "  2. Catalog Contract Check (WP-2)" -ForegroundColor Gray
-Write-Host "  3. Listing Contract Check (WP-3)" -ForegroundColor Gray
-Write-Host "  4. Reservation Contract Check (WP-4)" -ForegroundColor Gray
+Write-Host "  3. Catalog Integrity Check (WP-74)" -ForegroundColor Gray
+Write-Host "  4. Listing Contract Check (WP-3)" -ForegroundColor Gray
+Write-Host "  5. Reservation Contract Check (WP-4)" -ForegroundColor Gray
 Write-Host ""
 
 $checks = @(
     @{ Name = "World Status Check"; Script = "world_status_check.ps1"; WP = "WP-1.2" },
     @{ Name = "Catalog Contract Check"; Script = "catalog_contract_check.ps1"; WP = "WP-2" },
+    @{ Name = "Catalog Integrity Check"; Script = "catalog_integrity_check.ps1"; WP = "WP-74" },
     @{ Name = "Listing Contract Check"; Script = "listing_contract_check.ps1"; WP = "WP-3" },
     @{ Name = "Reservation Contract Check"; Script = "reservation_contract_check.ps1"; WP = "WP-4" }
 )

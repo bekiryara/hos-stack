@@ -1,11 +1,10 @@
-// API wrapper module (WP-66: Customer Auth UI)
+// WP-67: API wrapper module (unified)
 // Automatically attaches Authorization header for authenticated calls
 
-import { getToken } from './session.js';
+import { getBearerToken, clearSession, setToken, saveSession } from './demoSession.js';
 
 // HOS API base URL - use proxy if available, otherwise direct
 const HOS_BASE_URL = import.meta.env.VITE_HOS_BASE_URL || '/api';
-const DEFAULT_TENANT_SLUG = import.meta.env.VITE_DEFAULT_TENANT_SLUG || 'tenant-a';
 
 /**
  * Mask token for logging (show only last 6 chars)
@@ -33,11 +32,18 @@ export async function apiRequest(endpoint, options = {}, requireAuth = true) {
     ...options.headers,
   };
   
-  // Attach Authorization header if token exists
+  // WP-67: Attach Authorization header if token exists
   if (requireAuth) {
-    const token = getToken();
-    if (token) {
-      headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    const bearerToken = getBearerToken();
+    if (bearerToken) {
+      headers['Authorization'] = bearerToken;
+    } else {
+      // WP-67: No token but auth required - clear session and redirect
+      clearSession();
+      const error = new Error('Authentication required');
+      error.status = 401;
+      error.errorCode = 'missing_token';
+      throw error;
     }
   }
   
@@ -53,6 +59,12 @@ export async function apiRequest(endpoint, options = {}, requireAuth = true) {
     } catch {
       errorData = { error: 'unknown', message: response.statusText };
     }
+    
+    // WP-67: Handle 401 - clear session
+    if (response.status === 401) {
+      clearSession();
+    }
+    
     const error = new Error(errorData.message || `API request failed: ${response.status}`);
     error.status = response.status;
     error.errorCode = errorData.error;
@@ -64,7 +76,7 @@ export async function apiRequest(endpoint, options = {}, requireAuth = true) {
 }
 
 /**
- * Login user
+ * WP-67: Login user (public customer, no tenantSlug)
  * @param {string} email
  * @param {string} password
  * @returns {Promise<{token: string, user?: object}>}
@@ -73,78 +85,104 @@ export async function login(email, password) {
   const response = await apiRequest('/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify({
-      tenantSlug: DEFAULT_TENANT_SLUG,
+      // WP-67: No tenantSlug for public customer login
       email,
       password,
     }),
   }, false); // Login doesn't require auth
   
-  // If response has user info, use it; otherwise fetch from /me
-  let user = response.user || null;
-  if (response.token && !user) {
-    try {
-      // Try to fetch user profile from /me endpoint
-      const meResponse = await apiRequest('/v1/me', {}, true);
-      user = {
-        email: meResponse.email || email,
-        id: meResponse.user_id || meResponse.id,
-      };
-    } catch (e) {
-      // Fallback: use email from login
-      user = { email, id: null };
+  // WP-68: Token'ı önce kaydet, sonra /v1/me çağrısı yap
+  if (response.token) {
+    // Token'ı geçici olarak kaydet (user bilgisi olmadan)
+    setToken(response.token);
+    
+    // WP-68: Token'ın kaydedildiğini doğrula
+    const bearerToken = getBearerToken();
+    if (!bearerToken) {
+      throw new Error('Failed to save token');
     }
+    
+    // If response has user info, use it; otherwise fetch from /me
+    let user = response.user || null;
+    if (!user) {
+      try {
+        // WP-68: Token kaydedildi, şimdi /v1/me çağrısı yapabiliriz
+        const meResponse = await apiRequest('/v1/me', {}, true);
+        user = {
+          email: meResponse.email || email,
+          id: meResponse.user_id || meResponse.id,
+        };
+      } catch (e) {
+        // Fallback: use email from login
+        user = { email, id: null };
+      }
+    }
+    
+    // Token ve user bilgisini birlikte kaydet
+    saveSession(response.token, user);
+    
+    return {
+      token: response.token,
+      user,
+    };
   }
   
   return {
     token: response.token,
-    user,
+    user: response.user || { email, id: null },
   };
 }
 
 /**
- * Register user
+ * WP-67: Register user (public customer, no tenantSlug)
  * @param {string} email
  * @param {string} password
  * @returns {Promise<{token: string, user?: object}>}
  */
 export async function register(email, password) {
-  // Backend requires tenantSlug, but we hide it from user
+  // WP-67: No tenantSlug for public customer registration
   const response = await apiRequest('/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify({
-      tenantSlug: DEFAULT_TENANT_SLUG,
       email,
       password,
     }),
   }, false); // Register doesn't require auth
   
-  // If response has user info, use it; otherwise construct from email
-  let user = response.user || null;
-  if (response.token && !user) {
-    try {
-      // Try to fetch user profile from /me endpoint
-      const meResponse = await apiRequest('/v1/me', {}, true);
-      user = {
-        email: meResponse.email || email,
-        id: meResponse.user_id || meResponse.id,
-      };
-    } catch (e) {
-      // Fallback: use email from register
-      user = { email, id: null };
+  // WP-68: Token'ı önce kaydet, sonra /v1/me çağrısı yap
+  if (response.token) {
+    // Token'ı geçici olarak kaydet (user bilgisi olmadan)
+    setToken(response.token);
+    
+    // If response has user info, use it; otherwise fetch from /me
+    let user = response.user || null;
+    if (!user) {
+      try {
+        // WP-68: Token kaydedildi, şimdi /v1/me çağrısı yapabiliriz
+        const meResponse = await apiRequest('/v1/me', {}, true);
+        user = {
+          email: meResponse.email || email,
+          id: meResponse.user_id || meResponse.id,
+        };
+      } catch (e) {
+        // Fallback: use email from register
+        user = { email, id: null };
+      }
     }
+    
+    // Token ve user bilgisini birlikte kaydet
+    saveSession(response.token, user);
+    
+    return {
+      token: response.token,
+      user,
+    };
   }
   
   return {
     token: response.token,
-    user,
+    user: response.user || { email, id: null },
   };
 }
 
-/**
- * Get default tenant slug (for internal use only)
- * @returns {string}
- */
-export function getDefaultTenantSlug() {
-  return DEFAULT_TENANT_SLUG;
-}
 

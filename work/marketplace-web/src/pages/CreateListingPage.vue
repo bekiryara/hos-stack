@@ -185,7 +185,7 @@
 
 <script>
 import { api } from '../api/client';
-import { getToken } from '../lib/demoSession';
+import { isLoggedIn, getActiveTenantId } from '../lib/demoSession';
 
 export default {
   name: 'CreateListingPage',
@@ -213,18 +213,18 @@ export default {
     try {
       this.categories = await api.getCategories();
       
-      // WP-62: Auto-fill tenant ID using client.js helper (single source of truth)
+      // WP-68: Auto-fill tenant ID using client.js helper (single source of truth)
       if (!this.formData.tenantId) {
         // Try active tenant from localStorage first
-        const activeTenantId = api.getActiveTenantId();
+        const activeTenantId = getActiveTenantId();
         if (activeTenantId) {
           this.formData.tenantId = activeTenantId;
         } else {
-          // Fetch from HOS API if demo token exists
-          const demoToken = getToken(); // Use helper instead of direct localStorage
-          if (demoToken) {
+          // WP-68: Check if user is logged in (token auto-attached by API)
+          if (isLoggedIn()) {
             try {
-              const memberships = await api.getMyMemberships(demoToken);
+              // WP-68: Token auto-attached by API wrapper
+              const memberships = await api.getMyMemberships();
               const items = memberships.items || memberships.data || (Array.isArray(memberships) ? memberships : []);
               if (items.length > 0) {
                 // Prefer admin role, else first membership
@@ -249,7 +249,7 @@ export default {
               this.tenantIdLoadError = true;
             }
           } else {
-            // No demo token - user not logged in
+            // WP-68: User not logged in - show friendly message
             this.tenantIdLoadError = true;
           }
         }
@@ -312,16 +312,20 @@ export default {
           attributes: Object.keys(attributes).length > 0 ? attributes : null,
         };
         
-        // WP-61: Get demo token for Authorization header
-        const demoToken = getToken();
-        if (!demoToken) {
-          this.error = { message: 'Demo session yok. /demo sayfasından oturum başlat.', status: 401 };
+        // WP-68: Check if user has active tenant (firm account required)
+        const activeTenantId = this.formData.tenantId || getActiveTenantId();
+        if (!activeTenantId) {
+          this.error = { 
+            message: 'Firma hesabı gerekli. Lütfen aktif bir firma seçin veya firma kaydı yapın.', 
+            status: 400 
+          };
           this.loading = false;
           return;
         }
         
-        // API client will auto-use activeTenantId if tenantId not provided
-        const result = await api.createListing(payload, this.formData.tenantId || null, demoToken);
+        // WP-68: Token auto-attached by API wrapper
+        // API client will auto-use activeTenantId
+        const result = await api.createListing(payload, activeTenantId || null);
         this.success = result;
       } catch (err) {
         this.error = err;
@@ -364,8 +368,8 @@ export default {
       this.publishError = null;
       
       try {
-        // WP-64: Use existing publish endpoint with current tenant strategy
-        const tenantId = this.formData.tenantId || api.getActiveTenantId();
+        // WP-68: Use existing publish endpoint with current tenant strategy
+        const tenantId = this.formData.tenantId || getActiveTenantId();
         if (!tenantId) {
           this.publishError = { message: 'Tenant ID required. Please set active tenant.' };
           this.publishing = false;

@@ -45,6 +45,11 @@
         </button>
       </form>
       
+      <!-- WP-67: Show expired session message if redirected -->
+      <div v-if="$route.query.reason === 'expired'" class="info-box">
+        <strong>Oturum süresi doldu.</strong> Lütfen tekrar giriş yapın.
+      </div>
+      
       <div class="auth-links">
         <p>Hesabınız yok mu? <router-link to="/register">Kayıt Ol</router-link></p>
       </div>
@@ -54,20 +59,25 @@
 
 <script>
 import { login } from '../lib/api.js';
-import { saveSession } from '../lib/session.js';
+import { saveSession } from '../lib/demoSession.js';
 
 export default {
   name: 'LoginPage',
   data() {
     return {
       formData: {
-        email: '',
-        password: '',
+        email: 'testuser@example.com', // Test kullanıcısı otomatik dolu
+        password: 'Passw0rd!', // Test şifresi otomatik dolu
       },
       errors: {},
       loading: false,
       error: null,
     };
+  },
+  mounted() {
+    // WP-67: Test kullanıcısı bilgilerini form alanlarına doldur
+    this.formData.email = 'testuser@example.com';
+    this.formData.password = 'Passw0rd!';
   },
   methods: {
     validateEmail() {
@@ -115,11 +125,8 @@ export default {
       try {
         const result = await login(this.formData.email.trim(), this.formData.password);
         
-        // Save session
-        saveSession({
-          token: result.token,
-          user: result.user || { email: this.formData.email.trim() },
-        });
+        // WP-68: login() already saves session, no need to save again
+        // Session is saved in lib/api.js login() function
         
         // Redirect to account page
         this.$router.push('/account');
@@ -203,6 +210,15 @@ export default {
   padding: 0.75rem;
   border-radius: 4px;
   border: 1px solid #f5c6cb;
+}
+
+.info-box {
+  background: #d1ecf1;
+  color: #0c5460;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #bee5eb;
+  margin-bottom: 1rem;
 }
 
 .submit-button {

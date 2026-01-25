@@ -138,8 +138,9 @@
 </template>
 
 <script>
-import { api } from '../api/client';
-import { isLoggedIn, getUser, clearSession, getToken } from '../lib/session.js';
+import { api } from '../api/client.js';
+import { apiRequest as hosApiRequest } from '../lib/api.js';
+import { isLoggedIn, getUser, clearSession, getUserId, getBearerToken } from '../lib/demoSession.js';
 
 export default {
   name: 'AccountPortalPage',
@@ -170,8 +171,29 @@ export default {
       return id ? id.substring(0, 8) + '...' : '(unknown)';
     },
   },
-  mounted() {
+  async mounted() {
     if (this.isAuthenticated) {
+      // WP-67: Fetch user info from /v1/me first
+      try {
+        const meResponse = await hosApiRequest('/v1/me', { method: 'GET' }, true);
+        // Update user info in session
+        const user = getUser();
+        if (user) {
+          user.email = meResponse.email || user.email;
+          user.id = meResponse.user_id || meResponse.id || user.id;
+          // Save updated user info
+          const { saveSession } = await import('../lib/demoSession.js');
+          const token = getBearerToken().replace('Bearer ', '');
+          saveSession(token, user);
+        }
+      } catch (err) {
+        // If /v1/me fails with 401, clear session and redirect
+        if (err.status === 401) {
+          clearSession();
+          this.$router.push('/login?reason=expired');
+          return;
+        }
+      }
       this.refreshAll();
     }
   },
@@ -192,17 +214,16 @@ export default {
       this.loading = true;
       this.error = null;
       
-      const user = getUser();
-      if (!user || !user.id) {
-        this.error = {
-          status: 401,
-          message: 'Authentication required. Please login again.',
-        };
-        this.loading = false;
+      // WP-68: Get userId from token (single source of truth)
+      const userId = getUserId();
+      if (!userId) {
+        // WP-68: No userId - clear session and redirect to login
+        clearSession();
+        this.$router.push('/login?reason=expired');
         return;
       }
       
-      const userId = user.id;
+      // WP-68: Token auto-attached by API wrapper, no need to pass manually
       
       // Clear previous data
       this.orders = [];
@@ -210,36 +231,57 @@ export default {
       this.reservations = [];
       
       try {
-        // Fetch all in parallel using existing API client
+        // WP-68: Fetch all in parallel using client.js functions (auto-auth)
         const [ordersResp, rentalsResp, reservationsResp] = await Promise.all([
-          api.getMyOrders(userId, getToken()).catch(err => ({ ok: false, error: err })),
-          api.getMyRentals(userId, getToken()).catch(err => ({ ok: false, error: err })),
-          api.getMyReservations(userId, getToken()).catch(err => ({ ok: false, error: err })),
+          api.getMyOrders(userId).catch(err => ({ ok: false, error: err })),
+          api.getMyRentals(userId).catch(err => ({ ok: false, error: err })),
+          api.getMyReservations(userId).catch(err => ({ ok: false, error: err })),
         ]);
         
-        // Check for errors - collect per-panel errors instead of failing all
+        // Helper: Extract items from various response formats
+        const extractItems = (r) => Array.isArray(r) ? r : (r?.data ?? r?.items ?? []);
+        
+        // Helper: Check if response is an error wrapper (only { ok: false } is treated as error)
+        const isErrWrapper = (r) => r && typeof r === 'object' && r.ok === false;
+        
+        // WP-67: Handle 401 - clear session and redirect
         const errors = [];
         
-        if (ordersResp.error || !ordersResp.ok) {
+        if (isErrWrapper(ordersResp)) {
           const err = ordersResp.error || ordersResp;
-          errors.push({ panel: 'orders', status: err.status || 0, message: err.message || 'Failed to load orders', endpoint: '/api/v1/orders' });
+          if (err.status === 401) {
+            clearSession();
+            this.$router.push('/login?reason=expired');
+            return;
+          }
+          errors.push({ panel: 'orders', status: err.status || 0, message: err.message || 'Failed to load orders', endpoint: '/v1/me/orders' });
         } else {
-          // Extract data (API returns arrays directly or wrapped in {data: ...})
-          this.orders = Array.isArray(ordersResp) ? ordersResp : (ordersResp.data || []);
+          // Extract data (API returns {data: [...]} or array or {items: [...]})
+          this.orders = extractItems(ordersResp);
         }
         
-        if (rentalsResp.error || !rentalsResp.ok) {
+        if (isErrWrapper(rentalsResp)) {
           const err = rentalsResp.error || rentalsResp;
-          errors.push({ panel: 'rentals', status: err.status || 0, message: err.message || 'Failed to load rentals', endpoint: '/api/v1/rentals' });
+          if (err.status === 401) {
+            clearSession();
+            this.$router.push('/login?reason=expired');
+            return;
+          }
+          errors.push({ panel: 'rentals', status: err.status || 0, message: err.message || 'Failed to load rentals', endpoint: '/v1/me/rentals' });
         } else {
-          this.rentals = Array.isArray(rentalsResp) ? rentalsResp : (rentalsResp.data || []);
+          this.rentals = extractItems(rentalsResp);
         }
         
-        if (reservationsResp.error || !reservationsResp.ok) {
+        if (isErrWrapper(reservationsResp)) {
           const err = reservationsResp.error || reservationsResp;
-          errors.push({ panel: 'reservations', status: err.status || 0, message: err.message || 'Failed to load reservations', endpoint: '/api/v1/reservations' });
+          if (err.status === 401) {
+            clearSession();
+            this.$router.push('/login?reason=expired');
+            return;
+          }
+          errors.push({ panel: 'reservations', status: err.status || 0, message: err.message || 'Failed to load reservations', endpoint: '/v1/me/reservations' });
         } else {
-          this.reservations = Array.isArray(reservationsResp) ? reservationsResp : (reservationsResp.data || []);
+          this.reservations = extractItems(reservationsResp);
         }
         
         // Show first error if any, but don't block other panels
@@ -249,12 +291,18 @@ export default {
             status: firstError.status,
             message: firstError.message,
             endpoint: firstError.endpoint,
-            allErrors: errors, // Store all errors for potential future use
+            allErrors: errors,
           };
         }
         
         this.lastRefreshed = new Date();
       } catch (error) {
+        // WP-67: Handle 401 in catch block too
+        if (error.status === 401) {
+          clearSession();
+          this.$router.push('/login?reason=expired');
+          return;
+        }
         this.error = {
           status: error.status || 0,
           message: error.message || 'Unknown error',

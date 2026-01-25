@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { isLoggedIn, getUser, clearSession } from './lib/session.js';
+import { isLoggedIn, getUser, clearSession } from './lib/demoSession.js';
 
 export default {
   name: 'App',
@@ -43,6 +43,7 @@ export default {
   },
   methods: {
     handleLogout() {
+      // WP-67: Clear session and redirect to login
       clearSession();
       this.$router.push('/login');
     },

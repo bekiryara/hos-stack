@@ -1,7 +1,7 @@
 # WP-66: Customer Auth UI v1 - Proof
 
 **Date:** 2026-01-24  
-**Commit:** (to be filled after commit)
+**Commit:** 365d5d8
 
 ## Summary
 

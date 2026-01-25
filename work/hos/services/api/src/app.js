@@ -320,8 +320,9 @@ async function registerApiRoutes(app, { db, legacy = false }) {
     }
   );
 
+  // WP-67: Register body with optional tenantSlug
   const registerBody = z.object({
-    tenantSlug: z.string().min(3).max(50),
+    tenantSlug: z.string().min(3).max(50).optional(),
     email: z.string().email(),
     password: z.string().min(8).max(200)
   });
@@ -330,49 +331,105 @@ async function registerApiRoutes(app, { db, legacy = false }) {
     "/auth/register",
     { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
     async (req, reply) => {
-      const body = registerBody.safeParse(req.body);
-      if (!body.success) return reply.code(400).send({ error: body.error.flatten() });
-
-      const tenant = await db.query("select id from tenants where slug = $1", [body.data.tenantSlug]);
-      if (tenant.rowCount === 0) return reply.code(404).send({ error: "tenant_not_found" });
+      // WP-67: Validate body (tenantSlug is optional)
+      const parsed = registerBody.safeParse(req.body);
+      if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+      
+      const body = parsed.data;
+      const DEFAULT_PUBLIC_TENANT_SLUG = readEnvOrFile("DEFAULT_PUBLIC_TENANT_SLUG") || "public";
+      
+      // WP-67: Use DEFAULT_PUBLIC_TENANT_SLUG if tenantSlug not provided
+      const tenantSlug = body.tenantSlug || DEFAULT_PUBLIC_TENANT_SLUG;
 
       const userId = crypto.randomUUID();
-      const passwordHash = hashPassword(body.data.password);
-      // SECURITY: Do not automatically grant "owner" to every self-registration.
-      // Minimal rule: first user in a tenant becomes owner; subsequent users become member.
-      // Production-grade onboarding should use invites / admin approval instead of open self-register.
-      const tenantId = tenant.rows[0].id;
-      const existing = await db.query("select count(*)::int as c from users where tenant_id = $1", [tenantId]);
-      const count = existing.rows?.[0]?.c ?? 0;
+      const passwordHash = hashPassword(body.password);
 
-      // Hardening: allow self-register ONLY for the first user in a tenant.
-      // Otherwise tenants can be taken over by anyone who knows the slug.
-      if (count > 0) {
-        return reply.code(403).send({ error: "registration_closed" });
+      // WP-67: Public customer registration (DEFAULT_PUBLIC_TENANT_SLUG) vs tenant-scoped registration
+      if (tenantSlug === DEFAULT_PUBLIC_TENANT_SLUG) {
+        // WP-67: PUBLIC CUSTOMER REGISTRATION: Use DEFAULT_PUBLIC_TENANT_SLUG
+        // Use DEFAULT_PUBLIC_TENANT_SLUG tenant for storage (users table requires tenant_id)
+        let publicTenant = await db.query("select id from tenants where slug = $1 limit 1", [DEFAULT_PUBLIC_TENANT_SLUG]);
+        if (publicTenant.rowCount === 0) {
+          // Create public tenant if it doesn't exist (idempotent)
+          const publicTenantId = crypto.randomUUID();
+          try {
+            await db.query(
+              "insert into tenants (id, slug, name, display_name) values ($1, $2, $3, $4)",
+              [publicTenantId, DEFAULT_PUBLIC_TENANT_SLUG, "Public Customers", "Public Customers"]
+            );
+            publicTenant = { rowCount: 1, rows: [{ id: publicTenantId }] };
+          } catch (e) {
+            // If concurrent creation happened, refetch
+            if (String(e?.code) === "23505") {
+              publicTenant = await db.query("select id from tenants where slug = $1 limit 1", [DEFAULT_PUBLIC_TENANT_SLUG]);
+            } else {
+              throw e;
+            }
+          }
+        }
+        const tenantId = publicTenant.rows[0].id;
+        const role = "member"; // Public customers are members, not owners
+
+        try {
+          // WP-67: Public registration allows multiple users (bypass registration_closed)
+          // Check if email already exists (across all tenants for public registration)
+          const existing = await db.query("select id from users where email = $1 limit 1", [
+            body.email.toLowerCase()
+          ]);
+          if (existing.rowCount > 0) {
+            return reply.code(409).send({ error: "user_conflict", message: "Email already registered" });
+          }
+
+          await db.query(
+            "insert into users (id, tenant_id, email, password_hash, role) values ($1, $2, $3, $4, $5)",
+            [userId, tenantId, body.email.toLowerCase(), passwordHash, role]
+          );
+          // No audit for public registration (no tenant context)
+          // Note: JWT includes tenantId for storage, but user has no membership
+          const token = signAccessToken({ sub: userId, tenantId: null, role }); // tenantId null for public users
+          return reply.code(201).send({ token });
+        } catch (e) {
+          if (String(e?.code) === "23505") return reply.code(409).send({ error: "user_conflict" });
+          throw e;
+        }
+      } else {
+        // TENANT-SCOPED REGISTRATION: Keep existing behavior (backward compatible)
+        const tenant = await db.query("select id from tenants where slug = $1", [tenantSlug]);
+        if (tenant.rowCount === 0) return reply.code(404).send({ error: "tenant_not_found" });
+
+        const tenantId = tenant.rows[0].id;
+        const existing = await db.query("select count(*)::int as c from users where tenant_id = $1", [tenantId]);
+        const count = existing.rows?.[0]?.c ?? 0;
+
+        // Hardening: allow self-register ONLY for the first user in a tenant.
+        if (count > 0) {
+          return reply.code(403).send({ error: "registration_closed" });
+        }
+
+        const role = "owner";
+
+        try {
+          await db.query(
+            "insert into users (id, tenant_id, email, password_hash, role) values ($1, $2, $3, $4, $5)",
+            [userId, tenantId, body.email.toLowerCase(), passwordHash, role]
+          );
+          await audit(db, { action: "user.register", tenantId, actorUserId: userId });
+        } catch (e) {
+          if (String(e?.code) === "23505") return reply.code(409).send({ error: "user_conflict" });
+          throw e;
+        }
+
+        const token = signAccessToken({ sub: userId, tenantId, role });
+        const refresh = await issueRefreshToken({ tenantId, userId });
+        reply.setCookie("hos_refresh", refresh.token, sessionCookieOptions(req));
+        return reply.code(201).send({ token });
       }
-
-      const role = "owner";
-
-      try {
-        await db.query(
-          "insert into users (id, tenant_id, email, password_hash, role) values ($1, $2, $3, $4, $5)",
-          [userId, tenantId, body.data.email.toLowerCase(), passwordHash, role]
-        );
-        await audit(db, { action: "user.register", tenantId, actorUserId: userId });
-      } catch (e) {
-        if (String(e?.code) === "23505") return reply.code(409).send({ error: "user_conflict" });
-        throw e;
-      }
-
-      const token = signAccessToken({ sub: userId, tenantId, role });
-      const refresh = await issueRefreshToken({ tenantId, userId });
-      reply.setCookie("hos_refresh", refresh.token, sessionCookieOptions(req));
-      return reply.code(201).send({ token });
     }
   );
 
+  // WP-67: Login body with optional tenantSlug
   const loginBody = z.object({
-    tenantSlug: z.string().min(3).max(50),
+    tenantSlug: z.string().min(3).max(50).optional(),
     email: z.string().email(),
     password: z.string().min(1).max(200)
   });
@@ -381,29 +438,68 @@ async function registerApiRoutes(app, { db, legacy = false }) {
     "/auth/login",
     { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
     async (req, reply) => {
-      const body = loginBody.safeParse(req.body);
-      if (!body.success) return reply.code(400).send({ error: body.error.flatten() });
+      // WP-67: Validate body (tenantSlug is optional)
+      const parsed = loginBody.safeParse(req.body);
+      if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+      
+      const body = parsed.data;
+      const DEFAULT_PUBLIC_TENANT_SLUG = readEnvOrFile("DEFAULT_PUBLIC_TENANT_SLUG") || "public";
+      
+      // WP-67: Use DEFAULT_PUBLIC_TENANT_SLUG if tenantSlug not provided
+      const tenantSlug = body.tenantSlug || DEFAULT_PUBLIC_TENANT_SLUG;
 
-      const tenant = await db.query("select id from tenants where slug = $1", [body.data.tenantSlug]);
-      if (tenant.rowCount === 0) return reply.code(404).send({ error: "tenant_not_found" });
+      // WP-67: Public customer login (DEFAULT_PUBLIC_TENANT_SLUG) vs tenant-scoped login
+      if (tenantSlug === DEFAULT_PUBLIC_TENANT_SLUG) {
+        // PUBLIC CUSTOMER LOGIN: Search by email across all tenants
+        // For public customers, we look in the "public" tenant first, then fallback to any tenant
+        const user = await db.query(
+          "select id, tenant_id, password_hash, role from users where email = $1 limit 1",
+          [body.email.toLowerCase()]
+        );
+        if (user.rowCount === 0) return reply.code(401).send({ error: "invalid_credentials" });
+        if (!verifyPassword(body.password, user.rows[0].password_hash))
+          return reply.code(401).send({ error: "invalid_credentials" });
 
-      const user = await db.query(
-        "select id, password_hash, role from users where tenant_id = $1 and email = $2",
-        [tenant.rows[0].id, body.data.email.toLowerCase()]
-      );
-      if (user.rowCount === 0) return reply.code(401).send({ error: "invalid_credentials" });
-      if (!verifyPassword(body.data.password, user.rows[0].password_hash))
-        return reply.code(401).send({ error: "invalid_credentials" });
+        const userRow = user.rows[0];
+        // WP-67: Check if user is in DEFAULT_PUBLIC_TENANT_SLUG (public customer)
+        const publicTenant = await db.query("select id from tenants where slug = $1 limit 1", [DEFAULT_PUBLIC_TENANT_SLUG]);
+        const isPublicCustomer = publicTenant.rowCount > 0 && userRow.tenant_id === publicTenant.rows[0].id;
 
-      const token = signAccessToken({
-        sub: user.rows[0].id,
-        tenantId: tenant.rows[0].id,
-        role: user.rows[0].role ?? "member"
-      });
-      const refresh = await issueRefreshToken({ tenantId: tenant.rows[0].id, userId: user.rows[0].id });
-      reply.setCookie("hos_refresh", refresh.token, sessionCookieOptions(req));
-      await audit(db, { action: "user.login", tenantId: tenant.rows[0].id, actorUserId: user.rows[0].id });
-      return reply.send({ token });
+        const token = signAccessToken({
+          sub: userRow.id,
+          tenantId: isPublicCustomer ? null : userRow.tenant_id, // null for public customers
+          role: userRow.role ?? "member"
+        });
+        // Only issue refresh token for tenant-scoped users
+        if (!isPublicCustomer) {
+          const refresh = await issueRefreshToken({ tenantId: userRow.tenant_id, userId: userRow.id });
+          reply.setCookie("hos_refresh", refresh.token, sessionCookieOptions(req));
+          await audit(db, { action: "user.login", tenantId: userRow.tenant_id, actorUserId: userRow.id });
+        }
+        return reply.send({ token });
+      } else {
+        // TENANT-SCOPED LOGIN: Keep existing behavior (backward compatible)
+        const tenant = await db.query("select id from tenants where slug = $1", [tenantSlug]);
+        if (tenant.rowCount === 0) return reply.code(404).send({ error: "tenant_not_found" });
+
+        const user = await db.query(
+          "select id, password_hash, role from users where tenant_id = $1 and email = $2",
+          [tenant.rows[0].id, body.email.toLowerCase()]
+        );
+        if (user.rowCount === 0) return reply.code(401).send({ error: "invalid_credentials" });
+        if (!verifyPassword(body.password, user.rows[0].password_hash))
+          return reply.code(401).send({ error: "invalid_credentials" });
+
+        const token = signAccessToken({
+          sub: user.rows[0].id,
+          tenantId: tenant.rows[0].id,
+          role: user.rows[0].role ?? "member"
+        });
+        const refresh = await issueRefreshToken({ tenantId: tenant.rows[0].id, userId: user.rows[0].id });
+        reply.setCookie("hos_refresh", refresh.token, sessionCookieOptions(req));
+        await audit(db, { action: "user.login", tenantId: tenant.rows[0].id, actorUserId: user.rows[0].id });
+        return reply.send({ token });
+      }
     }
   );
 
@@ -1172,10 +1268,12 @@ async function registerApiRoutes(app, { db, legacy = false }) {
 
     try {
       const payload = verifyAccessToken(token);
-      if (!payload?.tenantId || !payload?.sub) {
+      // WP-66B: Allow null tenantId for public customers (sub is still required)
+      if (!payload?.sub) {
         reply.code(401).send({ error: "invalid_token" });
         return null;
       }
+      // tenantId can be null for public customers
       return payload;
     } catch {
       reply.code(401).send({ error: "invalid_token" });
@@ -1226,6 +1324,93 @@ async function registerApiRoutes(app, { db, legacy = false }) {
       display_name: userRow.display_name || userRow.email.split("@")[0],
       memberships_count: count
     });
+  });
+
+  // WP-66B: GET /v1/me/orders - Returns authenticated user's orders (proxies to Pazar API)
+  app.get("/me/orders", async (req, reply) => {
+    const payload = requireAuth(req, reply);
+    if (!payload) return;
+
+    const userId = payload.sub;
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    
+    try {
+      const response = await fetch(`${pazarBaseUrl}/api/v1/orders?buyer_user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": req.headers.authorization || "",
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        return reply.code(response.status).send({ error: "pazar_api_error", message: errorText });
+      }
+      
+      const data = await response.json();
+      return reply.send(data);
+    } catch (e) {
+      return reply.code(502).send({ error: "pazar_api_unavailable", message: String(e.message) });
+    }
+  });
+
+  // WP-66B: GET /v1/me/rentals - Returns authenticated user's rentals (proxies to Pazar API)
+  app.get("/me/rentals", async (req, reply) => {
+    const payload = requireAuth(req, reply);
+    if (!payload) return;
+
+    const userId = payload.sub;
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    
+    try {
+      const response = await fetch(`${pazarBaseUrl}/api/v1/rentals?renter_user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": req.headers.authorization || "",
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        return reply.code(response.status).send({ error: "pazar_api_error", message: errorText });
+      }
+      
+      const data = await response.json();
+      return reply.send(data);
+    } catch (e) {
+      return reply.code(502).send({ error: "pazar_api_unavailable", message: String(e.message) });
+    }
+  });
+
+  // WP-66B: GET /v1/me/reservations - Returns authenticated user's reservations (proxies to Pazar API)
+  app.get("/me/reservations", async (req, reply) => {
+    const payload = requireAuth(req, reply);
+    if (!payload) return;
+
+    const userId = payload.sub;
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    
+    try {
+      const response = await fetch(`${pazarBaseUrl}/api/v1/reservations?requester_user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": req.headers.authorization || "",
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        return reply.code(response.status).send({ error: "pazar_api_error", message: errorText });
+      }
+      
+      const data = await response.json();
+      return reply.send(data);
+    } catch (e) {
+      return reply.code(502).send({ error: "pazar_api_unavailable", message: String(e.message) });
+    }
   });
 
   // GET /v1/me/memberships - Returns active memberships for authenticated user (WP-8)

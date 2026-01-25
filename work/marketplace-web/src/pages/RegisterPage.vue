@@ -70,7 +70,7 @@
 
 <script>
 import { register } from '../lib/api.js';
-import { saveSession } from '../lib/session.js';
+import { saveSession } from '../lib/demoSession.js';
 
 export default {
   name: 'RegisterPage',
@@ -147,11 +147,11 @@ export default {
       try {
         const result = await register(this.formData.email.trim(), this.formData.password);
         
-        // Save session
-        saveSession({
-          token: result.token,
-          user: result.user || { email: this.formData.email.trim() },
-        });
+        // WP-67: Save session (token + user)
+        saveSession(
+          result.token,
+          result.user || { email: this.formData.email.trim() }
+        );
         
         // Redirect to account page
         this.$router.push('/account');

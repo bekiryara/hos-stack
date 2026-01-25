@@ -95,7 +95,7 @@
 
 <script>
 import { api } from '../api/client';
-import { getToken } from '../lib/demoSession';
+import { getUserId } from '../lib/demoSession';
 
 // Simple JWT decode (no verification needed for demo)
 function decodeJWT(token) {
@@ -127,16 +127,10 @@ export default {
     };
   },
   mounted() {
-    // WP-66: Check authentication (token from demoSession)
-    const token = getToken();
-    if (!token) {
-      this.authError = 'No authentication token found. Please login or create a tenant first.';
-      return;
-    }
-    
-    const payload = decodeJwtPayload(token);
-    if (!payload || !payload.sub) {
-      this.authError = 'Invalid authentication token. Please login again.';
+    // WP-68: Check authentication (userId from token)
+    const userId = getUserId();
+    if (!userId) {
+      this.authError = 'No authentication token found. Please login first.';
       return;
     }
     
@@ -161,11 +155,10 @@ export default {
       }
     },
     async handleSubmit() {
-      // WP-66: Get token and userId from demoSession
-      const token = getToken();
+      // WP-68: Get userId from demoSession (token auto-attached by API)
       const userId = getUserId();
       
-      if (!token) {
+      if (!userId) {
         this.authError = 'No authentication token found. Please login first.';
         return;
       }
@@ -196,9 +189,9 @@ export default {
           party_size: this.formData.party_size,
         };
         
+        // WP-68: Token auto-attached by API wrapper
         const result = await api.createReservation(
           payload,
-          token,
           userId || null
         );
         this.success = result;

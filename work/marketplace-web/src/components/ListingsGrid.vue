@@ -49,6 +49,13 @@
           >
             Rent
           </button>
+          <button
+            v-if="listing.transaction_modes && listing.transaction_modes.includes('sale')"
+            @click="goToOrder(listing.id)"
+            class="action-btn buy-btn"
+          >
+            Buy
+          </button>
         </div>
       </div>
     </div>
@@ -70,10 +77,13 @@ export default {
       this.$router.push(`/listing/${id}`);
     },
     goToReservation(listingId) {
-      this.$router.push(`/marketplace/reservation/create?listing_id=${listingId}`);
+      this.$router.push({ path: '/reservation/create', query: { listing_id: listingId } });
     },
     goToRental(listingId) {
-      this.$router.push(`/marketplace/rental/create?listing_id=${listingId}`);
+      this.$router.push({ path: '/rental/create', query: { listing_id: listingId } });
+    },
+    goToOrder(listingId) {
+      this.$router.push({ path: '/order/create', query: { listing_id: listingId } });
     },
     copyListingId(id) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -271,6 +281,17 @@ export default {
 .rent-btn:hover {
   background: #6a1b9a;
   border-color: #6a1b9a;
+}
+
+.buy-btn {
+  background: #388e3c;
+  color: white;
+  border-color: #388e3c;
+}
+
+.buy-btn:hover {
+  background: #2e7d32;
+  border-color: #2e7d32;
 }
 
 .no-results {

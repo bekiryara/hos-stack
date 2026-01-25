@@ -9,10 +9,11 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
     $query = DB::table('listings');
     
     // Filter by category_id if provided (WP-48: recursive - include all descendant categories)
+    // WP-73: Use CTE subquery in SQL instead of building ID array in PHP
     if ($request->has('category_id')) {
         $categoryId = (int) $request->input('category_id');
-        $categoryIds = pazar_category_descendant_ids($categoryId);
-        $query->whereIn('category_id', $categoryIds);
+        $cteData = pazar_category_descendant_cte_in_clause_sql($categoryId);
+        $query->whereRaw("category_id IN " . $cteData['sql'], $cteData['bindings']);
     }
     
     // Filter by status (default: published)
@@ -68,8 +69,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
     $perPage = min(50, max(1, (int)$request->input('per_page', 20)));
     $offset = ($page - 1) * $perPage;
     
-    // Get total count before pagination
-    $total = $query->count();
+    // A) Removed unused $total count (response is array, not paginated envelope)
+    // Contract: GET /v1/listings returns JSON array (WP-3.1)
     
     $listings = $query->orderBy('created_at', 'desc')
         ->offset($offset)
@@ -149,28 +150,14 @@ Route::get('/v1/search', function (\Illuminate\Http\Request $request) {
     // Get all category IDs including descendants (recursive)
     $categoryId = (int) $validated['category_id'];
     
-    // Helper function to get all descendant category IDs
-    $getDescendantCategoryIds = function($parentId) use (&$getDescendantCategoryIds) {
-        $categoryIds = [$parentId];
-        $children = DB::table('categories')
-            ->where('parent_id', $parentId)
-            ->where('status', 'active')
-            ->pluck('id')
-            ->toArray();
-        
-        foreach ($children as $childId) {
-            $categoryIds = array_merge($categoryIds, $getDescendantCategoryIds($childId));
-        }
-        
-        return $categoryIds;
-    };
-    
-    $categoryIds = $getDescendantCategoryIds($categoryId);
+    // WP-73: Use CTE subquery in SQL instead of building ID array in PHP
+    // Avoids generating large descendant ID arrays in memory
+    $cteData = pazar_category_descendant_cte_in_clause_sql($categoryId);
     
     // Build query - only published listings
     $query = DB::table('listings')
         ->where('status', 'published')
-        ->whereIn('category_id', $categoryIds);
+        ->whereRaw("category_id IN " . $cteData['sql'], $cteData['bindings']);
     
     // Filter by city (from location_json)
     if ($request->has('city')) {

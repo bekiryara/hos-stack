@@ -1,5 +1,8 @@
 // API client for Marketplace backend
 // WP-61: Use same-origin proxy path instead of direct 8080 to avoid CORS
+// WP-68: Auto-attach Authorization header when token exists
+import { getBearerToken, clearSession } from '../lib/demoSession.js';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/marketplace';
 
 /**
@@ -49,19 +52,33 @@ function buildPersonaHeaders(personaMode, config = {}) {
   return headers;
 }
 
-export async function apiRequest(endpoint, options = {}) {
+export async function apiRequest(endpoint, options = {}, skipAuth = false) {
   const url = `${API_BASE_URL}${endpoint}`;
   
-  // Merge headers: options.headers takes precedence over persona headers
+  // Merge headers: options.headers takes precedence
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
   
+  // WP-68: Auto-attach Authorization header if token exists
+  // Allow opt-out via skipAuth parameter for truly public calls
+  if (!skipAuth) {
+    const bearerToken = getBearerToken();
+    if (bearerToken) {
+      headers['Authorization'] = bearerToken;
+    }
+  }
+  
   const response = await fetch(url, {
     ...options,
     headers,
   });
+
+  // WP-68: Handle 401 - clear session
+  if (response.status === 401) {
+    clearSession();
+  }
 
   if (!response.ok) {
     let errorData;
@@ -118,18 +135,33 @@ function generateIdempotencyKey() {
 }
 
 // HOS API helper (WP-48: same-origin proxy via nginx)
+// WP-68: Auto-attach Authorization header when token exists
 // Calls HOS API through /api/* proxy (nginx routes to hos-api:3000)
-async function hosApiRequest(endpoint, options = {}) {
+async function hosApiRequest(endpoint, options = {}, skipAuth = false) {
   const url = `/api${endpoint}`; // nginx proxies /api/* to HOS API
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
   
+  // WP-68: Auto-attach Authorization header if token exists
+  // Allow opt-out via skipAuth parameter for truly public calls
+  if (!skipAuth) {
+    const bearerToken = getBearerToken();
+    if (bearerToken) {
+      headers['Authorization'] = bearerToken;
+    }
+  }
+  
   const response = await fetch(url, {
     ...options,
     headers,
   });
+
+  // WP-68: Handle 401 - clear session
+  if (response.status === 401) {
+    clearSession();
+  }
 
   if (!response.ok) {
     let errorData;
@@ -150,19 +182,20 @@ async function hosApiRequest(endpoint, options = {}) {
 
 export const api = {
   // GUEST persona: No headers required (SPEC §5.3)
-  getCategories: () => apiRequest('/api/v1/categories'),
-  getFilterSchema: (categoryId) => apiRequest(`/api/v1/categories/${categoryId}/filter-schema`),
+  // WP-68: Public calls use skipAuth to avoid attaching token
+  getCategories: () => apiRequest('/api/v1/categories', {}, true), // skipAuth = true
+  getFilterSchema: (categoryId) => apiRequest(`/api/v1/categories/${categoryId}/filter-schema`, {}, true), // skipAuth = true
   searchListings: (params) => {
     const queryString = new URLSearchParams(params).toString();
-    return apiRequest(`/api/v1/listings?${queryString}`);
+    return apiRequest(`/api/v1/listings?${queryString}`, {}, true); // skipAuth = true
   },
-  getListing: (id) => apiRequest(`/api/v1/listings/${id}`),
+  getListing: (id) => apiRequest(`/api/v1/listings/${id}`, {}, true), // skipAuth = true
   
   // HOS API (WP-48: tenant ID resolution)
-  // PERSONAL persona: Authorization header required
-  getMyMemberships: (authToken) => {
-    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
-    return hosApiRequest('/v1/me/memberships', { headers });
+  // WP-68: Auto-attach Authorization header (no manual token needed)
+  getMyMemberships: () => {
+    // Authorization header auto-attached by hosApiRequest
+    return hosApiRequest('/v1/me/memberships');
   },
   
   // HOS Auth API (WP-66: browser auth flows)
@@ -201,18 +234,23 @@ export const api = {
   },
   
   // Account Portal - Personal scope (WP-32, WP-8)
-  // PERSONAL persona: Authorization header required (SPEC §5.2)
-  getMyOrders: (userId, authToken) => {
-    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
-    return apiRequest(`/api/v1/orders?buyer_user_id=${userId}`, { headers });
+  // WP-68: Auto-attach Authorization header (no manual token needed)
+  // NOTE: These are HOS API endpoints, use hosApiRequest (not apiRequest)
+  // Customer V1: Use /v1/me/* endpoints (userId parameter ignored but kept for compatibility)
+  getMyOrders: (userId) => {
+    // Authorization header auto-attached by hosApiRequest
+    // userId parameter kept for compatibility but ignored (HOS uses token to identify user)
+    return hosApiRequest('/v1/me/orders');
   },
-  getMyRentals: (userId, authToken) => {
-    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
-    return apiRequest(`/api/v1/rentals?renter_user_id=${userId}`, { headers });
+  getMyRentals: (userId) => {
+    // Authorization header auto-attached by hosApiRequest
+    // userId parameter kept for compatibility but ignored (HOS uses token to identify user)
+    return hosApiRequest('/v1/me/rentals');
   },
-  getMyReservations: (userId, authToken) => {
-    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
-    return apiRequest(`/api/v1/reservations?requester_user_id=${userId}`, { headers });
+  getMyReservations: (userId) => {
+    // Authorization header auto-attached by hosApiRequest
+    // userId parameter kept for compatibility but ignored (HOS uses token to identify user)
+    return hosApiRequest('/v1/me/reservations');
   },
   
   // Account Portal - Store scope (WP-32, WP-8)
@@ -236,13 +274,17 @@ export const api = {
   
   // Write operations (WP-8: Persona-based headers)
   // STORE persona: X-Active-Tenant-Id required
-  // WP: Auto-use activeTenantId from localStorage if tenantId not provided
-  createListing: (data, tenantId, authToken) => {
+  // WP-68: Auto-use activeTenantId from localStorage if tenantId not provided
+  // WP-68: Token auto-attached by apiRequest
+  createListing: (data, tenantId) => {
     const idempotencyKey = generateIdempotencyKey();
     // Auto-use activeTenantId if tenantId not provided
     const activeTenantId = tenantId || api.getActiveTenantId();
-    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: activeTenantId, authToken });
-    headers['Idempotency-Key'] = idempotencyKey;
+    const headers = {
+      'Idempotency-Key': idempotencyKey,
+      'X-Active-Tenant-Id': activeTenantId,
+    };
+    // Authorization header auto-attached by apiRequest
     return apiRequest('/api/v1/listings', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -253,21 +295,27 @@ export const api = {
   publishListing: (id, tenantId) => {
     // Auto-use activeTenantId if tenantId not provided
     const activeTenantId = tenantId || api.getActiveTenantId();
-    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: activeTenantId });
+    const headers = {
+      'X-Active-Tenant-Id': activeTenantId,
+    };
+    // Authorization header auto-attached by apiRequest
     return apiRequest(`/api/v1/listings/${id}/publish`, {
       method: 'POST',
       headers,
     });
   },
   
+  // WP-68: Auto-attach Authorization header (no manual token needed)
   // PERSONAL persona: Authorization header required (SPEC §5.2)
-  createReservation: (data, authToken, userId) => {
+  createReservation: (data, userId) => {
     const idempotencyKey = generateIdempotencyKey();
-    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
-    headers['Idempotency-Key'] = idempotencyKey;
+    const headers = {
+      'Idempotency-Key': idempotencyKey,
+    };
     if (userId) {
       headers['X-Requester-User-Id'] = userId;
     }
+    // Authorization header auto-attached by apiRequest (via getBearerToken)
     return apiRequest('/api/v1/reservations', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -275,16 +323,35 @@ export const api = {
     });
   },
   
-  createRental: (data, authToken, userId) => {
+  createRental: (data, userId) => {
     const idempotencyKey = generateIdempotencyKey();
-    const headers = buildPersonaHeaders(PERSONA_MODES.PERSONAL, { authToken });
-    headers['Idempotency-Key'] = idempotencyKey;
+    const headers = {
+      'Idempotency-Key': idempotencyKey,
+    };
     if (userId) {
       headers['X-Requester-User-Id'] = userId;
     }
+    // Authorization header auto-attached by apiRequest (via getBearerToken)
     return apiRequest('/api/v1/rentals', {
       method: 'POST',
       body: JSON.stringify(data),
+      headers,
+    });
+  },
+  
+  // Customer V1: Create order (sale transaction)
+  createOrder: (listingId, quantity = 1) => {
+    const idempotencyKey = generateIdempotencyKey();
+    const headers = {
+      'Idempotency-Key': idempotencyKey,
+    };
+    // Authorization header auto-attached by apiRequest (via getBearerToken)
+    return apiRequest('/api/v1/orders', {
+      method: 'POST',
+      body: JSON.stringify({
+        listing_id: listingId,
+        quantity: quantity,
+      }),
       headers,
     });
   },
