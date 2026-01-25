@@ -55,6 +55,20 @@ export function getUserId() {
 }
 
 /**
+ * Set user ID (for backward compatibility, but prefer getting from token)
+ * @param {string} userId - User ID
+ */
+export function setUserId(userId) {
+  // Store in localStorage for backward compatibility
+  // But prefer getting from token via getUserId()
+  if (userId) {
+    localStorage.setItem('demo_user_id', userId);
+  } else {
+    localStorage.removeItem('demo_user_id');
+  }
+}
+
+/**
  * Get tenant ID from token payload (tenantId claim)
  * @returns {string|null} Tenant ID or null
  */
@@ -123,6 +137,7 @@ export function clearSession() {
   clearToken();
   localStorage.removeItem(TENANT_SLUG_KEY);
   localStorage.removeItem(ACTIVE_TENANT_ID_KEY);
+  localStorage.removeItem('demo_user_id'); // Clear userId if stored separately
 }
 
 // Helper URLs

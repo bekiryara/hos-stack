@@ -104,6 +104,7 @@ import {
   setTenantSlug,
   getTenantId,
   getUserId,
+  setUserId,
   getRole,
   decodeJwtPayload,
   setActiveTenantId,
@@ -178,11 +179,15 @@ export default {
           setToken(registerResult.token);
           setTenantSlug(this.newTenantForm.slug);
           
-          // Extract tenantId from token payload
+          // Extract tenantId and userId from token payload
           const payload = decodeJwtPayload(registerResult.token);
           if (payload?.tenantId || payload?.tenant_id) {
             const tid = payload.tenantId || payload.tenant_id;
             setActiveTenantId(tid);
+          }
+          // Store userId if present in payload
+          if (payload?.sub) {
+            setUserId(payload.sub);
           }
           
           // Clear form
@@ -214,11 +219,15 @@ export default {
           setToken(result.token);
           setTenantSlug(this.loginForm.tenantSlug);
           
-          // Extract tenantId from token payload
+          // Extract tenantId and userId from token payload
           const payload = decodeJwtPayload(result.token);
           if (payload?.tenantId || payload?.tenant_id) {
             const tid = payload.tenantId || payload.tenant_id;
             setActiveTenantId(tid);
+          }
+          // Store userId if present in payload
+          if (payload?.sub) {
+            setUserId(payload.sub);
           }
           
           // Clear form
