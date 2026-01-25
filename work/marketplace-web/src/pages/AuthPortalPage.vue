@@ -2,6 +2,15 @@
   <div class="auth-portal-page">
     <h2>Auth Portal</h2>
     
+    <!-- Success Banner -->
+    <div v-if="successMessage" class="success-banner">
+      <strong>Başarılı!</strong> {{ successMessage }}
+      <div class="success-actions">
+        <router-link to="/account" class="action-button">Hesabıma Git</router-link>
+        <router-link to="/" class="action-button">Devam Et / Demo</router-link>
+      </div>
+    </div>
+    
     <!-- Session Panel -->
     <div v-if="isAuthenticated" class="session-panel">
       <h3>Session</h3>
@@ -52,7 +61,7 @@
             </label>
           </div>
           <div v-if="newTenantError" class="error">
-            <strong>Error:</strong> {{ newTenantError }}
+            <strong>Hata ({{ newTenantErrorStatus || 'N/A' }}):</strong> {{ newTenantError }}
           </div>
           <button type="submit" :disabled="newTenantLoading" class="submit-button">
             {{ newTenantLoading ? 'Creating...' : 'Create Tenant + Register' }}
@@ -83,7 +92,7 @@
             </label>
           </div>
           <div v-if="loginError" class="error">
-            <strong>Error:</strong> {{ loginError }}
+            <strong>Hata ({{ loginErrorStatus || 'N/A' }}):</strong> {{ loginError }}
           </div>
           <button type="submit" :disabled="loginLoading" class="submit-button">
             {{ loginLoading ? 'Logging in...' : 'Login' }}
@@ -127,8 +136,11 @@ export default {
       },
       newTenantLoading: false,
       newTenantError: null,
+      newTenantErrorStatus: null,
       loginLoading: false,
       loginError: null,
+      loginErrorStatus: null,
+      successMessage: null,
     };
   },
   computed: {
@@ -192,11 +204,18 @@ export default {
           
           // Clear form
           this.newTenantForm = { slug: '', name: '', email: '', password: '' };
+          
+          // Show success
+          this.successMessage = 'Tenant oluşturuldu ve owner kaydedildi.';
+          this.newTenantError = null;
+          this.newTenantErrorStatus = null;
         } else {
           throw new Error('No token received from registration');
         }
       } catch (error) {
         this.newTenantError = error.message || 'Failed to create tenant and register owner';
+        this.newTenantErrorStatus = error.status || null;
+        this.successMessage = null;
         console.error('Create tenant error:', error);
       } finally {
         this.newTenantLoading = false;
@@ -232,11 +251,18 @@ export default {
           
           // Clear form
           this.loginForm = { tenantSlug: this.loginForm.tenantSlug, email: '', password: '' };
+          
+          // Show success
+          this.successMessage = 'Giriş başarılı.';
+          this.loginError = null;
+          this.loginErrorStatus = null;
         } else {
           throw new Error('No token received from login');
         }
       } catch (error) {
         this.loginError = error.message || 'Failed to login';
+        this.loginErrorStatus = error.status || null;
+        this.successMessage = null;
         console.error('Login error:', error);
       } finally {
         this.loginLoading = false;
@@ -245,6 +271,7 @@ export default {
     
     handleLogout() {
       clearSession();
+      this.successMessage = null;
       // Redirect to auth portal
       this.$router.push('/auth');
     },
@@ -373,6 +400,36 @@ export default {
 .action-link:hover {
   background: #007bff;
   color: white;
+}
+
+.success-banner {
+  background: #d4edda;
+  color: #155724;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #c3e6cb;
+  margin-bottom: 2rem;
+}
+
+.success-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #28a745;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.action-button:hover {
+  background: #218838;
 }
 
 @media (max-width: 768px) {
