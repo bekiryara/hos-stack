@@ -6,7 +6,7 @@
     <div v-if="!isAuthenticated" class="logged-out-view">
       <div class="login-cta">
         <p>Hesabınızı görüntülemek için giriş yapın.</p>
-        <router-link to="/auth" class="login-button">Giriş Yap</router-link>
+        <router-link to="/login" class="login-button">Giriş Yap</router-link>
       </div>
     </div>
     
@@ -17,11 +17,9 @@
         <h3>Kullanıcı Bilgileri</h3>
         <div class="user-info">
           <div v-if="userEmail"><strong>Email:</strong> {{ userEmail }}</div>
-          <div><strong>User ID:</strong> {{ userIdShort }}</div>
-          <div v-if="activeTenantId"><strong>Active Tenant ID:</strong> {{ activeTenantId }}</div>
         </div>
-        <div class="last-refreshed" v-if="lastRefreshed">
-          Son yenileme: {{ formatDate(lastRefreshed) }}
+        <div class="account-actions">
+          <button @click="handleLogout" class="logout-button">Çıkış</button>
         </div>
       </div>
       
@@ -141,7 +139,7 @@
 
 <script>
 import { api } from '../api/client';
-import { getToken, getUserId, getTenantId, getActiveTenantId, decodeJwtPayload } from '../lib/demoSession.js';
+import { isLoggedIn, getUser, clearSession, getToken } from '../lib/session.js';
 
 export default {
   name: 'AccountPortalPage',
@@ -160,23 +158,16 @@ export default {
   },
   computed: {
     isAuthenticated() {
-      return getToken() !== null;
-    },
-    userId() {
-      return getUserId();
-    },
-    userIdShort() {
-      const uid = this.userId;
-      return uid ? uid.substring(0, 8) + '...' : '(unknown)';
+      return isLoggedIn();
     },
     userEmail() {
-      const token = getToken();
-      if (!token) return null;
-      const payload = decodeJwtPayload(token);
-      return payload?.email || null;
+      const user = getUser();
+      return user?.email || null;
     },
-    activeTenantId() {
-      return getActiveTenantId();
+    userIdShort() {
+      const user = getUser();
+      const id = user?.id;
+      return id ? id.substring(0, 8) + '...' : '(unknown)';
     },
   },
   mounted() {
@@ -201,10 +192,8 @@ export default {
       this.loading = true;
       this.error = null;
       
-      const token = getToken();
-      const userId = getUserId();
-      
-      if (!token || !userId) {
+      const user = getUser();
+      if (!user || !user.id) {
         this.error = {
           status: 401,
           message: 'Authentication required. Please login again.',
@@ -213,17 +202,19 @@ export default {
         return;
       }
       
+      const userId = user.id;
+      
       // Clear previous data
       this.orders = [];
       this.rentals = [];
       this.reservations = [];
       
       try {
-        // Fetch all in parallel
+        // Fetch all in parallel using existing API client
         const [ordersResp, rentalsResp, reservationsResp] = await Promise.all([
-          api.getMyOrders(userId, token).catch(err => ({ ok: false, error: err })),
-          api.getMyRentals(userId, token).catch(err => ({ ok: false, error: err })),
-          api.getMyReservations(userId, token).catch(err => ({ ok: false, error: err })),
+          api.getMyOrders(userId, getToken()).catch(err => ({ ok: false, error: err })),
+          api.getMyRentals(userId, getToken()).catch(err => ({ ok: false, error: err })),
+          api.getMyReservations(userId, getToken()).catch(err => ({ ok: false, error: err })),
         ]);
         
         // Check for errors - collect per-panel errors instead of failing all
@@ -271,6 +262,10 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    handleLogout() {
+      clearSession();
+      this.$router.push('/login');
     },
   },
 };

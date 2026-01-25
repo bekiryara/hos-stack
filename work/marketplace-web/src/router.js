@@ -10,7 +10,9 @@ import DemoDashboardPage from './pages/DemoDashboardPage.vue';
 import MessagingPage from './pages/MessagingPage.vue';
 import NeedDemoPage from './pages/NeedDemoPage.vue';
 import AuthPortalPage from './pages/AuthPortalPage.vue';
-import { isTokenPresent } from './lib/demoSession.js';
+import LoginPage from './pages/LoginPage.vue';
+import RegisterPage from './pages/RegisterPage.vue';
+import { isLoggedIn } from './lib/session.js';
 
 const routes = [
   { path: '/', component: CategoriesPage },
@@ -24,6 +26,8 @@ const routes = [
   { path: '/rental/create', component: CreateRentalPage, meta: { requiresAuth: true } },
   { path: '/account', component: AccountPortalPage },
   { path: '/auth', component: AuthPortalPage },
+  { path: '/login', component: LoginPage },
+  { path: '/register', component: RegisterPage },
 ];
 
 const router = createRouter({
@@ -34,9 +38,9 @@ const router = createRouter({
 // Router guard for auth-required routes (WP-58, WP-66)
 router.beforeEach((to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
-    if (!isTokenPresent()) {
-      // WP-66: Redirect to Auth Portal instead of NeedDemoPage
-      next('/auth');
+    if (!isLoggedIn()) {
+      // WP-66: Redirect to Login page
+      next('/login');
     } else {
       next();
     }

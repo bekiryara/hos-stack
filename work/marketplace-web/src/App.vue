@@ -13,7 +13,8 @@
           <button @click="handleLogout" class="logout-btn">Çıkış</button>
         </template>
         <template v-else>
-          <router-link to="/auth">Giriş / Kayıt</router-link>
+          <router-link to="/login">Giriş</router-link>
+          <router-link to="/register">Kayıt Ol</router-link>
         </template>
       </nav>
     </header>
@@ -24,36 +25,26 @@
 </template>
 
 <script>
-import { getToken, getUserId, decodeJwtPayload, clearSession } from './lib/demoSession.js';
+import { isLoggedIn, getUser, clearSession } from './lib/session.js';
 
 export default {
   name: 'App',
   computed: {
     isAuthenticated() {
-      return getToken() !== null;
+      return isLoggedIn();
     },
     userIdentity() {
-      const token = getToken();
-      if (!token) return '(unknown)';
-      
-      const payload = decodeJwtPayload(token);
-      if (!payload) return '(unknown)';
-      
-      // Try email or preferred_username first
-      if (payload.email) return payload.email;
-      if (payload.preferred_username) return payload.preferred_username;
-      
-      // Fallback to userId
-      const userId = getUserId();
-      if (userId) return userId.substring(0, 8) + '...';
-      
+      const user = getUser();
+      if (user && user.email) {
+        return user.email;
+      }
       return '(unknown)';
     },
   },
   methods: {
     handleLogout() {
       clearSession();
-      this.$router.push('/auth');
+      this.$router.push('/login');
     },
   },
 };

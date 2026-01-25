@@ -1820,3 +1820,33 @@ cd work\marketplace-web; npm run build  # Build check
 - **ASCII-only:** All outputs ASCII format
 
 ---
+
+## WP-66: Customer Auth UI v1 (2026-01-24)
+
+**Goal:** Professional customer login/register UI with minimal friction. No tenant/owner concepts exposed to users.
+
+**Changes:**
+- Created `session.js` module (single source of truth for user session)
+- Created `api.js` module (auto-attaches Authorization header)
+- Created `/login` and `/register` pages (professional UX, inline validation)
+- Updated navbar (logged out: "Giriş", "Kayıt Ol" | logged in: email, "Hesabım", "Çıkış")
+- Updated Account page (minimal, shows email + logout button)
+- Tenant slug hidden via `VITE_DEFAULT_TENANT_SLUG` env var
+
+**Verification:**
+- `npm run build` PASS
+- Manual browser test: register → login → account → logout flow works
+
+**Proof:** docs/PROOFS/wp66_customer_auth_ui_pass.md
+
+**Acceptance:**
+- ✅ Navbar shows correct state (logged out/in)
+- ✅ Login/register pages work with validation
+- ✅ Session persists after auth
+- ✅ Auto-redirect to /account after login/register
+- ✅ Logout clears session
+- ✅ Errors shown clearly
+- ✅ No tenant concepts exposed to users
+- ✅ Build passes
+
+---
