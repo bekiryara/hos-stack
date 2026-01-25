@@ -166,23 +166,23 @@ export const api = {
   },
   
   // HOS Auth API (WP-66: browser auth flows)
-  // NOTE: These endpoints are under /v1 prefix
+  // NOTE: /tenants endpoint is public (no auth required)
   hosCreateTenant: ({ slug, name }) => {
-    return hosApiRequest('/v1/tenants/v2', {
+    return hosApiRequest('/v1/tenants', {
       method: 'POST',
-      body: JSON.stringify({ slug, display_name: name }),
+      body: JSON.stringify({ slug, name }),
     });
   },
   
   hosRegisterOwner: ({ tenantSlug, email, password }) => {
-    return hosApiRequest('/auth/register', {
+    return hosApiRequest('/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify({ tenantSlug, email, password }),
     });
   },
   
   hosLogin: ({ tenantSlug, email, password }) => {
-    return hosApiRequest('/auth/login', {
+    return hosApiRequest('/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({ tenantSlug, email, password }),
     });
