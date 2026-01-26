@@ -29,9 +29,9 @@
       Status: {{ success.status }}
       <br />
       <div class="success-actions">
+        <router-link to="/account" class="action-link">Go to Account</router-link>
         <router-link v-if="success.listing_id" :to="`/listing/${success.listing_id}`" class="action-link">View Listing</router-link>
         <router-link v-if="listingCategoryId" :to="`/search/${listingCategoryId}`" class="action-link">Go to Search</router-link>
-        <router-link to="/demo" class="action-link">Back to Dashboard</router-link>
       </div>
     </div>
     

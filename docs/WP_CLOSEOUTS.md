@@ -64,3 +64,23 @@
   - All leaf scripts remain available for advanced troubleshooting
   - Minimal diff: only banner + new entrypoint + docs
   - PowerShell 5.1 compatible, ASCII-only outputs
+
+## WP-69: V1 Prototype E2E Demo Proof (2026-01-27)
+- **Purpose:** Close V1 prototype by validating complete E2E journey from browser (customer → account → firm)
+- **Deliverables:**
+  - **UI:** Added "Go to Account" link to CreateReservationPage and CreateRentalPage success messages
+  - **UI:** CreateOrderPage already had "View My Orders" link pointing to `/account`
+  - **UI:** Account page already shows Reservations/Rentals/Orders sections clearly (no changes needed)
+  - **OPS:** Created `ops/demo_seed_v1.ps1` - idempotent demo seed for 3 listings (Bando Takimi, Kiralik Tekne, Adana Kebap)
+  - **OPS:** Updated `ops/prototype_v1.ps1` - added optional `-CheckDemoSeed` parameter for non-destructive demo seed check
+  - **Docs:** Created `docs/PROOFS/wp69_v1_e2e_demo_pass.md` - step-by-step E2E proof with URLs and expected UI states
+- **Commands:**
+  - `.\ops\demo_seed_v1.ps1` - Seed demo listings (idempotent, checks by title)
+  - `.\ops\prototype_v1.ps1 -CheckDemoSeed` - Verify prototype + check demo seed (non-destructive)
+- **Proof:** `docs/PROOFS/wp69_v1_e2e_demo_pass.md`
+- **Key Findings:**
+  - Complete E2E journey works: register → browse → create transaction → view in account → create firm → create listing
+  - Account page correctly shows user-scoped records (Reservations, Rentals, Orders)
+  - Firm creation is additive (same user session, no separate login)
+  - All changes are minimal, reuse existing endpoints, maintain existing flows
+  - No technical debt introduced
