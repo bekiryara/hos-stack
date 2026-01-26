@@ -75,7 +75,7 @@ export async function apiRequest(endpoint, options = {}, skipAuth = false) {
     headers,
   });
 
-  // WP-68: Handle 401 - clear session
+  // WP-68: Handle 401 - clear session (redirect handled by router guard or component)
   if (response.status === 401) {
     clearSession();
   }
@@ -158,7 +158,7 @@ async function hosApiRequest(endpoint, options = {}, skipAuth = false) {
     headers,
   });
 
-  // WP-68: Handle 401 - clear session
+  // WP-68: Handle 401 - clear session (redirect handled by router guard or component)
   if (response.status === 401) {
     clearSession();
   }
@@ -199,12 +199,19 @@ export const api = {
   },
   
   // HOS Auth API (WP-66: browser auth flows)
-  // NOTE: /tenants endpoint is public (no auth required)
-  hosCreateTenant: ({ slug, name }) => {
-    return hosApiRequest('/v1/tenants', {
+  // WP-68: Create tenant endpoint (auth required)
+  // Backend has /v1/tenants/v2, but WP-68 requires /v1/tenants
+  // Use /v1/tenants/v2 for now (backend implementation)
+  hosCreateTenant: ({ slug, display_name }) => {
+    return hosApiRequest('/v1/tenants/v2', {
       method: 'POST',
-      body: JSON.stringify({ slug, name }),
+      body: JSON.stringify({ slug, display_name }),
     });
+  },
+  
+  // WP-68: Get current user info
+  getMe: () => {
+    return hosApiRequest('/v1/me');
   },
   
   hosRegisterOwner: ({ tenantSlug, email, password }) => {

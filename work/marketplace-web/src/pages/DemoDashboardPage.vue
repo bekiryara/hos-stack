@@ -51,7 +51,8 @@
 
 <script>
 import { api } from '../api/client';
-import { clearToken, enterDemoUrl, getToken } from '../lib/demoSession.js';
+import { clearToken, enterDemoUrl, getToken, clearSession } from '../lib/demoSession.js';
+import { isDemoMode, setDemoMode } from '../lib/demoMode.js';
 
 export default {
   name: 'DemoDashboardPage',
@@ -67,13 +68,21 @@ export default {
     };
   },
   async mounted() {
+    // WP-68: Guard - redirect if not in demo mode
+    if (!isDemoMode()) {
+      this.$router.push('/account');
+      return;
+    }
+    
+    // WP-68: Load memberships ONCE and resolve active tenant deterministically
     await this.loadActiveTenantId();
     await this.ensureDemoListing();
   },
   methods: {
     exitDemo() {
-      clearToken();
-      window.location.href = enterDemoUrl;
+      // WP-68: Disable demo mode and redirect to account
+      setDemoMode(false, true);
+      this.$router.push('/account');
     },
     async loadActiveTenantId() {
       // WP-62: Use client.js helper (single source of truth)
@@ -90,7 +99,7 @@ export default {
       }
     },
     async loadMemberships(autoSelect = false) {
-      // WP-62: Load memberships and optionally auto-select tenant
+      // WP-68: Load memberships ONCE and resolve active tenant deterministically
       const demoToken = getToken();
       if (!demoToken) {
         this.error = 'No demo token found. Please enter demo first.';
@@ -99,23 +108,50 @@ export default {
       
       this.loadingMemberships = true;
       try {
-        const membershipsResponse = await api.getMyMemberships(demoToken);
+        // WP-68: Use existing API (no manual token needed - auto-attached)
+        const membershipsResponse = await api.getMyMemberships();
         const items = membershipsResponse.items || membershipsResponse.data || (Array.isArray(membershipsResponse) ? membershipsResponse : []);
         this.memberships = items;
         
-        if (autoSelect && items.length > 0) {
-          // Prefer admin role, else first membership
-          const adminMembership = items.find(m => m.role === 'admin' || m.role === 'owner');
-          const selectedMembership = adminMembership || items[0];
-          const tenantId = selectedMembership.tenant_id || selectedMembership.tenant?.id;
-          if (tenantId) {
-            this.setActiveTenant(selectedMembership);
+        // WP-68: Resolve active tenant deterministically
+        if (items.length === 0) {
+          // No memberships - show "Firma Seç" CTA (handled by template)
+          this.loadingMemberships = false;
+          return;
+        }
+        
+        if (autoSelect) {
+          // If localStorage activeTenantId exists → use it
+          const storedTenantId = api.getActiveTenantId();
+          if (storedTenantId) {
+            const matchingMembership = items.find(m => (m.tenant_id || m.tenant?.id) === storedTenantId);
+            if (matchingMembership) {
+              this.setActiveTenant(matchingMembership);
+              this.loadingMemberships = false;
+              return;
+            }
           }
+          
+          // Else if memberships.length === 1 → auto-select
+          if (items.length === 1) {
+            this.setActiveTenant(items[0]);
+            this.loadingMemberships = false;
+            return;
+          }
+          
+          // Else → show "Firma Seç" CTA
+          this.showMembershipSelector = true;
         } else if (items.length > 0) {
           // Show selector if not auto-selecting
           this.showMembershipSelector = true;
         }
       } catch (err) {
+        // WP-68: If API returns 401 → hard logout + redirect to login
+        if (err.status === 401) {
+          clearSession();
+          this.$router.push('/login?reason=expired');
+          return;
+        }
         console.error('Could not fetch memberships:', err);
         this.error = 'Failed to load memberships. Please try again.';
       } finally {

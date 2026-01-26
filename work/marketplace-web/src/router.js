@@ -13,7 +13,9 @@ import NeedDemoPage from './pages/NeedDemoPage.vue';
 import AuthPortalPage from './pages/AuthPortalPage.vue';
 import LoginPage from './pages/LoginPage.vue';
 import RegisterPage from './pages/RegisterPage.vue';
+import FirmRegisterPage from './pages/FirmRegisterPage.vue';
 import { isLoggedIn, clearSession } from './lib/demoSession.js';
+import { isDemoMode } from './lib/demoMode.js';
 
 const routes = [
   { path: '/', component: CategoriesPage },
@@ -27,6 +29,7 @@ const routes = [
   { path: '/rental/create', component: CreateRentalPage, meta: { requiresAuth: true } },
   { path: '/order/create', component: CreateOrderPage, meta: { requiresAuth: true } },
   { path: '/account', component: AccountPortalPage, meta: { requiresAuth: true } },
+  { path: '/firm/register', component: FirmRegisterPage, meta: { requiresAuth: true } },
   { path: '/auth', component: AuthPortalPage },
   { path: '/login', component: LoginPage },
   { path: '/register', component: RegisterPage },
@@ -41,6 +44,15 @@ const router = createRouter({
 import { getActiveTenantId } from './lib/demoSession.js';
 
 router.beforeEach((to, from, next) => {
+  // WP-68: Guard demo dashboard route - redirect if not in demo mode
+  if (to.path === '/demo') {
+    if (!isDemoMode()) {
+      // Not in demo mode, redirect to account
+      next({ path: '/account' });
+      return;
+    }
+  }
+  
   // Check auth-required routes
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!isLoggedIn()) {

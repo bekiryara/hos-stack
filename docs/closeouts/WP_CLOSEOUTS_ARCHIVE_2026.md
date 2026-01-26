@@ -406,3 +406,187 @@ Start-Sleep -Seconds 10
 
 ---
 
+
+
+## Rollover: 2026-01-26 20:05:08
+
+## WP-68: Demo Mode Isolation + Frontend Refresh Discipline
+
+---
+
+## WP-68: User → Tenant Binding Hardening (UI/UX Only)
+
+---
+
+## WP-67: User → Firm (Tenant) Binding (UI/UX)
+
+---
+
+## WP-68: Customer Auth Hard Lock + Firm Registration v1
+
+---
+
+## WP-67: Customer Auth + My Account (401 Fix)
+
+---
+
+## WP-66: Browser Auth Portal + Tokenless Demo UX
+
+---
+
+## WP-65: Account Portal 401 Fix + Base URL/Auth Normalize
+
+---
+
+## WP-65: Listing Discovery Completion (Spec-aligned)
+
+---
+
+## WP-65: Marketplace Demo v1 — "Publish → Search → Reserve/Rent" End-to-End
+
+---
+
+## WP-64: Create Listing Publish CTA + Strict Draft/Search UX
+
+---
+
+## WP-63: Transaction Mode Proof (Listing → Search → View)
+
+---
+
+## WP-62: Create -> View -> Search Loop Closure (Single-Origin)
+
+---
+
+## WP-61: Single-Origin Marketplace API Proxy + GENESIS Store Listing Auth Alignment
+
+---
+
+## WP-61: Marketplace Create Listing Auth Wiring (CORS + Auth Fix)
+
+---
+
+## WP-60: Demo UX Stabilization (Empty Filters + One-Shot Auto-Search)
+
+---
+
+## WP-62: Prototype Polish + Repo Hygiene (Active Tenant UX + Clean Gates)
+
+---
+
+## WP-51: Demo UX - Auto-fill Tenant ID on Create Listing
+
+---
+
+## WP-49: Demo Seed 4/4 Determinism (Fix Bando Presto 422)
+
+---
+
+## WP-48: SPEC Alignment — Category/Filter/Listing/Search + Demo Flow Stabilization
+
+---
+
+## WP-62: Prototype Demo Pack v1
+
+---
+
+## WP-61: Category Search Unification + Showcase Seed
+
+---
+
+## WP-50: Messaging Proxy + Thread Init Fix (Prototype Unblock)
+
+---
+
+## WP-49: Prototype Reality Check (Flow Lock + UX Debt List)
+
+---
+
+## WP-48: Recursive Category Search + Tenant ID UX + Showcase Demo Listings
+
+---
+
+## WP-61: Contract Check Auth Fix + Frontend Smoke Messaging Proxy Fix
+
+---
+
+## WP-60: Prototype Integration v1 (Search Empty-Filters Fix + Deterministic Demo Seed + Stable Routing)
+
+---
+
+## WP-59: Demo Control Panel v1 (Scriptless, Deterministic, Single-Origin)
+
+---
+
+## WP-58: Prototype UX Hardening v1 (Session Guard + Logout + Deep-link Resilience)
+
+---
+
+## WP-57: Messaging Thread GET Fix (Remove Literal :id)
+
+---
+
+## WP-56: Messaging Same-Origin Proxy (3002) — Fix Demo "Message Seller"
+
+---
+
+## WP-55: Single-Origin Marketplace UI (Serve marketplace-web under HOS Web /marketplace/*)
+
+---
+
+## WP-53: Repo Payload Guard (Emergency Discipline - Prevent Repo Bloat)
+
+---
+
+## WP-52: Demo Artifacts Determinism (Fix RESULT capture, remove WARN)
+
+---
+
+## WP-51: User-Like Prototype Demo Entrypoint
+
+---
+
+## WP-49: Demo Membership Bootstrap (Make prototype_flow_smoke GREEN)
+
+---
+
+## WP-48: Prototype Green Pack v1 (Frontend Marker Alignment + Memberships tenant_id Fix + persona.scope Middleware Fix)
+
+---
+
+## WP-47: Dev Auth Determinism (JWT Bootstrap Must Pass)
+
+---
+
+## WP-38: Pazar Ping Reliability v1
+
+---
+
+## WP-39: Closeouts Rollover v1 (Index + Archive)
+
+---
+
+## WP-42: GitHub Sync Safe Windows Compatibility (pwsh fallback + syntax fix)
+
+---
+
+## WP-41: Gates Restore (secret scan + conformance parser)
+
+---
+
+## WP-44: Prototype Spine v1 (Runtime Smoke + Prototype Launcher + Deterministic Output)
+
+---
+
+## WP-46: Prototype V1 Runner + Closeouts Hygiene Gate (single-main)
+
+---
+
+## WP-45: Single-Main Ship + Prototype Flow Smoke v1 (NO PR, NO EXTRA BRANCH)
+
+---
+
+## WP-43: Build Artefact Hygiene v1 (dist ignore + untrack, deterministic public_ready)
+
+---
+

@@ -23,7 +23,7 @@
       </div>
       <div class="session-actions">
         <button @click="handleLogout" class="logout-button">Logout (Clear Session)</button>
-        <router-link to="/demo" class="action-link">Demo Dashboard</router-link>
+        <router-link v-if="isDemoMode" to="/demo" class="action-link">Demo Dashboard</router-link>
         <router-link to="/listing/create" class="action-link">Create Listing</router-link>
         <router-link to="/search" class="action-link">Listings</router-link>
         <router-link to="/account" class="action-link">Account</router-link>
@@ -158,6 +158,9 @@ export default {
     },
     role() {
       return getRole();
+    },
+    isDemoMode() {
+      return isDemoMode();
     },
   },
   mounted() {

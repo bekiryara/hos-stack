@@ -16,10 +16,55 @@
       <div class="user-summary-card">
         <h3>Kullanıcı Bilgileri</h3>
         <div class="user-info">
-          <div v-if="userEmail"><strong>Email:</strong> {{ userEmail }}</div>
+          <div v-if="userInfo.email"><strong>Email:</strong> {{ userInfo.email }}</div>
+          <div v-if="userInfo.display_name"><strong>Ad:</strong> {{ userInfo.display_name }}</div>
+          <div v-if="userInfo.memberships_count !== undefined"><strong>Firma Sayısı:</strong> {{ userInfo.memberships_count }}</div>
         </div>
         <div class="account-actions">
           <button @click="handleLogout" class="logout-button">Çıkış</button>
+        </div>
+      </div>
+      
+      <!-- WP-68: Firm Status Card (ALWAYS RENDER) -->
+      <div class="firm-status-card">
+        <h3>Firma Durumu</h3>
+        <div v-if="membershipsLoading" class="loading-firm-state">
+          <p>Firma bilgileri yükleniyor...</p>
+        </div>
+        <div v-else-if="memberships.length === 0" class="no-firm-state">
+          <p>Henüz bir firmanız yok. Firma oluşturarak ilan verebilirsiniz.</p>
+          <router-link to="/firm/register" class="firm-register-btn-primary">Firma Oluştur</router-link>
+        </div>
+        <div v-else class="has-firm-state">
+          <div class="firm-info">
+            <p><strong>Aktif Firma:</strong> {{ activeTenantName || 'Seçilmemiş' }}</p>
+            <p v-if="activeTenantId"><strong>Firma ID:</strong> {{ activeTenantId.substring(0, 8) }}...</p>
+            <p v-if="activeTenantId"><strong>Durum:</strong> <span class="status-active">AKTİF</span></p>
+          </div>
+          <div class="firm-actions">
+            <router-link to="/listing/create" class="firm-panel-link">Firma Paneli</router-link>
+          </div>
+        </div>
+      </div>
+      
+      <!-- WP-68: Active Tenant Selection -->
+      <div v-if="memberships.length > 0" class="tenant-selection-card">
+        <h3>Firmalarım</h3>
+        <div class="memberships-list">
+          <div v-for="membership in memberships" :key="membership.tenant_id" class="membership-item" :class="{ active: membership.tenant_id === activeTenantId }">
+            <div class="membership-info">
+              <strong>{{ membership.tenant_name || membership.tenant_slug }}</strong>
+              <span class="membership-role">{{ membership.role }}</span>
+            </div>
+            <button 
+              v-if="membership.tenant_id !== activeTenantId"
+              @click="setActiveTenant(membership.tenant_id)"
+              class="set-active-btn"
+            >
+              Aktif Firma Yap
+            </button>
+            <span v-else class="active-badge">Aktif</span>
+          </div>
         </div>
       </div>
       
@@ -139,8 +184,8 @@
 
 <script>
 import { api } from '../api/client.js';
-import { apiRequest as hosApiRequest } from '../lib/api.js';
-import { isLoggedIn, getUser, clearSession, getUserId, getBearerToken } from '../lib/demoSession.js';
+import { isLoggedIn, getUser, clearSession, getUserId, getActiveTenantId, setActiveTenantId } from '../lib/demoSession.js';
+// WP-68: Removed isDemoMode import - single auth entry, no demo mode UI
 
 export default {
   name: 'AccountPortalPage',
@@ -150,9 +195,12 @@ export default {
       orders: [],
       rentals: [],
       reservations: [],
+      userInfo: {},
+      memberships: [],
       
       // State
       loading: false,
+      membershipsLoading: false, // WP-68: Separate loading state for memberships
       error: null,
       lastRefreshed: null,
     };
@@ -161,31 +209,31 @@ export default {
     isAuthenticated() {
       return isLoggedIn();
     },
-    userEmail() {
-      const user = getUser();
-      return user?.email || null;
+    activeTenantId() {
+      return getActiveTenantId();
     },
-    userIdShort() {
-      const user = getUser();
-      const id = user?.id;
-      return id ? id.substring(0, 8) + '...' : '(unknown)';
+    activeTenantName() {
+      if (!this.activeTenantId || this.memberships.length === 0) return null;
+      const active = this.memberships.find(m => m.tenant_id === this.activeTenantId);
+      return active ? (active.tenant_name || active.tenant_slug) : null;
     },
   },
   async mounted() {
+    console.log('[AccountPortalPage] mounted() called, isAuthenticated:', this.isAuthenticated);
     if (this.isAuthenticated) {
-      // WP-67: Fetch user info from /v1/me first
+      console.log('[AccountPortalPage] User is authenticated, loading data...');
+      await this.loadUserInfo();
+      await this.loadMemberships();
+      this.refreshAll();
+    } else {
+      console.log('[AccountPortalPage] User is NOT authenticated, skipping data load');
+    }
+  },
+  methods: {
+    async loadUserInfo() {
       try {
-        const meResponse = await hosApiRequest('/v1/me', { method: 'GET' }, true);
-        // Update user info in session
-        const user = getUser();
-        if (user) {
-          user.email = meResponse.email || user.email;
-          user.id = meResponse.user_id || meResponse.id || user.id;
-          // Save updated user info
-          const { saveSession } = await import('../lib/demoSession.js');
-          const token = getBearerToken().replace('Bearer ', '');
-          saveSession(token, user);
-        }
+        // WP-68: Fetch user info from /v1/me
+        this.userInfo = await api.getMe();
       } catch (err) {
         // If /v1/me fails with 401, clear session and redirect
         if (err.status === 401) {
@@ -193,11 +241,37 @@ export default {
           this.$router.push('/login?reason=expired');
           return;
         }
+        console.error('Failed to load user info:', err);
       }
-      this.refreshAll();
-    }
-  },
-  methods: {
+    },
+    async loadMemberships() {
+      console.log('[AccountPortalPage] loadMemberships() called');
+      this.membershipsLoading = true;
+      try {
+        // WP-68: Fetch memberships
+        console.log('[AccountPortalPage] Calling api.getMyMemberships()...');
+        const response = await api.getMyMemberships();
+        console.log('[AccountPortalPage] getMyMemberships response:', response);
+        this.memberships = response.items || response.data || (Array.isArray(response) ? response : []);
+        console.log('[AccountPortalPage] memberships set to:', this.memberships);
+      } catch (err) {
+        console.error('[AccountPortalPage] Failed to load memberships:', err);
+        if (err.status === 401) {
+          clearSession();
+          this.$router.push('/login?reason=expired');
+          return;
+        }
+        this.memberships = []; // Set empty array on error
+      } finally {
+        this.membershipsLoading = false;
+        console.log('[AccountPortalPage] loadMemberships() completed, membershipsLoading:', this.membershipsLoading);
+      }
+    },
+    setActiveTenant(tenantId) {
+      // WP-68: Set active tenant
+      setActiveTenantId(tenantId);
+      this.$forceUpdate(); // Force re-render to show active state
+    },
     formatDate(dateStr) {
       if (!dateStr) return 'N/A';
       try {
@@ -416,6 +490,185 @@ export default {
   padding: 2rem;
   text-align: center;
   color: #666;
+}
+
+.account-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.firm-register-btn {
+  padding: 0.5rem 1rem;
+  background: #28a745;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: inline-block;
+}
+
+.firm-register-btn:hover {
+  background: #218838;
+}
+
+.logout-button {
+  padding: 0.5rem 1rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.logout-button:hover {
+  background: #c82333;
+}
+
+.tenant-selection-card {
+  margin: 1rem 0;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.tenant-selection-card h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.memberships-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.membership-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.membership-item.active {
+  border-color: #007bff;
+  background: #e7f3ff;
+}
+
+.membership-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.membership-role {
+  font-size: 0.875rem;
+  color: #666;
+  text-transform: capitalize;
+}
+
+.set-active-btn {
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.set-active-btn:hover {
+  background: #0056b3;
+}
+
+.active-badge {
+  padding: 0.25rem 0.75rem;
+  background: #28a745;
+  color: white;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+/* WP-67: Firm Status Card */
+.firm-status-card {
+  margin: 1rem 0;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.firm-status-card h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.no-firm-state {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.no-firm-state p {
+  margin-bottom: 1.5rem;
+  color: #666;
+}
+
+.firm-register-btn-primary {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: #28a745;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.firm-register-btn-primary:hover {
+  background: #218838;
+}
+
+.has-firm-state {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.firm-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.firm-info p {
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.firm-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* WP-68: Removed firm-demo-link styles - no longer used (single auth entry) */
+
+.loading-firm-state {
+  text-align: center;
+  padding: 1rem 0;
+  color: #666;
+}
+
+.status-active {
+  color: #28a745;
+  font-weight: 600;
 }
 
 .error-box {

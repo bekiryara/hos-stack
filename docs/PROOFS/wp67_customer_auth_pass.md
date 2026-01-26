@@ -134,3 +134,4 @@ Invoke-RestMethod -Uri "http://localhost:3002/api/v1/me" -Method GET -Headers $h
 Invoke-RestMethod -Uri "http://localhost:3002/api/v1/me/memberships" -Method GET -Headers $headers
 ```
 
+

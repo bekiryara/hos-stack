@@ -229,11 +229,11 @@ export function App() {
           </div>
         )}
 
-        <h1>Demo Control Panel</h1>
+        <h1>System Status</h1>
 
-        <div data-marker="demo-control-panel" style={{ marginBottom: '2rem', padding: '1.5rem', border: '2px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+        <div data-marker="system-status" style={{ marginBottom: '2rem', padding: '1.5rem', border: '2px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
           <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Demo Ready Status</h2>
+            <h2 style={{ margin: 0, fontSize: '1.5rem' }}>System Status</h2>
             <button
               onClick={checkDemoReadiness}
               disabled={demoChecksLoading}
@@ -322,8 +322,8 @@ export function App() {
               }}
             >
               {Object.values(demoChecks).every((c) => c.pass)
-                ? '✓ Demo Ready'
-                : '✗ Demo Not Ready'}
+                ? '✓ All Systems Ready'
+                : '✗ Some Systems Not Ready'}
             </div>
           )}
 
@@ -378,7 +378,7 @@ export function App() {
           </div>
           {listingError && !listingId && (
             <div style={{ marginTop: '0.75rem', fontSize: '0.875rem', color: '#856404' }}>
-              No published listing found. <a href="/marketplace/demo" style={{ color: '#0066cc' }}>Open Marketplace Demo</a> to create one.
+              No published listing found. <a href="/marketplace/" style={{ color: '#0066cc' }}>Open Marketplace</a> to create one.
             </div>
           )}
         </div>
