@@ -134,10 +134,10 @@ export function App() {
 
     // Check 5: Marketplace UI route reachable
     try {
-      const resp = await fetch('/marketplace/need-demo', { cache: 'no-store' });
+      const resp = await fetch('/marketplace/', { cache: 'no-store' });
       if (resp.ok) {
         const text = await resp.text();
-        if (text.includes('data-marker="need-demo"') || text.includes('id="app"')) {
+        if (text.includes('id="app"') || text.includes('Marketplace')) {
           checks.marketplaceUi = { pass: true, message: 'Marketplace UI: Reachable' };
         } else {
           checks.marketplaceUi = { pass: false, message: 'Marketplace UI: Missing marker' };
@@ -202,7 +202,7 @@ export function App() {
   return (
     <div className="page" data-marker="hos-home">
       <header className="top">
-        <div className="brand">H-OS Admin</div>
+        <div className="brand">H-OS Admin <span style={{ fontSize: '0.7rem', color: '#ff6b6b', fontWeight: 'normal' }}>(DEV ONLY)</span></div>
         <div className="actions">
           <button onClick={load} disabled={loading}>
             {loading ? 'Loading…' : 'Refresh'}

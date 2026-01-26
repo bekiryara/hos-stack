@@ -7,20 +7,15 @@ import CreateReservationPage from './pages/CreateReservationPage.vue';
 import CreateRentalPage from './pages/CreateRentalPage.vue';
 import CreateOrderPage from './pages/CreateOrderPage.vue';
 import AccountPortalPage from './pages/AccountPortalPage.vue';
-import DemoDashboardPage from './pages/DemoDashboardPage.vue';
 import MessagingPage from './pages/MessagingPage.vue';
-import NeedDemoPage from './pages/NeedDemoPage.vue';
 import AuthPortalPage from './pages/AuthPortalPage.vue';
 import LoginPage from './pages/LoginPage.vue';
 import RegisterPage from './pages/RegisterPage.vue';
 import FirmRegisterPage from './pages/FirmRegisterPage.vue';
 import { isLoggedIn, clearSession } from './lib/demoSession.js';
-import { isDemoMode } from './lib/demoMode.js';
 
 const routes = [
   { path: '/', component: CategoriesPage },
-  { path: '/demo', component: DemoDashboardPage, meta: { requiresAuth: true } },
-  { path: '/need-demo', component: NeedDemoPage },
   { path: '/search/:categoryId?', component: ListingsSearchPage, props: true },
   { path: '/listing/:id', component: ListingDetailPage, props: true },
   { path: '/listing/:id/message', component: MessagingPage, props: true, meta: { requiresAuth: true } },
@@ -44,14 +39,7 @@ const router = createRouter({
 import { getActiveTenantId } from './lib/demoSession.js';
 
 router.beforeEach((to, from, next) => {
-  // WP-68: Guard demo dashboard route - redirect if not in demo mode
-  if (to.path === '/demo') {
-    if (!isDemoMode()) {
-      // Not in demo mode, redirect to account
-      next({ path: '/account' });
-      return;
-    }
-  }
+  // WP-70: Single auth entry - no demo routes
   
   // Check auth-required routes
   if (to.matched.some(record => record.meta.requiresAuth)) {

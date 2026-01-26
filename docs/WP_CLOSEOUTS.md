@@ -23,6 +23,27 @@
 
 ## WP-74: Category Integrity Gate Pack (SAFE, OPS-ONLY)
 
+## WP-70: Single Auth UX Lock + Demo Cleanup (2026-01-27)
+- **Purpose:** Finalize V1 user experience by eliminating demo/admin confusion
+- **Deliverables:**
+  - **AUTH UX:** Removed `/demo` and `/need-demo` routes from router
+  - **AUTH UX:** Removed demo login buttons and demo dashboard links from AuthPortalPage
+  - **AUTH UX:** Changed "Devam Et / Demo" to "Ana Sayfa" in success banner
+  - **HOS WEB:** Added "(DEV ONLY)" label to HOS Web header (3002 port)
+  - **HOS WEB:** Updated Marketplace UI check from `/marketplace/need-demo` to `/marketplace/`
+  - **OPS:** Archived 4 old demo seed scripts to `ops/_archive/` (demo_seed.ps1, demo_seed_root_listings.ps1, demo_seed_showcase.ps1, demo_seed_transaction_modes.ps1)
+  - **OPS:** Only `ops/demo_seed_v1.ps1` remains active (WP-69, idempotent)
+- **Commands:**
+  - Archive old scripts: `Move-Item -Path "ops\demo_seed*.ps1" -Destination "ops\_archive\"`
+- **Proof:** `docs/PROOFS/wp70_single_auth_v1_lock_pass.md`
+- **Key Findings:**
+  - Single auth entry point locked: `/login` and `/register` only
+  - Account page is canonical home with all sections (Reservations, Rentals, Orders, Firm)
+  - Firm creation is optional and additive, accessible only from Account
+  - HOS Web (3002) marked as DEV ONLY, not user-facing
+  - All demo artifacts removed or archived
+  - System now feels like real product, not playground
+
 ## WP-68: Single Auth Gate + OPS Entrypoints + Dev Refresh (2026-01-26)
 - **Purpose:** Fix UX confusion (single auth entry) + ops discipline (single entrypoint) + dev refresh (deterministic)
 - **Deliverables:**
