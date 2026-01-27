@@ -1,13 +1,26 @@
-// WP-67: Single session module (unified customer auth + demo)
+// WP-67: Single session module (unified customer auth)
+// WP-72: Renamed localStorage keys from demo_* to auth_* (backward compatible)
 // Manages authentication token in localStorage
 
-const TOKEN_KEY = 'demo_auth_token';
-const USER_KEY = 'demo_user'; // WP-67: Store user info { email, id? }
+const TOKEN_KEY = 'auth_token';
+const OLD_TOKEN_KEY = 'demo_auth_token'; // Backward compatibility
+const USER_KEY = 'auth_user';
+const OLD_USER_KEY = 'demo_user'; // Backward compatibility
 const TENANT_SLUG_KEY = 'tenant_slug';
 const ACTIVE_TENANT_ID_KEY = 'active_tenant_id';
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  // WP-72: Check new key first, fallback to old key for backward compatibility
+  let token = localStorage.getItem(TOKEN_KEY);
+  if (!token) {
+    token = localStorage.getItem(OLD_TOKEN_KEY);
+    if (token) {
+      // Migrate to new key
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.removeItem(OLD_TOKEN_KEY);
+    }
+  }
+  return token;
 }
 
 /**
@@ -34,14 +47,20 @@ export function saveSession(token, user) {
   const rawToken = normalizeToken(token);
   if (rawToken) {
     localStorage.setItem(TOKEN_KEY, rawToken);
+    // WP-72: Remove old key if exists
+    localStorage.removeItem(OLD_TOKEN_KEY);
   } else {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(OLD_TOKEN_KEY);
   }
   
   if (user) {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
+    // WP-72: Remove old key if exists
+    localStorage.removeItem(OLD_USER_KEY);
   } else {
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(OLD_USER_KEY);
   }
 }
 
@@ -49,13 +68,17 @@ export function setToken(token) {
   const rawToken = normalizeToken(token);
   if (rawToken) {
     localStorage.setItem(TOKEN_KEY, rawToken);
+    // WP-72: Remove old key if exists
+    localStorage.removeItem(OLD_TOKEN_KEY);
   } else {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(OLD_TOKEN_KEY);
   }
 }
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(OLD_TOKEN_KEY);
 }
 
 export function isTokenPresent() {
@@ -110,7 +133,16 @@ export function getUserId() {
  * @returns {object|null} { email, id? } or null
  */
 export function getUser() {
-  const userStr = localStorage.getItem(USER_KEY);
+  // WP-72: Check new key first, fallback to old key for backward compatibility
+  let userStr = localStorage.getItem(USER_KEY);
+  if (!userStr) {
+    userStr = localStorage.getItem(OLD_USER_KEY);
+    if (userStr) {
+      // Migrate to new key
+      localStorage.setItem(USER_KEY, userStr);
+      localStorage.removeItem(OLD_USER_KEY);
+    }
+  }
   if (userStr) {
     try {
       return JSON.parse(userStr);
@@ -223,7 +255,8 @@ export function getActiveTenantId() {
  */
 export function clearSession() {
   clearToken();
-  localStorage.removeItem(USER_KEY); // WP-67: Clear user info
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(OLD_USER_KEY); // WP-72: Clear old key too
   localStorage.removeItem(TENANT_SLUG_KEY);
   localStorage.removeItem(ACTIVE_TENANT_ID_KEY);
   localStorage.removeItem('demo_user_id'); // Clear userId if stored separately

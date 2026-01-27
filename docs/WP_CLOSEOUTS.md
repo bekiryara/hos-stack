@@ -19,6 +19,28 @@
 
 ## WP-72: Category Scale Core Pack (SAFE MODE)
 
+## WP-72 FINAL: V1 Repo Standardization (2026-01-27)
+- **Purpose:** Remove leftover demo artifacts, make header/nav standard, make docs clean & current
+- **Deliverables:**
+  - **HEADER:** Standardized App.vue nav - minimal, professional (Keşfet, Hesabım, Login/Register only)
+  - **ROUTER:** Removed AuthPortalPage import, /auth redirects to /login
+  - **SESSION:** Renamed localStorage keys (demo_* → auth_*) with backward compatibility
+  - **DEMO CLEANUP:** Deleted DemoDashboardPage.vue, NeedDemoPage.vue, demoMode.js
+  - **REPO HYGIENE:** Removed tracked artifacts (oidc_userinfo.json, .vite files), updated .gitignore
+  - **DOCS:** Archived non-canonical docs (CLEANUP_SUMMARY.md, DEMO_TEST_GUIDE.md, TEST_RESULT_SUMMARY.md)
+- **Commands:**
+  - `git rm --cached` for tracked artifacts
+  - `.\ops\secret_scan.ps1` - PASS
+  - `.\ops\public_ready_check.ps1` - PASS (after commit)
+  - `.\ops\conformance.ps1` - PASS
+- **Proof:** `docs/PROOFS/wp72_final_repo_standard_pass.md`
+- **Key Findings:**
+  - Header is minimal and professional (no create buttons)
+  - Demo routes/pages removed
+  - No forbidden artifacts tracked
+  - Docs cleaned and archived
+  - All gates PASS
+
 ## WP-73: Subtree Filter Hardening (No ID list, No contract change)
 
 ## WP-74: Category Integrity Gate Pack (SAFE, OPS-ONLY)

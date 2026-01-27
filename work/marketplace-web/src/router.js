@@ -8,7 +8,6 @@ import CreateRentalPage from './pages/CreateRentalPage.vue';
 import CreateOrderPage from './pages/CreateOrderPage.vue';
 import AccountPortalPage from './pages/AccountPortalPage.vue';
 import MessagingPage from './pages/MessagingPage.vue';
-import AuthPortalPage from './pages/AuthPortalPage.vue';
 import LoginPage from './pages/LoginPage.vue';
 import RegisterPage from './pages/RegisterPage.vue';
 import FirmRegisterPage from './pages/FirmRegisterPage.vue';
@@ -25,7 +24,7 @@ const routes = [
   { path: '/order/create', component: CreateOrderPage, meta: { requiresAuth: true } },
   { path: '/account', component: AccountPortalPage, meta: { requiresAuth: true } },
   { path: '/firm/register', component: FirmRegisterPage, meta: { requiresAuth: true } },
-  { path: '/auth', component: AuthPortalPage },
+  { path: '/auth', redirect: '/login' },
   { path: '/login', component: LoginPage },
   { path: '/register', component: RegisterPage },
 ];

@@ -2,7 +2,9 @@
 work/hos/secrets/*.txt
 .env
 .env.*
+**/.env
 oidc_token*.json
+oidc_userinfo.json
 cookies.txt
 headers.txt
 
@@ -42,6 +44,8 @@ _temp_*.txt
 work/marketplace-web/node_modules/
 
 # Vendor (should never be tracked)
+**/vendor/
 work/pazar/vendor/
 **/dist/
 work/marketplace-web/dist/
+**/.vite/

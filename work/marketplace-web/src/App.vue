@@ -3,13 +3,10 @@
     <header>
       <h1>Marketplace</h1>
       <nav>
-        <router-link to="/">Categories</router-link>
-        <router-link to="/listing/create">Create Listing</router-link>
-        <router-link to="/reservation/create">Create Reservation</router-link>
-        <router-link to="/rental/create">Create Rental</router-link>
+        <router-link to="/">Keşfet</router-link>
         <template v-if="isAuthenticated">
-          <span class="user-identity">{{ userIdentity }}</span>
           <router-link to="/account">Hesabım</router-link>
+          <span class="user-identity">{{ userIdentity }}</span>
           <button @click="handleLogout" class="logout-btn">Çıkış</button>
         </template>
         <template v-else>
