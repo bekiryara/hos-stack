@@ -1,5 +1,10 @@
 # ONBOARDING - Quick Start for Newcomers
 
+> ⚠️ **IMPORTANT**
+>
+> All technical conversations and new agents MUST start by following:
+> [`docs/NEW_CHAT_PROTOCOL.md`](NEW_CHAT_PROTOCOL.md)
+
 **Target Audience:** New developers joining the project  
 **Goal:** Get the stack running with 2 commands
 

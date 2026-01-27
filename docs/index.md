@@ -15,6 +15,7 @@ This is a full-stack marketplace platform built with Laravel (backend), Vue.js (
 - **[Getting Started](START_HERE.html)** - Onboarding guide
 
 ### For AI/ChatGPT
+- 🔁 **New Chat / New Agent Start:** [`docs/NEW_CHAT_PROTOCOL.md`](NEW_CHAT_PROTOCOL.md)
 - **[Code Index](CODE_INDEX.html)** - Start here to understand the codebase structure
 - **[API Routes](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api.php)** - All backend endpoints
 - **[Frontend Components](https://github.com/bekiryara/hos-stack/tree/main/work/marketplace-web/src)** - Vue.js components
