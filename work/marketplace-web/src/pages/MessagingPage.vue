@@ -250,14 +250,6 @@ export default {
 }
 
 /* WP-74: Removed exit-demo-button styles */
-  color: #333;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.exit-demo-button:hover {
-  background: #e5e5e5;
-}
 
 .back-button {
   padding: 0.5rem 1rem;
