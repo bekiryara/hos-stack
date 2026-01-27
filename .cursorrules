@@ -1,0 +1,14 @@
+---
+You are working in a governance-first WP-based repository.
+
+ABSOLUTE RULES:
+- DO NOT run any git commands (no checkout/branch/commit/push/pull/merge/rebase).
+- DO NOT change branches.
+- Only edit files explicitly listed in the prompt.
+- Minimal diff only. No refactor. No new features unless the WP explicitly requires it.
+- If a git action is required, output the exact commands for the human to run.
+- Use existing ops scripts (ship_main, github_sync_safe) and existing docs; do not create new workflows, branches, or publishing methods.
+
+OUTPUT FORMAT:
+- Always return: (1) list of files created/changed, (2) next manual steps for the human.
+---
