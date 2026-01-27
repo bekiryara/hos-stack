@@ -92,4 +92,69 @@ Kural: Ayni klasore ayni anda 2 ajan girmez.
 - Frontend: 1 kucuk UX duzeltme
 - Pazar: 1 kucuk endpoint/contract duzeltme
 - Ops: 1 gate/runbook netligi
+
+---
+
+# KOPYALA-YAPISTIR: 3 AJAN PROMPTU (TEK DOSYADAN YONETIM)
+
+Kullanim:
+- Yeni ajan sohbetine su dosyayi okut: `docs/NEW_CHAT_PROTOCOL.md`
+- Sonra ajana sadece sunu yaz: "Sen AJAN-1'sin" (veya 2/3)
+- Ardindan asagidaki ilgili promptu aynen yapistir.
+
+## AJAN-1 PROMPT (FRONTEND / MARKETPLACE UX)
+
+CONTEXT
+- Repo disiplini: WP tabanli, minimal diff, fail-fast gates, proof + closeout.
+- Publish yolu: sadece `ops/ship_main.ps1` (ajan publish ETMEZ).
+
+SCOPE
+- Sadece: `work/marketplace-web/**`
+- Dokunma: `ops/**`, `work/pazar/**`, `work/hos/**`, `work/messaging/**`, `docs/WP_CLOSEOUTS.md`, `CHANGELOG.md` (ozellikle istenmedikce)
+
+OUTPUT (ZORUNLU)
+1) Degisen dosyalar listesi
+2) Neden (1-2 cumle)
+3) Test/proof adimi (kisa)
+
+## AJAN-2 PROMPT (BACKEND / PAZAR-LARAVEL)
+
+CONTEXT
+- Repo disiplini: WP tabanli, minimal diff, fail-fast gates, proof + closeout.
+- Publish yolu: sadece `ops/ship_main.ps1` (ajan publish ETMEZ).
+
+SCOPE
+- Sadece: `work/pazar/**`
+- Dokunma: `ops/**`, `work/marketplace-web/**`, `work/hos/**`, `work/messaging/**`, `docs/WP_CLOSEOUTS.md`, `CHANGELOG.md` (ozellikle istenmedikce)
+
+OUTPUT (ZORUNLU)
+1) Degisen dosyalar listesi
+2) Contract/semantik etkisi (1-2 cumle)
+3) Test/proof adimi (kisa)
+
+## AJAN-3 PROMPT (OPS / GATES / DOCS-PROOF)
+
+CONTEXT
+- Repo disiplini: WP tabanli, minimal diff, fail-fast gates, proof + closeout.
+- Publish yolu: sadece `ops/ship_main.ps1` (ajan publish ETMEZ).
+
+SCOPE
+- Sadece: `ops/**` ve gerekirse `docs/runbooks/**` + `docs/PROOFS/**`
+- Dokunma: urun/UX feature ekleme, yeni publish yolu uretme, genis refactor
+
+OUTPUT (ZORUNLU)
+1) Degisen dosyalar listesi
+2) Hangi gate/komut etkilendi (PASS/FAIL beklentisi)
+3) Runbook/proof notu (kisa)
+
+---
+
+# WP SABLONU (5 SATIR, KAPANABILIR)
+
+WP-XXX: <Kisa baslik>
+- Goal: <tek cumle>
+- In-scope paths: <or. work/marketplace-web/**>
+- Out-of-scope: <dokunulmayacak yerler>
+- Test plan: <hangi komutlar/URL>
+- Closeout artifacts: <proof + (varsa) closeout/changelog>
 ---

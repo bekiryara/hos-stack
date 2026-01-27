@@ -108,4 +108,8 @@ Read `docs/CURRENT.md` for the complete stack overview.
 - **Full status**: Run `.\ops\baseline_status.ps1` (faster) or `.\ops\doctor.ps1` (comprehensive)
 - **Documentation**: Start with `docs/CURRENT.md`
 
+## Publishing Changes
+
+**Single publish path:** All changes to main branch must go through `.\ops\ship_main.ps1` (runs gates, then push). See `docs/DEV_DISCIPLINE.md` for details.
+
 

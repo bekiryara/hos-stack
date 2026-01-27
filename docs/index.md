@@ -72,6 +72,7 @@ This is a full-stack marketplace platform built with Laravel (backend), Vue.js (
 - [Ops Status Runbook](runbooks/ops_status.html)
 - [Security Runbook](runbooks/security.html)
 - [Incident Response](runbooks/incident.html)
+- **Publish:** `ops/ship_main.ps1` (single publish path - see `docs/DEV_DISCIPLINE.md`)
 
 ---
 

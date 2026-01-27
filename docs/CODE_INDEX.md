@@ -228,7 +228,7 @@
 ### Core Scripts (Most Important)
 
 - **Ops Run:** `ops/ops_run.ps1` - Daily ops entrypoint (Prototype/Full profiles)
-- **Ship Main:** `ops/ship_main.ps1` - Publish to main (gates + push)
+- **Ship Main:** `ops/ship_main.ps1` - **Single publish path** to main (gates + push). Only way to publish changes.
 - **Ops Status:** `ops/ops_status.ps1` - Unified ops dashboard
 - **Verify:** `ops/verify.ps1` - Full health check
 - **Baseline Status:** `ops/baseline_status.ps1` - Baseline status check
