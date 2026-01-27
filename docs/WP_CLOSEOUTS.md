@@ -19,6 +19,26 @@
 
 ## WP-72: Category Scale Core Pack (SAFE MODE)
 
+## WP-74: V1 Demo Freeze + Real User Flow Confirmation (2026-01-27)
+- **Purpose:** Lock repository into clean V1 demo state, confirm real user flow works end-to-end
+- **Deliverables:**
+  - **UI CLEANUP:** Removed AuthPortalPage.vue (unused), removed "Exit Demo" button from MessagingPage, changed "/demo" link to "/account" in CreateListingPage, changed "/auth" links to "/login" in CreateReservationPage/CreateRentalPage
+  - **USER FLOW:** Confirmed working: register → login → create reservation/rental/order → view in account → logout
+  - **FIRM FLOW:** Confirmed working: user can create firm → gains FIRM_OWNER role (additive)
+  - **CODE HYGIENE:** Removed unused AuthPortalPage, updated MessagingPage to use centralized token getter
+  - **DOCS:** Updated `docs/CURRENT.md` with V1 demo user flow section
+- **Commands:**
+  - `.\ops\secret_scan.ps1` - PASS (0 hits)
+  - `.\ops\public_ready_check.ps1` - PASS
+  - `.\ops\conformance.ps1` - PASS
+- **Proof:** `docs/PROOFS/wp74_v1_demo_freeze_pass.md`
+- **Key Findings:**
+  - No demo shortcuts/buttons remain
+  - Single login entry (marketplace-web)
+  - User flow confirmed working end-to-end
+  - Firm flow confirmed working
+  - All gates PASS
+
 ## WP-73: V1 Hygiene Lock (2026-01-27)
 - **Purpose:** Eliminate packaging noise, enforce single login entry, end rebuild confusion
 - **Deliverables:**

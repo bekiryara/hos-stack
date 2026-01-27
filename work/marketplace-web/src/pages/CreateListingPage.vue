@@ -41,7 +41,7 @@
             <small class="auto-fill-note">Auto-filled from active tenant</small>
           </div>
           <div v-else class="tenant-id-missing">
-            <router-link to="/demo" class="tenant-picker-link">Select Active Tenant</router-link>
+            <router-link to="/account" class="tenant-picker-link">Go to Account to Create Firm</router-link>
             <span class="or-text">or</span>
             <input
               v-model="formData.tenantId"
@@ -51,7 +51,7 @@
               class="form-input"
             />
             <small v-if="tenantIdLoadError" class="tenant-id-warning">
-              <strong>Note:</strong> Could not auto-load tenant ID. Please select from Demo page or enter manually.
+              <strong>Note:</strong> Could not auto-load tenant ID. Please create a firm from Account page or enter tenant ID manually.
             </small>
           </div>
         </label>

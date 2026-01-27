@@ -116,6 +116,27 @@ docker compose up -d --build
 
 This ensures baseline remains stable and prevents breaking changes.
 
+## V1 Demo User Flow
+
+**Confirmed Working:**
+1. Guest opens Marketplace Web (`http://localhost:3002/marketplace/`)
+2. Guest registers (email + password) → logged in as CUSTOMER
+3. Header shows logged-in state (email, "Hesabım", "Çıkış")
+4. User can create:
+   - Reservation (`/reservation/create`)
+   - Rental (`/rental/create`)
+   - Order (`/order/create`)
+5. User opens "My Account" (`/account`) → sees created records (reservations, rentals, orders)
+6. Logout works correctly
+7. Optional: User can create firm (`/firm/register`) → gains FIRM_OWNER role (additive, CUSTOMER remains)
+
+**Not Included in V1:**
+- Payment processing
+- Advanced search/filters
+- Email notifications
+- Multi-tenant switching UI
+- Admin dashboard for firms
+
 ## Related Docs
 
 - **Onboarding:** `docs/ONBOARDING.md` (quick start for newcomers)

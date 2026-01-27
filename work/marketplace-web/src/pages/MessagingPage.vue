@@ -3,7 +3,6 @@
     <div class="header">
       <button @click="$router.back()" class="back-button">← Back</button>
       <h2>Message Seller</h2>
-      <button @click="exitDemo" class="exit-demo-button" data-marker="exit-demo">Exit Demo</button>
     </div>
     <div v-if="loading" class="loading">Loading conversation...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
@@ -35,7 +34,7 @@
 </template>
 
 <script>
-import { clearToken, enterDemoUrl } from '../lib/demoSession.js';
+import { getToken } from '../lib/demoSession.js';
 
 // Simple JWT decode (no verification needed for demo)
 function decodeJWT(token) {
@@ -75,7 +74,7 @@ export default {
     async initializeMessaging() {
       try {
         // Get user ID from JWT token
-        const token = localStorage.getItem('demo_auth_token');
+        const token = getToken(); // WP-74: Use centralized token getter
         if (!token) {
           this.error = 'Not authenticated. Please login first.';
           this.loading = false;
@@ -103,7 +102,7 @@ export default {
     },
     async ensureThread() {
       const messagingBaseUrl = '/api/messaging';
-      const token = localStorage.getItem('demo_auth_token');
+      const token = getToken(); // WP-74: Use centralized token getter
       
       try {
         // Upsert thread for this listing
@@ -145,7 +144,7 @@ export default {
     },
     async loadMessages() {
       const messagingBaseUrl = '/api/messaging';
-      const token = localStorage.getItem('demo_auth_token');
+      const token = getToken(); // WP-74: Use centralized token getter
 
       try {
         // Use by-context endpoint (more reliable than by-id)
@@ -187,7 +186,7 @@ export default {
       this.newMessage = '';
 
       const messagingBaseUrl = '/api/messaging';
-      const token = localStorage.getItem('demo_auth_token');
+      const token = getToken(); // WP-74: Use centralized token getter
 
       try {
         const response = await fetch(`${messagingBaseUrl}/api/v1/threads/${this.threadId}/messages`, {
@@ -232,10 +231,7 @@ export default {
       const date = new Date(timestamp);
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     },
-    exitDemo() {
-      clearToken();
-      window.location.href = enterDemoUrl;
-    },
+    // WP-74: Removed exitDemo method
   },
 };
 </script>
@@ -253,11 +249,7 @@ export default {
   margin-bottom: 1.5rem;
 }
 
-.exit-demo-button {
-  padding: 0.5rem 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #f5f5f5;
+/* WP-74: Removed exit-demo-button styles */
   color: #333;
   cursor: pointer;
   font-size: 0.9rem;

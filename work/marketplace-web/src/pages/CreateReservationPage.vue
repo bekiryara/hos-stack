@@ -7,7 +7,7 @@
       <br />
       {{ authError }}
       <br />
-      <router-link to="/auth" class="action-link">Go to Auth Portal</router-link>
+      <router-link to="/login" class="action-link">Go to Login</router-link>
     </div>
     
     <div v-if="error && !authError" class="error">
