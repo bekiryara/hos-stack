@@ -19,6 +19,24 @@
 
 ## WP-72: Category Scale Core Pack (SAFE MODE)
 
+## WP-73: V1 Hygiene Lock (2026-01-27)
+- **Purpose:** Eliminate packaging noise, enforce single login entry, end rebuild confusion
+- **Deliverables:**
+  - **REPO HYGIENE:** Untracked `pazar_oidc_discovery.json`, updated .gitignore (added `**/secrets/*`, `pazar_oidc_discovery.json`)
+  - **SINGLE LOGIN:** HOS Web text updated (removed "demo features", clarified ops/admin only)
+  - **DEV REFRESH:** `ops/dev_refresh.ps1` already exists (WP-68)
+  - **DOCS:** Updated `docs/CURRENT.md` (single login entry, hygiene rules, dev refresh)
+- **Commands:**
+  - `.\ops\secret_scan.ps1` - PASS (0 hits)
+  - `.\ops\public_ready_check.ps1` - PASS
+  - `.\ops\conformance.ps1` - PASS
+- **Proof:** `docs/PROOFS/wp73_v1_hygiene_lock_pass.md`
+- **Key Findings:**
+  - No secrets/.env/dist/.vite tracked
+  - HOS Web is ops/admin only (DEV ONLY label)
+  - Marketplace Web is single customer login entry
+  - All gates PASS
+
 ## WP-72 FINAL: V1 Repo Standardization (2026-01-27)
 - **Purpose:** Remove leftover demo artifacts, make header/nav standard, make docs clean & current
 - **Deliverables:**

@@ -1,10 +1,12 @@
 ﻿# Secrets / private
 work/hos/secrets/*.txt
+**/secrets/*
 .env
 .env.*
 **/.env
 oidc_token*.json
 oidc_userinfo.json
+pazar_oidc_discovery.json
 cookies.txt
 headers.txt
 

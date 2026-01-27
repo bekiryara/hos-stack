@@ -12,7 +12,7 @@ This repository runs **H-OS** (universe governance) and **Pazar** (first commerc
 **H-OS Core:**
 - `hos-db`: PostgreSQL 16 database for H-OS (internal service, no exposed port)
 - `hos-api`: H-OS API service on `http://localhost:3000`
-- `hos-web`: H-OS Web UI on `http://localhost:3002`
+- `hos-web`: H-OS Web UI on `http://localhost:3002` (ops/admin only, DEV ONLY)
 
 **Pazar Core:**
 - `pazar-db`: PostgreSQL 16 database for Pazar (internal service, no exposed port)
@@ -26,7 +26,8 @@ This repository runs **H-OS** (universe governance) and **Pazar** (first commerc
 ## Ports
 
 - **3000**: H-OS API (`http://localhost:3000`)
-- **3002**: H-OS Web (`http://localhost:3002`)
+- **3002**: H-OS Web (`http://localhost:3002`) - ops/admin only
+- **3002/marketplace/**: Marketplace Web - customer login/register entry point
 - **8080**: Pazar App (`http://localhost:8080`)
 
 ## API Endpoints

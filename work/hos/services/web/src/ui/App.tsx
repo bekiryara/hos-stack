@@ -391,7 +391,7 @@ export function App() {
             <div>
               <a
                 href="/marketplace/"
-                data-marker="enter-demo"
+                data-marker="marketplace-access"
                 style={{
                   padding: '0.75rem 1.5rem',
                   fontSize: '1rem',
@@ -424,7 +424,7 @@ export function App() {
                 Login / Register
               </a>
               <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
-                Access Marketplace Web for authentication and demo features
+                Marketplace Web: Customer login/register entry point
               </div>
             </div>
           </div>
