@@ -1,6 +1,6 @@
 # CURRENT - Single Source of Truth
 
-**Last Updated:** 2026-01-14  
+**Last Updated:** 2026-01-28  
 **Baseline:** RELEASE-GRADE BASELINE RESET v1
 
 ## What is the Stack?
@@ -43,6 +43,7 @@ This repository runs **H-OS** (universe governance) and **Pazar** (first commerc
 - `GET /api/world/status` - Marketplace world status (SPEC §24.4)
 - `GET /api/v1/categories` - Category tree (WP-2, may return empty array if not seeded)
 - `GET /api/v1/categories/{id}/filter-schema` - Filter schema for category (WP-2)
+- `GET /api/v1/listings` - Single listing read/search engine (category + filters)
 
 **Note:** Laravel routes in `routes/api.php` are automatically prefixed with `/api` by default.
 
@@ -129,6 +130,25 @@ This ensures baseline remains stable and prevents breaking changes.
 5. User opens "My Account" (`/account`) → sees created records (reservations, rentals, orders)
 6. Logout works correctly
 7. Optional: User can create firm (`/firm/register`) → gains FIRM_OWNER role (additive, CUSTOMER remains)
+
+## Catalog / Search Final (Category → Catalog → Listing)
+
+**Category (tree-only):**
+- `GET /api/v1/categories` returns nodes with: `id`, `slug`, `parent_id` (plus optional nested `children`).
+
+**Catalog (filter definitions):**
+- `GET /api/v1/categories/{id}/filter-schema` returns `filters[]` describing allowed filter keys and types.
+- Each filter includes canonical `key` and simplified `type` (select/number/range/boolean/text) for UI rendering (additive fields; existing fields remain).
+
+**Listing read/search (single engine):**
+- `GET /api/v1/listings` is the only listing read/search endpoint.
+- Filter contract:
+  - Primary: `filters[...]`
+  - Backward compatible: `attrs[...]` (still supported)
+  - Priority: if `filters[...]` exists → use it; else if `attrs[...]` exists → use it.
+- Category-scoped validation:
+  - If `category_id` is provided and invalid → 404.
+  - If `category_id` is provided and filter keys are not defined by catalog schema for that category (or descendants) → 422.
 
 **Not Included in V1:**
 - Payment processing
