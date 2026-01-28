@@ -8,6 +8,21 @@ use Illuminate\Support\Facades\DB;
 Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/listings', function (\Illuminate\Http\Request $request) {
     $query = DB::table('listings');
     
+    // WP-FINAL: Validate category_id if provided (fail-fast)
+    if ($request->has('category_id')) {
+        $categoryId = (int) $request->input('category_id');
+        $exists = DB::table('categories')
+            ->where('id', $categoryId)
+            ->where('status', 'active')
+            ->exists();
+        if (!$exists) {
+            return response()->json([
+                'error' => 'category_not_found',
+                'message' => "Category with id {$categoryId} not found",
+            ], 404);
+        }
+    }
+
     // Filter by category_id if provided (WP-48: recursive - include all descendant categories)
     // WP-73: Use CTE subquery in SQL instead of building ID array in PHP
     if ($request->has('category_id')) {

@@ -19,9 +19,6 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 'id' => $cat->id,
                 'parent_id' => $cat->parent_id,
                 'slug' => $cat->slug,
-                'name' => $cat->name,
-                'vertical' => $cat->vertical,
-                'status' => $cat->status,
             ];
         })
         ->toArray();
@@ -78,6 +75,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         ->map(function ($item) use ($hasNewFields) {
             $result = [
                 'attribute_key' => $item->attribute_key,
+                // WP-FINAL: Canonical key alias (catalog defines filter keys; clients should use this)
+                'key' => $item->attribute_key,
                 // WP-69: UI-friendly label field (additive; does not change meaning)
                 'label' => $item->description ? $item->description : $item->attribute_key,
                 'value_type' => $item->value_type,
@@ -96,6 +95,20 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 $result['required'] = (bool) $item->required;
                 $result['filter_mode'] = $item->filter_mode;
                 $result['rules'] = (object) []; // default empty object
+
+                // WP-FINAL: Simple type mapping for UI (additive; keeps existing fields)
+                // Allowed: select|number|range|boolean|text
+                $type = 'text';
+                if ($item->ui_component === 'select' || $item->value_type === 'enum') {
+                    $type = 'select';
+                } elseif ($item->value_type === 'boolean') {
+                    $type = 'boolean';
+                } elseif ($item->filter_mode === 'range') {
+                    $type = 'range';
+                } elseif ($item->value_type === 'number') {
+                    $type = 'number';
+                }
+                $result['type'] = $type;
                 
                 // Parse rules_json if present
                 if ($item->rules_json) {

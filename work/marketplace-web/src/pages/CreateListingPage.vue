@@ -63,7 +63,7 @@
           <select v-model.number="formData.category_id" required class="form-input">
             <option value="">Select category...</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-              {{ cat.name }} ({{ cat.slug }})
+              {{ cat.slug }} ({{ cat.id }})
             </option>
           </select>
         </label>

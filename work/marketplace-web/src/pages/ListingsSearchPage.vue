@@ -80,7 +80,7 @@ export default {
       const walk = (nodes, depth) => {
         (nodes || []).forEach((n) => {
           const prefix = depth > 0 ? `${'—'.repeat(depth)} ` : '';
-          out.push({ id: n.id, label: `${prefix}${n.name} (${n.slug})` });
+          out.push({ id: n.id, label: `${prefix}${n.slug} (${n.id})` });
           if (n.children && n.children.length > 0) walk(n.children, depth + 1);
         });
       };

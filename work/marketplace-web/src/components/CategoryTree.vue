@@ -7,7 +7,7 @@
           class="category-link"
           :class="{ 'has-children': category.children && category.children.length > 0 }"
         >
-          {{ category.name }} ({{ category.slug }})
+          {{ category.slug }} ({{ category.id }})
         </router-link>
         <CategoryTree
           v-if="category.children && category.children.length > 0"

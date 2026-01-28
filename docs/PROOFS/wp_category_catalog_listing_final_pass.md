@@ -8,7 +8,13 @@ Timestamp: 2026-01-28
 - Backward compatibility: `attrs[...]` still works.
 - If `filters[...]` exists → it is used.
 - Else if `attrs[...]` exists → legacy behavior is used.
-- Category provides only the tree; filter definitions come from catalog schema; listings apply only provided filters.
+- Category provides only the tree (`id`, `slug`, `parent_id`); filter definitions come from catalog schema; listings apply only provided filters.
+
+## Categories proof (category is tree-only)
+```text
+curl.exe -s "http://localhost:8080/api/v1/categories"
+```
+Expected shape: nodes contain only `id`, `slug`, `parent_id` (and optional nested `children`).
 
 ## Backend proof (filters[] works)
 
