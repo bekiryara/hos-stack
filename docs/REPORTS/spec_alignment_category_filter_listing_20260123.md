@@ -186,6 +186,8 @@ Filters count: 1
 
 ### 3.D) Search Endpoint Comparison
 
+**UPDATE (2026-01-28):** `/api/v1/search` was removed. Canonical read/search spine is `/api/v1/listings` only (and conformance gate forbids reintroducing `/v1/search`).
+
 **Runtime Evidence:**
 
 **GET /api/v1/listings (recursive):**

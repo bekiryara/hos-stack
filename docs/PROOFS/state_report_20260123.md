@@ -156,6 +156,8 @@ ffa007c WP-60: demo UX auto-search + deterministic demo seed
 
 **Evidence:** `work/pazar/routes/api/03b_listings_read.php`
 
+**UPDATE (2026-01-28):** This report reflects an older state where `/api/v1/search` existed. The endpoint was removed; canonical read/search spine is `/api/v1/listings` only.
+
 **Two Endpoints with Different Behavior:**
 
 1. **GET /api/v1/listings?category_id={id}** (Line 8-97)

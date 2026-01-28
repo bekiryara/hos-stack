@@ -1,4 +1,4 @@
-﻿# WP Closeouts Archive 2026-B
+# WP Closeouts Archive 2026-B
 
 **Date:** 2026-01-22  
 **Note:** Archived closeouts (WP-27 through WP-37) moved from `docs/WP_CLOSEOUTS.md` to keep index small. Only the last 8 WP entries remain in the main file.
@@ -839,6 +839,8 @@ docker compose exec pazar-app php artisan migrate
 
 **Status:** COMPLETE  
 **Date:** 2026-01-17
+
+**UPDATE (2026-01-28):** `/api/v1/search` and `ops/search_contract_check.ps1` were removed. Canonical read/search spine is `/api/v1/listings` only.
 
 ### Purpose
 

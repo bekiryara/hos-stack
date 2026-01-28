@@ -31,7 +31,7 @@ docker compose ps
 
 ### Backend
 - **GET /api/v1/listings**: Already recursive (WP-48) - uses `pazar_category_descendant_ids()` helper
-- **GET /api/v1/search**: Also recursive (uses same descendant logic)
+- **GET /api/v1/search**: Removed (2026-01-28). Canonical is `/api/v1/listings` only.
 
 ### Frontend
 - **api.searchListings()**: Uses `/api/v1/listings?category_id=...` (already recursive)
