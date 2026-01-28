@@ -91,11 +91,19 @@
       </div>
       
       <!-- Data Panels -->
-      <div v-if="!loading && !error">
+      <div v-if="!loading">
         <!-- Rezervasyonlarım -->
         <div class="result-section">
           <h3>Rezervasyonlarım</h3>
-          <div v-if="reservations.length === 0" class="empty-state">
+          <div v-if="panelErrors.reservations" class="error-box">
+            <h3>Hata</h3>
+            <div class="error-details">
+              <div><strong>Status:</strong> {{ panelErrors.reservations.status || 'N/A' }}</div>
+              <div v-if="panelErrors.reservations.endpoint"><strong>Endpoint:</strong> {{ panelErrors.reservations.endpoint }}</div>
+              <div><strong>Message:</strong> {{ panelErrors.reservations.message || 'Unknown error' }}</div>
+            </div>
+          </div>
+          <div v-else-if="reservations.length === 0" class="empty-state">
             Henüz rezervasyon yok
           </div>
           <table v-else class="data-table">
@@ -125,7 +133,15 @@
         <!-- Kiralamalarım -->
         <div class="result-section">
           <h3>Kiralamalarım</h3>
-          <div v-if="rentals.length === 0" class="empty-state">
+          <div v-if="panelErrors.rentals" class="error-box">
+            <h3>Hata</h3>
+            <div class="error-details">
+              <div><strong>Status:</strong> {{ panelErrors.rentals.status || 'N/A' }}</div>
+              <div v-if="panelErrors.rentals.endpoint"><strong>Endpoint:</strong> {{ panelErrors.rentals.endpoint }}</div>
+              <div><strong>Message:</strong> {{ panelErrors.rentals.message || 'Unknown error' }}</div>
+            </div>
+          </div>
+          <div v-else-if="rentals.length === 0" class="empty-state">
             Henüz kiralama yok
           </div>
           <table v-else class="data-table">
@@ -153,7 +169,15 @@
         <!-- Siparişlerim -->
         <div class="result-section">
           <h3>Siparişlerim</h3>
-          <div v-if="orders.length === 0" class="empty-state">
+          <div v-if="panelErrors.orders" class="error-box">
+            <h3>Hata</h3>
+            <div class="error-details">
+              <div><strong>Status:</strong> {{ panelErrors.orders.status || 'N/A' }}</div>
+              <div v-if="panelErrors.orders.endpoint"><strong>Endpoint:</strong> {{ panelErrors.orders.endpoint }}</div>
+              <div><strong>Message:</strong> {{ panelErrors.orders.message || 'Unknown error' }}</div>
+            </div>
+          </div>
+          <div v-else-if="orders.length === 0" class="empty-state">
             Henüz sipariş yok
           </div>
           <table v-else class="data-table">
@@ -202,6 +226,11 @@ export default {
       loading: false,
       membershipsLoading: false, // WP-68: Separate loading state for memberships
       error: null,
+      panelErrors: {
+        orders: null,
+        rentals: null,
+        reservations: null,
+      },
       lastRefreshed: null,
     };
   },
@@ -287,6 +316,7 @@ export default {
       
       this.loading = true;
       this.error = null;
+      this.panelErrors = { orders: null, rentals: null, reservations: null };
       
       // WP-68: Get userId from token (single source of truth)
       const userId = getUserId();
@@ -328,7 +358,9 @@ export default {
             this.$router.push('/login?reason=expired');
             return;
           }
-          errors.push({ panel: 'orders', status: err.status || 0, message: err.message || 'Failed to load orders', endpoint: '/v1/me/orders' });
+          const e = { panel: 'orders', status: err.status || 0, message: err.message || 'Failed to load orders', endpoint: '/v1/me/orders' };
+          errors.push(e);
+          this.panelErrors.orders = e;
         } else {
           // Extract data (API returns {data: [...]} or array or {items: [...]})
           this.orders = extractItems(ordersResp);
@@ -341,7 +373,9 @@ export default {
             this.$router.push('/login?reason=expired');
             return;
           }
-          errors.push({ panel: 'rentals', status: err.status || 0, message: err.message || 'Failed to load rentals', endpoint: '/v1/me/rentals' });
+          const e = { panel: 'rentals', status: err.status || 0, message: err.message || 'Failed to load rentals', endpoint: '/v1/me/rentals' };
+          errors.push(e);
+          this.panelErrors.rentals = e;
         } else {
           this.rentals = extractItems(rentalsResp);
         }
@@ -353,12 +387,14 @@ export default {
             this.$router.push('/login?reason=expired');
             return;
           }
-          errors.push({ panel: 'reservations', status: err.status || 0, message: err.message || 'Failed to load reservations', endpoint: '/v1/me/reservations' });
+          const e = { panel: 'reservations', status: err.status || 0, message: err.message || 'Failed to load reservations', endpoint: '/v1/me/reservations' };
+          errors.push(e);
+          this.panelErrors.reservations = e;
         } else {
           this.reservations = extractItems(reservationsResp);
         }
         
-        // Show first error if any, but don't block other panels
+        // Show a summary error if any panels failed, but keep rendering other panels
         if (errors.length > 0) {
           const firstError = errors[0];
           this.error = {

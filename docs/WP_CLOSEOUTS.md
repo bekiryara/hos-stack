@@ -9,6 +9,14 @@
 
 
 
+## WP-NEXT: Customer Spine v1 (My Account + My Records) (2026-01-28)
+- **Proof:** `docs/PROOFS/wp_customer_spine_account_pass.md`
+- **Outcome:** Customer can register/login, create a record (order), and see it under `/account` (with per-section error states). All gates PASS.
+
+## WP-NEXT: Catalog Spine Hardening (2026-01-28)
+- **Proof:** `docs/PROOFS/wp_catalog_spine_hardening_pass.md`
+- **Outcome:** Catalog spine hardened (deterministic filter-schema, canonical search query, integrity guard reuse). All gates PASS.
+
 ## WP-A0: Agent System Pilot Lock (2026-01-28)
 - **Proof:** `docs/PROOFS/wp_a0_agent_system_pilot_lock_pass.md`
 - **Outcome:** Agent workflow + discipline docs aligned and locked for new chats/agents.

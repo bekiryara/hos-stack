@@ -9,34 +9,48 @@
         </label>
         <div v-if="filter.filter_mode === 'range' && filter.value_type === 'number'">
           <input
-            v-model.number="formData[filter.attribute_key + '_min']"
+            v-model.number="localFormData[filter.attribute_key + '_min']"
             type="number"
             :placeholder="`Min ${filter.attribute_key}`"
             class="filter-input"
           />
           <input
-            v-model.number="formData[filter.attribute_key + '_max']"
+            v-model.number="localFormData[filter.attribute_key + '_max']"
             type="number"
             :placeholder="`Max ${filter.attribute_key}`"
             class="filter-input"
           />
         </div>
+        <select
+          v-else-if="isSelectFilter(filter)"
+          v-model="localFormData[filter.attribute_key]"
+          class="filter-input"
+        >
+          <option value="">Select {{ filter.attribute_key }}</option>
+          <option
+            v-for="opt in getSelectOptions(filter)"
+            :key="opt.value"
+            :value="opt.value"
+          >
+            {{ opt.label }}
+          </option>
+        </select>
         <input
           v-else-if="filter.value_type === 'string'"
-          v-model="formData[filter.attribute_key]"
+          v-model="localFormData[filter.attribute_key]"
           type="text"
           :placeholder="filter.attribute_key"
           class="filter-input"
         />
         <input
           v-else-if="filter.value_type === 'boolean'"
-          v-model="formData[filter.attribute_key]"
+          v-model="localFormData[filter.attribute_key]"
           type="checkbox"
           class="filter-checkbox"
         />
         <input
           v-else-if="filter.value_type === 'number'"
-          v-model.number="formData[filter.attribute_key]"
+          v-model.number="localFormData[filter.attribute_key]"
           type="number"
           :placeholder="filter.attribute_key"
           class="filter-input"
@@ -64,18 +78,65 @@ export default {
       type: Boolean,
       default: false,
     },
+    modelValue: {
+      type: Object,
+      default: () => ({}),
+    },
   },
-  emits: ['search'],
+  emits: ['search', 'update:modelValue'],
   data() {
     return {
-      formData: {},
+      localFormData: {},
+      syncingFromParent: false,
     };
   },
+  watch: {
+    modelValue: {
+      handler(val) {
+        this.syncingFromParent = true;
+        this.localFormData = { ...(val || {}) };
+        this.$nextTick(() => {
+          this.syncingFromParent = false;
+        });
+      },
+      immediate: true,
+    },
+    localFormData: {
+      handler(val) {
+        if (this.syncingFromParent) return;
+        this.$emit('update:modelValue', { ...(val || {}) });
+      },
+      deep: true,
+    },
+  },
   methods: {
+    isSelectFilter(filter) {
+      // WP-NEXT: enum/select support (schema-driven)
+      return filter && (filter.ui_component === 'select' || filter.value_type === 'enum' || filter.value_type === 'select');
+    },
+    getSelectOptions(filter) {
+      // Prefer schema rules.options (current backend shape), fallback to enum/options if present
+      const raw =
+        (filter && filter.rules && Array.isArray(filter.rules.options) && filter.rules.options) ||
+        (filter && Array.isArray(filter.options) && filter.options) ||
+        (filter && Array.isArray(filter.enum) && filter.enum) ||
+        [];
+
+      return raw
+        .map((opt) => {
+          if (opt && typeof opt === 'object') {
+            const value = opt.value ?? opt.key ?? opt.id ?? '';
+            const label = opt.label ?? opt.name ?? String(value);
+            return { value: String(value), label: String(label) };
+          }
+          return { value: String(opt), label: String(opt) };
+        })
+        .filter((o) => o.value !== '');
+    },
     handleSubmit() {
       const attrs = {};
-      Object.keys(this.formData).forEach((key) => {
-        const value = this.formData[key];
+      Object.keys(this.localFormData).forEach((key) => {
+        const value = this.localFormData[key];
         if (value !== null && value !== undefined && value !== '') {
           if (key.endsWith('_min')) {
             const baseKey = key.replace('_min', '');

@@ -288,6 +288,101 @@ if ($rootResult) {
 
 Write-Host ""
 
+# Test F: Filter-schema reachability (active schema rows must belong to active categories)
+Write-Host "[F] Testing filter-schema reachability (active schema categories must be active)..." -ForegroundColor Yellow
+$schemaReachQuery = @"
+SELECT cfs.category_id, c.slug, c.status, cfs.attribute_key
+FROM category_filter_schema cfs
+INNER JOIN categories c ON c.id = cfs.category_id
+WHERE cfs.status = 'active'
+  AND c.status <> 'active'
+LIMIT 10;
+"@
+
+$schemaReachResult = Invoke-PostgresQuery -Query $schemaReachQuery -Description "Schema reachability check query failed"
+if ($schemaReachResult -and $schemaReachResult.Trim().Length -gt 0) {
+    Write-Host "FAIL: Found active filter-schema rows attached to non-active categories" -ForegroundColor Red
+    Write-Host "  Offenders (first 10):" -ForegroundColor Yellow
+    $schemaReachResult -split "`n" | Where-Object { $_.Trim().Length -gt 0 } | ForEach-Object {
+        $parts = $_ -split '\|'
+        if ($parts.Count -ge 4) {
+            Write-Host "    Category: $($parts[1]) (ID: $($parts[0]), status: $($parts[2])) attr: $($parts[3])" -ForegroundColor Yellow
+        }
+    }
+    $hasFailures = $true
+} else {
+    Write-Host "PASS: All active filter-schema rows belong to active categories" -ForegroundColor Green
+}
+
+Write-Host ""
+
+# Test G: Allowed schema renderer types (number|range|boolean|string|select)
+Write-Host "[G] Testing allowed schema renderer types (number|range|boolean|string|select)..." -ForegroundColor Yellow
+$schemaTypeQuery = @"
+SELECT c.slug, cfs.attribute_key, a.value_type, cfs.ui_component, cfs.filter_mode
+FROM category_filter_schema cfs
+INNER JOIN categories c ON c.id = cfs.category_id
+INNER JOIN attributes a ON a.key = cfs.attribute_key
+WHERE cfs.status = 'active'
+ORDER BY c.slug, cfs.attribute_key;
+"@
+
+$schemaTypeResult = Invoke-PostgresQuery -Query $schemaTypeQuery -Description "Schema type check query failed"
+if ($schemaTypeResult -eq $null) {
+    Write-Host "FAIL: Could not check schema renderer types" -ForegroundColor Red
+    $hasFailures = $true
+} else {
+    $bad = @()
+    $lines = $schemaTypeResult -split "`n" | Where-Object { $_.Trim().Length -gt 0 }
+    foreach ($line in $lines) {
+        $parts = $line -split '\|'
+        if ($parts.Count -lt 5) { continue }
+        $slug = $parts[0]
+        $attr = $parts[1]
+        $valueType = $parts[2]
+        $ui = $parts[3]
+        $mode = $parts[4]
+
+        $renderer = $null
+        if ($mode -eq 'range') {
+            $renderer = 'range'
+            if ($valueType -ne 'number') {
+                $bad += "Category=$slug attr=${attr}: range requires value_type=number (got $valueType)"
+                continue
+            }
+        } elseif ($ui -eq 'select') {
+            $renderer = 'select'
+        } elseif ($valueType -eq 'boolean') {
+            $renderer = 'boolean'
+        } elseif ($valueType -eq 'number') {
+            $renderer = 'number'
+        } elseif ($valueType -eq 'string') {
+            $renderer = 'string'
+        } else {
+            $bad += "Category=$slug attr=${attr}: unsupported value_type=$valueType (ui_component=$ui, filter_mode=$mode)"
+            continue
+        }
+
+        $allowed = @('number','range','boolean','string','select')
+        if ($allowed -notcontains $renderer) {
+            $bad += "Category=$slug attr=${attr}: computed renderer=$renderer not allowed"
+        }
+    }
+
+    if ($bad.Count -gt 0) {
+        Write-Host "FAIL: Found invalid schema renderer/type combinations" -ForegroundColor Red
+        $bad | Select-Object -First 10 | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
+        if ($bad.Count -gt 10) {
+            Write-Host "  ... ($($bad.Count) total)" -ForegroundColor Yellow
+        }
+        $hasFailures = $true
+    } else {
+        Write-Host "PASS: All active filter-schema rows map to allowed renderers" -ForegroundColor Green
+    }
+}
+
+Write-Host ""
+
 # Summary
 if ($hasFailures) {
     Write-Host "=== CATALOG INTEGRITY CHECK: FAIL ===" -ForegroundColor Red

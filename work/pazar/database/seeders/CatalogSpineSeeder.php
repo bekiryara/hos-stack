@@ -32,6 +32,14 @@ final class CatalogSpineSeeder extends Seeder
                 'updated_at' => $now,
             ],
             [
+                'key' => 'guests_max',
+                'value_type' => 'number',
+                'unit' => 'person',
+                'description' => 'Maximum guests (for accommodation-style listings)',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
                 'key' => 'party_size',
                 'value_type' => 'number',
                 'unit' => 'person',
@@ -77,7 +85,7 @@ final class CatalogSpineSeeder extends Seeder
             DB::table('attributes')->insertOrIgnore($attr);
         }
 
-        $this->command->info('Inserted attributes: capacity_max, party_size, price_min, seats, cuisine, city');
+        $this->command->info('Inserted attributes: capacity_max, guests_max, party_size, price_min, seats, cuisine, city');
 
         // 2. Insert Root Categories (idempotent: upsert by slug)
         $vehicleId = DB::table('categories')->updateOrInsert(
@@ -122,6 +130,35 @@ final class CatalogSpineSeeder extends Seeder
         ) ? DB::table('categories')->where('slug', 'service')->value('id') : null;
         $serviceId = $serviceId ?? DB::table('categories')->where('slug', 'service')->value('id');
 
+        // Additional upper classes (KANONIK_MODEL): keep them under "service" to preserve 3-root contract lock (WP-2)
+        $productsId = DB::table('categories')->updateOrInsert(
+            ['slug' => 'products'],
+            [
+                'parent_id' => $serviceId,
+                'name' => 'Products',
+                'vertical' => 'product',
+                'status' => 'active',
+                'sort_order' => 50,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        ) ? DB::table('categories')->where('slug', 'products')->value('id') : null;
+        $productsId = $productsId ?? DB::table('categories')->where('slug', 'products')->value('id');
+
+        $accommodationId = DB::table('categories')->updateOrInsert(
+            ['slug' => 'accommodation'],
+            [
+                'parent_id' => $serviceId,
+                'name' => 'Accommodation',
+                'vertical' => 'accommodation',
+                'status' => 'active',
+                'sort_order' => 60,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        ) ? DB::table('categories')->where('slug', 'accommodation')->value('id') : null;
+        $accommodationId = $accommodationId ?? DB::table('categories')->where('slug', 'accommodation')->value('id');
+
         $this->command->info('Upserted root categories: vehicle, real-estate, service');
 
         // 3. Insert Branch Categories (idempotent: upsert by slug)
@@ -155,7 +192,7 @@ final class CatalogSpineSeeder extends Seeder
         );
         $weddingHallId = DB::table('categories')->where('slug', 'wedding-hall')->value('id');
 
-        // service > food > restaurant
+        // service > food > restaurant (keep original structure: Food under Services)
         DB::table('categories')->updateOrInsert(
             ['slug' => 'food'],
             [
@@ -213,7 +250,123 @@ final class CatalogSpineSeeder extends Seeder
         );
         $carRentalId = DB::table('categories')->where('slug', 'car-rental')->value('id');
 
-        $this->command->info('Upserted branch categories: service > events > wedding-hall, service > food > restaurant, vehicle > car > car-rental');
+        // vehicle > boat > boat-rental
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'boat'],
+            [
+                'parent_id' => $vehicleId,
+                'name' => 'Boat',
+                'vertical' => 'vehicle',
+                'status' => 'active',
+                'sort_order' => 20,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $boatId = DB::table('categories')->where('slug', 'boat')->value('id');
+
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'boat-rental'],
+            [
+                'parent_id' => $boatId,
+                'name' => 'Boat Rental',
+                'vertical' => 'vehicle',
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $boatRentalId = DB::table('categories')->where('slug', 'boat-rental')->value('id');
+
+        // products > electronics > headphones
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'electronics'],
+            [
+                'parent_id' => $productsId,
+                'name' => 'Electronics',
+                'vertical' => 'product',
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $electronicsId = DB::table('categories')->where('slug', 'electronics')->value('id');
+
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'headphones'],
+            [
+                'parent_id' => $electronicsId,
+                'name' => 'Headphones',
+                'vertical' => 'product',
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $headphonesId = DB::table('categories')->where('slug', 'headphones')->value('id');
+
+        // accommodation > hotel > hotel-room
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'hotel'],
+            [
+                'parent_id' => $accommodationId,
+                'name' => 'Hotel',
+                'vertical' => 'accommodation',
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $hotelId = DB::table('categories')->where('slug', 'hotel')->value('id');
+
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'hotel-room'],
+            [
+                'parent_id' => $hotelId,
+                'name' => 'Hotel Room',
+                'vertical' => 'accommodation',
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $hotelRoomId = DB::table('categories')->where('slug', 'hotel-room')->value('id');
+
+        // real-estate > for-sale > apartment-sale
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'for-sale'],
+            [
+                'parent_id' => $realEstateId,
+                'name' => 'For Sale',
+                'vertical' => 'real_estate',
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $forSaleId = DB::table('categories')->where('slug', 'for-sale')->value('id');
+
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'apartment-sale'],
+            [
+                'parent_id' => $forSaleId,
+                'name' => 'Apartment (Sale)',
+                'vertical' => 'real_estate',
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $apartmentSaleId = DB::table('categories')->where('slug', 'apartment-sale')->value('id');
+
+        $this->command->info('Upserted branch categories (expanded roots + example leaves).');
 
         // 4. Insert Category Filter Schema (idempotent: upsert by category_id + attribute_key)
         
@@ -271,10 +424,86 @@ final class CatalogSpineSeeder extends Seeder
             ]
         );
 
+        // products/headphones: price_min (required, range)
+        DB::table('category_filter_schema')->updateOrInsert(
+            [
+                'category_id' => $headphonesId,
+                'attribute_key' => 'price_min',
+            ],
+            [
+                'ui_component' => 'number',
+                'required' => true,
+                'filter_mode' => 'range',
+                'rules_json' => json_encode(['min' => 0, 'max' => 500000]),
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
+        // accommodation/hotel-room: guests_max (required, range)
+        DB::table('category_filter_schema')->updateOrInsert(
+            [
+                'category_id' => $hotelRoomId,
+                'attribute_key' => 'guests_max',
+            ],
+            [
+                'ui_component' => 'number',
+                'required' => true,
+                'filter_mode' => 'range',
+                'rules_json' => json_encode(['min' => 1, 'max' => 20]),
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
+        // real-estate/apartment-sale: price_min (required, range)
+        DB::table('category_filter_schema')->updateOrInsert(
+            [
+                'category_id' => $apartmentSaleId,
+                'attribute_key' => 'price_min',
+            ],
+            [
+                'ui_component' => 'number',
+                'required' => true,
+                'filter_mode' => 'range',
+                'rules_json' => json_encode(['min' => 0, 'max' => 1000000000]),
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
+        // vehicle/boat-rental: seats (optional, range)
+        DB::table('category_filter_schema')->updateOrInsert(
+            [
+                'category_id' => $boatRentalId,
+                'attribute_key' => 'seats',
+            ],
+            [
+                'ui_component' => 'number',
+                'required' => false,
+                'filter_mode' => 'range',
+                'rules_json' => json_encode(['min' => 1, 'max' => 100]),
+                'status' => 'active',
+                'sort_order' => 20,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
         $this->command->info('Inserted filter schemas:');
         $this->command->info('  - wedding-hall: capacity_max (required, range)');
         $this->command->info('  - restaurant: cuisine (optional, select)');
         $this->command->info('  - car-rental: seats (optional, range)');
+        $this->command->info('  - headphones: price_min (required, range)');
+        $this->command->info('  - hotel-room: guests_max (required, range)');
+        $this->command->info('  - apartment-sale: price_min (required, range)');
+        $this->command->info('  - boat-rental: seats (optional, range)');
         $this->command->info('Catalog spine seeding completed.');
     }
 }

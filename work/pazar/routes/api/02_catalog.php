@@ -87,14 +87,40 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
             
             // Add new fields if migration has run
             if ($hasNewFields) {
+                // WP-NEXT: Deterministic response shape for schema-driven UI (always emit these keys)
                 $result['ui_component'] = $item->ui_component;
                 $result['required'] = (bool) $item->required;
                 $result['filter_mode'] = $item->filter_mode;
+                $result['rules'] = (object) []; // default empty object
                 
                 // Parse rules_json if present
                 if ($item->rules_json) {
                     $rules = json_decode($item->rules_json, true);
                     if ($rules) {
+                        // WP-NEXT: Normalize enum/select options to a consistent structure (array of strings)
+                        if (isset($rules['options']) && is_array($rules['options'])) {
+                            $mapped = array_map(function ($opt) {
+                                if (is_array($opt)) {
+                                    if (isset($opt['value'])) return (string) $opt['value'];
+                                    if (isset($opt['label'])) return (string) $opt['label'];
+                                    if (isset($opt['key'])) return (string) $opt['key'];
+                                    if (isset($opt['id'])) return (string) $opt['id'];
+                                    return null;
+                                }
+                                if (is_object($opt)) {
+                                    if (isset($opt->value)) return (string) $opt->value;
+                                    if (isset($opt->label)) return (string) $opt->label;
+                                    if (isset($opt->key)) return (string) $opt->key;
+                                    if (isset($opt->id)) return (string) $opt->id;
+                                    return null;
+                                }
+                                if (is_string($opt) || is_numeric($opt)) return (string) $opt;
+                                return null;
+                            }, $rules['options']);
+                            $rules['options'] = array_values(array_filter($mapped, function ($s) {
+                                return $s !== null && $s !== '';
+                            }));
+                        }
                         $result['rules'] = $rules;
                     }
                 }

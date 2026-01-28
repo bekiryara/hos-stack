@@ -185,6 +185,7 @@
 
 <script>
 import { api } from '../api/client';
+import { getCategoriesTree, getFilterSchemaForCategory } from '../lib/catalogSpine';
 import { isLoggedIn, getActiveTenantId } from '../lib/demoSession';
 
 export default {
@@ -211,7 +212,7 @@ export default {
   },
   async mounted() {
     try {
-      this.categories = await api.getCategories();
+      this.categories = await getCategoriesTree();
       
       // WP-68: Auto-fill tenant ID using client.js helper (single source of truth)
       if (!this.formData.tenantId) {
@@ -271,7 +272,7 @@ export default {
         return;
       }
       try {
-        this.filterSchema = await api.getFilterSchema(this.formData.category_id);
+        this.filterSchema = await getFilterSchemaForCategory(this.formData.category_id);
       } catch (err) {
         console.error('Failed to load filter schema:', err);
         this.filterSchema = null;

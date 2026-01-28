@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import { api } from '../api/client';
+import { getCategoriesTree } from '../lib/catalogSpine';
 import CategoryTree from '../components/CategoryTree.vue';
 
 export default {
@@ -25,7 +25,7 @@ export default {
   },
   async mounted() {
     try {
-      this.categories = await api.getCategories();
+      this.categories = await getCategoriesTree();
       this.loading = false;
     } catch (err) {
       this.error = err.message;
