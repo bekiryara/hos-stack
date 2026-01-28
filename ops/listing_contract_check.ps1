@@ -204,6 +204,11 @@ if (-not $weddingHallId) {
         category_id = $weddingHallId
         title = "Test Without Auth (WP-61B)"
         transaction_modes = @("reservation")
+        # wedding-hall requires capacity_max (catalog filter-schema required=true)
+        # Include it so this test validates ONLY the auth rule (GENESIS_ALLOW_UNAUTH_STORE), not schema validation.
+        attributes = @{
+            capacity_max = 500
+        }
     } | ConvertTo-Json
 
     try {

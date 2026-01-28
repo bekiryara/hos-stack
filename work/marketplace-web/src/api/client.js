@@ -187,6 +187,7 @@ export const api = {
   getFilterSchema: (categoryId) => apiRequest(`/api/v1/categories/${categoryId}/filter-schema`, {}, true), // skipAuth = true
   searchListings: (params) => {
     const queryString = new URLSearchParams(params).toString();
+    // Stable read spine (array response). Keep /search for special availability-style queries.
     return apiRequest(`/api/v1/listings?${queryString}`, {}, true); // skipAuth = true
   },
   getListing: (id) => apiRequest(`/api/v1/listings/${id}`, {}, true), // skipAuth = true

@@ -106,7 +106,6 @@ These scripts verify API contracts and should only be run as part of gates or tr
 - `ops/rental_contract_check.ps1`
 - `ops/reservation_contract_check.ps1`
 - `ops/order_contract_check.ps1`
-- `ops/search_contract_check.ps1`
 - `ops/offer_contract_check.ps1`
 - `ops/boundary_contract_check.ps1`
 - `ops/catalog_contract_check.ps1`

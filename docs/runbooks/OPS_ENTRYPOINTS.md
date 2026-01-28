@@ -135,7 +135,6 @@ These scripts are called by the Golden 4 Commands or used for specific diagnosti
 - `product_contract_check.ps1` - Product API contract
 - `rental_contract_check.ps1` - Rental API contract
 - `reservation_contract_check.ps1` - Reservation API contract
-- `search_contract_check.ps1` - Search API contract
 - `tenant_scope_contract_check.ps1` - Tenant scope contract
 
 ### Gates

@@ -471,6 +471,34 @@ try {
     Write-FailCheck "F" "Error checking docs DB engine alignment: $($_.Exception.Message)"
 }
 
+# G) Single read spine: forbid /v1/search endpoint
+Write-Host "`n[G] Forbidden endpoint check..." -ForegroundColor Yellow
+try {
+    $routesRoot = "work\pazar\routes"
+    if (-not (Test-Path $routesRoot)) {
+        Write-FailCheck "G" "work/pazar/routes not found" @($routesRoot)
+    } else {
+        $hits = @()
+        $routeFiles = Get-ChildItem -Path $routesRoot -Recurse -File -Filter "*.php" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\_archive\*" }
+        if ($null -ne $routeFiles -and $routeFiles.Count -gt 0) {
+            foreach ($f in $routeFiles) {
+                $m = Select-String -Path $f.FullName -Pattern "Route::get('/v1/search'" -SimpleMatch -ErrorAction SilentlyContinue
+                if ($m) {
+                    $hits += $f.FullName
+                }
+            }
+        }
+        if ($hits.Count -gt 0) {
+            Write-FailCheck "G" "Forbidden endpoint found: /v1/search. Canonical read spine is /v1/listings (SPEC)." $hits
+        } else {
+            Write-PassCheck "G" "No /v1/search endpoint in Pazar routes"
+        }
+    }
+} catch {
+    Write-FailCheck "G" "Error checking forbidden endpoint: $($_.Exception.Message)"
+}
+
 # Summary
 Write-Host ""
 if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {

@@ -225,21 +225,6 @@
 
 ## Search
 
-### 15. search_contract_check.ps1 (WP-8)
-**SPEC:** §6.3 (Search Functionality)  
-**Tests:**
-- GET /api/v1/listings?category_id={id}
-- GET /api/v1/listings?attrs[capacity_max_min]={value}
-- Filter attribute validation
-- Search result format
-
-**Run:**
-```powershell
-.\ops\search_contract_check.ps1
-```
-
----
-
 ## Boundary & Other
 
 ### 16. boundary_contract_check.ps1
@@ -339,7 +324,7 @@
 ---
 
 **Last Updated:** 2026-01-23  
-**Total Contract Check Scripts:** 19
+**Total Contract Check Scripts:** 18
 
 
 
