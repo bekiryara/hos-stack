@@ -1,6 +1,17 @@
 <template>
   <div class="filters-panel">
     <h3>Filters</h3>
+    <div v-if="appliedFilters.length > 0" class="applied-filters">
+      <div class="applied-header">
+        <div class="applied-title">Applied</div>
+        <button type="button" class="clear-button" @click="handleClear">Clear filters</button>
+      </div>
+      <ul class="applied-list">
+        <li v-for="f in appliedFilters" :key="f.key">
+          <strong>{{ f.key }}:</strong> {{ f.value }}
+        </li>
+      </ul>
+    </div>
     <form v-if="filters.length > 0" @submit.prevent="handleSubmit">
       <div v-for="filter in filters" :key="filter.attribute_key" class="filter-item">
         <label>
@@ -90,6 +101,18 @@ export default {
       syncingFromParent: false,
     };
   },
+  computed: {
+    appliedFilters() {
+      const out = [];
+      Object.keys(this.localFormData || {}).forEach((key) => {
+        const value = this.localFormData[key];
+        if (value !== null && value !== undefined && value !== '') {
+          out.push({ key, value });
+        }
+      });
+      return out;
+    },
+  },
   watch: {
     modelValue: {
       handler(val) {
@@ -150,6 +173,11 @@ export default {
         }
       });
       this.$emit('search', attrs);
+    },
+    handleClear() {
+      this.localFormData = {};
+      this.$emit('update:modelValue', {});
+      this.$emit('search', {});
     },
   },
 };
@@ -224,6 +252,45 @@ export default {
 
 .empty-state p {
   margin-bottom: 1rem;
+}
+
+.applied-filters {
+  margin: 0.75rem 0 1rem;
+  padding: 0.75rem;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+
+.applied-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.applied-title {
+  font-weight: 600;
+}
+
+.applied-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #333;
+}
+
+.clear-button {
+  background: transparent;
+  border: 1px solid #bbb;
+  color: #333;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.clear-button:hover {
+  background: #f5f5f5;
 }
 </style>
 

@@ -43,7 +43,8 @@
 
 ## WP-69: V1 Prototype E2E Demo Proof (2026-01-27)
 - **Proof:** `docs/PROOFS/wp69_v1_e2e_demo_pass.md`
-- **Outcome:** Browser-based customer → account → firm journey verified.
+- **Proof (Catalog/Search alignment):** `docs/PROOFS/wp69_catalog_search_frontend_alignment_pass.md`
+- **Outcome:** Browser E2E verified; catalog+search is schema-driven (categories + filter-schema + attrs filters) with deterministic demo seed.
 
 ## WP-68C: OPS Entrypoints Runbook (2026-01-26)
 - **Proof:** `docs/PROOFS/wp68c_ops_entrypoints_pass.md`

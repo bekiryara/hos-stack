@@ -1,6 +1,21 @@
 <template>
   <div class="listings-search-page" data-marker="marketplace-search">
     <h2>Search Listings</h2>
+    <div class="category-picker">
+      <label>
+        Category
+        <select
+          class="category-select"
+          :value="categoryId || ''"
+          @change="onCategorySelect($event.target.value)"
+        >
+          <option value="">Select category...</option>
+          <option v-for="opt in categoryOptions" :key="opt.id" :value="String(opt.id)">
+            {{ opt.label }}
+          </option>
+        </select>
+      </label>
+    </div>
     <div v-if="loadingFilters" class="loading">Loading filters...</div>
     <div v-else-if="errorFilters" class="error">{{ errorFilters }}</div>
     <FiltersPanel
@@ -23,7 +38,7 @@
 
 <script>
 import { api } from '../api/client';
-import { getFilterSchemaForCategory } from '../lib/catalogSpine';
+import { getCategoriesTree, getFilterSchemaForCategory } from '../lib/catalogSpine';
 import FiltersPanel from '../components/FiltersPanel.vue';
 import ListingsGrid from '../components/ListingsGrid.vue';
 
@@ -41,6 +56,7 @@ export default {
   },
   data() {
     return {
+      categoriesTree: [],
       filters: [],
       filterState: {}, // WP-NEXT: single source of truth for UI filter values
       q: '', // WP-NEXT: canonical query param (future-safe)
@@ -57,7 +73,28 @@ export default {
       querySyncTimer: null, // WP-NEXT: debounce URL query sync
     };
   },
+  computed: {
+    categoryOptions() {
+      // Flatten category tree for a simple selector (schema-driven; no hardcoded vertical logic)
+      const out = [];
+      const walk = (nodes, depth) => {
+        (nodes || []).forEach((n) => {
+          const prefix = depth > 0 ? `${'—'.repeat(depth)} ` : '';
+          out.push({ id: n.id, label: `${prefix}${n.name} (${n.slug})` });
+          if (n.children && n.children.length > 0) walk(n.children, depth + 1);
+        });
+      };
+      walk(this.categoriesTree, 0);
+      return out;
+    },
+  },
   async mounted() {
+    try {
+      this.categoriesTree = await getCategoriesTree();
+    } catch {
+      // Category selector is optional for /search/:categoryId; ignore failures here.
+      this.categoriesTree = [];
+    }
     if (this.categoryId) {
       await this.loadFilters();
     }
@@ -94,6 +131,13 @@ export default {
     },
   },
   methods: {
+    async onCategorySelect(nextId) {
+      if (!nextId) {
+        await this.$router.push({ path: '/search', query: {} });
+        return;
+      }
+      await this.$router.push({ path: `/search/${nextId}`, query: {} });
+    },
     stableStringify(obj) {
       // WP-NEXT: deterministic serialization (stable key order, shallow)
       const out = {};
@@ -254,6 +298,19 @@ export default {
 .listings-search-page h2 {
   margin-bottom: 1.5rem;
   font-size: 2rem;
+}
+
+.category-picker {
+  margin-bottom: 1rem;
+}
+
+.category-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-top: 0.25rem;
 }
 </style>
 

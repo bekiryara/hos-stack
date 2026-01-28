@@ -78,6 +78,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         ->map(function ($item) use ($hasNewFields) {
             $result = [
                 'attribute_key' => $item->attribute_key,
+                // WP-69: UI-friendly label field (additive; does not change meaning)
+                'label' => $item->description ? $item->description : $item->attribute_key,
                 'value_type' => $item->value_type,
                 'unit' => $item->unit,
                 'description' => $item->description,
@@ -89,6 +91,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
             if ($hasNewFields) {
                 // WP-NEXT: Deterministic response shape for schema-driven UI (always emit these keys)
                 $result['ui_component'] = $item->ui_component;
+                // WP-69: Back-compat alias field (ui_type) for clients expecting that name
+                $result['ui_type'] = $item->ui_component;
                 $result['required'] = (bool) $item->required;
                 $result['filter_mode'] = $item->filter_mode;
                 $result['rules'] = (object) []; // default empty object

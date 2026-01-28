@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Catalog Spine Seeder (SPEC §6.2, WP-2)
  * 
- * Seeds categories tree, attributes catalog, and filter schema.
+ * Seeds categories tree, attributes catalog, filter schema, and minimal demo listings.
  * Roots: vehicle, real_estate, service
  * Branches: service > events > wedding-hall, service > food > restaurant, vehicle > car > car-rental
  */
@@ -79,13 +79,29 @@ final class CatalogSpineSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
+            [
+                'key' => 'brand',
+                'value_type' => 'string',
+                'unit' => null,
+                'description' => 'Brand / make (vehicle)',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'key' => 'spicy_level',
+                'value_type' => 'number',
+                'unit' => null,
+                'description' => 'Spicy level (0-10)',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
         ];
 
         foreach ($attributes as $attr) {
             DB::table('attributes')->insertOrIgnore($attr);
         }
 
-        $this->command->info('Inserted attributes: capacity_max, guests_max, party_size, price_min, seats, cuisine, city');
+        $this->command->info('Inserted attributes: capacity_max, guests_max, party_size, price_min, seats, cuisine, city, brand, spicy_level');
 
         // 2. Insert Root Categories (idempotent: upsert by slug)
         $vehicleId = DB::table('categories')->updateOrInsert(
@@ -192,6 +208,21 @@ final class CatalogSpineSeeder extends Seeder
         );
         $weddingHallId = DB::table('categories')->where('slug', 'wedding-hall')->value('id');
 
+        // service > events > bando
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'bando'],
+            [
+                'parent_id' => $eventsId,
+                'name' => 'Bando',
+                'vertical' => 'service',
+                'status' => 'active',
+                'sort_order' => 20,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $bandoId = DB::table('categories')->where('slug', 'bando')->value('id');
+
         // service > food > restaurant (keep original structure: Food under Services)
         DB::table('categories')->updateOrInsert(
             ['slug' => 'food'],
@@ -220,6 +251,21 @@ final class CatalogSpineSeeder extends Seeder
             ]
         );
         $restaurantId = DB::table('categories')->where('slug', 'restaurant')->value('id');
+
+        // service > food > kebab
+        DB::table('categories')->updateOrInsert(
+            ['slug' => 'kebab'],
+            [
+                'parent_id' => $foodId,
+                'name' => 'Kebab',
+                'vertical' => 'service',
+                'status' => 'active',
+                'sort_order' => 20,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        $kebabId = DB::table('categories')->where('slug', 'kebab')->value('id');
 
         // vehicle > car > car-rental
         DB::table('categories')->updateOrInsert(
@@ -406,6 +452,40 @@ final class CatalogSpineSeeder extends Seeder
             ]
         );
 
+        // bando: capacity_max (optional, range) + city (optional, exact)
+        DB::table('category_filter_schema')->updateOrInsert(
+            [
+                'category_id' => $bandoId,
+                'attribute_key' => 'capacity_max',
+            ],
+            [
+                'ui_component' => 'number',
+                'required' => false,
+                'filter_mode' => 'range',
+                'rules_json' => json_encode(['min' => 1, 'max' => 1000]),
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        DB::table('category_filter_schema')->updateOrInsert(
+            [
+                'category_id' => $bandoId,
+                'attribute_key' => 'city',
+            ],
+            [
+                'ui_component' => 'text',
+                'required' => false,
+                'filter_mode' => 'exact',
+                'rules_json' => null,
+                'status' => 'active',
+                'sort_order' => 20,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
         // car-rental: seats (optional, number)
         DB::table('category_filter_schema')->updateOrInsert(
             [
@@ -419,6 +499,24 @@ final class CatalogSpineSeeder extends Seeder
                 'rules_json' => json_encode(['min' => 2, 'max' => 9]),
                 'status' => 'active',
                 'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
+        // car-rental: brand (optional, exact)
+        DB::table('category_filter_schema')->updateOrInsert(
+            [
+                'category_id' => $carRentalId,
+                'attribute_key' => 'brand',
+            ],
+            [
+                'ui_component' => 'text',
+                'required' => false,
+                'filter_mode' => 'exact',
+                'rules_json' => null,
+                'status' => 'active',
+                'sort_order' => 20,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]
@@ -496,14 +594,120 @@ final class CatalogSpineSeeder extends Seeder
             ]
         );
 
+        // kebab: cuisine (optional, select) + spicy_level (optional, range)
+        DB::table('category_filter_schema')->updateOrInsert(
+            [
+                'category_id' => $kebabId,
+                'attribute_key' => 'cuisine',
+            ],
+            [
+                'ui_component' => 'select',
+                'required' => false,
+                'filter_mode' => 'exact',
+                'rules_json' => json_encode(['options' => ['Turkish', 'Italian', 'Chinese', 'Japanese']]),
+                'status' => 'active',
+                'sort_order' => 10,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+        DB::table('category_filter_schema')->updateOrInsert(
+            [
+                'category_id' => $kebabId,
+                'attribute_key' => 'spicy_level',
+            ],
+            [
+                'ui_component' => 'number',
+                'required' => false,
+                'filter_mode' => 'range',
+                'rules_json' => json_encode(['min' => 0, 'max' => 10]),
+                'status' => 'active',
+                'sort_order' => 20,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
         $this->command->info('Inserted filter schemas:');
         $this->command->info('  - wedding-hall: capacity_max (required, range)');
         $this->command->info('  - restaurant: cuisine (optional, select)');
+        $this->command->info('  - bando: capacity_max (optional, range), city (optional, exact)');
         $this->command->info('  - car-rental: seats (optional, range)');
+        $this->command->info('  - car-rental: brand (optional, exact)');
         $this->command->info('  - headphones: price_min (required, range)');
         $this->command->info('  - hotel-room: guests_max (required, range)');
         $this->command->info('  - apartment-sale: price_min (required, range)');
         $this->command->info('  - boat-rental: seats (optional, range)');
+        $this->command->info('  - kebab: cuisine (optional, select), spicy_level (optional, range)');
+
+        // 5. Insert minimal demo listings (idempotent by UUID)
+        // Note: tenant_id is a stable placeholder UUID; no FK constraint exists in Pazar for listings.tenant_id
+        $demoTenantId = '00000000-0000-0000-0000-000000000001';
+
+        $demoListings = [
+            // service / bando
+            [
+                'id' => '510e1bc9-4e08-40cd-a4d0-fc430142a96b',
+                'category_id' => $bandoId,
+                'title' => 'Bando Presto 4 kişi',
+                'description' => 'Demo listing (service/bando)',
+                'status' => 'published',
+                'transaction_modes_json' => json_encode(['reservation']),
+                'attributes_json' => json_encode(['capacity_max' => 4, 'city' => 'Izmir']),
+            ],
+            // rental / boat
+            [
+                'id' => '68003790-cf34-4329-91a3-150aff9ced1d',
+                'category_id' => $boatRentalId,
+                'title' => 'Rüyam Tekne Kiralama',
+                'description' => 'Demo listing (rental/boat)',
+                'status' => 'published',
+                'transaction_modes_json' => json_encode(['rental']),
+                'attributes_json' => json_encode(['seats' => 8, 'city' => 'Istanbul']),
+            ],
+            // rental / car
+            [
+                'id' => '9f425e36-2dd2-4787-88a0-a459406f35a9',
+                'category_id' => $carRentalId,
+                'title' => 'Mercedes Kiralık',
+                'description' => 'Demo listing (rental/car)',
+                'status' => 'published',
+                'transaction_modes_json' => json_encode(['rental']),
+                'attributes_json' => json_encode(['seats' => 5, 'brand' => 'Mercedes', 'city' => 'Ankara']),
+            ],
+            // food / kebab (sale)
+            [
+                'id' => '40988e47-a29c-4e7f-9453-d0690478b1fa',
+                'category_id' => $kebabId,
+                'title' => 'Adana Kebap',
+                'description' => 'Demo listing (food/kebab)',
+                'status' => 'published',
+                'transaction_modes_json' => json_encode(['sale']),
+                'attributes_json' => json_encode(['cuisine' => 'Turkish', 'spicy_level' => 7, 'city' => 'Adana']),
+            ],
+        ];
+
+        foreach ($demoListings as $l) {
+            $world = DB::table('categories')->where('id', $l['category_id'])->value('vertical') ?? 'commerce';
+            DB::table('listings')->updateOrInsert(
+                ['id' => $l['id']],
+                [
+                    'tenant_id' => $demoTenantId,
+                    'world' => $world,
+                    'category_id' => $l['category_id'],
+                    'title' => $l['title'],
+                    'description' => $l['description'],
+                    'status' => $l['status'],
+                    'transaction_modes_json' => $l['transaction_modes_json'],
+                    'attributes_json' => $l['attributes_json'],
+                    'location_json' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+
+        $this->command->info('Inserted demo listings: bando, boat rental, car rental, kebab');
         $this->command->info('Catalog spine seeding completed.');
     }
 }
