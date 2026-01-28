@@ -146,15 +146,15 @@ export default {
       });
       return JSON.stringify(out);
     },
-    buildAttrsFromFilterState() {
-      const attrs = {};
+    buildFiltersFromFilterState() {
+      const filters = {};
       Object.keys(this.filterState || {}).forEach((key) => {
         const value = this.filterState[key];
         if (value !== null && value !== undefined && value !== '') {
-          attrs[key] = value;
+          filters[key] = value;
         }
       });
-      return attrs;
+      return filters;
     },
     buildQueryFromFilterState() {
       // WP-NEXT: canonical query shape
@@ -165,12 +165,35 @@ export default {
       if (this.sort) query.sort = String(this.sort);
       if (this.page && Number(this.page) > 1) query.page = String(this.page);
 
-      const attrs = this.buildAttrsFromFilterState();
-      if (Object.keys(attrs).length > 0) {
-        query.filters = this.stableStringify(attrs);
+      const filters = this.buildFiltersFromFilterState();
+      if (Object.keys(filters).length > 0) {
+        query.filters = this.stableStringify(filters);
       }
 
       return query;
+    },
+    buildListingsApiParamsFromFilters(filters) {
+      // WP-75: build SPEC-aligned listing search params:
+      // - filters[KEY]=VALUE
+      // - filters[KEY][min|max]=...
+      const params = {};
+      Object.keys(filters || {}).forEach((key) => {
+        const value = filters[key];
+        if (value === null || value === undefined || value === '') return;
+
+        if (key.endsWith('_min')) {
+          const baseKey = key.replace('_min', '');
+          params[`filters[${baseKey}][min]`] = value;
+          return;
+        }
+        if (key.endsWith('_max')) {
+          const baseKey = key.replace('_max', '');
+          params[`filters[${baseKey}][max]`] = value;
+          return;
+        }
+        params[`filters[${key}]`] = value;
+      });
+      return params;
     },
     hydrateFilterStateFromQuery(schemaFilters) {
       const query = this.$route.query || {};
@@ -254,7 +277,7 @@ export default {
         // WP-60: Auto-run initial search after filters load (once only)
         if (!this.initialSearchDone) {
           this.initialSearchDone = true;
-          await this.executeSearch(this.buildAttrsFromFilterState());
+          await this.executeSearch(this.buildFiltersFromFilterState());
         }
       } catch (err) {
         this.errorFilters = err.message;
@@ -264,7 +287,7 @@ export default {
         this.filters = [];
       }
     },
-    async executeSearch(attrs) {
+    async executeSearch(filters) {
       try {
         this.loadingListings = true;
         this.errorListings = null;
@@ -274,8 +297,11 @@ export default {
           page: this.page,
           per_page: 20,
         };
-        Object.keys(attrs || {}).forEach((key) => {
-          params[`attrs[${key}]`] = attrs[key];
+        if (this.q) params.q = String(this.q);
+
+        const filterParams = this.buildListingsApiParamsFromFilters(filters);
+        Object.keys(filterParams).forEach((k) => {
+          params[k] = filterParams[k];
         });
         this.listings = await api.searchListings(params);
         this.loadingListings = false;
@@ -288,7 +314,7 @@ export default {
     },
     async handleSearch(attrs) {
       // URL query is kept in sync by filterState watcher; search just executes with current state.
-      await this.executeSearch(attrs && Object.keys(attrs).length ? attrs : this.buildAttrsFromFilterState());
+      await this.executeSearch(attrs && Object.keys(attrs).length ? attrs : this.buildFiltersFromFilterState());
     },
   },
 };

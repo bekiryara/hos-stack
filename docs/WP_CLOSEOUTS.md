@@ -46,6 +46,14 @@
 - **Proof (Catalog/Search alignment):** `docs/PROOFS/wp69_catalog_search_frontend_alignment_pass.md`
 - **Outcome:** Browser E2E verified; catalog+search is schema-driven (categories + filter-schema + attrs filters) with deterministic demo seed.
 
+## WP-75: Listing Search Filters Spec Alignment (filters[] + attrs[] compat) (2026-01-28)
+- **Proof:** `docs/PROOFS/wp75_filters_array_pass.md`
+- **Outcome:** Listing search accepts SPEC-style `filters[...]` (preferred) and keeps legacy `attrs[...]` working; frontend sends `filters[...]`.
+
+## WP-FINAL: Category / Catalog / Listing Finalization (2026-01-28)
+- **Proof:** `docs/PROOFS/wp_category_catalog_listing_final_pass.md`
+- **Outcome:** Single listing read engine; `filters[...]` is primary contract with `attrs[...]` backward compatibility; catalog-defined filter keys are enforced for category-scoped searches.
+
 ## WP-68C: OPS Entrypoints Runbook (2026-01-26)
 - **Proof:** `docs/PROOFS/wp68c_ops_entrypoints_pass.md`
 - **Outcome:** “Golden 4 Commands” ops entrypoints documented.

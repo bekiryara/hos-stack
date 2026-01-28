@@ -54,8 +54,87 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         $query->where('tenant_id', $tenantId);
     }
     
-    // Filter by attributes (supports exact match + _min/_max numeric ranges)
-    if ($request->has('attrs')) {
+    // WP-FINAL: Category -> Catalog -> Listing separation (whitelist)
+    // If category_id is provided, only allow filter keys that exist in category_filter_schema
+    // for that category OR any of its descendants (same CTE used for listings category filter).
+    $allowedFilterKeys = null;
+    if ($request->has('category_id') && ($request->has('filters') || $request->has('attrs'))) {
+        $rootCategoryId = (int) $request->input('category_id');
+        $cteData = pazar_category_descendant_cte_in_clause_sql($rootCategoryId);
+        $allowedFilterKeys = DB::table('category_filter_schema')
+            ->whereRaw("category_id IN " . $cteData['sql'], $cteData['bindings'])
+            ->where('status', 'active')
+            ->distinct()
+            ->pluck('attribute_key')
+            ->map(function ($k) { return (string) $k; })
+            ->values()
+            ->all();
+        
+        $allowedSet = [];
+        foreach ($allowedFilterKeys as $k) { $allowedSet[$k] = true; }
+        
+        $unknownKeys = [];
+        
+        if ($request->has('filters')) {
+            $incoming = $request->input('filters');
+            if (is_array($incoming)) {
+                foreach ($incoming as $key => $value) {
+                    if (!is_string($key) || $key === '') continue;
+                    if (!isset($allowedSet[$key])) {
+                        $unknownKeys[] = $key;
+                    }
+                }
+            }
+        } elseif ($request->has('attrs')) {
+            $incoming = $request->input('attrs');
+            if (is_array($incoming)) {
+                foreach ($incoming as $key => $value) {
+                    if (!is_string($key) || $key === '') continue;
+                    // attrs supports *_min/*_max keys; whitelist is based on base key
+                    $baseKey = $key;
+                    if (preg_match('/^(.*)_(min|max)$/', $key, $m)) {
+                        $baseKey = $m[1];
+                    }
+                    if (!isset($allowedSet[$baseKey])) {
+                        $unknownKeys[] = $baseKey;
+                    }
+                }
+            }
+        }
+        
+        $unknownKeys = array_values(array_unique($unknownKeys));
+        if (!empty($unknownKeys)) {
+            return response()->json([
+                'error' => 'VALIDATION_ERROR',
+                'message' => 'Unknown filter keys for this category (allowed keys are defined by catalog)',
+                'unknown_keys' => $unknownKeys,
+            ], 422);
+        }
+    }
+
+    // WP-75: SPEC-aligned listing filters parsing
+    // Primary: filters[...] (SPEC) e.g. filters[capacity_max][min]=100, filters[city]=izmir
+    // Secondary: attrs[...] (backward compatible) e.g. attrs[capacity_max_min]=100, attrs[city]=izmir
+    if ($request->has('filters')) {
+        $filters = $request->input('filters');
+        if (is_array($filters)) {
+            foreach ($filters as $key => $value) {
+                if (!is_string($key) || $key === '') continue;
+                if (is_array($value)) {
+                    if (array_key_exists('min', $value) && $value['min'] !== null && $value['min'] !== '') {
+                        $query->whereRaw("CAST(attributes_json->>? AS INTEGER) >= ?", [$key, (int) $value['min']]);
+                    }
+                    if (array_key_exists('max', $value) && $value['max'] !== null && $value['max'] !== '') {
+                        $query->whereRaw("CAST(attributes_json->>? AS INTEGER) <= ?", [$key, (int) $value['max']]);
+                    }
+                } else {
+                    if ($value === null || $value === '') continue;
+                    $query->whereRaw("attributes_json->>? = ?", [$key, $value]);
+                }
+            }
+        }
+    } elseif ($request->has('attrs')) {
+        // Backward compatible attribute filtering (supports exact match + _min/_max numeric ranges)
         $attrs = $request->input('attrs');
         if (is_array($attrs)) {
             foreach ($attrs as $key => $value) {
