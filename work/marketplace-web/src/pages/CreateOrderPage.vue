@@ -66,7 +66,7 @@
 
 <script>
 import { api } from '../api/client';
-import { getUserId, clearSession } from '../lib/demoSession.js';
+import { getUserId, clearSession } from '../lib/session.js';
 
 export default {
   name: 'CreateOrderPage',

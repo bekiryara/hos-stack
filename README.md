@@ -1,10 +1,8 @@
 # Stack (H-OS + Pazar)
 
-This repository runs **H-OS** (universe governance) and **Pazar** (first commerce world) services together in a standardized workspace.
+This repository runs **H-OS** (universe governance) and **Pazar** (first commerce world) services together.
 
-## 🚀 Quick Start (2 Commands)
-
-**New to this repo?** Start here: [`docs/ONBOARDING.md`](docs/ONBOARDING.md)
+## Quick Start (2 Commands)
 
 ```powershell
 # 1. Start the stack
@@ -22,7 +20,7 @@ This is a **RELEASE-GRADE BASELINE CORE v1** repository that combines:
 - **H-OS**: Universe governance system (API + Web UI)
 - **Pazar**: First commerce world (Laravel application)
 
-**Baseline is FROZEN** - see [`docs/DECISIONS.md`](docs/DECISIONS.md) for what can and cannot be changed.
+**Baseline is FROZEN** - do not change ports, compose topology, or health endpoints without an explicit decision.
 
 ## Health Checks
 
@@ -51,19 +49,12 @@ All commands return exit code `0` on success, `1` on failure.
 
 See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the complete frozen baseline definition.
 
-## Documentation
+## Documentation (V1)
 
-### Entry Points
-- **Onboarding**: [`docs/ONBOARDING.md`](docs/ONBOARDING.md) - Quick start for newcomers
-- **Current State**: [`docs/CURRENT.md`](docs/CURRENT.md) - Single source of truth (stack, ports, services)
-- **Decisions**: [`docs/DECISIONS.md`](docs/DECISIONS.md) - Baseline definition + frozen items
+- **Discipline**: [`docs/DEV_DISCIPLINE.md`](docs/DEV_DISCIPLINE.md)
+- **New Chat Protocol**: [`docs/NEW_CHAT_PROTOCOL.md`](docs/NEW_CHAT_PROTOCOL.md)
 
-### Daily Operations
-- **Daily Ops**: [`docs/runbooks/daily_ops.md`](docs/runbooks/daily_ops.md) - Daily snapshot runbook
-- **Repo Hygiene**: [`docs/runbooks/repo_hygiene.md`](docs/runbooks/repo_hygiene.md) - File management rules
-
-### Contributing
-- **Contributing**: [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) - Commit rules, PR conventions, CHANGELOG discipline
+All other files under `docs/` are considered **historical** (kept for traceability, not a source of truth).
 
 ## Repository Structure
 
@@ -76,11 +67,7 @@ See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the complete frozen baseline de
 │   ├── conformance.ps1        # Conformance checks
 │   ├── daily_snapshot.ps1     # Daily evidence capture
 │   └── ci_guard.ps1          # CI drift guard
-├── docs/                       # Documentation
-│   ├── CURRENT.md             # Single source of truth
-│   ├── ONBOARDING.md          # Quick start guide
-│   ├── DECISIONS.md           # Baseline decisions
-│   └── PROOFS/                # Proof documents
+├── docs/                       # Documentation (V1: see DEV_DISCIPLINE + NEW_CHAT_PROTOCOL)
 ├── work/
 │   ├── hos/                   # H-OS service
 │   └── pazar/                 # Pazar service
@@ -94,7 +81,7 @@ See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the complete frozen baseline de
 - **H-OS Web**: `http://localhost:3002`
 - **Pazar App**: `http://localhost:8080` (health: `/up`)
 
-See [`docs/CURRENT.md`](docs/CURRENT.md) for complete service details.
+Service details are intentionally kept minimal in V1. If something is unclear, use `docker compose ps` and the health endpoints.
 
 ## Secrets & Configuration
 
@@ -121,13 +108,13 @@ See [`SECURITY.md`](SECURITY.md) for security policy.
 
 - **Version**: See `VERSION` file
 - **Changelog**: [`CHANGELOG.md`](CHANGELOG.md) (Keep a Changelog format)
-- **Baseline Releases**: [`docs/RELEASES/BASELINE.md`](docs/RELEASES/BASELINE.md)
+- **Baseline Releases**: See `VERSION` + `CHANGELOG.md`
 
 ## Getting Help
 
 - **Stack issues**: Run `.\ops\triage.ps1`
 - **Full status**: Run `.\ops\baseline_status.ps1` (faster) or `.\ops\doctor.ps1` (comprehensive)
-- **Documentation**: Start with [`docs/CURRENT.md`](docs/CURRENT.md)
+- **Documentation**: Start with `docs/DEV_DISCIPLINE.md`
 
 ## License
 

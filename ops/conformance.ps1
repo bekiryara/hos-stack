@@ -392,12 +392,11 @@ try {
             if ($null -eq $expectedDbLabel) {
                 Write-Host "  [WARN] Cannot detect DB engine from docker-compose.yml pazar-db image, skipping check" -ForegroundColor Yellow
             } else {
-                # Check docs/index.md
+                # Check docs/index.md (optional in V1-minimal docs)
                 $indexPath = "docs\index.md"
                 $indexFail = $false
                 if (-not (Test-Path $indexPath)) {
-                    Write-FailCheck "F" "docs/index.md not found" @($indexPath)
-                    $indexFail = $true
+                    Write-Host "  [INFO] docs/index.md not found (V1-minimal docs). Skipping drift check." -ForegroundColor Gray
                 } else {
                     $indexContent = Get-Content $indexPath -Raw -ErrorAction Stop
                     if ($null -eq $indexContent) {
@@ -435,12 +434,11 @@ try {
                     }
                 }
                 
-                # Check docs/CODE_INDEX.md
+                # Check docs/CODE_INDEX.md (optional in V1-minimal docs)
                 $codeIndexPath = "docs\CODE_INDEX.md"
                 $codeIndexFail = $false
                 if (-not (Test-Path $codeIndexPath)) {
-                    Write-FailCheck "F" "docs/CODE_INDEX.md not found" @($codeIndexPath)
-                    $codeIndexFail = $true
+                    Write-Host "  [INFO] docs/CODE_INDEX.md not found (V1-minimal docs). Skipping drift check." -ForegroundColor Gray
                 } else {
                     $codeIndexContent = Get-Content $codeIndexPath -Raw -ErrorAction Stop
                     if ($null -eq $codeIndexContent) {

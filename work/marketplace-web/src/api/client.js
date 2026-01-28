@@ -1,7 +1,7 @@
 // API client for Marketplace backend
 // WP-61: Use same-origin proxy path instead of direct 8080 to avoid CORS
 // WP-68: Auto-attach Authorization header when token exists
-import { getBearerToken, clearSession } from '../lib/demoSession.js';
+import { getBearerToken, clearSession } from '../lib/session.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/marketplace';
 

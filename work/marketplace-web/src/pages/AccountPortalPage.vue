@@ -20,9 +20,6 @@
           <div v-if="userInfo.display_name"><strong>Ad:</strong> {{ userInfo.display_name }}</div>
           <div v-if="userInfo.memberships_count !== undefined"><strong>Firma Sayısı:</strong> {{ userInfo.memberships_count }}</div>
         </div>
-        <div class="account-actions">
-          <button @click="handleLogout" class="logout-button">Çıkış</button>
-        </div>
       </div>
       
       <!-- WP-68: Firm Status Card (ALWAYS RENDER) -->
@@ -42,7 +39,8 @@
             <p v-if="activeTenantId"><strong>Durum:</strong> <span class="status-active">AKTİF</span></p>
           </div>
           <div class="firm-actions">
-            <router-link to="/listing/create" class="firm-panel-link">Firma Paneli</router-link>
+            <router-link v-if="activeTenantId" to="/listing/create" class="firm-panel-link">Firma Paneli</router-link>
+            <span v-else class="firm-panel-disabled">Firma paneli için aktif firma seçin.</span>
           </div>
         </div>
       </div>
@@ -208,8 +206,7 @@
 
 <script>
 import { api } from '../api/client.js';
-import { isLoggedIn, getUser, clearSession, getUserId, getActiveTenantId, setActiveTenantId } from '../lib/demoSession.js';
-// WP-68: Removed isDemoMode import - single auth entry, no demo mode UI
+import { isLoggedIn, getUser, clearSession, getUserId, getActiveTenantId, setActiveTenantId } from '../lib/session.js';
 
 export default {
   name: 'AccountPortalPage',
@@ -221,6 +218,7 @@ export default {
       reservations: [],
       userInfo: {},
       memberships: [],
+      activeTenantIdValue: getActiveTenantId(),
       
       // State
       loading: false,
@@ -239,7 +237,7 @@ export default {
       return isLoggedIn();
     },
     activeTenantId() {
-      return getActiveTenantId();
+      return this.activeTenantIdValue;
     },
     activeTenantName() {
       if (!this.activeTenantId || this.memberships.length === 0) return null;
@@ -248,14 +246,10 @@ export default {
     },
   },
   async mounted() {
-    console.log('[AccountPortalPage] mounted() called, isAuthenticated:', this.isAuthenticated);
     if (this.isAuthenticated) {
-      console.log('[AccountPortalPage] User is authenticated, loading data...');
       await this.loadUserInfo();
       await this.loadMemberships();
       this.refreshAll();
-    } else {
-      console.log('[AccountPortalPage] User is NOT authenticated, skipping data load');
     }
   },
   methods: {
@@ -274,15 +268,21 @@ export default {
       }
     },
     async loadMemberships() {
-      console.log('[AccountPortalPage] loadMemberships() called');
       this.membershipsLoading = true;
       try {
-        // WP-68: Fetch memberships
-        console.log('[AccountPortalPage] Calling api.getMyMemberships()...');
         const response = await api.getMyMemberships();
-        console.log('[AccountPortalPage] getMyMemberships response:', response);
         this.memberships = response.items || response.data || (Array.isArray(response) ? response : []);
-        console.log('[AccountPortalPage] memberships set to:', this.memberships);
+
+        // Keep active tenant id in sync (single source of truth: session storage)
+        this.activeTenantIdValue = getActiveTenantId();
+        if (this.memberships.length > 0 && !this.activeTenantIdValue) {
+          // If user has memberships but no active tenant selected, default to first membership
+          const first = this.memberships[0];
+          if (first && first.tenant_id) {
+            setActiveTenantId(first.tenant_id);
+            this.activeTenantIdValue = first.tenant_id;
+          }
+        }
       } catch (err) {
         console.error('[AccountPortalPage] Failed to load memberships:', err);
         if (err.status === 401) {
@@ -293,13 +293,11 @@ export default {
         this.memberships = []; // Set empty array on error
       } finally {
         this.membershipsLoading = false;
-        console.log('[AccountPortalPage] loadMemberships() completed, membershipsLoading:', this.membershipsLoading);
       }
     },
     setActiveTenant(tenantId) {
-      // WP-68: Set active tenant
       setActiveTenantId(tenantId);
-      this.$forceUpdate(); // Force re-render to show active state
+      this.activeTenantIdValue = tenantId || null;
     },
     formatDate(dateStr) {
       if (!dateStr) return 'N/A';
@@ -421,10 +419,6 @@ export default {
         this.loading = false;
       }
     },
-    handleLogout() {
-      clearSession();
-      this.$router.push('/login');
-    },
   },
 };
 </script>
@@ -528,38 +522,9 @@ export default {
   color: #666;
 }
 
-.account-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.firm-register-btn {
-  padding: 0.5rem 1rem;
-  background: #28a745;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
+.firm-panel-disabled {
+  color: #666;
   font-size: 0.9rem;
-  display: inline-block;
-}
-
-.firm-register-btn:hover {
-  background: #218838;
-}
-
-.logout-button {
-  padding: 0.5rem 1rem;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.logout-button:hover {
-  background: #c82333;
 }
 
 .tenant-selection-card {
@@ -694,7 +659,7 @@ export default {
   gap: 1rem;
 }
 
-/* WP-68: Removed firm-demo-link styles - no longer used (single auth entry) */
+/* WP-68: firm link styles cleaned up */
 
 .loading-firm-state {
   text-align: center;

@@ -82,7 +82,7 @@
 
 <script>
 import { api } from '../api/client';
-import { getUserId } from '../lib/demoSession.js';
+import { getUserId } from '../lib/session.js';
 
 export default {
   name: 'CreateRentalPage',
@@ -129,7 +129,7 @@ export default {
       }
     },
     async handleSubmit() {
-      // WP-68: Get userId from demoSession (token auto-attached by API)
+      // Get userId from session token (token auto-attached by API)
       const userId = getUserId();
       
       if (!userId) {

@@ -29,7 +29,7 @@
     <form v-if="!success" @submit.prevent="handleSubmit" class="listing-form">
       <div class="form-group">
         <label>
-          Tenant ID (UUID) <span class="required">*</span>
+          Aktif Firma <span class="required">*</span>
           <div v-if="formData.tenantId" class="tenant-id-display">
             <input
               v-model="formData.tenantId"
@@ -38,20 +38,18 @@
               readonly
               class="form-input auto-filled"
             />
-            <small class="auto-fill-note">Auto-filled from active tenant</small>
+            <small class="auto-fill-note">Account sayfasından seçilen aktif firma kullanılır.</small>
           </div>
           <div v-else class="tenant-id-missing">
-            <router-link to="/account" class="tenant-picker-link">Go to Account to Create Firm</router-link>
-            <span class="or-text">or</span>
-            <input
-              v-model="formData.tenantId"
-              type="text"
-              required
-              placeholder="Enter tenant ID manually"
-              class="form-input"
-            />
+            <p class="tenant-id-warning">
+              Bu işlem için aktif bir firmanız olmalı.
+            </p>
+            <div class="tenant-actions">
+              <router-link to="/account" class="tenant-picker-link">Hesabıma Git</router-link>
+              <router-link to="/firm/register" class="tenant-picker-link secondary">Firma Oluştur</router-link>
+            </div>
             <small v-if="tenantIdLoadError" class="tenant-id-warning">
-              <strong>Note:</strong> Could not auto-load tenant ID. Please create a firm from Account page or enter tenant ID manually.
+              <strong>Not:</strong> Aktif firma bulunamadı. Lütfen /account üzerinden firma oluşturun veya aktif firma seçin.
             </small>
           </div>
         </label>
@@ -176,7 +174,7 @@
         </div>
       </div>
       
-      <button type="submit" :disabled="loading" class="submit-button">
+      <button type="submit" :disabled="loading || !formData.tenantId" class="submit-button">
         {{ loading ? 'Creating...' : 'Create Listing (DRAFT)' }}
       </button>
     </form>
@@ -186,7 +184,7 @@
 <script>
 import { api } from '../api/client';
 import { getCategoriesTree, getFilterSchemaForCategory } from '../lib/catalogSpine';
-import { isLoggedIn, getActiveTenantId } from '../lib/demoSession';
+import { isLoggedIn, getActiveTenantId } from '../lib/session.js';
 
 export default {
   name: 'CreateListingPage',

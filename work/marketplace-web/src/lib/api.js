@@ -1,7 +1,7 @@
 // WP-67: API wrapper module (unified)
 // Automatically attaches Authorization header for authenticated calls
 
-import { getBearerToken, clearSession, setToken, saveSession } from './demoSession.js';
+import { getBearerToken, clearSession, setToken, saveSession } from './session.js';
 
 // HOS API base URL - use proxy if available, otherwise direct
 const HOS_BASE_URL = import.meta.env.VITE_HOS_BASE_URL || '/api';

@@ -26,12 +26,10 @@ $ErrorActionPreference = "Continue"
 
 # WP-68C: Golden 4 Commands Banner
 Write-Host "=== GOLDEN 4 COMMANDS (WP-68C) ===" -ForegroundColor Yellow
-Write-Host "(1) Prototype/Demo:  .\ops\prototype_v1.ps1" -ForegroundColor White
+Write-Host "(1) Prototype:      .\ops\prototype_v1.ps1" -ForegroundColor White
 Write-Host "(2) Status/Audit:   .\ops\ops_status.ps1" -ForegroundColor White
 Write-Host "(3) Publish:        .\ops\ship_main.ps1" -ForegroundColor White
 Write-Host "(4) Frontend Apply: .\ops\frontend_refresh.ps1 [-Build]" -ForegroundColor White
-Write-Host "See: docs/runbooks/OPS_ENTRYPOINTS.md for details" -ForegroundColor Gray
-Write-Host "See: docs/ops/OPS_ENTRYPOINTS.md for tier structure (WP-68)" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "=== UNIFIED OPS STATUS DASHBOARD ===" -ForegroundColor Cyan

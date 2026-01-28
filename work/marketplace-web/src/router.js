@@ -11,7 +11,7 @@ import MessagingPage from './pages/MessagingPage.vue';
 import LoginPage from './pages/LoginPage.vue';
 import RegisterPage from './pages/RegisterPage.vue';
 import FirmRegisterPage from './pages/FirmRegisterPage.vue';
-import { isLoggedIn, clearSession } from './lib/demoSession.js';
+import { isLoggedIn } from './lib/session.js';
 
 const routes = [
   { path: '/', component: CategoriesPage },
@@ -35,10 +35,10 @@ const router = createRouter({
 });
 
 // WP-68: Router guard for auth-required routes and firm-only routes
-import { getActiveTenantId } from './lib/demoSession.js';
+import { getActiveTenantId } from './lib/session.js';
 
 router.beforeEach((to, from, next) => {
-  // WP-70: Single auth entry - no demo routes
+  // Single auth entry
   
   // Check auth-required routes
   if (to.matched.some(record => record.meta.requiresAuth)) {
@@ -57,9 +57,8 @@ router.beforeEach((to, from, next) => {
     }
     const activeTenantId = getActiveTenantId();
     if (!activeTenantId) {
-      // WP-68: Show friendly message - redirect to account or show message
-      // For now, allow access but page will show friendly message
-      next();
+      // Firm-only route: require an active firm (derived from memberships via /account)
+      next({ path: '/account', query: { reason: 'firm_required' } });
       return;
     }
   }

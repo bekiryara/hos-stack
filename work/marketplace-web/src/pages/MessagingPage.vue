@@ -34,9 +34,9 @@
 </template>
 
 <script>
-import { getToken } from '../lib/demoSession.js';
+import { getToken } from '../lib/session.js';
 
-// Simple JWT decode (no verification needed for demo)
+// Simple JWT decode (no signature verification; client-side convenience only)
 function decodeJWT(token) {
   try {
     const parts = token.split('.');
@@ -231,7 +231,7 @@ export default {
       const date = new Date(timestamp);
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     },
-    // WP-74: Removed exitDemo method
+    // WP-74: Removed exit method
   },
 };
 </script>
@@ -249,7 +249,7 @@ export default {
   margin-bottom: 1.5rem;
 }
 
-/* WP-74: Removed exit-demo-button styles */
+/* WP-74: Removed exit button styles */
 
 .back-button {
   padding: 0.5rem 1rem;

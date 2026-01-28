@@ -56,7 +56,7 @@
 
 <script>
 import { api } from '../api/client.js';
-import { isLoggedIn, setActiveTenantId } from '../lib/demoSession.js';
+import { isLoggedIn, setActiveTenantId } from '../lib/session.js';
 
 export default {
   name: 'FirmRegisterPage',
@@ -121,7 +121,7 @@ export default {
           
           this.success = `Firma başarıyla oluşturuldu! (${response.slug})`;
           
-          // WP-68: Redirect to account page after success (not demo)
+          // Redirect to account page after success
           await new Promise(resolve => setTimeout(resolve, 1500)); // Brief delay for UX
           this.$router.push('/account');
         } else {

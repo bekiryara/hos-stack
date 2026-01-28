@@ -123,7 +123,7 @@ try {
     
     if (-not $tenantId) {
         Write-Host "  No valid tenant_id found, attempting bootstrap..." -ForegroundColor Yellow
-        $bootstrapScript = Join-Path $scriptDir "ensure_demo_membership.ps1"
+        $bootstrapScript = Join-Path $scriptDir "ensure_membership.ps1"
         if (Test-Path $bootstrapScript) {
             & $bootstrapScript -HosBaseUrl $hosBaseUrl -TenantSlug "tenant-a" -Email "testuser@example.com" 2>&1 | Out-Null
             if ($LASTEXITCODE -eq 0) {

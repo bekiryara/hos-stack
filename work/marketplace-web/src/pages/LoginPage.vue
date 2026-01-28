@@ -59,25 +59,19 @@
 
 <script>
 import { login } from '../lib/api.js';
-import { saveSession } from '../lib/demoSession.js';
 
 export default {
   name: 'LoginPage',
   data() {
     return {
       formData: {
-        email: 'testuser@example.com', // Test kullanıcısı otomatik dolu
-        password: 'Passw0rd!', // Test şifresi otomatik dolu
+        email: '',
+        password: '',
       },
       errors: {},
       loading: false,
       error: null,
     };
-  },
-  mounted() {
-    // WP-67: Test kullanıcısı bilgilerini form alanlarına doldur
-    this.formData.email = 'testuser@example.com';
-    this.formData.password = 'Passw0rd!';
   },
   methods: {
     validateEmail() {
@@ -123,10 +117,7 @@ export default {
       this.loading = true;
       
       try {
-        const result = await login(this.formData.email.trim(), this.formData.password);
-        
-        // WP-68: login() already saves session, no need to save again
-        // Session is saved in lib/api.js login() function
+        await login(this.formData.email.trim(), this.formData.password);
         
         // Redirect to account page
         this.$router.push('/account');

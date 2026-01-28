@@ -95,19 +95,7 @@
 
 <script>
 import { api } from '../api/client';
-import { getUserId } from '../lib/demoSession';
-
-// Simple JWT decode (no verification needed for demo)
-function decodeJWT(token) {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1]));
-    return payload;
-  } catch {
-    return null;
-  }
-}
+import { getUserId } from '../lib/session.js';
 
 export default {
   name: 'CreateReservationPage',
@@ -155,7 +143,7 @@ export default {
       }
     },
     async handleSubmit() {
-      // WP-68: Get userId from demoSession (token auto-attached by API)
+      // Get userId from session token (token auto-attached by API)
       const userId = getUserId();
       
       if (!userId) {

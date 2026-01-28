@@ -22,7 +22,7 @@
 </template>
 
 <script>
-import { isLoggedIn, getUser, clearSession } from './lib/demoSession.js';
+import { isLoggedIn, getUser, clearSession } from './lib/session.js';
 
 export default {
   name: 'App',
