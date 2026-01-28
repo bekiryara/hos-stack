@@ -91,6 +91,10 @@ Write-Host ""
 Write-Host "[GIT] Synchronizing with origin..." -ForegroundColor Yellow
 
 try {
+    # Git can write normal progress lines to stderr; do not treat as terminating errors.
+    $oldErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+
     # Pull with rebase
     Write-Host "  Pulling from origin/main (rebase)..." -ForegroundColor Gray
     $pullOutput = git pull --rebase origin main 2>&1
@@ -112,7 +116,10 @@ try {
         exit 1
     }
     Write-Host "PASS: Pushed to origin/main" -ForegroundColor Green
+
+    $ErrorActionPreference = $oldErrorActionPreference
 } catch {
+    if ($null -ne $oldErrorActionPreference) { $ErrorActionPreference = $oldErrorActionPreference }
     Write-Sanitized "FAIL: Git operation failed: $($_.Exception.Message)" "Red"
     exit 1
 }
