@@ -144,11 +144,26 @@ This ensures baseline remains stable and prevents breaking changes.
 - `GET /api/v1/listings` is the only listing read/search endpoint.
 - Filter contract:
   - Primary: `filters[...]`
-  - Backward compatible: `attrs[...]` (still supported)
+  - Legacy/backward compatible: `attrs[...]` (still supported; do not build new logic on this)
   - Priority: if `filters[...]` exists → use it; else if `attrs[...]` exists → use it.
 - Category-scoped validation:
   - If `category_id` is provided and invalid → 404.
   - If `category_id` is provided and filter keys are not defined by catalog schema for that category (or descendants) → 422.
+
+**Rules: Adding Categories (no code change)**
+- Add a new row to the `categories` table (set `parent_id` to attach it to the tree).
+- No new frontend route/page is created; users navigate via the existing category tree and `/search/:categoryId?`.
+
+**Rules: Adding Filters (catalog-only)**
+- Add a new row to `attributes` (if the attribute key does not exist yet).
+- Add a new row to `category_filter_schema` for the target category (and set status=active).
+- No backend or frontend code changes are required for the filter to appear in UI and be accepted by listing search.
+
+**DO NOT (locked rules)**
+- Do not add new listing search endpoints (only `GET /api/v1/listings`).
+- Do not add category-specific SQL or category-specific frontend pages.
+- Do not hardcode filter keys/types in frontend; UI renders from catalog schema.
+- Do not add new logic that depends on `attrs[...]` (legacy only; kept for compatibility).
 
 **Not Included in V1:**
 - Payment processing

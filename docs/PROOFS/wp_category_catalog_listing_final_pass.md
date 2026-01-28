@@ -45,6 +45,12 @@ Expected: HTTP 422.
 2. Choose filters and click **Search**.
 3. Verify the request to `.../api/v1/listings` includes `filters[...]` parameters.
 
+## Verification checklist (PASS/FAIL)
+- New category added via `categories` table only → should appear in `/api/v1/categories` and UI tree.
+- New filter added via `attributes` + `category_filter_schema` only → should appear in `/api/v1/categories/{id}/filter-schema` and UI panel.
+- Invalid filter key rejected when `category_id` is provided → 422.
+- Same endpoint works for all categories (descendants included via category CTE) → PASS.
+
 ## Files changed
 - `work/pazar/routes/api/03b_listings_read.php`
 - `work/marketplace-web/src/pages/ListingsSearchPage.vue`
