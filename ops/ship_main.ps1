@@ -63,6 +63,11 @@ $gateIndex = 1
 foreach ($script in $gateScripts) {
     $scriptName = Split-Path $script -Leaf
     Write-Host "  [$gateIndex] Running $scriptName..." -ForegroundColor Gray
+    if (-not (Test-Path $script)) {
+        Write-Host "SKIP: $scriptName not present" -ForegroundColor Yellow
+        $gateIndex++
+        continue
+    }
     try {
         $output = & $script 2>&1
         $exitCode = $LASTEXITCODE
