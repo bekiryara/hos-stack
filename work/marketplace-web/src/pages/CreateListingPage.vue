@@ -137,22 +137,10 @@
             <span v-if="filter.required" class="required-badge">required</span>
             <span v-if="filter.value_type" class="type-badge">{{ filter.value_type }}</span>
           </label>
-          <div v-if="filter.filter_mode === 'range' && filter.value_type === 'number'">
-            <input
-              v-model.number="formData.attributes[filter.attribute_key + '_min']"
-              type="number"
-              :placeholder="`Min ${filter.attribute_key}`"
-              class="form-input"
-            />
-            <input
-              v-model.number="formData.attributes[filter.attribute_key + '_max']"
-              type="number"
-              :placeholder="`Max ${filter.attribute_key}`"
-              class="form-input"
-            />
-          </div>
+          <!-- NOTE: Listing attributes store a single value per key.
+               `filter_mode: range` is a search-time UI hint, not a listing write shape. -->
           <input
-            v-else-if="filter.value_type === 'string'"
+            v-if="filter.value_type === 'string'"
             v-model="formData.attributes[filter.attribute_key]"
             type="text"
             :placeholder="filter.attribute_key"
@@ -286,20 +274,12 @@ export default {
       this.error = null;
       
       try {
-        // Build attributes object (handle range min/max)
+        // Build attributes object (single value per attribute_key)
         const attributes = {};
         Object.keys(this.formData.attributes).forEach((key) => {
           const value = this.formData.attributes[key];
           if (value !== null && value !== undefined && value !== '') {
-            if (key.endsWith('_min')) {
-              const baseKey = key.replace('_min', '');
-              attributes[`${baseKey}_min`] = value;
-            } else if (key.endsWith('_max')) {
-              const baseKey = key.replace('_max', '');
-              attributes[`${baseKey}_max`] = value;
-            } else {
-              attributes[key] = value;
-            }
+            attributes[key] = value;
           }
         });
         
