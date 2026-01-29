@@ -172,7 +172,7 @@
 <script>
 import { api } from '../api/client';
 import { getCategoriesTree, getFilterSchemaForCategory } from '../lib/catalogSpine';
-import { isLoggedIn, getActiveTenantId } from '../lib/session.js';
+import { isLoggedIn, getActiveTenantId, setActiveTenantId } from '../lib/session.js';
 
 export default {
   name: 'CreateListingPage',
@@ -219,8 +219,8 @@ export default {
                 const selectedMembership = adminMembership || items[0];
                 const tenantId = selectedMembership.tenant_id || selectedMembership.tenant?.id;
                 if (tenantId) {
-                  // WP-62: Use client.js helper to set active tenant
-                  api.setActiveTenantId(tenantId);
+                  // Single source of truth: session storage
+                  setActiveTenantId(tenantId);
                   this.formData.tenantId = tenantId;
                 } else {
                   // No tenant_id found in memberships

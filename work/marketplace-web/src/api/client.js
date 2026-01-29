@@ -1,7 +1,14 @@
 // API client for Marketplace backend
 // WP-61: Use same-origin proxy path instead of direct 8080 to avoid CORS
 // WP-68: Auto-attach Authorization header when token exists
-import { getBearerToken, clearSession, setToken, saveSession } from '../lib/session.js';
+import {
+  getBearerToken,
+  clearSession,
+  setToken,
+  saveSession,
+  getActiveTenantId as getActiveTenantIdFromSession,
+  setActiveTenantId as setActiveTenantIdFromSession,
+} from '../lib/session.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/marketplace';
 
@@ -311,17 +318,10 @@ export const api = {
     return hosApiRequest('/v1/auth/logout', { method: 'POST' }, true);
   },
   
-  // WP-62: Active Tenant helpers (single source of truth)
-  getActiveTenantId: () => {
-    return localStorage.getItem('active_tenant_id');
-  },
-  setActiveTenantId: (tenantId) => {
-    if (tenantId) {
-      localStorage.setItem('active_tenant_id', tenantId);
-    } else {
-      localStorage.removeItem('active_tenant_id');
-    }
-  },
+  // Active tenant is stored in `src/lib/session.js` (single source of truth).
+  // Keep these wrappers for backwards compatibility.
+  getActiveTenantId: () => getActiveTenantIdFromSession(),
+  setActiveTenantId: (tenantId) => setActiveTenantIdFromSession(tenantId),
   
   // Account Portal - Personal scope (WP-32, WP-8)
   // WP-68: Auto-attach Authorization header (no manual token needed)
@@ -369,7 +369,7 @@ export const api = {
   createListing: (data, tenantId) => {
     const idempotencyKey = generateIdempotencyKey();
     // Auto-use activeTenantId if tenantId not provided
-    const activeTenantId = tenantId || api.getActiveTenantId();
+    const activeTenantId = tenantId || getActiveTenantIdFromSession();
     const headers = {
       'Idempotency-Key': idempotencyKey,
       'X-Active-Tenant-Id': activeTenantId,
@@ -384,7 +384,7 @@ export const api = {
   
   publishListing: (id, tenantId) => {
     // Auto-use activeTenantId if tenantId not provided
-    const activeTenantId = tenantId || api.getActiveTenantId();
+    const activeTenantId = tenantId || getActiveTenantIdFromSession();
     const headers = {
       'X-Active-Tenant-Id': activeTenantId,
     };
