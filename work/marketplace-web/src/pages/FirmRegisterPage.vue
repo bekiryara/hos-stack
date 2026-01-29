@@ -15,47 +15,84 @@
         <p class="muted">Mevcut bir firmanız varsa otomatik yönlendirileceksiniz.</p>
       </div>
 
-      <div v-else class="registration-form">
-      <form @submit.prevent="handleSubmit">
-        <div class="form-group">
-          <label for="firm-name">Firma Adı *</label>
-          <input
-            id="firm-name"
-            v-model="formData.firm_name"
-            type="text"
-            required
-            placeholder="Örn: ABC Teknoloji"
-            maxlength="100"
-          />
-          <small>Firma adı, URL'de slug olarak kullanılacaktır.</small>
+      <div v-else>
+        <!-- Deterministic redirect reasons (no silent redirects) -->
+        <div v-if="gateState === 'already_active'" class="info-message">
+          <p><strong>Bu hesapta zaten aktif bir firma var.</strong></p>
+          <p class="muted">Yeni firma oluşturmana gerek yok. İstersen firma paneline geçebilirsin.</p>
+          <div class="cta-row">
+            <router-link to="/account" class="secondary-link">Hesabım</router-link>
+            <button type="button" class="primary-btn" @click="goToListingCreate">İlan Oluştur</button>
+          </div>
         </div>
-        
-        <div class="form-group">
-          <label for="firm-owner-name">Firma Sahibi Adı</label>
-          <input
-            id="firm-owner-name"
-            v-model="formData.firm_owner_name"
-            type="text"
-            placeholder="İsteğe bağlı"
-            maxlength="100"
-          />
+
+        <div v-else-if="gateState === 'has_memberships'" class="info-message">
+          <p><strong>Bu hesapta mevcut firma üyeliği var.</strong></p>
+          <p class="muted">Firma seçimini netleştirmek için önce Hesabım sayfasına gidebilirsin.</p>
+          <div class="cta-row">
+            <router-link to="/account" class="secondary-link">Hesabım (firma seç)</router-link>
+            <button
+              v-if="preferredTenantId"
+              type="button"
+              class="primary-btn"
+              @click="activatePreferredAndContinue"
+            >
+              Aktif yap ve devam et
+            </button>
+          </div>
+          <div v-if="membershipsPreview.length > 0" class="memberships-preview">
+            <div class="muted">Bulunan firmalar:</div>
+            <ul>
+              <li v-for="m in membershipsPreview" :key="m.tenant_id">
+                {{ m.tenant_name || m.tenant_slug || m.tenant_id }}
+              </li>
+            </ul>
+          </div>
         </div>
-        
-        <div v-if="error" class="error-message">
-          {{ error }}
+
+        <!-- Firm registration form -->
+        <div v-else class="registration-form">
+          <form @submit.prevent="handleSubmit">
+            <div class="form-group">
+              <label for="firm-name">Firma Adı *</label>
+              <input
+                id="firm-name"
+                v-model="formData.firm_name"
+                type="text"
+                required
+                placeholder="Örn: ABC Teknoloji"
+                maxlength="100"
+              />
+              <small>Firma adı, URL'de slug olarak kullanılacaktır.</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="firm-owner-name">Firma Sahibi Adı</label>
+              <input
+                id="firm-owner-name"
+                v-model="formData.firm_owner_name"
+                type="text"
+                placeholder="İsteğe bağlı"
+                maxlength="100"
+              />
+            </div>
+            
+            <div v-if="error" class="error-message">
+              {{ error }}
+            </div>
+            
+            <div v-if="success" class="success-message">
+              {{ success }}
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" :disabled="loading || submitting" class="submit-btn">
+                {{ submitting ? 'Oluşturuluyor...' : 'Firma Oluştur' }}
+              </button>
+              <router-link to="/account" class="cancel-link">İptal</router-link>
+            </div>
+          </form>
         </div>
-        
-        <div v-if="success" class="success-message">
-          {{ success }}
-        </div>
-        
-        <div class="form-actions">
-          <button type="submit" :disabled="loading || submitting" class="submit-btn">
-            {{ submitting ? 'Oluşturuluyor...' : 'Firma Oluştur' }}
-          </button>
-          <router-link to="/account" class="cancel-link">İptal</router-link>
-        </div>
-      </form>
       </div>
     </div>
   </div>
@@ -77,6 +114,9 @@ export default {
       submitting: false,
       error: null,
       success: null,
+      gateState: 'checking', // checking | needs_form | already_active | has_memberships
+      preferredTenantId: null,
+      membershipsPreview: [],
     };
   },
   computed: {
@@ -90,35 +130,47 @@ export default {
       this.$router.push('/login?reason=expired');
       return;
     }
-    // If an active tenant already exists, firm creation is not needed.
-    const activeTenantId = getActiveTenantId();
-    if (activeTenantId) {
-      this.$router.push('/listing/create');
-      return;
-    }
-
-    // If user already has memberships, select one and go to listing/create (single flow).
+    this.loading = true;
     try {
-      this.loading = true;
+      // If an active tenant already exists, show reason + CTA (no silent redirect)
+      const activeTenantId = getActiveTenantId();
+      if (activeTenantId) {
+        this.gateState = 'already_active';
+        return;
+      }
+
+      // If user has memberships, show reason + CTA (user-controlled activation)
       const resp = await api.getMyMemberships();
       const items = resp?.items || resp?.data || (Array.isArray(resp) ? resp : []);
       if (Array.isArray(items) && items.length > 0) {
         const preferred = items.find((m) => m?.role === 'owner' || m?.role === 'admin') || items[0];
-        const tenantId = preferred?.tenant_id || null;
-        if (tenantId) {
-          setActiveTenantId(tenantId);
-          this.$router.push('/listing/create');
-          return;
-        }
-        // fall through to form if membership shape is unexpected
+        this.preferredTenantId = preferred?.tenant_id || null;
+        this.membershipsPreview = items.slice(0, 5).map((m) => ({
+          tenant_id: m?.tenant_id,
+          tenant_name: m?.tenant_name,
+          tenant_slug: m?.tenant_slug,
+        })).filter((m) => m.tenant_id);
+        this.gateState = 'has_memberships';
+        return;
       }
+
+      this.gateState = 'needs_form';
     } catch {
-      // ignore and allow form to render
+      // If membership check fails, allow form to render (still deterministic)
+      this.gateState = 'needs_form';
     } finally {
       this.loading = false;
     }
   },
   methods: {
+    goToListingCreate() {
+      this.$router.push('/listing/create');
+    },
+    activatePreferredAndContinue() {
+      if (!this.preferredTenantId) return;
+      setActiveTenantId(this.preferredTenantId);
+      this.$router.push('/listing/create');
+    },
     generateSlug(name) {
       // WP-68: Generate slug from firm name (lowercase, dash)
       return name
@@ -244,6 +296,51 @@ export default {
   margin: 0;
   color: #666;
   font-size: 0.9rem;
+}
+
+.info-message {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.cta-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.primary-btn {
+  padding: 0.75rem 1.25rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.primary-btn:hover {
+  background: #0056b3;
+}
+
+.secondary-link {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.secondary-link:hover {
+  text-decoration: underline;
+}
+
+.memberships-preview {
+  margin-top: 1rem;
+  color: #333;
+}
+
+.memberships-preview ul {
+  margin: 0.5rem 0 0 1rem;
 }
 
 .form-group {
