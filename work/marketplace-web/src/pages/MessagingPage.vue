@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import { getToken, getUserId } from '../lib/session.js';
+import { getToken, getUserId, clearSession } from '../lib/session.js';
 import { messagingUpsertThread, messagingGetThreadByContext, messagingSendMessage } from '../api/client.js';
 
 export default {
@@ -65,6 +65,10 @@ export default {
     await this.initializeMessaging();
   },
   methods: {
+    handleAuthExpired() {
+      clearSession();
+      this.$router.push('/login?reason=expired');
+    },
     async initializeMessaging() {
       try {
         this.loading = true;
@@ -91,6 +95,10 @@ export default {
         // Load messages (by-context, will also set threadId from response)
         await this.loadMessages();
       } catch (err) {
+        if (err?.status === 401) {
+          this.handleAuthExpired();
+          return;
+        }
         this.fatalError = err?.message || String(err);
       } finally {
         this.loading = false;
@@ -109,6 +117,10 @@ export default {
           throw new Error('Missing thread_id in upsert response');
         }
       } catch (err) {
+        if (err?.status === 401) {
+          this.handleAuthExpired();
+          return;
+        }
         throw new Error('Failed to initialize thread: ' + err.message);
       }
     },
@@ -122,6 +134,10 @@ export default {
         }
         this.messages = data.messages || [];
       } catch (err) {
+        if (err?.status === 401) {
+          this.handleAuthExpired();
+          return;
+        }
         throw new Error('Failed to load messages: ' + err.message);
       }
     },
@@ -141,6 +157,10 @@ export default {
         });
         await this.loadMessages();
       } catch (err) {
+        if (err?.status === 401) {
+          this.handleAuthExpired();
+          return;
+        }
         this.inlineError = 'Failed to send message: ' + (err?.message || String(err));
         // Restore message on error
         this.newMessage = messageBody;

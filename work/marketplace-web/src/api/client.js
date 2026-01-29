@@ -213,6 +213,11 @@ export async function messagingApiRequest(endpoint, options = {}, skipAuth = fal
     headers,
   });
 
+  // Standard 401 behavior: clear local session (redirect handled by router/component)
+  if (response.status === 401) {
+    clearSession();
+  }
+
   if (!response.ok) {
     let errorData;
     try {
