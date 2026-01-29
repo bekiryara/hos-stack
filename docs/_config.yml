@@ -1,0 +1,11 @@
+theme: jekyll-theme-minimal
+title: H-OS Stack Documentation
+description: H-OS Stack - Full-stack marketplace platform documentation
+plugins:
+  - jekyll-relative-links
+
+relative_links:
+  enabled: true
+  collections: true
+
+

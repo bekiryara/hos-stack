@@ -12,7 +12,8 @@ Write-Host "[1] Proof dosyalari kontrol ediliyor..." -ForegroundColor Yellow
 $proofFiles = Select-String -Path docs/WP_CLOSEOUTS.md -Pattern "docs/PROOFS/([^`\s`"]+)" | 
     ForEach-Object { 
         if ($_.Line -match "docs/PROOFS/([^`\s`"]+)") { 
-            $matches[1] 
+            # Normalize capture (WP_CLOSEOUTS uses backticks in markdown paths)
+            ($matches[1]).Trim('`').Trim()
         } 
     } | Sort-Object -Unique
 

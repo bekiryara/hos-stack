@@ -19,6 +19,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 'id' => $cat->id,
                 'parent_id' => $cat->parent_id,
                 'slug' => $cat->slug,
+                // SPEC Canonical Model: title (DB column is `name`)
+                'title' => $cat->name,
+                // Additive: expose status for clients (already filtered to active)
+                'status' => $cat->status,
             ];
         })
         ->toArray();

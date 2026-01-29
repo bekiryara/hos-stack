@@ -1,0 +1,208 @@
+# Ops Status Dashboard Runbook
+
+## Overview
+
+The Unified Ops Status Dashboard (`ops/ops_status.ps1`) aggregates all operational checks into a single command, providing a comprehensive view of system health, security, and compliance.
+
+## Running Locally
+
+### Recommended Usage (Terminal-Safe)
+
+```powershell
+.\ops\run_ops_status.ps1
+```
+
+This wrapper prevents the terminal from closing and preserves exit codes. It's the recommended way to run ops_status locally.
+
+### Direct Usage (Alternative)
+
+```powershell
+.\ops\ops_status.ps1
+```
+
+**Note:** Ops scripts now use safe exit behavior: in interactive PowerShell sessions, the terminal will not close (exit codes are set via `$global:LASTEXITCODE`). In CI environments (GitHub Actions), exit codes are properly propagated. This applies to all ops scripts (ops_status.ps1, doctor.ps1, verify.ps1, triage.ps1, conformance.ps1, schema_snapshot.ps1, pazar_storage_posture.ps1).
+
+**Safe Exit Behavior:**
+- **Interactive Mode**: Scripts set `$global:LASTEXITCODE` and return (terminal stays open)
+- **CI Mode**: Scripts call `exit $Code` (proper exit code propagation for CI/CD pipelines)
+- **Detection**: Automatically detects CI environment via `$env:CI` or `$env:GITHUB_ACTIONS`
+
+**ASCII-Only Output:**
+- All ops scripts use ASCII-only output markers: `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]`
+- No Unicode glyphs (✅ ❌ ⚠️ ✓ ✗ → ➕ ➖) in output
+- Ensures consistent rendering across all terminals and CI environments
+
+### CI Usage
+
+```powershell
+.\ops\run_ops_status.ps1 -Ci
+```
+
+The `-Ci` switch ensures proper exit code propagation for CI/CD pipelines.
+
+### Prerequisites
+
+- Docker Compose services must be running
+- All ops scripts must be available in `ops/` directory
+- PowerShell 5.1+ or PowerShell Core
+
+## Interpreting Results
+
+### Status Values
+
+- **PASS**: Check completed successfully
+- **WARN**: Check completed with warnings (non-blocking)
+- **FAIL**: Check failed (blocking)
+- **SKIP**: Check not executed (script not found or intentionally skipped)
+
+### Decision Matrix
+
+The dashboard determines overall status based on individual check results and blocking semantics:
+
+- **PASS**: Release allowed
+  - All blocking checks PASS
+  - Non-blocking checks may PASS, WARN, or SKIP
+
+- **WARN**: Release allowed (with review)
+  - All blocking checks PASS
+  - One or more non-blocking checks WARN
+  - Non-blocking checks that can WARN:
+    - SLO Check (p50-only latency warnings)
+    - Observability Status (WARN when Prometheus/Alertmanager absent but not blocking)
+    - Storage Posture (legacy/non-critical warnings)
+
+- **FAIL**: Blocks release + auto incident bundle
+  - Any blocking check FAIL
+  - Blocking checks: doctor, verify, conformance, env-contract, auth-security, tenant-boundary, session-posture, error-contract, routes-snapshot, schema-snapshot, product_spine_check, ops_drift_guard
+  - Incident bundle is automatically generated and path is printed
+
+### Overall Status
+
+The dashboard determines overall status based on blocking semantics:
+
+- **FAIL**: Any blocking check has status FAIL
+- **WARN**: No blocking FAIL, but at least one non-blocking check WARN
+- **PASS**: All blocking checks PASS (non-blocking checks may WARN)
+
+### Exit Codes
+
+- `0`: PASS (all checks passed)
+- `2`: WARN (warnings present, no failures)
+- `1`: FAIL (one or more failures)
+
+## Checks Performed
+
+The dashboard runs the following checks in order:
+
+1. **Repository Doctor** (`ops/doctor.ps1`)
+   - Docker Compose services status
+   - Health endpoints
+   - Repository structure
+
+2. **Stack Verification** (`ops/verify.ps1`)
+   - Docker Compose services
+   - H-OS health endpoint
+   - Pazar health endpoint
+
+3. **Incident Triage** (`ops/triage.ps1`)
+   - Quick health check for all services
+   - Service status summary
+
+4. **SLO Check** (`ops/slo_check.ps1`)
+   - Service Level Objectives validation
+   - Availability, latency, error rate checks
+
+5. **Security Audit** (`ops/security_audit.ps1`)
+   - Route/middleware security validation
+   - Admin/panel surface protection
+   - State-changing route protection
+
+6. **Conformance** (`ops/conformance.ps1`)
+   - Architecture conformance checks
+   - World registry validation
+   - Documentation compliance
+
+7. **World Spine Governance** (`ops/world_spine_check.ps1`)
+   - World spine route validation
+   - Enabled/disabled world policy enforcement
+
+8. **Routes Snapshot** (`ops/routes_snapshot.ps1`)
+   - API route contract validation
+   - Route changes detection
+
+9. **Schema Snapshot** (`ops/schema_snapshot.ps1`)
+   - Database schema contract validation
+   - Schema changes detection
+
+10. **Error Contract** (inline check)
+   - Error envelope validation (422, 404)
+   - Standard error format compliance
+
+11. **Product Contract** (`ops/product_contract.ps1`)
+   - Product API spine documentation validation
+   - Spine endpoints vs routes snapshot alignment
+   - Middleware posture validation
+   - Error-contract posture smoke
+
+## Incident Bundle on FAIL
+
+When overall status is **FAIL**, the dashboard automatically:
+
+1. Runs `ops/incident_bundle.ps1` to generate an incident bundle
+2. Prints the bundle path: `INCIDENT_BUNDLE_PATH=incident_bundles/incident_bundle_YYYYMMDD_HHMMSS`
+
+The incident bundle contains:
+- System diagnostics
+- Service logs
+- Configuration snapshots
+- Health check results
+
+## CI Integration
+
+The dashboard is integrated into CI via `.github/workflows/ops-status.yml`:
+
+- Runs on pull requests and pushes
+- Uploads incident bundle artifact on failure
+- Always cleans up Docker Compose services
+
+## Troubleshooting
+
+### All Checks Fail
+
+1. **Check Docker Compose**: Ensure services are running
+   ```powershell
+   docker compose ps
+   ```
+
+2. **Check Service Health**: Verify endpoints are accessible
+   ```powershell
+   curl.exe http://localhost:3000/v1/health
+   curl.exe http://localhost:8080/up
+   ```
+
+3. **Review Individual Scripts**: Run each check individually to identify the issue
+   ```powershell
+   .\ops\doctor.ps1
+   .\ops\verify.ps1
+   ```
+
+### Specific Check Fails
+
+1. **SLO Check**: May fail due to performance issues; check SLO targets
+2. **Security Audit**: Review route middleware configuration
+3. **Conformance**: Check architecture rules in `docs/RULES.md`
+4. **Routes/Schema Snapshot**: Update snapshots if changes are intentional
+
+### Incident Bundle Not Generated
+
+If incident bundle generation fails:
+1. Check `ops/incident_bundle.ps1` is executable
+2. Verify `incident_bundles/` directory exists or can be created
+3. Check disk space and permissions
+
+## Related Documentation
+
+- `docs/RULES.md` - Rule 27: New ops gates must be integrated into ops_status.ps1
+- `ops/incident_bundle.ps1` - Incident bundle generation
+- Individual ops script runbooks in `docs/runbooks/`
+
