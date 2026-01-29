@@ -102,7 +102,8 @@ if ($authHeader) {
     Write-Host ""
     Write-Host "=== MESSAGING JOURNEY CHECK: PASS ===" -ForegroundColor Green
     if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
-        Invoke-OpsExit -ExitCode 0
+        Invoke-OpsExit 0
+        return
     } else {
         exit 0
     }
@@ -113,7 +114,8 @@ if (-not $authEnabled -or -not $userId -or -not $listingId) {
     Write-Host ""
     Write-Host "=== MESSAGING JOURNEY CHECK: PASS ===" -ForegroundColor Green
     if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
-        Invoke-OpsExit -ExitCode 0
+        Invoke-OpsExit 0
+        return
     } else {
         exit 0
     }
@@ -334,14 +336,16 @@ Write-Host ""
 if ($hasFailures) {
     Write-Host "=== MESSAGING JOURNEY CHECK: FAIL ===" -ForegroundColor Red
     if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
-        Invoke-OpsExit -ExitCode 1
+        Invoke-OpsExit 1
+        return
     } else {
         exit 1
     }
 } else {
     Write-Host "=== MESSAGING JOURNEY CHECK: PASS ===" -ForegroundColor Green
     if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
-        Invoke-OpsExit -ExitCode 0
+        Invoke-OpsExit 0
+        return
     } else {
         exit 0
     }

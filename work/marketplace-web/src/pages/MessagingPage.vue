@@ -5,8 +5,12 @@
       <h2>Message Seller</h2>
     </div>
     <div v-if="loading" class="loading">Loading conversation...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else-if="fatalError" class="error">
+      <div>{{ fatalError }}</div>
+      <button class="retry-button" @click="initializeMessaging">Retry</button>
+    </div>
     <div v-else class="messaging-container">
+      <div v-if="inlineError" class="error inline-error">{{ inlineError }}</div>
       <div class="messages-list">
         <div v-if="messages.length === 0" class="no-messages">No messages yet. Start the conversation!</div>
         <div
@@ -34,19 +38,8 @@
 </template>
 
 <script>
-import { getToken } from '../lib/session.js';
-
-// Simple JWT decode (no signature verification; client-side convenience only)
-function decodeJWT(token) {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1]));
-    return payload;
-  } catch {
-    return null;
-  }
-}
+import { getToken, getUserId } from '../lib/session.js';
+import { messagingUpsertThread, messagingGetThreadByContext, messagingSendMessage } from '../api/client.js';
 
 export default {
   name: 'MessagingPage',
@@ -61,7 +54,8 @@ export default {
       messages: [],
       newMessage: '',
       loading: true,
-      error: null,
+      fatalError: null,
+      inlineError: null,
       sending: false,
       threadId: null,
       userId: null,
@@ -73,102 +67,55 @@ export default {
   methods: {
     async initializeMessaging() {
       try {
+        this.loading = true;
+        this.fatalError = null;
+        this.inlineError = null;
+
         // Get user ID from JWT token
-        const token = getToken(); // WP-74: Use centralized token getter
+        const token = getToken();
         if (!token) {
-          this.error = 'Not authenticated. Please login first.';
-          this.loading = false;
+          this.fatalError = 'Not authenticated. Please login first.';
           return;
         }
 
-        const payload = decodeJWT(token);
-        if (!payload || !payload.sub) {
-          this.error = 'Invalid token. Please login again.';
-          this.loading = false;
+        const uid = getUserId();
+        if (!uid) {
+          this.fatalError = 'Invalid token. Please login again.';
           return;
         }
-        this.userId = payload.sub;
+        this.userId = uid;
 
         // Get or create thread (upsert ensures thread exists)
         await this.ensureThread();
 
         // Load messages (by-context, will also set threadId from response)
         await this.loadMessages();
-        this.loading = false;
       } catch (err) {
-        this.error = err.message;
+        this.fatalError = err?.message || String(err);
+      } finally {
         this.loading = false;
       }
     },
     async ensureThread() {
-      const messagingBaseUrl = '/api/messaging';
-      const token = getToken(); // WP-74: Use centralized token getter
-      
       try {
         // Upsert thread for this listing
-        const response = await fetch(`${messagingBaseUrl}/api/v1/threads/upsert`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'messaging-api-key': 'dev-messaging-key',
-          },
-          body: JSON.stringify({
-            context_type: 'listing',
-            context_id: this.id,
-            participants: [
-              { type: 'user', id: this.userId },
-            ],
-          }),
+        const data = await messagingUpsertThread({
+          contextType: 'listing',
+          contextId: this.id,
+          participants: [{ type: 'user', id: this.userId }],
         });
-
-        if (!response.ok) {
-          // Read error response body for better error message
-          let errorText = `HTTP ${response.status}`;
-          try {
-            const errorData = await response.json();
-            if (errorData.message) errorText += `: ${errorData.message}`;
-            else if (errorData.error) errorText += `: ${errorData.error}`;
-          } catch {
-            // If response is not JSON, use status text
-            errorText += `: ${response.statusText}`;
-          }
-          throw new Error(`Failed to create/get thread (${errorText})`);
+        this.threadId = data?.thread_id || null;
+        if (!this.threadId) {
+          throw new Error('Missing thread_id in upsert response');
         }
-
-        const data = await response.json();
-        this.threadId = data.thread_id;
       } catch (err) {
         throw new Error('Failed to initialize thread: ' + err.message);
       }
     },
     async loadMessages() {
-      const messagingBaseUrl = '/api/messaging';
-      const token = getToken(); // WP-74: Use centralized token getter
-
       try {
         // Use by-context endpoint (more reliable than by-id)
-        const response = await fetch(`${messagingBaseUrl}/api/v1/threads/by-context?context_type=listing&context_id=${this.id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'messaging-api-key': 'dev-messaging-key',
-          },
-        });
-
-        if (!response.ok) {
-          // Read error response body for better error message
-          let errorText = `HTTP ${response.status}`;
-          try {
-            const errorData = await response.json();
-            if (errorData.message) errorText += `: ${errorData.message}`;
-            else if (errorData.error) errorText += `: ${errorData.error}`;
-          } catch {
-            errorText += `: ${response.statusText}`;
-          }
-          throw new Error(`Failed to load messages (${errorText})`);
-        }
-
-        const data = await response.json();
+        const data = await messagingGetThreadByContext({ contextType: 'listing', contextId: this.id });
         // Store thread_id from response for sendMessage
         if (data.thread_id) {
           this.threadId = data.thread_id;
@@ -182,44 +129,19 @@ export default {
       if (!this.newMessage.trim() || !this.threadId || !this.userId || this.sending) return;
 
       this.sending = true;
+      this.inlineError = null;
       const messageBody = this.newMessage.trim();
       this.newMessage = '';
 
-      const messagingBaseUrl = '/api/messaging';
-      const token = getToken(); // WP-74: Use centralized token getter
-
       try {
-        const response = await fetch(`${messagingBaseUrl}/api/v1/threads/${this.threadId}/messages`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'messaging-api-key': 'dev-messaging-key',
-          },
-          body: JSON.stringify({
-            sender_type: 'user',
-            sender_id: this.userId,
-            body: messageBody,
-          }),
+        await messagingSendMessage(this.threadId, {
+          senderType: 'user',
+          senderId: this.userId,
+          body: messageBody,
         });
-
-        if (!response.ok) {
-          // Read error response body for better error message
-          let errorText = `HTTP ${response.status}`;
-          try {
-            const errorData = await response.json();
-            if (errorData.message) errorText += `: ${errorData.message}`;
-            else if (errorData.error) errorText += `: ${errorData.error}`;
-          } catch {
-            errorText += `: ${response.statusText}`;
-          }
-          throw new Error(`Failed to send message (${errorText})`);
-        }
-
-        // Reload messages
         await this.loadMessages();
       } catch (err) {
-        this.error = 'Failed to send message: ' + err.message;
+        this.inlineError = 'Failed to send message: ' + (err?.message || String(err));
         // Restore message on error
         this.newMessage = messageBody;
       } finally {
@@ -263,6 +185,32 @@ export default {
 
 .back-button:hover {
   background: #e5e5e5;
+}
+
+.loading {
+  padding: 1rem;
+  color: #666;
+}
+
+.error {
+  padding: 1rem;
+  color: #b00020;
+  background: #fff5f5;
+  border: 1px solid #ffd5d5;
+  border-radius: 6px;
+}
+
+.inline-error {
+  margin: 0.75rem;
+}
+
+.retry-button {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .messaging-container {

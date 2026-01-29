@@ -11,6 +11,8 @@ import {
 } from '../lib/session.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/marketplace';
+const MESSAGING_BASE_URL = '/api/messaging';
+const MESSAGING_API_KEY = import.meta.env.VITE_MESSAGING_API_KEY || 'dev-messaging-key';
 
 /**
  * Persona modes for WP-8 Persona & Scope Lock (SPEC §5.1-§5.3)
@@ -185,6 +187,85 @@ export async function hosApiRequest(endpoint, options = {}, skipAuth = false) {
   }
 
   return response.json();
+}
+
+/**
+ * Messaging API helper (same-origin proxy via HOS Web nginx)
+ * Calls Messaging API through /api/messaging/* proxy.
+ */
+export async function messagingApiRequest(endpoint, options = {}, skipAuth = false) {
+  const url = `${MESSAGING_BASE_URL}${endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'messaging-api-key': MESSAGING_API_KEY,
+    ...options.headers,
+  };
+
+  if (!skipAuth) {
+    const bearerToken = getBearerToken();
+    if (bearerToken) {
+      headers['Authorization'] = bearerToken;
+    }
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = { error: 'unknown', message: response.statusText };
+    }
+    const error = new Error(errorData.message || `Messaging request failed: ${response.status}`);
+    error.status = response.status;
+    error.errorCode = errorData.error;
+    error.data = errorData;
+    throw error;
+  }
+
+  return response.json();
+}
+
+export async function messagingUpsertThread({ contextType, contextId, participants }) {
+  return messagingApiRequest(
+    '/api/v1/threads/upsert',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        context_type: contextType,
+        context_id: contextId,
+        participants,
+      }),
+    },
+    false
+  );
+}
+
+export async function messagingGetThreadByContext({ contextType, contextId }) {
+  const qs = new URLSearchParams({
+    context_type: contextType,
+    context_id: contextId,
+  });
+  return messagingApiRequest(`/api/v1/threads/by-context?${qs.toString()}`, {}, false);
+}
+
+export async function messagingSendMessage(threadId, { senderType, senderId, body }) {
+  return messagingApiRequest(
+    `/api/v1/threads/${encodeURIComponent(threadId)}/messages`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        sender_type: senderType,
+        sender_id: senderId,
+        body,
+      }),
+    },
+    false
+  );
 }
 
 /**
