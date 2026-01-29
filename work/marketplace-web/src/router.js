@@ -37,6 +37,17 @@ const router = createRouter({
 // WP-68: Router guard for auth-required routes and firm-only routes
 import { getActiveTenantId } from './lib/session.js';
 
+// Global 401 behavior: api/client.js clears session and emits `hos:session-expired`.
+// Keep redirect logic centralized here (single behavior across pages).
+if (typeof window !== 'undefined') {
+  window.addEventListener('hos:session-expired', () => {
+    // Avoid redirect loops
+    const current = router.currentRoute?.value;
+    if (current && current.path === '/login') return;
+    router.push({ path: '/login', query: { reason: 'expired' } }).catch(() => {});
+  });
+}
+
 router.beforeEach((to, from, next) => {
   // Single auth entry
   

@@ -14,6 +14,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/marketplace';
 const MESSAGING_BASE_URL = '/api/messaging';
 const MESSAGING_API_KEY = import.meta.env.VITE_MESSAGING_API_KEY || 'dev-messaging-key';
 
+function notifySessionExpired() {
+  // Router listens to this to apply a single, consistent 401 redirect policy.
+  if (typeof window === 'undefined') return;
+  try {
+    window.dispatchEvent(new CustomEvent('hos:session-expired'));
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * Persona modes for WP-8 Persona & Scope Lock (SPEC §5.1-§5.3)
  * - GUEST: No headers required
@@ -87,6 +97,7 @@ export async function apiRequest(endpoint, options = {}, skipAuth = false) {
   // WP-68: Handle 401 - clear session (redirect handled by router guard or component)
   if (response.status === 401) {
     clearSession();
+    notifySessionExpired();
   }
 
   if (!response.ok) {
@@ -170,6 +181,7 @@ export async function hosApiRequest(endpoint, options = {}, skipAuth = false) {
   // WP-68: Handle 401 - clear session (redirect handled by router guard or component)
   if (response.status === 401) {
     clearSession();
+    notifySessionExpired();
   }
 
   if (!response.ok) {
@@ -216,6 +228,7 @@ export async function messagingApiRequest(endpoint, options = {}, skipAuth = fal
   // Standard 401 behavior: clear local session (redirect handled by router/component)
   if (response.status === 401) {
     clearSession();
+    notifySessionExpired();
   }
 
   if (!response.ok) {
