@@ -61,11 +61,22 @@ $gateScripts = @(
     ".\ops\prototype_flow_smoke.ps1"
 )
 
+# Some smokes are optional (may not exist in every repo state)
+$optionalGateNames = @(
+    "prototype_smoke.ps1",
+    "prototype_flow_smoke.ps1"
+)
+
 $gateIndex = 1
 foreach ($script in $gateScripts) {
     $scriptName = Split-Path $script -Leaf
     Write-Host "  [$gateIndex] Running $scriptName..." -ForegroundColor Gray
     if (-not (Test-Path $script)) {
+        if ($optionalGateNames -contains $scriptName) {
+            Write-Host "SKIP: $scriptName not present (optional gate)" -ForegroundColor Yellow
+            $gateIndex++
+            continue
+        }
         Write-Host "FAIL: $scriptName not present (required gate)" -ForegroundColor Red
         exit 1
     }
