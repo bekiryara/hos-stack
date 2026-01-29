@@ -67,8 +67,20 @@ Write-Host "Bulunan önemli dosya sayısı: $($importantFiles.Count)" -Foregroun
 $codeIndexContent = Get-Content $codeIndexPath -Raw -Encoding UTF8
 
 # Mevcut dosyaları tespit et (raw URL'lerden)
-$existingFiles = [regex]::Matches($codeIndexContent, 'https://raw\.githubusercontent\.com/bekiryara/hos-stack/main/([^\s\)]+)') | 
+$existingFiles = @()
+
+# 1) Prefer raw.githubusercontent links if present (legacy CODE_INDEX format)
+$existingFiles += [regex]::Matches($codeIndexContent, 'https://raw\.githubusercontent\.com/bekiryara/hos-stack/main/([^\s\)]+)') |
     ForEach-Object { $_.Groups[1].Value }
+
+# 2) Also support CODE_INDEX format that lists paths in backticks (current repo style)
+$existingFiles += [regex]::Matches($codeIndexContent, '`([^`]+)`') |
+    ForEach-Object { $_.Groups[1].Value } |
+    Where-Object {
+        $_ -match '^(work/|ops/|docs/|docker-compose\.yml$|README\.md$)' -and $_ -match '\.'
+    }
+
+$existingFiles = $existingFiles | ForEach-Object { ($_ -replace '\\','/').Trim() } | Sort-Object -Unique
 
 # Yeni dosyaları bul
 $newFiles = $importantFiles | Where-Object { 
@@ -113,7 +125,8 @@ function Add-FileToSection {
     $fileName = Split-Path $file -Leaf
     $githubUrl = "https://github.com/bekiryara/hos-stack/blob/main/$normalized"
     $rawUrl = "https://raw.githubusercontent.com/bekiryara/hos-stack/main/$normalized"
-    $entry = "- **$fileName**: [`$normalized`]($githubUrl) | [Raw]($rawUrl)"
+    # NOTE: Do not use PowerShell backtick before $normalized (it escapes '$' and prints literal "$normalized").
+    $entry = "- **$fileName**: [$normalized]($githubUrl) | [Raw]($rawUrl)"
     
     # Section'ı bul
     if ($codeIndexContent -match $sectionPattern) {
@@ -138,7 +151,7 @@ foreach ($file in $newFiles) {
     $fileName = Split-Path $file -Leaf
     $githubUrl = "https://github.com/bekiryara/hos-stack/blob/main/$normalized"
     $rawUrl = "https://raw.githubusercontent.com/bekiryara/hos-stack/main/$normalized"
-    $entry = "- **$fileName**: [`$normalized`]($githubUrl) | [Raw]($rawUrl)"
+    $entry = "- **$fileName**: [$normalized]($githubUrl) | [Raw]($rawUrl)"
     
     $added = $false
     
@@ -210,8 +223,9 @@ foreach ($file in $newFiles) {
     if ($added) { $addedCount++ }
 }
 
-# "Last Updated" tarihini güncelle
-$codeIndexContent = $codeIndexContent -replace '(\*\*Last Updated:\*\* )\d{4}-\d{2}-\d{2}', "`$1$(Get-Date -Format 'yyyy-MM-dd')"
+# "Last Updated" tarihini güncelle (avoid $1 interpolation issues)
+$today = (Get-Date -Format 'yyyy-MM-dd')
+$codeIndexContent = $codeIndexContent -replace '\*\*Last Updated:\*\*\s+\d{4}-\d{2}-\d{2}', ("**Last Updated:** " + $today)
 
 # Dosyayı kaydet
 Set-Content -Path $codeIndexPath -Value $codeIndexContent -Encoding UTF8 -NoNewline

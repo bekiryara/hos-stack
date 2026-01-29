@@ -301,6 +301,9 @@
 - **ops_output.ps1**: `ops/_lib/ops_output.ps1` - Ops output helper
 - **routes_json.ps1**: `ops/_lib/routes_json.ps1` - Routes JSON helper
 - **test_auth.ps1**: `ops/_lib/test_auth.ps1` - Test auth helper
+- **frontend_apply.ps1**: [ops/build/frontend_apply.ps1](https://github.com/bekiryara/hos-stack/blob/main/ops/build/frontend_apply.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/build/frontend_apply.ps1)
+- **refresh.ps1**: [ops/dev/refresh.ps1](https://github.com/bekiryara/hos-stack/blob/main/ops/dev/refresh.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/dev/refresh.ps1)
+- **run.ps1**: [ops/verify/run.ps1](https://github.com/bekiryara/hos-stack/blob/main/ops/verify/run.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/verify/run.ps1)
 - **worlds_config.ps1**: `ops/_lib/worlds_config.ps1` - Worlds config helper
 ### Release & Bundle
 
@@ -419,5 +422,5 @@
 
 ---
 
-**Last Updated:** 2026-01-27  
+**Last Updated:** 2026-01-29  
 **Index Status:** Complete - Repository scanned and indexed for quick navigation

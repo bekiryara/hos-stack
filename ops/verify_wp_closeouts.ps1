@@ -1,6 +1,10 @@
 # WP_CLOSEOUTS.md Verification Script
 # Checks if deliverables mentioned in WP_CLOSEOUTS.md actually exist in the codebase
 
+param(
+  [switch]$Gate = $false
+)
+
 Write-Host "=== WP_CLOSEOUTS.md UYUM KONTROLU ===" -ForegroundColor Cyan
 Write-Host ""
 
@@ -19,6 +23,8 @@ $proofFiles = Select-String -Path docs/WP_CLOSEOUTS.md -Pattern "docs/PROOFS/([^
 
 $missingProofs = @()
 foreach ($proof in $proofFiles) {
+    # Ignore placeholders/examples (e.g. wpNN_<short_slug>_pass.md) and anything with invalid path chars
+    if ($proof -match '<' -or $proof -match 'wpNN_') { continue }
     if (-not (Test-Path "docs/PROOFS/$proof")) {
         $missingProofs += $proof
         $warnings++
@@ -117,8 +123,13 @@ if ($errors -eq 0 -and $warnings -eq 0) {
     Write-Host "SONUC: TUM KONTROLLER PASS" -ForegroundColor Green
     exit 0
 } elseif ($errors -eq 0) {
-    Write-Host "SONUC: PASS (bazi uyarilar var)" -ForegroundColor Yellow
-    exit 0
+    if ($Gate) {
+        Write-Host "SONUC: FAIL (Gate mode: $warnings uyari)" -ForegroundColor Red
+        exit 1
+    } else {
+        Write-Host "SONUC: PASS (bazi uyarilar var)" -ForegroundColor Yellow
+        exit 0
+    }
 } else {
     Write-Host "SONUC: FAIL ($errors hata, $warnings uyari)" -ForegroundColor Red
     exit 1
