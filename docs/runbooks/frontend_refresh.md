@@ -4,7 +4,7 @@
 
 This document describes when to use hard refresh vs container rebuild for frontend changes.
 
-## When to Use Hard Refresh (Ctrl+F5 / Cmd+Shift+R)
+## When to Use Hard Refresh (Ctrl+Shift+R / Cmd+Shift+R)
 
 **Use hard refresh when:**
 - Only UI text/layout changes were made
@@ -62,6 +62,12 @@ This document describes when to use hard refresh vs container rebuild for fronte
 | UI text/layout (Docker) | Restart container | `.\ops\frontend_refresh.ps1` |
 | Build config / dependencies | Rebuild container | `.\ops\frontend_refresh.ps1 -Build` |
 | API contracts | Restart services | `docker compose restart <service>` |
+
+## Dev Helper (Optional)
+
+`ops/dev_refresh.ps1` is a **development helper** (heavier):
+- `.\ops\dev_refresh.ps1 -FrontendOnly` rebuilds web services (similar to `frontend_refresh -Build`).
+- `.\ops\dev_refresh.ps1 -All` is an interactive full rebuild (use sparingly).
 
 ## Troubleshooting
 

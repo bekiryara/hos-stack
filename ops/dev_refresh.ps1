@@ -91,7 +91,7 @@ if ($mode -eq "FrontendOnly") {
 Write-Host ""
 Write-Host "=== WHEN TO USE HARD REFRESH VS REBUILD ===" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Hard Refresh (Ctrl+F5 or Ctrl+Shift+R):" -ForegroundColor Yellow
+Write-Host "Hard Refresh (Ctrl+Shift+R; Ctrl+F5 also ok):" -ForegroundColor Yellow
 Write-Host "  - Use when: Only UI text/layout changed and dev server is running" -ForegroundColor White
 Write-Host "  - Use when: Changes are purely client-side JavaScript/CSS" -ForegroundColor White
 Write-Host "  - Use when: Development server is actively serving latest files" -ForegroundColor White

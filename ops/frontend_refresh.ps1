@@ -35,7 +35,7 @@ if ($webServices.Count -eq 0) {
 }
 
 if ($Build) {
-    Write-Host "Mode: REBUILD (--Build switch)" -ForegroundColor Yellow
+    Write-Host "Mode: REBUILD (-Build)" -ForegroundColor Yellow
     Write-Host ""
     
     foreach ($service in $webServices) {
