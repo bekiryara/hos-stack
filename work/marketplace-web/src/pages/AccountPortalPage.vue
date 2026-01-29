@@ -199,6 +199,156 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Store scope panels (only when active firm selected) -->
+        <div v-if="activeTenantId" class="store-scope-section">
+          <h3>Firma Görünümü</h3>
+          <div class="store-scope-hint">
+            Aktif firma: <strong>{{ activeTenantName || activeTenantId.substring(0, 8) + '...' }}</strong>
+          </div>
+
+          <!-- İlanlarım (Store) -->
+          <div class="result-section">
+            <h3>İlanlarım (Firma)</h3>
+            <div v-if="storePanelErrors.listings" class="error-box">
+              <h3>Hata</h3>
+              <div class="error-details">
+                <div><strong>Status:</strong> {{ storePanelErrors.listings.status || 'N/A' }}</div>
+                <div v-if="storePanelErrors.listings.endpoint"><strong>Endpoint:</strong> {{ storePanelErrors.listings.endpoint }}</div>
+                <div><strong>Message:</strong> {{ storePanelErrors.listings.message || 'Unknown error' }}</div>
+              </div>
+            </div>
+            <div v-else-if="storeListings.length === 0" class="empty-state">
+              Bu firmaya ait ilan yok
+            </div>
+            <table v-else class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="listing in storeListings" :key="listing.id">
+                  <td>{{ listing.id }}</td>
+                  <td>{{ listing.title }}</td>
+                  <td>{{ listing.status }}</td>
+                  <td>{{ formatDate(listing.created_at) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Store Rezervasyonlar -->
+          <div class="result-section">
+            <h3>Rezervasyonlar (Firma)</h3>
+            <div v-if="storePanelErrors.reservations" class="error-box">
+              <h3>Hata</h3>
+              <div class="error-details">
+                <div><strong>Status:</strong> {{ storePanelErrors.reservations.status || 'N/A' }}</div>
+                <div v-if="storePanelErrors.reservations.endpoint"><strong>Endpoint:</strong> {{ storePanelErrors.reservations.endpoint }}</div>
+                <div><strong>Message:</strong> {{ storePanelErrors.reservations.message || 'Unknown error' }}</div>
+              </div>
+            </div>
+            <div v-else-if="storeReservations.length === 0" class="empty-state">
+              Bu firmaya ait rezervasyon yok
+            </div>
+            <table v-else class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Listing ID</th>
+                  <th>Slot Start</th>
+                  <th>Slot End</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="reservation in storeReservations" :key="reservation.id">
+                  <td>{{ reservation.id }}</td>
+                  <td>{{ reservation.listing_id }}</td>
+                  <td>{{ formatDate(reservation.slot_start) }}</td>
+                  <td>{{ formatDate(reservation.slot_end) }}</td>
+                  <td>{{ reservation.status }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Store Kiralamalar -->
+          <div class="result-section">
+            <h3>Kiralamalar (Firma)</h3>
+            <div v-if="storePanelErrors.rentals" class="error-box">
+              <h3>Hata</h3>
+              <div class="error-details">
+                <div><strong>Status:</strong> {{ storePanelErrors.rentals.status || 'N/A' }}</div>
+                <div v-if="storePanelErrors.rentals.endpoint"><strong>Endpoint:</strong> {{ storePanelErrors.rentals.endpoint }}</div>
+                <div><strong>Message:</strong> {{ storePanelErrors.rentals.message || 'Unknown error' }}</div>
+              </div>
+            </div>
+            <div v-else-if="storeRentals.length === 0" class="empty-state">
+              Bu firmaya ait kiralama yok
+            </div>
+            <table v-else class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Listing ID</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="rental in storeRentals" :key="rental.id">
+                  <td>{{ rental.id }}</td>
+                  <td>{{ rental.listing_id }}</td>
+                  <td>{{ formatDate(rental.start_at) }}</td>
+                  <td>{{ formatDate(rental.end_at) }}</td>
+                  <td>{{ rental.status }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Store Siparişler -->
+          <div class="result-section">
+            <h3>Siparişler (Firma)</h3>
+            <div v-if="storePanelErrors.orders" class="error-box">
+              <h3>Hata</h3>
+              <div class="error-details">
+                <div><strong>Status:</strong> {{ storePanelErrors.orders.status || 'N/A' }}</div>
+                <div v-if="storePanelErrors.orders.endpoint"><strong>Endpoint:</strong> {{ storePanelErrors.orders.endpoint }}</div>
+                <div><strong>Message:</strong> {{ storePanelErrors.orders.message || 'Unknown error' }}</div>
+              </div>
+            </div>
+            <div v-else-if="storeOrders.length === 0" class="empty-state">
+              Bu firmaya ait sipariş yok
+            </div>
+            <table v-else class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Listing ID</th>
+                  <th>Status</th>
+                  <th>Quantity</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="order in storeOrders" :key="order.id">
+                  <td>{{ order.id }}</td>
+                  <td>{{ order.listing_id }}</td>
+                  <td>{{ order.status }}</td>
+                  <td>{{ order.quantity }}</td>
+                  <td>{{ formatDate(order.created_at) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -216,6 +366,10 @@ export default {
       orders: [],
       rentals: [],
       reservations: [],
+      storeOrders: [],
+      storeRentals: [],
+      storeReservations: [],
+      storeListings: [],
       userInfo: {},
       memberships: [],
       activeTenantIdValue: getActiveTenantId(),
@@ -228,6 +382,12 @@ export default {
         orders: null,
         rentals: null,
         reservations: null,
+      },
+      storePanelErrors: {
+        orders: null,
+        rentals: null,
+        reservations: null,
+        listings: null,
       },
       lastRefreshed: null,
     };
@@ -298,6 +458,10 @@ export default {
     setActiveTenant(tenantId) {
       setActiveTenantId(tenantId);
       this.activeTenantIdValue = tenantId || null;
+      // Refresh panels immediately when active firm changes (deterministic UX)
+      if (this.isAuthenticated) {
+        this.refreshAll();
+      }
     },
     formatDate(dateStr) {
       if (!dateStr) return 'N/A';
@@ -315,6 +479,7 @@ export default {
       this.loading = true;
       this.error = null;
       this.panelErrors = { orders: null, rentals: null, reservations: null };
+      this.storePanelErrors = { orders: null, rentals: null, reservations: null, listings: null };
       
       // WP-68: Get userId from token (single source of truth)
       const userId = getUserId();
@@ -331,6 +496,10 @@ export default {
       this.orders = [];
       this.rentals = [];
       this.reservations = [];
+      this.storeOrders = [];
+      this.storeRentals = [];
+      this.storeReservations = [];
+      this.storeListings = [];
       
       try {
         // WP-68: Fetch all in parallel using client.js functions (auto-auth)
@@ -401,6 +570,85 @@ export default {
             endpoint: firstError.endpoint,
             allErrors: errors,
           };
+        }
+
+        // Store scope reads (independent from personal panels)
+        if (this.activeTenantId) {
+          const [storeOrdersResp, storeRentalsResp, storeReservationsResp, storeListingsResp] = await Promise.all([
+            api.getStoreOrders(this.activeTenantId).catch(err => ({ ok: false, error: err })),
+            api.getStoreRentals(this.activeTenantId).catch(err => ({ ok: false, error: err })),
+            api.getStoreReservations(this.activeTenantId).catch(err => ({ ok: false, error: err })),
+            api.getStoreListings(this.activeTenantId).catch(err => ({ ok: false, error: err })),
+          ]);
+
+          const storeErrors = [];
+
+          if (isErrWrapper(storeOrdersResp)) {
+            const err = storeOrdersResp.error || storeOrdersResp;
+            if (err.status === 401) {
+              clearSession();
+              this.$router.push('/login?reason=expired');
+              return;
+            }
+            const e = { panel: 'orders', status: err.status || 0, message: err.message || 'Failed to load store orders', endpoint: '/api/v1/orders?seller_tenant_id=...' };
+            storeErrors.push(e);
+            this.storePanelErrors.orders = e;
+          } else {
+            this.storeOrders = extractItems(storeOrdersResp);
+          }
+
+          if (isErrWrapper(storeRentalsResp)) {
+            const err = storeRentalsResp.error || storeRentalsResp;
+            if (err.status === 401) {
+              clearSession();
+              this.$router.push('/login?reason=expired');
+              return;
+            }
+            const e = { panel: 'rentals', status: err.status || 0, message: err.message || 'Failed to load store rentals', endpoint: '/api/v1/rentals?provider_tenant_id=...' };
+            storeErrors.push(e);
+            this.storePanelErrors.rentals = e;
+          } else {
+            this.storeRentals = extractItems(storeRentalsResp);
+          }
+
+          if (isErrWrapper(storeReservationsResp)) {
+            const err = storeReservationsResp.error || storeReservationsResp;
+            if (err.status === 401) {
+              clearSession();
+              this.$router.push('/login?reason=expired');
+              return;
+            }
+            const e = { panel: 'reservations', status: err.status || 0, message: err.message || 'Failed to load store reservations', endpoint: '/api/v1/reservations?provider_tenant_id=...' };
+            storeErrors.push(e);
+            this.storePanelErrors.reservations = e;
+          } else {
+            this.storeReservations = extractItems(storeReservationsResp);
+          }
+
+          if (isErrWrapper(storeListingsResp)) {
+            const err = storeListingsResp.error || storeListingsResp;
+            if (err.status === 401) {
+              clearSession();
+              this.$router.push('/login?reason=expired');
+              return;
+            }
+            const e = { panel: 'listings', status: err.status || 0, message: err.message || 'Failed to load store listings', endpoint: '/api/v1/listings?tenant_id=...' };
+            storeErrors.push(e);
+            this.storePanelErrors.listings = e;
+          } else {
+            this.storeListings = extractItems(storeListingsResp);
+          }
+
+          // Keep main error summary as-is (personal first); store errors should not hide personal panels
+          if (!this.error && storeErrors.length > 0) {
+            const firstStoreError = storeErrors[0];
+            this.error = {
+              status: firstStoreError.status,
+              message: firstStoreError.message,
+              endpoint: firstStoreError.endpoint,
+              allErrors: storeErrors,
+            };
+          }
         }
         
         this.lastRefreshed = new Date();
@@ -489,6 +737,15 @@ export default {
   font-size: 0.875rem;
   color: #999;
   font-style: italic;
+}
+
+.store-scope-section {
+  margin-top: 2rem;
+}
+
+.store-scope-hint {
+  margin: 0.25rem 0 1rem 0;
+  color: #666;
 }
 
 .button-group {
