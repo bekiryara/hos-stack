@@ -56,7 +56,7 @@
 
 <script>
 import { api } from '../api/client.js';
-import { isLoggedIn, setActiveTenantId } from '../lib/session.js';
+import { isLoggedIn, setActiveTenantId, getActiveTenantId } from '../lib/session.js';
 
 export default {
   name: 'FirmRegisterPage',
@@ -83,8 +83,33 @@ export default {
       this.$router.push('/login?reason=expired');
       return;
     }
-    // WP-68: Ensure form is visible when authenticated
-    this.loading = false;
+    // If an active tenant already exists, firm creation is not needed.
+    const activeTenantId = getActiveTenantId();
+    if (activeTenantId) {
+      this.$router.push('/listing/create');
+      return;
+    }
+
+    // If user already has memberships, select one and go to listing/create (single flow).
+    try {
+      this.loading = true;
+      const resp = await api.getMyMemberships();
+      const items = resp?.items || resp?.data || (Array.isArray(resp) ? resp : []);
+      if (Array.isArray(items) && items.length > 0) {
+        const preferred = items.find((m) => m?.role === 'owner' || m?.role === 'admin') || items[0];
+        const tenantId = preferred?.tenant_id || null;
+        if (tenantId) {
+          setActiveTenantId(tenantId);
+          this.$router.push('/listing/create');
+          return;
+        }
+        // fall through to form if membership shape is unexpected
+      }
+    } catch {
+      // ignore and allow form to render
+    } finally {
+      this.loading = false;
+    }
   },
   methods: {
     generateSlug(name) {
@@ -107,6 +132,11 @@ export default {
       
       try {
         const slug = this.generateSlug(this.formData.firm_name);
+        if (!slug || slug.length < 3) {
+          this.error = 'Firma adı slug üretilemedi. Lütfen sadece harf/rakam içeren bir firma adı girin (en az 3 karakter).';
+          this.submitting = false;
+          return;
+        }
         const displayName = this.formData.firm_owner_name.trim() || this.formData.firm_name.trim();
         
         // WP-68: Call POST /v1/tenants/v2
@@ -121,9 +151,9 @@ export default {
           
           this.success = `Firma başarıyla oluşturuldu! (${response.slug})`;
           
-          // Redirect to account page after success
+          // Redirect to listing creation (single firm->listing flow)
           await new Promise(resolve => setTimeout(resolve, 1500)); // Brief delay for UX
-          this.$router.push('/account');
+          this.$router.push('/listing/create');
         } else {
           this.error = 'Firma oluşturulamadı. Lütfen tekrar deneyin.';
         }
