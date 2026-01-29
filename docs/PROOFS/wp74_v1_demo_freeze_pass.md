@@ -13,7 +13,7 @@
 - **CreateListingPage:** Changed "/demo" link to "/account" (firm creation flow)
 - **CreateReservationPage:** Changed "/auth" link to "/login"
 - **CreateRentalPage:** Changed "/auth" link to "/login"
-- **MessagingPage:** Updated to use `getToken()` from demoSession.js (centralized token getter)
+- **MessagingPage:** Updated to use `getToken()` from `session.js` (centralized token getter)
 
 ## User Flow Verification
 

@@ -347,6 +347,7 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 - Filter schema endpoint returns active schema rows
 - Seeder populates example categories (wedding-hall, restaurant, car-rental)
 - Contract check (`ops/catalog_contract_check.ps1`) passes
+- Contract report (`ops/contract_check_report.ps1`) passes (single report point)
 
 **Proof:** `docs/PROOFS/wp2_catalog_spine_pass.md`
 
@@ -374,6 +375,7 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 - Tenant ownership enforced via X-Active-Tenant-Id header
 - Publish endpoint transitions draft -> published
 - Contract check (`ops/listing_contract_check.ps1`) passes
+- Contract report (`ops/contract_check_report.ps1`) passes (single report point)
 
 **Proof:** `docs/PROOFS/wp3_supply_spine_pass.md`
 

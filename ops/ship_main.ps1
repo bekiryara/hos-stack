@@ -45,6 +45,24 @@ Write-Host "PASS: Working tree is clean" -ForegroundColor Green
 
 Write-Host ""
 
+# CODE_INDEX gate (drift prevention)
+Write-Host "[GATES] Checking CODE_INDEX.md is up-to-date..." -ForegroundColor Yellow
+try {
+    $ciOut = & .\ops\update_code_index.ps1 -DryRun -Gate 2>&1
+    $ciExit = $LASTEXITCODE
+    if ($ciExit -ne 0) {
+        Write-Host "FAIL: CODE_INDEX.md is not up-to-date" -ForegroundColor Red
+        $ciOut | ForEach-Object { Write-Sanitized $_ "Gray" }
+        exit 1
+    }
+    Write-Host "PASS: CODE_INDEX.md is up-to-date" -ForegroundColor Green
+} catch {
+    Write-Sanitized "FAIL: CODE_INDEX gate failed: $($_.Exception.Message)" "Red"
+    exit 1
+}
+
+Write-Host ""
+
 # Run gates (fail-fast)
 Write-Host "[GATES] Running quality gates..." -ForegroundColor Yellow
 

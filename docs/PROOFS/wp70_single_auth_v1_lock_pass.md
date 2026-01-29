@@ -170,4 +170,5 @@ Move-Item -Path "ops\demo_seed_transaction_modes.ps1" -Destination "ops\_archive
 - `DemoDashboardPage.vue` and `NeedDemoPage.vue` files still exist but are not routed
 - These can be deleted in a future cleanup if desired
 - WP-70 focuses on UX lock, not file deletion
+- Session storage keys were standardized to `auth_token` / `auth_user` with one-time migration support from legacy `demo_auth_token` / `demo_user` (read-only migration).
 

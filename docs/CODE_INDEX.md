@@ -31,6 +31,7 @@
 - New Chat Protocol: `docs/NEW_CHAT_PROTOCOL.md`
 - WP Closeouts: `docs/WP_CLOSEOUTS.md`
 - Current State: `docs/CURRENT.md`
+- Source Map: `docs/SRC.md`
 
 ---
 
@@ -216,7 +217,7 @@
 
 - **Pazar API:** `work/marketplace-web/src/lib/pazarApi.js`
 - **API Wrapper:** `work/marketplace-web/src/lib/api.js`
-- **Session Management:** `work/marketplace-web/src/lib/demoSession.js`
+- **Session Management:** `work/marketplace-web/src/lib/session.js`
 - **API Client:** `work/marketplace-web/src/api/client.js`
 
 ---
@@ -361,6 +362,7 @@
 - **Index:** `docs/index.md` - Documentation index
 - **SPEC:** `docs/SPEC.md` - Canonical specification (single source of truth)
 - **CURRENT:** `docs/CURRENT.md` - Current system state (single source of truth)
+- **SRC:** `docs/SRC.md` - Repository source map (entrypoints)
 - **ARCHITECTURE:** `docs/ARCHITECTURE.md` - System architecture overview
 - **DECISIONS:** `docs/DECISIONS.md` - Baseline decisions and frozen items
 - **RULES:** `docs/RULES.md` - Repository rules and conventions

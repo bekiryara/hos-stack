@@ -21,11 +21,11 @@ Implemented user-to-firm binding flow: customer can create a firm via `/marketpl
 ### 2. Firm Register Page — Form Render Fix
 - **File:** `work/marketplace-web/src/pages/FirmRegisterPage.vue`
 - **Change:** Added `mounted()` hook to redirect to login if not authenticated
-- **Change:** Updated redirect destination from `/account` to `/demo` after successful firm creation
+- **Change:** Updated redirect destination to the canonical firm flow (now `/listing/create`).
 - **Behavior:**
   - Form renders properly when authenticated
   - Redirects to login if not authenticated
-  - On success: Sets active tenant, shows success message, redirects to `/demo`
+  - On success: Sets active tenant, shows success message, redirects to `/listing/create`
 
 ### 3. API Client — Auth Header (Already Implemented)
 - **File:** `work/marketplace-web/src/api/client.js`

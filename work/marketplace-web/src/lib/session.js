@@ -1,6 +1,10 @@
 // Session module (single auth/session)
 // Stores auth token + user in localStorage.
-// Backward compatible migration from older legacy keys.
+//
+// Session Keys Contract (V1):
+// - Canonical keys (the only keys we WRITE): auth_token, auth_user, tenant_slug, active_tenant_id
+// - Legacy keys (READ for migration only, never write): demo_auth_token, demo_user
+// - Migration window policy: keep legacy read+migrate for one release window, then remove.
  
 const TOKEN_KEY = 'auth_token';
 const OLD_TOKEN_KEY = 'demo_auth_token'; // Backward compatibility (migrate once)

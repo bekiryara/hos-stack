@@ -108,6 +108,16 @@ docker compose up -d --build
    - Creates daily evidence snapshot in `_archive/daily/YYYYMMDD-HHmmss/`
    - Captures: git status, commit hash, container status, logs, health checks
 
+## Frontend Refresh SOP (Local Dev)
+
+Use this when “I changed frontend code but browser still shows old UI”:
+
+1. **Hard refresh first:** `Ctrl+Shift+R` (or `Ctrl+F5`).
+2. If still stale: run `.\ops\dev_refresh.ps1 -FrontendOnly` (rebuild/restart web services).
+3. If Docker compose / build chain changed: run `.\ops\dev_refresh.ps1 -All` (full rebuild).
+4. If you changed only docs/backend: do **not** rebuild frontend; rerun `.\ops\verify.ps1` instead.
+5. If you still can’t see changes after step 2: check you’re on the right URL (`/marketplace/`) and no browser extension is caching.
+
 ## No PASS, No Next Step Rule
 
 **CRITICAL:** Before starting new work:
@@ -116,6 +126,20 @@ docker compose up -d --build
 - If either fails, fix issues before proceeding
 
 This ensures baseline remains stable and prevents breaking changes.
+
+## Session Keys Contract (V1)
+
+**Canonical localStorage keys (only keys we WRITE):**
+- `auth_token` - raw JWT token (no `Bearer ` prefix)
+- `auth_user` - JSON user object (best-effort cache; token payload is fallback)
+- `tenant_slug` - active tenant slug (optional)
+- `active_tenant_id` - active tenant id (optional)
+
+**Legacy keys (READ for migration only, never write):**
+- `demo_auth_token` → migrate to `auth_token`, then delete legacy key
+- `demo_user` → migrate to `auth_user`, then delete legacy key
+
+**Policy:** Legacy keys are supported for one release window (migration only) and should be removed after the window closes.
 
 ## V1 Demo User Flow
 
@@ -174,6 +198,7 @@ This ensures baseline remains stable and prevents breaking changes.
 
 ## Related Docs
 
+- **Source Map:** `docs/SRC.md` (repo entrypoints, minimal navigation map)
 - **Onboarding:** `docs/ONBOARDING.md` (quick start for newcomers)
 - **Decisions:** `docs/DECISIONS.md` (baseline definition + frozen items)
 - **Start Here:** `docs/START_HERE.md` (7 rule set)

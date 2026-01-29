@@ -5,7 +5,8 @@
 param(
     [switch]$AutoCommit = $false,
     [switch]$AutoPush = $false,
-    [switch]$DryRun = $false
+    [switch]$DryRun = $false,
+    [switch]$Gate = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -94,6 +95,10 @@ foreach ($file in $newFiles) {
 
 if ($DryRun) {
     Write-Host "`n[DRY RUN] Dosyalar bulundu ama güncelleme yapılmadı." -ForegroundColor Cyan
+    if ($Gate) {
+        Write-Host "FAIL: CODE_INDEX.md güncel değil (Gate mode)." -ForegroundColor Red
+        exit 1
+    }
     exit 0
 }
 

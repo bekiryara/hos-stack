@@ -9,7 +9,13 @@
     </div>
     
     <!-- Logged in - Registration form -->
-    <div v-else class="registration-form">
+    <div v-else>
+      <div v-if="loading" class="loading-message">
+        <p>Hesap bilgileri kontrol ediliyor...</p>
+        <p class="muted">Mevcut bir firmanız varsa otomatik yönlendirileceksiniz.</p>
+      </div>
+
+      <div v-else class="registration-form">
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
           <label for="firm-name">Firma Adı *</label>
@@ -50,6 +56,7 @@
           <router-link to="/account" class="cancel-link">İptal</router-link>
         </div>
       </form>
+      </div>
     </div>
   </div>
 </template>
@@ -219,6 +226,24 @@ export default {
   padding: 2rem;
   border-radius: 8px;
   border: 1px solid #dee2e6;
+}
+
+.loading-message {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.loading-message p {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.loading-message .muted {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
 }
 
 .form-group {

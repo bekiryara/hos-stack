@@ -1,9 +1,27 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-01-28  
+**Last Updated:** 2026-01-29  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
 
 ---
+
+## Errata Policy (Do Not Rewrite History)
+
+If a WP entry has a wrong WP number/title/date or a proof link mistake:
+
+- **Do not delete or rewrite the original entry.**
+- Add a short **ERRATA** note with:
+  - Date of correction
+  - What was wrong
+  - What is the corrected value
+  - Which references were updated (paths)
+- Prefer additive wording: `ERRATA (2026-01-29): corrected WP title from X to Y (proof link unchanged).`
+
+## Proof Naming Standard
+
+- **Canonical format:** `docs/PROOFS/wpNN_<short_slug>_pass.md`
+- **Allowed variants:** `wpNN_<short_slug>_final_pass.md`, `wpNN_<short_slug>_lock_pass.md`
+- **Rule:** Do not rename existing proof files just to match the format; record naming drift as an ERRATA note instead (lower risk, no broken links).
 
 
 

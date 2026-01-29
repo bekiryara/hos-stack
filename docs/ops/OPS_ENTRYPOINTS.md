@@ -4,6 +4,16 @@
 
 **Principle:** Do not run random scripts. Use the entrypoints below.
 
+## Supported Entrypoints (Run These)
+
+These are the only scripts you should run directly in normal workflows:
+
+- `ops/ops_run.ps1` - Daily baseline gates (Prototype profile by default).
+- `ops/ops_run.ps1 -Profile Full` - Before release (includes `ops_status.ps1` dashboard).
+- `ops/prototype_v1.ps1` - Quick prototype/demo readiness check.
+- `ops/ship_main.ps1` - Publish path (runs gates, then pushes if PASS).
+- `ops/STACK_E2E_CRITICAL_TESTS_v1.ps1` - Heavy “everything critical” checklist (use pre-RC / deep validation).
+
 ---
 
 ## Tier-0: Daily Entrypoints
