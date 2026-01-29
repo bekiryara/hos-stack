@@ -9,6 +9,16 @@ const OLD_USER_KEY = 'demo_user'; // Backward compatibility (migrate once)
 const TENANT_SLUG_KEY = 'tenant_slug';
 const ACTIVE_TENANT_ID_KEY = 'active_tenant_id';
  
+function notifySessionChanged() {
+  // Let UI update immediately when session/localStorage changes in this tab.
+  // (The native 'storage' event does NOT fire in the same tab.)
+  try {
+    window.dispatchEvent(new CustomEvent('session-changed'));
+  } catch {
+    // ignore (non-browser environments)
+  }
+}
+
 export function getToken() {
   // Check new key first, fallback to old key for backward compatibility
   let token = localStorage.getItem(TOKEN_KEY);
@@ -59,6 +69,8 @@ export function saveSession(token, user) {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(OLD_USER_KEY);
   }
+
+  notifySessionChanged();
 }
  
 export function setToken(token) {
@@ -70,6 +82,8 @@ export function setToken(token) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(OLD_TOKEN_KEY);
   }
+
+  notifySessionChanged();
 }
  
 export function clearToken() {
@@ -169,6 +183,7 @@ export function setTenantSlug(slug) {
   } else {
     localStorage.removeItem(TENANT_SLUG_KEY);
   }
+  notifySessionChanged();
 }
  
 export function getTenantSlug() {
@@ -181,6 +196,7 @@ export function setActiveTenantId(tenantId) {
   } else {
     localStorage.removeItem(ACTIVE_TENANT_ID_KEY);
   }
+  notifySessionChanged();
 }
  
 export function getActiveTenantId() {
@@ -215,4 +231,5 @@ export function clearSession() {
   localStorage.removeItem(OLD_USER_KEY);
   localStorage.removeItem(TENANT_SLUG_KEY);
   localStorage.removeItem(ACTIVE_TENANT_ID_KEY);
+  notifySessionChanged();
 }

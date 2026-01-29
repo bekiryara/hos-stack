@@ -4,7 +4,12 @@
       <h1>Marketplace</h1>
       <nav>
         <router-link to="/">Keşfet</router-link>
+        <router-link to="/search">Ara</router-link>
         <template v-if="isAuthenticated">
+          <router-link to="/reservation/create">Rezervasyon</router-link>
+          <router-link to="/rental/create">Kiralama</router-link>
+          <router-link v-if="hasActiveTenant" to="/listing/create">İlan Ver</router-link>
+          <router-link v-else to="/firm/register">Firma Oluştur</router-link>
           <router-link to="/account">Hesabım</router-link>
           <span class="user-identity">{{ userIdentity }}</span>
           <button @click="handleLogout" class="logout-btn">Çıkış</button>
@@ -23,23 +28,44 @@
 
 <script>
 import { api } from './api/client.js';
-import { isLoggedIn, getUser, clearSession } from './lib/session.js';
+import { isLoggedIn, getUser, clearSession, getActiveTenantId } from './lib/session.js';
 
 export default {
   name: 'App',
+  data() {
+    return {
+      // Forces re-computation of computed properties when session changes.
+      sessionVersion: 0,
+    };
+  },
   computed: {
     isAuthenticated() {
+      void this.sessionVersion;
       return isLoggedIn();
     },
     userIdentity() {
+      void this.sessionVersion;
       const user = getUser();
       if (user && user.email) {
         return user.email;
       }
       return '(unknown)';
     },
+    hasActiveTenant() {
+      void this.sessionVersion;
+      return Boolean(getActiveTenantId());
+    },
+  },
+  mounted() {
+    window.addEventListener('session-changed', this.onSessionChanged);
+  },
+  beforeUnmount() {
+    window.removeEventListener('session-changed', this.onSessionChanged);
   },
   methods: {
+    onSessionChanged() {
+      this.sessionVersion += 1;
+    },
     async handleLogout() {
       // Best-effort: revoke server-side refresh cookie, then clear local session.
       try {

@@ -24,7 +24,7 @@
     
     <div v-if="success" class="success">
       <strong>Success!</strong> Reservation created with ID: {{ success.id }}
-      <button @click="copyReservationId(success.id)" class="copy-id-btn" title="Copy reservation ID">Copy ID</button>
+      <button @click="copyReservationId(success.id, $event)" class="copy-id-btn" title="Copy reservation ID">Copy ID</button>
       <br />
       Status: {{ success.status }}
       <br />
@@ -94,7 +94,7 @@
 </template>
 
 <script>
-import { api } from '../api/client';
+import { api } from '../api/client.js';
 import { getUserId } from '../lib/session.js';
 
 export default {
@@ -201,7 +201,7 @@ export default {
         this.loading = false;
       }
     },
-    copyReservationId(id) {
+    copyReservationId(id, event) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(id).then(() => {
           const btn = event.target;
