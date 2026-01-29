@@ -252,6 +252,85 @@ function Test-AuthEndpointResponse {
     }
 }
 
+# Helper: Check frontend session keys contract (V1)
+function Test-FrontendSessionKeysContract {
+    param([string]$RepoRoot)
+
+    Write-Host "Checking frontend session keys contract..." -ForegroundColor Yellow
+
+    $status = "PASS"
+    $notes = ""
+    $exitCode = 0
+    $failures = @()
+    $warnings = @()
+
+    $sessionPath = Join-Path $RepoRoot "work\marketplace-web\src\lib\session.js"
+    if (-not (Test-Path $sessionPath)) {
+        $warnings += "Missing session.js at work/marketplace-web/src/lib/session.js (cannot verify contract)"
+    } else {
+        $session = Get-Content $sessionPath -Raw -Encoding UTF8
+
+        if ($session -notmatch "const\s+TOKEN_KEY\s*=\s*'auth_token'") {
+            $failures += "session.js TOKEN_KEY must be 'auth_token'"
+        }
+        if ($session -notmatch "const\s+USER_KEY\s*=\s*'auth_user'") {
+            $failures += "session.js USER_KEY must be 'auth_user'"
+        }
+
+        # Legacy keys are READ-only (migrate-only). Never write OLD_* keys.
+        if ($session -match "setItem\s*\(\s*OLD_TOKEN_KEY") {
+            $failures += "session.js must not write OLD_TOKEN_KEY (demo_auth_token)"
+        }
+        if ($session -match "setItem\s*\(\s*OLD_USER_KEY") {
+            $failures += "session.js must not write OLD_USER_KEY (demo_user)"
+        }
+
+        # Ensure demo_* keys are not referenced anywhere else in marketplace-web/src
+        $srcRoot = Join-Path $RepoRoot "work\marketplace-web\src"
+        if (Test-Path $srcRoot) {
+            $files = Get-ChildItem -Path $srcRoot -Recurse -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.Extension -in @(".js", ".vue") }
+
+            $demoRefs = $files | Select-String -Pattern "demo_auth_token|demo_user" -ErrorAction SilentlyContinue
+            $badRefs = @()
+            foreach ($m in $demoRefs) {
+                if ($m.Path -notlike "*\work\marketplace-web\src\lib\session.js") {
+                    $badRefs += $m
+                }
+            }
+
+            if ($badRefs.Count -gt 0) {
+                $failures += "Found demo_* key references outside session.js (must be migrate-only in session.js)"
+            }
+        } else {
+            $warnings += "Missing marketplace-web/src directory (cannot verify drift)"
+        }
+    }
+
+    if ($failures.Count -gt 0) {
+        $status = "FAIL"
+        $notes = $failures -join "; "
+        $exitCode = 1
+    } elseif ($warnings.Count -gt 0) {
+        $status = "WARN"
+        $notes = $warnings -join "; "
+        $exitCode = 2
+    } else {
+        $notes = "Canonical keys only (auth_token/auth_user); legacy demo_* keys are migrate-only"
+    }
+
+    $results += [PSCustomObject]@{
+        Check = "Frontend Session Keys Contract (V1)"
+        Status = $status
+        Notes = $notes
+    }
+
+    return @{
+        Status = $status
+        ExitCode = $exitCode
+    }
+}
+
 # Check session cookie configuration
 Write-Host "=== Checking Session Cookie Configuration ===" -ForegroundColor Cyan
 Write-Host ""
@@ -282,6 +361,14 @@ if ($servicesRunning) {
         Notes = "Docker services not running, endpoint checks skipped"
     }
 }
+
+# Check frontend session keys contract (always local-file based)
+Write-Host ""
+Write-Host "=== Checking Frontend Session Keys Contract ===" -ForegroundColor Cyan
+Write-Host ""
+
+$repoRoot = Split-Path -Parent $scriptDir
+Test-FrontendSessionKeysContract -RepoRoot $repoRoot
 
 # Print results table
 Write-Host ""
