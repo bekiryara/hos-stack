@@ -10,15 +10,18 @@
       <router-link to="/login" class="action-link">Go to Login</router-link>
     </div>
     
-    <div v-if="error && !authError" class="error">
+    <div v-else-if="error" class="error">
       <strong>Error ({{ error.status || 'N/A' }}):</strong> {{ error.errorCode || 'unknown' }}
       <br />
       {{ error.message || 'Unknown error' }}
+      <div v-if="error.hint" class="error-hint">
+        {{ error.hint }}
+      </div>
     </div>
     
     <div v-if="success" class="success">
       <strong>Success!</strong> Order created with ID: {{ success.id }}
-      <button @click="copyOrderId(success.id)" class="copy-id-btn" title="Copy order ID">Copy ID</button>
+      <button @click="copyOrderId(success.id, $event)" class="copy-id-btn" title="Copy order ID">Copy ID</button>
       <br />
       Status: {{ success.status }}
       <br />
@@ -65,7 +68,7 @@
 </template>
 
 <script>
-import { api } from '../api/client';
+import { api } from '../api/client.js';
 import { getUserId, clearSession } from '../lib/session.js';
 
 export default {
@@ -127,19 +130,30 @@ export default {
           this.$router.push('/login?reason=expired');
           return;
         }
+        const status = err.status || 0;
+        const errorCode = err.errorCode || 'unknown';
+        let hint = null;
+        if (status === 404) {
+          hint = 'Listing not found. Check the Listing ID and try again.';
+        } else if (status === 422) {
+          hint = 'Validation failed. Ensure Listing ID is a valid UUID and quantity is >= 1.';
+        } else if (status === 403) {
+          hint = 'Forbidden. Your account may not have permission to order this listing.';
+        }
         this.error = {
-          status: err.status || 0,
+          status,
           message: err.message || 'Failed to create order',
-          errorCode: err.errorCode || 'unknown',
+          errorCode,
+          hint,
         };
       } finally {
         this.loading = false;
       }
     },
-    copyOrderId(id) {
+    copyOrderId(id, evt) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(id).then(() => {
-          const btn = event.target;
+          const btn = evt?.target;
           const originalText = btn.textContent;
           btn.textContent = 'Copied!';
           setTimeout(() => {
@@ -220,6 +234,11 @@ export default {
 
 .copy-id-btn:hover {
   background: #f1f8f4;
+}
+
+.error-hint {
+  margin-top: 0.75rem;
+  color: #7a1f1f;
 }
 
 .order-form {
