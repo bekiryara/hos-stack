@@ -1,10 +1,11 @@
 <template>
   <div class="filters-panel">
     <h3>Filters</h3>
+
     <div v-if="appliedFilters.length > 0" class="applied-filters">
       <div class="applied-header">
         <div class="applied-title">Applied</div>
-        <button type="button" class="clear-button" @click="handleClear">Clear filters</button>
+        <button type="button" class="clear-button" @click="handleClear">Reset filters</button>
       </div>
       <ul class="applied-list">
         <li v-for="f in appliedFilters" :key="f.key">

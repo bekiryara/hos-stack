@@ -71,6 +71,9 @@ export default {
       initialSearchDone: false, // WP-60: Guard to prevent infinite loops
       searchExecuted: false, // WP-60: Track if search has been executed at least once
       querySyncTimer: null, // WP-NEXT: debounce URL query sync
+      syncingFromQuery: false, // prevents state->query loop
+      syncingToQuery: false, // prevents query->state loop
+      lastSyncedQueryKey: '', // deterministic back/forward hydration
     };
   },
   computed: {
@@ -115,17 +118,43 @@ export default {
     filterState: {
       handler() {
         // WP-NEXT: keep filter state in URL query (refresh/back works)
+        if (this.syncingFromQuery) return;
         if (!this.filtersLoaded) return;
         if (!this.categoryId) return;
+        // Any filter change resets paging
+        this.page = 1;
         if (this.querySyncTimer) clearTimeout(this.querySyncTimer);
         this.querySyncTimer = setTimeout(async () => {
           const query = this.buildQueryFromFilterState();
+          const nextKey = this.stableStringify(query);
+          this.lastSyncedQueryKey = nextKey;
+          this.syncingToQuery = true;
           try {
             await this.$router.replace({ query });
           } catch {
             // ignore navigation duplication errors
+          } finally {
+            this.syncingToQuery = false;
           }
         }, 250);
+      },
+      deep: true,
+    },
+    '$route.query': {
+      handler(newQuery) {
+        if (this.syncingToQuery) return;
+        if (!this.filtersLoaded) return;
+        if (!this.categoryId) return;
+        const key = this.stableStringify(newQuery || {});
+        if (key === this.lastSyncedQueryKey) return;
+        this.syncingFromQuery = true;
+        try {
+          this.hydrateFilterStateFromQuery(this.filters);
+          // Back/forward should immediately re-run the search for the new URL state
+          this.executeSearch(this.filterState);
+        } finally {
+          this.syncingFromQuery = false;
+        }
       },
       deep: true,
     },
@@ -172,25 +201,26 @@ export default {
 
       return query;
     },
-    buildListingsApiParamsFromFilters(filters) {
-      // WP-75: build SPEC-aligned listing search params:
+    buildListingsApiParamsFromFilterState(schemaFilters, filterState) {
+      // WP-75: build SPEC-aligned listing search params schema-driven (no hardcoded filter keys)
       // - filters[KEY]=VALUE
-      // - filters[KEY][min|max]=...
+      // - filters[KEY][min|max]=... for range(number) filters
       const params = {};
-      Object.keys(filters || {}).forEach((key) => {
-        const value = filters[key];
-        if (value === null || value === undefined || value === '') return;
+      const state = filterState || {};
+      (schemaFilters || []).forEach((def) => {
+        const key = def?.attribute_key;
+        if (!key) return;
 
-        if (key.endsWith('_min')) {
-          const baseKey = key.replace('_min', '');
-          params[`filters[${baseKey}][min]`] = value;
+        if (def.filter_mode === 'range' && def.value_type === 'number') {
+          const min = state[`${key}_min`];
+          const max = state[`${key}_max`];
+          if (min !== null && min !== undefined && min !== '') params[`filters[${key}][min]`] = min;
+          if (max !== null && max !== undefined && max !== '') params[`filters[${key}][max]`] = max;
           return;
         }
-        if (key.endsWith('_max')) {
-          const baseKey = key.replace('_max', '');
-          params[`filters[${baseKey}][max]`] = value;
-          return;
-        }
+
+        const value = state[key];
+        if (value === null || value === undefined || value === '') return;
         params[`filters[${key}]`] = value;
       });
       return params;
@@ -231,10 +261,16 @@ export default {
       Object.keys(rawFilters || {}).forEach((rawKey) => {
         const rawVal = rawFilters[rawKey];
 
-        // range keys come in as <attr>_min / <attr>_max
-        const baseKey = rawKey.endsWith('_min') ? rawKey.replace('_min', '') :
-          (rawKey.endsWith('_max') ? rawKey.replace('_max', '') : rawKey);
+        // Range keys only if schema defines <attr> as range(number)
+        const isMin = rawKey.endsWith('_min');
+        const isMax = rawKey.endsWith('_max');
+        const baseKey = (isMin || isMax) ? rawKey.replace(/_(min|max)$/, '') : rawKey;
         const def = byKey[baseKey];
+
+        if ((isMin || isMax) && !(def && def.filter_mode === 'range' && def.value_type === 'number')) {
+          // Unknown/min-max key not defined as range in schema: ignore (prevents hardcoded drift)
+          return;
+        }
 
         if (def && def.value_type === 'number') {
           const n = typeof rawVal === 'number' ? rawVal : Number(rawVal);
@@ -254,6 +290,7 @@ export default {
       });
 
       this.filterState = next;
+      this.lastSyncedQueryKey = this.stableStringify(query);
     },
     async loadFilters() {
       if (!this.categoryId) {
@@ -277,7 +314,7 @@ export default {
         // WP-60: Auto-run initial search after filters load (once only)
         if (!this.initialSearchDone) {
           this.initialSearchDone = true;
-          await this.executeSearch(this.buildFiltersFromFilterState());
+          await this.executeSearch(this.filterState);
         }
       } catch (err) {
         this.errorFilters = err.message;
@@ -287,7 +324,7 @@ export default {
         this.filters = [];
       }
     },
-    async executeSearch(filters) {
+    async executeSearch(filterState) {
       try {
         this.loadingListings = true;
         this.errorListings = null;
@@ -299,7 +336,7 @@ export default {
         };
         if (this.q) params.q = String(this.q);
 
-        const filterParams = this.buildListingsApiParamsFromFilters(filters);
+        const filterParams = this.buildListingsApiParamsFromFilterState(this.filters, filterState || this.filterState);
         Object.keys(filterParams).forEach((k) => {
           params[k] = filterParams[k];
         });
@@ -314,7 +351,7 @@ export default {
     },
     async handleSearch(attrs) {
       // URL query is kept in sync by filterState watcher; search just executes with current state.
-      await this.executeSearch(attrs && Object.keys(attrs).length ? attrs : this.buildFiltersFromFilterState());
+      await this.executeSearch(this.filterState);
     },
   },
 };
