@@ -29,6 +29,31 @@ Write-Host ""
 $hasFailures = $false
 $violations = @()
 
+# Check 0: CHANGELOG encoding safety (release_note parse reliability)
+Write-Host "[0] Checking CHANGELOG encoding safety..." -ForegroundColor Yellow
+try {
+    if (Test-Path "CHANGELOG.md") {
+        $bytes = [IO.File]::ReadAllBytes("CHANGELOG.md")
+        if ($bytes -contains 0) {
+            $violations += [PSCustomObject]@{
+                File = "CHANGELOG.md"
+                Reason = "Contains NUL bytes (likely UTF-16 or corrupted encoding). Standardize to UTF-8."
+                Type = "Encoding"
+            }
+            $hasFailures = $true
+            Write-Host "FAIL: CHANGELOG.md contains NUL bytes (encoding risk)" -ForegroundColor Red
+        } else {
+            Write-Host "PASS: CHANGELOG.md encoding looks safe (no NUL bytes)" -ForegroundColor Green
+        }
+    } else {
+        Write-Host "WARN: CHANGELOG.md not found (skipping encoding check)" -ForegroundColor Yellow
+    }
+} catch {
+    Write-Sanitized "WARN: Failed to check CHANGELOG encoding: $($_.Exception.Message)" "Yellow"
+}
+
+Write-Host ""
+
 # Check 1: Tracked files exceeding size budget
 Write-Host "[1] Checking tracked file sizes..." -ForegroundColor Yellow
 

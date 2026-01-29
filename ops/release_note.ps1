@@ -22,10 +22,23 @@ if (-not (Test-Path "CHANGELOG.md")) {
     exit 1
 }
 
-$changelog = Get-Content "CHANGELOG.md" -Raw
+# Read CHANGELOG with encoding tolerance (UTF-8 preferred; fallback to UTF-16 if needed)
+$changelog = $null
+try {
+    $changelog = Get-Content "CHANGELOG.md" -Raw -Encoding UTF8
+} catch {
+    $changelog = $null
+}
+if (-not $changelog) {
+    try {
+        $changelog = Get-Content "CHANGELOG.md" -Raw -Encoding Unicode
+    } catch {
+        $changelog = ""
+    }
+}
 
 # Extract [Unreleased] section
-$unreleasedPattern = '##\s*\[Unreleased\](.*?)(?=##\s*\[|$)'
+$unreleasedPattern = '(?ms)^##\s*\[Unreleased\]\s*(.*?)(?=^##\s*\[|\z)'
 if ($changelog -match $unreleasedPattern) {
     $unreleasedContent = $matches[1].Trim()
 } else {
@@ -51,40 +64,45 @@ try {
 }
 
 # Generate release note
-$releaseNote = @"
-# Release Note: $Tag
+$contributorsText = if ($shortlog) { $shortlog } else { "See git log for contributors." }
 
-**Date:** $tagDate
+# NOTE: Use a single-quoted here-string + -f to avoid PowerShell backtick escaping
+$releaseNoteTemplate = @'
+# Release Note: {0}
+
+**Date:** {1}
 
 ## Changes
 
-$unreleasedContent
+{2}
 
 ## Verification
 
 Before deploying this release, verify:
 
-\`\`\`powershell
+```powershell
 # Checkout tag
-git checkout $Tag
+git checkout {0}
 
 # Verify baseline
 .\ops\baseline_status.ps1
 .\ops\verify.ps1
 .\ops\conformance.ps1
-\`\`\`
+```
 
 ## Contributors
 
-$(if ($shortlog) { $shortlog } else { "See git log for contributors." })
+{3}
 
 ## Related
 
-- **Baseline definition**: See \`docs/CURRENT.md\`
-- **Release plan**: See \`docs/RELEASES/PLAN.md\`
-- **Proof docs**: See \`docs/PROOFS/\`
+- **Baseline definition**: See `docs/CURRENT.md`
+- **Release plan**: See `docs/RELEASES/PLAN.md`
+- **Proof docs**: See `docs/PROOFS/`
 
-"@
+'@
+
+$releaseNote = $releaseNoteTemplate -f $Tag, $tagDate, $unreleasedContent, $contributorsText
 
 # Write release note
 Set-Content -Path $OutputFile -Value $releaseNote -Encoding UTF8
