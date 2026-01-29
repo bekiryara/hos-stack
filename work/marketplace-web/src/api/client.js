@@ -1,7 +1,7 @@
 // API client for Marketplace backend
 // WP-61: Use same-origin proxy path instead of direct 8080 to avoid CORS
 // WP-68: Auto-attach Authorization header when token exists
-import { getBearerToken, clearSession } from '../lib/session.js';
+import { getBearerToken, clearSession, setToken, saveSession } from '../lib/session.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/marketplace';
 
@@ -137,7 +137,7 @@ function generateIdempotencyKey() {
 // HOS API helper (WP-48: same-origin proxy via nginx)
 // WP-68: Auto-attach Authorization header when token exists
 // Calls HOS API through /api/* proxy (nginx routes to hos-api:3000)
-async function hosApiRequest(endpoint, options = {}, skipAuth = false) {
+export async function hosApiRequest(endpoint, options = {}, skipAuth = false) {
   const url = `/api${endpoint}`; // nginx proxies /api/* to HOS API
   const headers = {
     'Content-Type': 'application/json',
@@ -178,6 +178,82 @@ async function hosApiRequest(endpoint, options = {}, skipAuth = false) {
   }
 
   return response.json();
+}
+
+/**
+ * HOS customer auth: login (public customer, tenantSlug omitted)
+ * Keeps session logic centralized in this module (single auth spine).
+ */
+export async function login(email, password) {
+  const response = await hosApiRequest(
+    '/v1/auth/login',
+    {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    },
+    true // skipAuth: login is public
+  );
+
+  if (response?.token) {
+    // Save token first, then hydrate user from /v1/me when possible
+    setToken(response.token);
+
+    let user = response.user || null;
+    if (!user) {
+      try {
+        const me = await hosApiRequest('/v1/me', {}, false);
+        user = {
+          email: me?.email || email,
+          id: me?.user_id || me?.id || null,
+        };
+      } catch {
+        user = { email, id: null };
+      }
+    }
+
+    saveSession(response.token, user);
+    return { token: response.token, user };
+  }
+
+  return { token: response?.token, user: response?.user || { email, id: null } };
+}
+
+/**
+ * HOS customer auth: register (public customer, tenantSlug omitted)
+ * Keeps session logic centralized in this module (single auth spine).
+ */
+export async function register(email, password) {
+  const response = await hosApiRequest(
+    '/v1/auth/register',
+    {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    },
+    true // skipAuth: register is public
+  );
+
+  if (response?.token) {
+    // Save token first, then hydrate user from /v1/me when possible
+    setToken(response.token);
+
+    let user = response.user || null;
+    if (!user) {
+      try {
+        const me = await hosApiRequest('/v1/me', {}, false);
+        user = {
+          email: me?.email || email,
+          id: me?.user_id || me?.id || null,
+        };
+      } catch {
+        user = { email, id: null };
+      }
+    }
+
+    saveSession(response.token, user);
+    return { token: response.token, user };
+  }
+
+  return { token: response?.token, user: response?.user || { email, id: null } };
 }
 
 export const api = {
@@ -227,6 +303,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ tenantSlug, email, password }),
     });
+  },
+
+  // WP-??: Best-effort logout (revokes refresh cookie if present)
+  // Always safe to call; UI still clears local session after.
+  hosLogout: () => {
+    return hosApiRequest('/v1/auth/logout', { method: 'POST' }, true);
   },
   
   // WP-62: Active Tenant helpers (single source of truth)

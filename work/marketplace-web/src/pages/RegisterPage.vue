@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import { register } from '../lib/api.js';
+import { register } from '../api/client.js';
 
 export default {
   name: 'RegisterPage',

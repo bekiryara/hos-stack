@@ -22,6 +22,7 @@
 </template>
 
 <script>
+import { api } from './api/client.js';
 import { isLoggedIn, getUser, clearSession } from './lib/session.js';
 
 export default {
@@ -39,10 +40,16 @@ export default {
     },
   },
   methods: {
-    handleLogout() {
-      // WP-67: Clear session and redirect to login
-      clearSession();
-      this.$router.push('/login');
+    async handleLogout() {
+      // Best-effort: revoke server-side refresh cookie, then clear local session.
+      try {
+        await api.hosLogout();
+      } catch {
+        // ignore; local logout still proceeds
+      } finally {
+        clearSession();
+        this.$router.push('/login');
+      }
     },
   },
 };

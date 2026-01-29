@@ -58,7 +58,7 @@
 </template>
 
 <script>
-import { login } from '../lib/api.js';
+import { login } from '../api/client.js';
 
 export default {
   name: 'LoginPage',
