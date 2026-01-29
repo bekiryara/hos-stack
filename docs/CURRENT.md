@@ -108,6 +108,8 @@ docker compose up -d --build
    - Creates daily evidence snapshot in `_archive/daily/YYYYMMDD-HHmmss/`
    - Captures: git status, commit hash, container status, logs, health checks
 
+**Ops entrypoints (Golden 4):** See `docs/runbooks/OPS_ENTRYPOINTS.md` (single canonical runbook).
+
 ## Frontend Refresh SOP (Local Dev)
 
 Use this when “I changed frontend code but browser still shows old UI”:

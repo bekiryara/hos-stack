@@ -51,7 +51,7 @@ Write-Host ""
 # Each check has: Id, Name, ScriptPath, Blocking, OnFailAction, Arguments, CoreDependent (bool)
 # CoreDependent: true if check requires H-OS API or database to be running
 $checkRegistry = @(
-    @{ Id = "ops_drift_guard"; Name = "Ops Drift Guard"; ScriptPath = ".\ops\ops_drift_guard.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $false },
+    @{ Id = "ops_drift_guard"; Name = "Ops Drift Guard"; ScriptPath = ".\ops\ops_drift_guard.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $false },
     @{ Id = "storage_permissions"; Name = "Storage Permissions"; ScriptPath = ".\ops\storage_permissions_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $false },
     @{ Id = "doctor"; Name = "Repository Doctor"; ScriptPath = ".\ops\doctor.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $false },
     @{ Id = "verify"; Name = "Stack Verification"; ScriptPath = ".\ops\verify.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $false },
@@ -60,15 +60,15 @@ $checkRegistry = @(
     @{ Id = "storage_posture"; Name = "Storage Posture"; ScriptPath = ".\ops\storage_posture_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "pazar_ui_smoke"; Name = "Pazar UI Smoke"; ScriptPath = ".\ops\pazar_ui_smoke.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "pazar_storage_posture"; Name = "Pazar Storage Posture"; ScriptPath = ".\ops\pazar_storage_posture.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true },
-    @{ Id = "slo_check"; Name = "SLO Check"; ScriptPath = ".\ops\slo_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @("-N", "10"); CoreDependent = $true },
-    @{ Id = "security_audit"; Name = "Security Audit"; ScriptPath = ".\ops\security_audit.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $false },
+    @{ Id = "slo_check"; Name = "SLO Check"; ScriptPath = ".\ops\slo_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @("10"); Optional = $true; CoreDependent = $true },
+    @{ Id = "security_audit"; Name = "Security Audit"; ScriptPath = ".\ops\security_audit.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $false },
     @{ Id = "conformance"; Name = "Conformance"; ScriptPath = ".\ops\conformance.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $false },
     @{ Id = "product_spine"; Name = "Product Spine Check"; ScriptPath = ".\ops\product_spine_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "product_spine_e2e"; Name = "Product Spine E2E Check"; ScriptPath = ".\ops\product_spine_e2e_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "product_read_path"; Name = "Product Read Path Check"; ScriptPath = ".\ops\product_read_path_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
-    @{ Id = "routes_snapshot"; Name = "Routes Snapshot"; ScriptPath = ".\ops\routes_snapshot.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $true },
-    @{ Id = "schema_snapshot"; Name = "Schema Snapshot"; ScriptPath = ".\ops\schema_snapshot.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $true },
-    @{ Id = "error_contract"; Name = "Error Contract"; ScriptPath = $null; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); InlineCheck = $true; CoreDependent = $true },
+    @{ Id = "routes_snapshot"; Name = "Routes Snapshot"; ScriptPath = ".\ops\routes_snapshot.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
+    @{ Id = "schema_snapshot"; Name = "Schema Snapshot"; ScriptPath = ".\ops\schema_snapshot.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
+    @{ Id = "error_contract"; Name = "Error Contract"; ScriptPath = $null; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); InlineCheck = $true; Optional = $true; CoreDependent = $true },
     @{ Id = "env_contract"; Name = "Environment Contract"; ScriptPath = ".\ops\env_contract.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $false },
     @{ Id = "auth_security"; Name = "Auth Security"; ScriptPath = ".\ops\auth_security_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "tenant_boundary"; Name = "Tenant Boundary"; ScriptPath = ".\ops\tenant_boundary_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
@@ -114,6 +114,30 @@ function Invoke-OpsCheckFromRegistry {
     $exitCode = 0
     $status = "PASS"
     $notes = ""
+    $blocking = $CheckDef.Blocking
+
+    # Optional checks are CI-only by default (to keep ops_status usable in local/dev)
+    if ($isOptional -and -not $Ci) {
+        $status = "SKIP"
+        $exitCode = 0
+        $notes = "OPTIONAL_DISABLED: run with -Ci to enable"
+        $blocking = $false
+
+        $script:results += [PSCustomObject]@{
+            Check = $checkName
+            Status = $status
+            ExitCode = $exitCode
+            Notes = $notes
+            Blocking = $blocking
+            CheckId = $CheckDef.Id
+        }
+
+        return @{
+            Status = $status
+            ExitCode = $exitCode
+            Blocking = $blocking
+        }
+    }
     
     # Gate: If core-dependent and core unavailable, SKIP
     if ($isCoreDependent -and -not $coreAvailability.Available) {
@@ -126,14 +150,14 @@ function Invoke-OpsCheckFromRegistry {
             Status = $status
             ExitCode = $exitCode
             Notes = $notes
-            Blocking = $CheckDef.Blocking
+            Blocking = $blocking
             CheckId = $CheckDef.Id
         }
         
         return @{
             Status = $status
             ExitCode = $exitCode
-            Blocking = $CheckDef.Blocking
+            Blocking = $blocking
         }
     }
     
@@ -198,7 +222,7 @@ function Invoke-OpsCheckFromRegistry {
     }
     
     # Add blocking/non-blocking indicator to notes for display
-    $blockingNote = if ($CheckDef.Blocking) { "(BLOCKING)" } else { "(NON-BLOCKING)" }
+    $blockingNote = if ($blocking) { "(BLOCKING)" } else { "(NON-BLOCKING)" }
     if ($notes) {
         $notes = "$blockingNote $notes"
     } else {
@@ -210,14 +234,14 @@ function Invoke-OpsCheckFromRegistry {
         Status = $status
         ExitCode = $exitCode
         Notes = $notes
-        Blocking = $CheckDef.Blocking
+        Blocking = $blocking
         CheckId = $CheckDef.Id
     }
     
     return @{
         Status = $status
         ExitCode = $exitCode
-        Blocking = $CheckDef.Blocking
+        Blocking = $blocking
     }
 }
 
