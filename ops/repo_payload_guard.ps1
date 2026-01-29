@@ -65,15 +65,18 @@ Write-Host ""
 Write-Host "[2] Checking forbidden generated patterns..." -ForegroundColor Yellow
 
 $forbiddenPatterns = @(
-    'dist/',
-    'build/',
-    '\.next/',
-    'vendor/',
-    'node_modules/',
-    'coverage/',
-    'logs/',
-    'tmp/',
-    '_archive/'
+    # Regex patterns (match paths produced by build tools)
+    # - dist/ should never be tracked anywhere
+    # - build/ is forbidden ONLY at repo root (ops/build/ is allowed for scripts)
+    '(^|/)dist/',
+    '^build/',
+    '(^|/)\.next/',
+    '(^|/)vendor/',
+    '(^|/)node_modules/',
+    '(^|/)coverage/',
+    '(^|/)logs/',
+    '(^|/)tmp/',
+    '^_archive/'
 )
 
 try {
