@@ -15,7 +15,7 @@
         />
       </li>
     </ul>
-    <div v-else class="loading">Loading categories...</div>
+    <div v-else class="empty-state">No categories found</div>
   </div>
 </template>
 
@@ -56,6 +56,11 @@ export default {
 
 .category-link.has-children {
   font-weight: 600;
+}
+
+.empty-state {
+  padding: 0.75rem;
+  color: #666;
 }
 </style>
 

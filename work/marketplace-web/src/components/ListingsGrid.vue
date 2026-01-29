@@ -10,7 +10,7 @@
         <h4>{{ listing.title || 'Untitled' }}</h4>
         <p class="listing-id">
           ID: {{ listing.id }}
-          <button @click.stop="copyListingId(listing.id)" class="copy-id-btn" title="Copy listing ID">Copy</button>
+          <button @click.stop="copyListingId(listing.id, $event)" class="copy-id-btn" title="Copy listing ID">Copy</button>
         </p>
         <p v-if="listing.category_id" class="listing-category">Category ID: {{ listing.category_id }}</p>
         <p class="listing-status">Status: {{ listing.status }}</p>
@@ -85,11 +85,12 @@ export default {
     goToOrder(listingId) {
       this.$router.push({ path: '/order/create', query: { listing_id: listingId } });
     },
-    copyListingId(id) {
+    copyListingId(id, evt) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(id).then(() => {
           // Optional: Show brief feedback (minimal UI change)
-          const btn = event.target;
+          const btn = evt?.target;
+          if (!btn) return;
           const originalText = btn.textContent;
           btn.textContent = 'Copied!';
           setTimeout(() => {

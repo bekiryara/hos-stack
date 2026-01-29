@@ -31,6 +31,10 @@
       <ListingsGrid v-if="listings && listings.length > 0" :listings="listings" />
       <div v-else class="empty-state">
         <p>No listings found</p>
+        <div class="empty-actions">
+          <button type="button" class="secondary-button" @click="resetAllFilters">Reset filters</button>
+          <router-link to="/" class="secondary-link">Browse categories</router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -353,6 +357,14 @@ export default {
       // URL query is kept in sync by filterState watcher; search just executes with current state.
       await this.executeSearch(this.filterState);
     },
+    resetAllFilters() {
+      // Customer-browse friendly: reset state and re-run search (no firm/create CTAs here)
+      this.q = '';
+      this.sort = '';
+      this.page = 1;
+      this.filterState = {};
+      this.handleSearch({});
+    },
   },
 };
 </script>
@@ -374,6 +386,31 @@ export default {
   border-radius: 4px;
   font-size: 1rem;
   margin-top: 0.25rem;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+.secondary-button {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #ddd;
+  background: #f5f5f5;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.secondary-link {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.secondary-link:hover {
+  text-decoration: underline;
 }
 </style>
 
