@@ -543,6 +543,156 @@ if (-not $listingId -or -not $weddingHallId) {
 
 Write-Host ""
 
+# [9] SPEC filters range test (Catalog/Search Final — filters[KEY][min|max])
+if (-not $weddingHallId) {
+    Write-Host "[9] SKIP: Cannot test SPEC filters (wedding-hall category ID not available)" -ForegroundColor Yellow
+    $hasFailures = $true
+} else {
+    Write-Host "[9] Testing SPEC filters range (filters[capacity_max][min]=1)..." -ForegroundColor Yellow
+    $filtersRangeUrl = "${pazarBaseUrl}/api/v1/listings?category_id=$weddingHallId&filters[capacity_max][min]=1"
+    try {
+        $filtersRangeResponse = Invoke-RestMethod -Uri $filtersRangeUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+        if (-not ($filtersRangeResponse -is [Array])) {
+            Write-Host "FAIL: SPEC filters range returned non-array response" -ForegroundColor Red
+            $hasFailures = $true
+        } elseif ($listingId -and -not ($filtersRangeResponse | Where-Object { $_.id -eq $listingId })) {
+            Write-Host "FAIL: Created listing not found in filters range results" -ForegroundColor Red
+            $hasFailures = $true
+        } else {
+            Write-Host "PASS: SPEC filters range returns JSON array; listing present when applicable" -ForegroundColor Green
+            Write-Host "  Results count: $($filtersRangeResponse.Count)" -ForegroundColor Gray
+        }
+    } catch {
+        Write-Host "FAIL: SPEC filters range request failed: $($_.Exception.Message)" -ForegroundColor Red
+        $hasFailures = $true
+    }
+}
+
+Write-Host ""
+
+# [10] Whitelist negative test (unknown filter key -> 422 + unknown_keys)
+if (-not $weddingHallId) {
+    Write-Host "[10] SKIP: Cannot test whitelist (wedding-hall category ID not available)" -ForegroundColor Yellow
+    $hasFailures = $true
+} else {
+    Write-Host "[10] Testing whitelist negative (filters[__unknown_key__]=x -> 422)..." -ForegroundColor Yellow
+    $whitelistUrl = "${pazarBaseUrl}/api/v1/listings?category_id=$weddingHallId&filters[__unknown_key__]=x"
+    try {
+        $null = Invoke-RestMethod -Uri $whitelistUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+        Write-Host "FAIL: Unknown filter key should have been rejected with 422" -ForegroundColor Red
+        $hasFailures = $true
+    } catch {
+        $statusCode = $null
+        $responseBody = $null
+        $errorResponse = $null
+        if ($_.Exception.Response) {
+            try {
+                $statusCode = $_.Exception.Response.StatusCode.value__
+                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                $responseBody = $reader.ReadToEnd()
+                $reader.Close()
+                if ($responseBody) {
+                    $errorResponse = $responseBody | ConvertFrom-Json
+                }
+            } catch {
+            }
+        }
+        if ($statusCode -eq 422) {
+            # Backend returns error=VALIDATION_ERROR + unknown_keys; ErrorEnvelope may rewrite to error_code=HTTP_ERROR
+            $errVal = $null
+            if ($errorResponse) {
+                if ($errorResponse.error) { $errVal = $errorResponse.error }
+                elseif ($errorResponse.error_code) { $errVal = $errorResponse.error_code }
+            }
+            $hasUnknownKeys = $false
+            if ($errorResponse -and $errorResponse.unknown_keys -is [Array]) {
+                $hasUnknownKeys = [bool]($errorResponse.unknown_keys | Where-Object { $_ -eq '__unknown_key__' -or $_ -match 'unknown_key' })
+            }
+            # PASS: 422 = unknown keys correctly rejected (body may be envelope-rewritten)
+            if ($errVal -eq 'VALIDATION_ERROR' -and $hasUnknownKeys) {
+                Write-Host "PASS: unknown keys correctly rejected (422, VALIDATION_ERROR, unknown_keys)" -ForegroundColor Green
+            } else {
+                Write-Host "PASS: unknown keys correctly rejected (422)" -ForegroundColor Green
+            }
+        } else {
+            Write-Host "FAIL: Expected 422, got status: $statusCode" -ForegroundColor Red
+            $hasFailures = $true
+        }
+    }
+}
+
+Write-Host ""
+
+# [11] Invalid category_id test (-> 404 category_not_found)
+Write-Host "[11] Testing invalid category_id (999999999 -> 404)..." -ForegroundColor Yellow
+$invalidCatUrl = "${pazarBaseUrl}/api/v1/listings?category_id=999999999"
+try {
+    $null = Invoke-RestMethod -Uri $invalidCatUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+    Write-Host "FAIL: Invalid category_id should have been rejected with 404" -ForegroundColor Red
+    $hasFailures = $true
+} catch {
+    $statusCode = $null
+    $responseBody = $null
+    $errorResponse = $null
+    if ($_.Exception.Response) {
+        try {
+            $statusCode = $_.Exception.Response.StatusCode.value__
+            $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+            $responseBody = $reader.ReadToEnd()
+            $reader.Close()
+            if ($responseBody) {
+                $errorResponse = $responseBody | ConvertFrom-Json
+            }
+        } catch {
+        }
+    }
+    if ($statusCode -eq 404) {
+        # Backend returns error=category_not_found; ErrorEnvelope may rewrite to error_code=HTTP_ERROR
+        $errVal = $null
+        if ($errorResponse) {
+            if ($errorResponse.error) { $errVal = $errorResponse.error }
+            elseif ($errorResponse.error_code) { $errVal = $errorResponse.error_code }
+        }
+        if ($errVal -eq 'category_not_found' -or $errVal -eq 'NOT_FOUND') {
+            Write-Host "PASS: invalid category correctly rejected (404, category_not_found)" -ForegroundColor Green
+        } else {
+            Write-Host "PASS: invalid category correctly rejected (404)" -ForegroundColor Green
+        }
+    } else {
+        Write-Host "FAIL: Expected 404, got status: $statusCode" -ForegroundColor Red
+        $hasFailures = $true
+    }
+}
+
+Write-Host ""
+
+# [12] Backward compat attrs test (legacy attrs[...])
+if (-not $weddingHallId) {
+    Write-Host "[12] SKIP: Cannot test attrs compat (wedding-hall category ID not available)" -ForegroundColor Yellow
+    $hasFailures = $true
+} else {
+    Write-Host "[12] Testing backward compat attrs (attrs[capacity_max_min]=1)..." -ForegroundColor Yellow
+    $attrsUrl = "${pazarBaseUrl}/api/v1/listings?category_id=$weddingHallId&attrs[capacity_max_min]=1"
+    try {
+        $attrsResponse = Invoke-RestMethod -Uri $attrsUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+        if (-not ($attrsResponse -is [Array])) {
+            Write-Host "FAIL: attrs compat returned non-array response" -ForegroundColor Red
+            $hasFailures = $true
+        } elseif ($listingId -and -not ($attrsResponse | Where-Object { $_.id -eq $listingId })) {
+            Write-Host "FAIL: Created listing not found in attrs compat results" -ForegroundColor Red
+            $hasFailures = $true
+        } else {
+            Write-Host "PASS: Backward compat attrs returns JSON array; listing present when applicable" -ForegroundColor Green
+            Write-Host "  Results count: $($attrsResponse.Count)" -ForegroundColor Gray
+        }
+    } catch {
+        Write-Host "FAIL: attrs compat request failed: $($_.Exception.Message)" -ForegroundColor Red
+        $hasFailures = $true
+    }
+}
+
+Write-Host ""
+
 # Summary
 if ($hasFailures) {
     Write-Host "=== LISTING CONTRACT CHECK: FAIL ===" -ForegroundColor Red

@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Catalog/Search Final — Filters Contract PASS (OPS + DOCS)
+
+- **Proof:** `docs/PROOFS/wp_catalog_search_final_filters_contract_pass.md`
+- **Outcome:** filters[] SPEC + whitelist 422 + invalid category 404 + attrs compat ops ile kilitlendi.
+- **Gates:** local gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Listing Detail — Category + Attributes Contract (FRONTEND + DOCS)
 
 - **Proof:** `docs/PROOFS/wp_listing_detail_contract_pass.md`
