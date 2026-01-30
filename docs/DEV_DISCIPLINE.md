@@ -10,8 +10,13 @@ Temel Kurallar:
 - Minimal diff (az degisiklik), sifir gurultu.
 - main (ana dal) gelistirme yeri degildir; sadece sonuc dalidir.
 
+ISLEM SIRASI (degismez):
+- Once islemler yapilir (kod, docs degisiklikleri).
+- En son: tek commit + tek push; merge commit yok.
+- Yontem: git add -> git commit -m "..." -> gates (ops_run veya ship_main) -> git push. Gates PASS degilse push yok.
+
 TEK MAIN / TEK YAYIN YOLU:
-- Gunluk calisma yerel olabilir, ancak main'e yayin ops/ship_main.ps1 ile yapilir.
+- Gunluk calisma yerel olabilir, ancak main'e yayin ops/ship_main.ps1 ile yapilir (veya WP akisinda: commit -> ops_run -Profile Prototype -> push).
 - ship_main zorunlu kilar: main branch, temiz working tree, gates fail-fast calistir, sonra pull --rebase ve push.
 - Gates sirasi: secret_scan -> public_ready_check -> repo_payload_guard -> closeouts_size_gate -> conformance -> frontend_smoke -> prototype_smoke -> prototype_flow_smoke (varsa).
 - WP kapanisinda: proof dokumani olustur (docs/PROOFS/wpXX_*.md), docs/WP_CLOSEOUTS.md'ye entry ekle (Purpose, Deliverables, Commands, Proof, Key Findings), CHANGELOG.md'ye entry ekle (### WP-XX: Title (tarih) formatinda, **bold** section'lar ile).
