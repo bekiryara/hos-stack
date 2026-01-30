@@ -18,9 +18,12 @@
       <!-- Listings (Step 5) -->
       <section class="portal-section">
         <h3>İlanlarım</h3>
-        <div v-if="listingsLoading" class="section-loading">Yükleniyor...</div>
-        <div v-else-if="listingsError" class="section-error">{{ listingsError }}</div>
-        <div v-else-if="!listings.length" class="section-empty">Henüz ilan yok</div>
+        <div v-if="listingsLoading" class="section-loading">Loading …</div>
+        <div v-else-if="listingsError" class="section-error-box">
+          <p>{{ listingsError }}</p>
+          <button type="button" class="btn-retry" @click="loadListings">Retry</button>
+        </div>
+        <div v-else-if="!listings.length" class="section-empty">No listings yet</div>
         <div v-else class="section-list">
           <table class="data-table">
             <thead>
@@ -29,6 +32,7 @@
                 <th>Başlık</th>
                 <th>Durum</th>
                 <th>Kategori ID</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -37,6 +41,11 @@
                 <td>{{ item.title || '—' }}</td>
                 <td>{{ item.status || '—' }}</td>
                 <td>{{ item.category_id || '—' }}</td>
+                <td class="actions-cell">
+                  <router-link :to="`/listing/${item.id}`" class="btn-action">View</router-link>
+                  <router-link :to="`/listing/${item.id}/message`" class="btn-action">Message</router-link>
+                  <button type="button" class="btn-action btn-disabled" disabled title="not implemented">Edit</button>
+                </td>
               </tr>
             </tbody>
           </table>
