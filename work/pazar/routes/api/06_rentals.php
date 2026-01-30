@@ -211,6 +211,52 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     ]);
 });
 
+// WP-NEXT: Transaction Lifecycle v1 — POST /v1/rentals/{id}/transition
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/rentals/{id}/transition', function ($id, \Illuminate\Http\Request $request) {
+    $validated = $request->validate(['action' => 'required|string|in:approve,reject,cancel,complete']);
+    $action = $validated['action'];
+    $tenantId = $request->attributes->get('tenant_id');
+
+    $rental = DB::table('rentals')->where('id', $id)->first();
+    if (!$rental) {
+        return response()->json(['error' => 'rental_not_found', 'message' => "Rental with id {$id} not found"], 404);
+    }
+    if ($rental->provider_tenant_id !== $tenantId) {
+        return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Only the provider can transition this rental'], 403);
+    }
+
+    $allowlist = [
+        'requested' => ['approve' => 'accepted', 'reject' => 'rejected', 'cancel' => 'cancelled'],
+        'accepted' => ['complete' => 'completed'],
+    ];
+    $current = $rental->status;
+    $allowed = $allowlist[$current] ?? [];
+    if (!isset($allowed[$action])) {
+        return response()->json([
+            'error' => 'INVALID_TRANSITION',
+            'message' => "Action '{$action}' not allowed from status '{$current}'",
+            'allowed' => array_keys($allowed),
+        ], 422);
+    }
+    $newStatus = $allowed[$action];
+
+    $updated = DB::table('rentals')->where('id', $id)->where('status', $current)->update([
+        'status' => $newStatus,
+        'updated_at' => now(),
+    ]);
+    if ($updated === 0) {
+        $cur = DB::table('rentals')->where('id', $id)->first();
+        return response()->json([
+            'error' => 'INVALID_TRANSITION',
+            'message' => 'Status changed during update',
+            'allowed' => array_keys($allowlist[$cur->status] ?? []),
+        ], 422);
+    }
+    \Illuminate\Support\Facades\Log::info('rental.transition', ['rental_id' => $id, 'action' => $action, 'from' => $current, 'to' => $newStatus]);
+    $row = DB::table('rentals')->where('id', $id)->first();
+    return response()->json(['id' => $row->id, 'status' => $row->status, 'updated_at' => $row->updated_at], 200);
+});
+
 // GET /v1/rentals/{id} - Get rental
 Route::get('/v1/rentals/{id}', function ($id) {
     $rental = DB::table('rentals')->where('id', $id)->first();

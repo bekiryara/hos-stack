@@ -70,6 +70,7 @@
                 <th>Listing ID</th>
                 <th>Durum</th>
                 <th>Oluşturulma</th>
+                <th>İşlem</th>
               </tr>
             </thead>
             <tbody>
@@ -78,6 +79,10 @@
                 <td>{{ item.listing_id || '—' }}</td>
                 <td>{{ item.status || '—' }}</td>
                 <td>{{ formatDate(item.created_at) }}</td>
+                <td class="actions-cell">
+                  <button type="button" class="btn-action" :disabled="!canApproveOrder(item) || orderTransitioning[item.id]" @click="transitionOrder(item.id, 'approve')">Onayla</button>
+                  <button type="button" class="btn-action btn-reject" :disabled="!canRejectOrder(item) || orderTransitioning[item.id]" @click="transitionOrder(item.id, 'reject')">Reddet</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -101,6 +106,7 @@
                 <th>Listing ID</th>
                 <th>Durum</th>
                 <th>Oluşturulma</th>
+                <th>İşlem</th>
               </tr>
             </thead>
             <tbody>
@@ -109,6 +115,10 @@
                 <td>{{ item.listing_id || '—' }}</td>
                 <td>{{ item.status || '—' }}</td>
                 <td>{{ formatDate(item.created_at) }}</td>
+                <td class="actions-cell">
+                  <button type="button" class="btn-action" :disabled="!canApproveRental(item) || rentalTransitioning[item.id]" @click="transitionRental(item.id, 'approve')">Onayla</button>
+                  <button type="button" class="btn-action btn-reject" :disabled="!canRejectRental(item) || rentalTransitioning[item.id]" @click="transitionRental(item.id, 'reject')">Reddet</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -132,6 +142,7 @@
                 <th>Listing ID</th>
                 <th>Durum</th>
                 <th>Oluşturulma</th>
+                <th>İşlem</th>
               </tr>
             </thead>
             <tbody>
@@ -140,6 +151,10 @@
                 <td>{{ item.listing_id || '—' }}</td>
                 <td>{{ item.status || '—' }}</td>
                 <td>{{ formatDate(item.created_at) }}</td>
+                <td class="actions-cell">
+                  <button type="button" class="btn-action" :disabled="!canApproveReservation(item) || reservationTransitioning[item.id]" @click="transitionReservation(item.id, 'approve')">Onayla</button>
+                  <button type="button" class="btn-action btn-reject" :disabled="!canRejectReservation(item) || reservationTransitioning[item.id]" @click="transitionReservation(item.id, 'reject')">Reddet</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -178,6 +193,9 @@ export default {
       ordersError: null,
       rentalsError: null,
       reservationsError: null,
+      orderTransitioning: {},
+      rentalTransitioning: {},
+      reservationTransitioning: {},
     };
   },
   async mounted() {
@@ -259,6 +277,63 @@ export default {
         return new Date(dateStr).toLocaleString();
       } catch {
         return dateStr;
+      }
+    },
+    canApproveOrder(item) {
+      return item && (item.status === 'placed');
+    },
+    canRejectOrder(item) {
+      return item && (item.status === 'placed');
+    },
+    canApproveRental(item) {
+      return item && (item.status === 'requested');
+    },
+    canRejectRental(item) {
+      return item && (item.status === 'requested');
+    },
+    canApproveReservation(item) {
+      return item && (item.status === 'requested');
+    },
+    canRejectReservation(item) {
+      return item && (item.status === 'requested');
+    },
+    async transitionOrder(id, action) {
+      if (!this.activeTenantId) return;
+      this.orderTransitioning = { ...this.orderTransitioning, [id]: true };
+      this.ordersError = null;
+      try {
+        await api.transitionOrder(id, action, this.activeTenantId);
+        await this.loadOrders();
+      } catch (err) {
+        this.ordersError = err.message || err.data?.message || 'İşlem başarısız';
+      } finally {
+        this.orderTransitioning = { ...this.orderTransitioning, [id]: false };
+      }
+    },
+    async transitionRental(id, action) {
+      if (!this.activeTenantId) return;
+      this.rentalTransitioning = { ...this.rentalTransitioning, [id]: true };
+      this.rentalsError = null;
+      try {
+        await api.transitionRental(id, action, this.activeTenantId);
+        await this.loadRentals();
+      } catch (err) {
+        this.rentalsError = err.message || err.data?.message || 'İşlem başarısız';
+      } finally {
+        this.rentalTransitioning = { ...this.rentalTransitioning, [id]: false };
+      }
+    },
+    async transitionReservation(id, action) {
+      if (!this.activeTenantId) return;
+      this.reservationTransitioning = { ...this.reservationTransitioning, [id]: true };
+      this.reservationsError = null;
+      try {
+        await api.transitionReservation(id, action, this.activeTenantId);
+        await this.loadReservations();
+      } catch (err) {
+        this.reservationsError = err.message || err.data?.message || 'İşlem başarısız';
+      } finally {
+        this.reservationTransitioning = { ...this.reservationTransitioning, [id]: false };
       }
     },
   },
@@ -385,11 +460,27 @@ export default {
   background: #0056b3;
 }
 
+.btn-action:disabled {
+  background: #ccc;
+  border-color: #999;
+  color: #666;
+  cursor: not-allowed;
+}
+
 .btn-action.btn-disabled {
   background: #ccc;
   border-color: #999;
   color: #666;
   cursor: not-allowed;
+}
+
+.btn-action.btn-reject {
+  background: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-action.btn-reject:hover:not(:disabled) {
+  background: #c82333;
 }
 
 .section-empty {

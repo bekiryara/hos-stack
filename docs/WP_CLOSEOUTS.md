@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Transaction Lifecycle v1 — Status Transitions (MIN BACKEND + MIN UI + DOCS)
+
+- **Proof:** `docs/PROOFS/wp_transaction_lifecycle_v1_pass.md`
+- **Outcome:** Orders/Rentals/Reservations v1 status lifecycle: POST `/{resource}/{id}/transition` (action: approve|reject|cancel|complete); allowlist transitions; illegal → 422 INVALID_TRANSITION; success → 200 { id, status, updated_at }; audit log. Firm portal: Approve/Reject per row (disabled when not allowed); customer account lists show status on refresh.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype -CheckDemoSeed PASS.
+
+---
+
 ## WP-NEXT: ops_run — CheckDemoSeed (OPS + DOCS)
 
 - **Proof:** `docs/PROOFS/wp_ops_run_check_demo_seed_pass.md`

@@ -460,7 +460,36 @@ export const api = {
     const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId, authToken });
     return apiRequest(`/api/v1/reservations?provider_tenant_id=${tenantId}`, { headers });
   },
-  
+
+  // WP-NEXT: Transaction Lifecycle v1 — status transition (store scope)
+  transitionOrder: (id, action, tenantId) => {
+    const tid = tenantId || getActiveTenantIdFromSession();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: tid });
+    return apiRequest(`/api/v1/orders/${id}/transition`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+      headers,
+    });
+  },
+  transitionRental: (id, action, tenantId) => {
+    const tid = tenantId || getActiveTenantIdFromSession();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: tid });
+    return apiRequest(`/api/v1/rentals/${id}/transition`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+      headers,
+    });
+  },
+  transitionReservation: (id, action, tenantId) => {
+    const tid = tenantId || getActiveTenantIdFromSession();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: tid });
+    return apiRequest(`/api/v1/reservations/${id}/transition`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+      headers,
+    });
+  },
+
   // Write operations (WP-8: Persona-based headers)
   // STORE persona: X-Active-Tenant-Id required
   // WP-68: Auto-use activeTenantId from localStorage if tenantId not provided

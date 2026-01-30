@@ -132,3 +132,50 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     return response()->json($response, 201);
 });
 
+// WP-NEXT: Transaction Lifecycle v1 — POST /v1/orders/{id}/transition
+// Store scope: seller can approve/reject/cancel/complete. Allowlist: placed->approved->completed, placed->rejected, placed->cancelled.
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/orders/{id}/transition', function ($id, \Illuminate\Http\Request $request) {
+    $validated = $request->validate(['action' => 'required|string|in:approve,reject,cancel,complete']);
+    $action = $validated['action'];
+    $tenantId = $request->attributes->get('tenant_id');
+
+    $order = DB::table('orders')->where('id', $id)->first();
+    if (!$order) {
+        return response()->json(['error' => 'order_not_found', 'message' => "Order with id {$id} not found"], 404);
+    }
+    if ($order->seller_tenant_id !== $tenantId) {
+        return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Only the seller can transition this order'], 403);
+    }
+
+    $allowlist = [
+        'placed' => ['approve' => 'approved', 'reject' => 'rejected', 'cancel' => 'cancelled'],
+        'approved' => ['complete' => 'completed'],
+    ];
+    $current = $order->status;
+    $allowed = $allowlist[$current] ?? [];
+    if (!isset($allowed[$action])) {
+        return response()->json([
+            'error' => 'INVALID_TRANSITION',
+            'message' => "Action '{$action}' not allowed from status '{$current}'",
+            'allowed' => array_keys($allowed),
+        ], 422);
+    }
+    $newStatus = $allowed[$action];
+
+    $updated = DB::table('orders')->where('id', $id)->where('status', $current)->update([
+        'status' => $newStatus,
+        'updated_at' => now(),
+    ]);
+    if ($updated === 0) {
+        $cur = DB::table('orders')->where('id', $id)->first();
+        return response()->json([
+            'error' => 'INVALID_TRANSITION',
+            'message' => 'Status changed during update',
+            'allowed' => array_keys($allowlist[$cur->status] ?? []),
+        ], 422);
+    }
+    \Illuminate\Support\Facades\Log::info('order.transition', ['order_id' => $id, 'action' => $action, 'from' => $current, 'to' => $newStatus]);
+    $row = DB::table('orders')->where('id', $id)->first();
+    return response()->json(['id' => $row->id, 'status' => $row->status, 'updated_at' => $row->updated_at], 200);
+});
+

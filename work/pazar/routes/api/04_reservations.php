@@ -281,6 +281,52 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     }
 });
 
+// WP-NEXT: Transaction Lifecycle v1 — POST /v1/reservations/{id}/transition
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/reservations/{id}/transition', function ($id, \Illuminate\Http\Request $request) {
+    $validated = $request->validate(['action' => 'required|string|in:approve,reject,cancel,complete']);
+    $action = $validated['action'];
+    $tenantId = $request->attributes->get('tenant_id');
+
+    $reservation = DB::table('reservations')->where('id', $id)->first();
+    if (!$reservation) {
+        return response()->json(['error' => 'reservation_not_found', 'message' => "Reservation with id {$id} not found"], 404);
+    }
+    if ($reservation->provider_tenant_id !== $tenantId) {
+        return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Only the provider can transition this reservation'], 403);
+    }
+
+    $allowlist = [
+        'requested' => ['approve' => 'accepted', 'reject' => 'rejected', 'cancel' => 'cancelled'],
+        'accepted' => ['complete' => 'completed'],
+    ];
+    $current = $reservation->status;
+    $allowed = $allowlist[$current] ?? [];
+    if (!isset($allowed[$action])) {
+        return response()->json([
+            'error' => 'INVALID_TRANSITION',
+            'message' => "Action '{$action}' not allowed from status '{$current}'",
+            'allowed' => array_keys($allowed),
+        ], 422);
+    }
+    $newStatus = $allowed[$action];
+
+    $updated = DB::table('reservations')->where('id', $id)->where('status', $current)->update([
+        'status' => $newStatus,
+        'updated_at' => now(),
+    ]);
+    if ($updated === 0) {
+        $cur = DB::table('reservations')->where('id', $id)->first();
+        return response()->json([
+            'error' => 'INVALID_TRANSITION',
+            'message' => 'Status changed during update',
+            'allowed' => array_keys($allowlist[$cur->status] ?? []),
+        ], 422);
+    }
+    \Illuminate\Support\Facades\Log::info('reservation.transition', ['reservation_id' => $id, 'action' => $action, 'from' => $current, 'to' => $newStatus]);
+    $row = DB::table('reservations')->where('id', $id)->first();
+    return response()->json(['id' => $row->id, 'status' => $row->status, 'updated_at' => $row->updated_at], 200);
+});
+
 // GET /v1/reservations/{id} - Get reservation
 Route::get('/v1/reservations/{id}', function ($id) {
     $reservation = DB::table('reservations')->where('id', $id)->first();
