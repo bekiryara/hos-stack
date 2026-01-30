@@ -211,6 +211,42 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     ]);
 });
 
+// WP-NEXT: Transaction Decisions v1 — POST /v1/rentals/{id}/reject
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/rentals/{id}/reject', function ($id, \Illuminate\Http\Request $request) {
+    $tenantId = $request->attributes->get('tenant_id');
+    $rental = DB::table('rentals')->where('id', $id)->first();
+    if (!$rental) {
+        return response()->json(['error' => 'rental_not_found', 'message' => "Rental with id {$id} not found"], 404);
+    }
+    if ($rental->provider_tenant_id !== $tenantId) {
+        return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Only the provider can reject this rental'], 403);
+    }
+    if ($rental->status !== 'requested') {
+        return response()->json(['error' => 'INVALID_STATE', 'message' => "Rental must be in 'requested' status to reject. Current status: {$rental->status}"], 422);
+    }
+    $updated = DB::table('rentals')->where('id', $id)->where('status', 'requested')->update(['status' => 'rejected', 'updated_at' => now()]);
+    if ($updated === 0) {
+        $cur = DB::table('rentals')->where('id', $id)->first();
+        if ($cur && $cur->status === 'rejected') {
+            $rental = $cur;
+        } else {
+            return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Rental status changed during update'], 422);
+        }
+    } else {
+        $rental = DB::table('rentals')->where('id', $id)->first();
+    }
+    return response()->json([
+        'id' => $rental->id,
+        'listing_id' => $rental->listing_id,
+        'renter_user_id' => $rental->renter_user_id,
+        'provider_tenant_id' => $rental->provider_tenant_id,
+        'start_at' => $rental->start_at,
+        'end_at' => $rental->end_at,
+        'status' => $rental->status,
+        'updated_at' => $rental->updated_at
+    ]);
+});
+
 // WP-NEXT: Transaction Lifecycle v1 — POST /v1/rentals/{id}/transition
 Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/rentals/{id}/transition', function ($id, \Illuminate\Http\Request $request) {
     $validated = $request->validate(['action' => 'required|string|in:approve,reject,cancel,complete']);

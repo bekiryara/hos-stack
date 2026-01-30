@@ -53,9 +53,10 @@
         <router-link v-if="activeTenantId" to="/listing/create" class="btn-primary">İlan Ver</router-link>
       </section>
 
-      <!-- Orders (Step 6) -->
+      <!-- Orders (Step 6) — WP-NEXT: Transaction Lifecycle v1 -->
       <section class="portal-section">
         <h3>Gelen Siparişler</h3>
+        <p class="section-hint">Onayla veya Reddet ile sipariş durumunu güncelleyebilirsiniz.</p>
         <div v-if="ordersLoading" class="section-loading">Loading …</div>
         <div v-else-if="ordersError" class="section-error-box">
           <p>{{ ordersError }}</p>
@@ -80,8 +81,8 @@
                 <td>{{ item.status || '—' }}</td>
                 <td>{{ formatDate(item.created_at) }}</td>
                 <td class="actions-cell">
-                  <button type="button" class="btn-action" :disabled="!canApproveOrder(item) || orderTransitioning[item.id]" @click="transitionOrder(item.id, 'approve')">Onayla</button>
-                  <button type="button" class="btn-action btn-reject" :disabled="!canRejectOrder(item) || orderTransitioning[item.id]" @click="transitionOrder(item.id, 'reject')">Reddet</button>
+                  <button type="button" class="btn-action" :disabled="!canApproveOrder(item) || orderTransitioning[item.id]" @click="acceptOrder(item.id)">Accept</button>
+                  <button type="button" class="btn-action btn-reject" :disabled="!canRejectOrder(item) || orderTransitioning[item.id]" @click="rejectOrder(item.id)">Reject</button>
                 </td>
               </tr>
             </tbody>
@@ -89,9 +90,10 @@
         </div>
       </section>
 
-      <!-- Rentals (Step 6) -->
+      <!-- Rentals (Step 6) — WP-NEXT: Transaction Lifecycle v1 -->
       <section class="portal-section">
         <h3>Gelen Kiralama Talepleri</h3>
+        <p class="section-hint">Onayla veya Reddet ile kiralama talebi durumunu güncelleyebilirsiniz.</p>
         <div v-if="rentalsLoading" class="section-loading">Loading …</div>
         <div v-else-if="rentalsError" class="section-error-box">
           <p>{{ rentalsError }}</p>
@@ -116,8 +118,8 @@
                 <td>{{ item.status || '—' }}</td>
                 <td>{{ formatDate(item.created_at) }}</td>
                 <td class="actions-cell">
-                  <button type="button" class="btn-action" :disabled="!canApproveRental(item) || rentalTransitioning[item.id]" @click="transitionRental(item.id, 'approve')">Onayla</button>
-                  <button type="button" class="btn-action btn-reject" :disabled="!canRejectRental(item) || rentalTransitioning[item.id]" @click="transitionRental(item.id, 'reject')">Reddet</button>
+                  <button type="button" class="btn-action" :disabled="!canApproveRental(item) || rentalTransitioning[item.id]" @click="acceptRental(item.id)">Accept</button>
+                  <button type="button" class="btn-action btn-reject" :disabled="!canRejectRental(item) || rentalTransitioning[item.id]" @click="rejectRental(item.id)">Reject</button>
                 </td>
               </tr>
             </tbody>
@@ -125,9 +127,10 @@
         </div>
       </section>
 
-      <!-- Reservations (Step 6) -->
+      <!-- Reservations (Step 6) — WP-NEXT: Transaction Lifecycle v1 -->
       <section class="portal-section">
         <h3>Gelen Rezervasyonlar</h3>
+        <p class="section-hint">Onayla veya Reddet ile rezervasyon durumunu güncelleyebilirsiniz.</p>
         <div v-if="reservationsLoading" class="section-loading">Loading …</div>
         <div v-else-if="reservationsError" class="section-error-box">
           <p>{{ reservationsError }}</p>
@@ -152,8 +155,8 @@
                 <td>{{ item.status || '—' }}</td>
                 <td>{{ formatDate(item.created_at) }}</td>
                 <td class="actions-cell">
-                  <button type="button" class="btn-action" :disabled="!canApproveReservation(item) || reservationTransitioning[item.id]" @click="transitionReservation(item.id, 'approve')">Onayla</button>
-                  <button type="button" class="btn-action btn-reject" :disabled="!canRejectReservation(item) || reservationTransitioning[item.id]" @click="transitionReservation(item.id, 'reject')">Reddet</button>
+                  <button type="button" class="btn-action" :disabled="!canApproveReservation(item) || reservationTransitioning[item.id]" @click="acceptReservation(item.id)">Accept</button>
+                  <button type="button" class="btn-action btn-reject" :disabled="!canRejectReservation(item) || reservationTransitioning[item.id]" @click="rejectReservation(item.id)">Reject</button>
                 </td>
               </tr>
             </tbody>
@@ -297,12 +300,12 @@ export default {
     canRejectReservation(item) {
       return item && (item.status === 'requested');
     },
-    async transitionOrder(id, action) {
+    async acceptOrder(id) {
       if (!this.activeTenantId) return;
       this.orderTransitioning = { ...this.orderTransitioning, [id]: true };
       this.ordersError = null;
       try {
-        await api.transitionOrder(id, action, this.activeTenantId);
+        await api.acceptStoreOrder(id, this.activeTenantId);
         await this.loadOrders();
       } catch (err) {
         this.ordersError = err.message || err.data?.message || 'İşlem başarısız';
@@ -310,12 +313,25 @@ export default {
         this.orderTransitioning = { ...this.orderTransitioning, [id]: false };
       }
     },
-    async transitionRental(id, action) {
+    async rejectOrder(id) {
+      if (!this.activeTenantId) return;
+      this.orderTransitioning = { ...this.orderTransitioning, [id]: true };
+      this.ordersError = null;
+      try {
+        await api.rejectStoreOrder(id, this.activeTenantId);
+        await this.loadOrders();
+      } catch (err) {
+        this.ordersError = err.message || err.data?.message || 'İşlem başarısız';
+      } finally {
+        this.orderTransitioning = { ...this.orderTransitioning, [id]: false };
+      }
+    },
+    async acceptRental(id) {
       if (!this.activeTenantId) return;
       this.rentalTransitioning = { ...this.rentalTransitioning, [id]: true };
       this.rentalsError = null;
       try {
-        await api.transitionRental(id, action, this.activeTenantId);
+        await api.acceptStoreRental(id, this.activeTenantId);
         await this.loadRentals();
       } catch (err) {
         this.rentalsError = err.message || err.data?.message || 'İşlem başarısız';
@@ -323,12 +339,38 @@ export default {
         this.rentalTransitioning = { ...this.rentalTransitioning, [id]: false };
       }
     },
-    async transitionReservation(id, action) {
+    async rejectRental(id) {
+      if (!this.activeTenantId) return;
+      this.rentalTransitioning = { ...this.rentalTransitioning, [id]: true };
+      this.rentalsError = null;
+      try {
+        await api.rejectStoreRental(id, this.activeTenantId);
+        await this.loadRentals();
+      } catch (err) {
+        this.rentalsError = err.message || err.data?.message || 'İşlem başarısız';
+      } finally {
+        this.rentalTransitioning = { ...this.rentalTransitioning, [id]: false };
+      }
+    },
+    async acceptReservation(id) {
       if (!this.activeTenantId) return;
       this.reservationTransitioning = { ...this.reservationTransitioning, [id]: true };
       this.reservationsError = null;
       try {
-        await api.transitionReservation(id, action, this.activeTenantId);
+        await api.acceptStoreReservation(id, this.activeTenantId);
+        await this.loadReservations();
+      } catch (err) {
+        this.reservationsError = err.message || err.data?.message || 'İşlem başarısız';
+      } finally {
+        this.reservationTransitioning = { ...this.reservationTransitioning, [id]: false };
+      }
+    },
+    async rejectReservation(id) {
+      if (!this.activeTenantId) return;
+      this.reservationTransitioning = { ...this.reservationTransitioning, [id]: true };
+      this.reservationsError = null;
+      try {
+        await api.rejectStoreReservation(id, this.activeTenantId);
         await this.loadReservations();
       } catch (err) {
         this.reservationsError = err.message || err.data?.message || 'İşlem başarısız';
@@ -402,8 +444,14 @@ export default {
 
 .portal-section h3 {
   margin-top: 0;
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
   color: #333;
+}
+
+.portal-section .section-hint {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #666;
 }
 
 .section-loading,

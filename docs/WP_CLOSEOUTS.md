@@ -1,7 +1,15 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-01-30  
+**Last Updated:** 2026-01-31  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-NEXT: Transaction Decisions v1 — Firm Accept/Reject (BACKEND + FRONTEND + DOCS)
+
+- **Proof:** `docs/PROOFS/wp_transaction_decisions_v1_pass.md`
+- **Outcome:** Orders: POST /accept, /reject (placed → accepted | rejected). Rentals/Reservations: POST /reject added (accept existed). Firm Portal: Accept/Reject buttons per row; panel-isolated reload/error. Contract in CURRENT.md.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
 
 ---
 

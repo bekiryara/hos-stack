@@ -461,6 +461,38 @@ export const api = {
     return apiRequest(`/api/v1/reservations?provider_tenant_id=${tenantId}`, { headers });
   },
 
+  // WP-NEXT: Transaction Decisions v1 — firm accept/reject (store scope)
+  acceptStoreOrder: (orderId, tenantId) => {
+    const tid = tenantId || getActiveTenantIdFromSession();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: tid });
+    return apiRequest(`/api/v1/orders/${orderId}/accept`, { method: 'POST', headers });
+  },
+  rejectStoreOrder: (orderId, tenantId) => {
+    const tid = tenantId || getActiveTenantIdFromSession();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: tid });
+    return apiRequest(`/api/v1/orders/${orderId}/reject`, { method: 'POST', headers });
+  },
+  acceptStoreRental: (rentalId, tenantId) => {
+    const tid = tenantId || getActiveTenantIdFromSession();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: tid });
+    return apiRequest(`/api/v1/rentals/${rentalId}/accept`, { method: 'POST', headers });
+  },
+  rejectStoreRental: (rentalId, tenantId) => {
+    const tid = tenantId || getActiveTenantIdFromSession();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: tid });
+    return apiRequest(`/api/v1/rentals/${rentalId}/reject`, { method: 'POST', headers });
+  },
+  acceptStoreReservation: (reservationId, tenantId) => {
+    const tid = tenantId || getActiveTenantIdFromSession();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: tid });
+    return apiRequest(`/api/v1/reservations/${reservationId}/accept`, { method: 'POST', headers });
+  },
+  rejectStoreReservation: (reservationId, tenantId) => {
+    const tid = tenantId || getActiveTenantIdFromSession();
+    const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId: tid });
+    return apiRequest(`/api/v1/reservations/${reservationId}/reject`, { method: 'POST', headers });
+  },
+
   // WP-NEXT: Transaction Lifecycle v1 — status transition (store scope)
   transitionOrder: (id, action, tenantId) => {
     const tid = tenantId || getActiveTenantIdFromSession();

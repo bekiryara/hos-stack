@@ -47,6 +47,15 @@ This repository runs **H-OS** (universe governance) and **Pazar** (first commerc
 
 **Note:** Laravel routes in `routes/api.php` are automatically prefixed with `/api` by default.
 
+## Transaction Decisions v1 (Orders/Rentals/Reservations)
+
+- **Allowed transitions (v1):**
+  - Order: `placed` → accepted | rejected
+  - Rental: `requested` → accepted | rejected
+  - Reservation: `requested` → accepted | rejected
+- **Endpoints:** POST `/v1/orders/{id}/accept`, `/v1/orders/{id}/reject`; POST `/v1/rentals/{id}/accept`, `/v1/rentals/{id}/reject`; POST `/v1/reservations/{id}/accept`, `/v1/reservations/{id}/reject`.
+- **Scope:** Store decision endpoints are tenant-locked (X-Active-Tenant-Id + PersonaScope:store).
+
 ## Green Checks (Working Definition)
 
 Baseline is "working" when:

@@ -281,6 +281,43 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     }
 });
 
+// WP-NEXT: Transaction Decisions v1 — POST /v1/reservations/{id}/reject
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/reservations/{id}/reject', function ($id, \Illuminate\Http\Request $request) {
+    $tenantId = $request->attributes->get('tenant_id');
+    $reservation = DB::table('reservations')->where('id', $id)->first();
+    if (!$reservation) {
+        return response()->json(['error' => 'reservation_not_found', 'message' => "Reservation with id {$id} not found"], 404);
+    }
+    if ($reservation->provider_tenant_id !== $tenantId) {
+        return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Only the provider can reject this reservation'], 403);
+    }
+    if ($reservation->status !== 'requested') {
+        return response()->json(['error' => 'INVALID_STATE', 'message' => "Reservation must be in 'requested' status to reject. Current status: {$reservation->status}"], 422);
+    }
+    $updated = DB::table('reservations')->where('id', $id)->where('status', 'requested')->update(['status' => 'rejected', 'updated_at' => now()]);
+    if ($updated === 0) {
+        $cur = DB::table('reservations')->where('id', $id)->first();
+        if ($cur && $cur->status === 'rejected') {
+            $reservation = $cur;
+        } else {
+            return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Reservation status changed during update'], 422);
+        }
+    } else {
+        $reservation = DB::table('reservations')->where('id', $id)->first();
+    }
+    return response()->json([
+        'id' => $reservation->id,
+        'listing_id' => $reservation->listing_id,
+        'provider_tenant_id' => $reservation->provider_tenant_id,
+        'requester_user_id' => $reservation->requester_user_id,
+        'slot_start' => $reservation->slot_start,
+        'slot_end' => $reservation->slot_end,
+        'party_size' => $reservation->party_size,
+        'status' => $reservation->status,
+        'updated_at' => $reservation->updated_at
+    ]);
+});
+
 // WP-NEXT: Transaction Lifecycle v1 — POST /v1/reservations/{id}/transition
 Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/reservations/{id}/transition', function ($id, \Illuminate\Http\Request $request) {
     $validated = $request->validate(['action' => 'required|string|in:approve,reject,cancel,complete']);

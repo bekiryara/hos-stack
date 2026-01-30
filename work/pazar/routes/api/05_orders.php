@@ -132,6 +132,72 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     return response()->json($response, 201);
 });
 
+// WP-NEXT: Transaction Decisions v1 — POST /v1/orders/{id}/accept
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/orders/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
+    $tenantId = $request->attributes->get('tenant_id');
+    $order = DB::table('orders')->where('id', $id)->first();
+    if (!$order) {
+        return response()->json(['error' => 'order_not_found', 'message' => "Order with id {$id} not found"], 404);
+    }
+    if ($order->seller_tenant_id !== $tenantId) {
+        return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Only the seller can accept this order'], 403);
+    }
+    if ($order->status !== 'placed') {
+        return response()->json(['error' => 'INVALID_STATE', 'message' => "Order must be in 'placed' status to accept. Current status: {$order->status}"], 422);
+    }
+    $updated = DB::table('orders')->where('id', $id)->where('status', 'placed')->update(['status' => 'accepted', 'updated_at' => now()]);
+    if ($updated === 0) {
+        $cur = DB::table('orders')->where('id', $id)->first();
+        if ($cur && $cur->status === 'accepted') {
+            $order = $cur;
+        } else {
+            return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Order status changed during update'], 422);
+        }
+    } else {
+        $order = DB::table('orders')->where('id', $id)->first();
+    }
+    return response()->json([
+        'id' => $order->id,
+        'seller_tenant_id' => $order->seller_tenant_id,
+        'listing_id' => $order->listing_id,
+        'status' => $order->status,
+        'updated_at' => $order->updated_at
+    ]);
+});
+
+// WP-NEXT: Transaction Decisions v1 — POST /v1/orders/{id}/reject
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/orders/{id}/reject', function ($id, \Illuminate\Http\Request $request) {
+    $tenantId = $request->attributes->get('tenant_id');
+    $order = DB::table('orders')->where('id', $id)->first();
+    if (!$order) {
+        return response()->json(['error' => 'order_not_found', 'message' => "Order with id {$id} not found"], 404);
+    }
+    if ($order->seller_tenant_id !== $tenantId) {
+        return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Only the seller can reject this order'], 403);
+    }
+    if ($order->status !== 'placed') {
+        return response()->json(['error' => 'INVALID_STATE', 'message' => "Order must be in 'placed' status to reject. Current status: {$order->status}"], 422);
+    }
+    $updated = DB::table('orders')->where('id', $id)->where('status', 'placed')->update(['status' => 'rejected', 'updated_at' => now()]);
+    if ($updated === 0) {
+        $cur = DB::table('orders')->where('id', $id)->first();
+        if ($cur && $cur->status === 'rejected') {
+            $order = $cur;
+        } else {
+            return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Order status changed during update'], 422);
+        }
+    } else {
+        $order = DB::table('orders')->where('id', $id)->first();
+    }
+    return response()->json([
+        'id' => $order->id,
+        'seller_tenant_id' => $order->seller_tenant_id,
+        'listing_id' => $order->listing_id,
+        'status' => $order->status,
+        'updated_at' => $order->updated_at
+    ]);
+});
+
 // WP-NEXT: Transaction Lifecycle v1 — POST /v1/orders/{id}/transition
 // Store scope: seller can approve/reject/cancel/complete. Allowlist: placed->approved->completed, placed->rejected, placed->cancelled.
 Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/orders/{id}/transition', function ($id, \Illuminate\Http\Request $request) {
