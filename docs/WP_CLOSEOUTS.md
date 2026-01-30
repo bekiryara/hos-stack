@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Search UI — Filters deterministic + empty-safe (FRONTEND + DOCS)
+
+- **Proof:** `docs/PROOFS/wp_search_ui_filters_deterministic_pass.md`
+- **Outcome:** Search UI filters state deterministik + empty-safe + marker; single source, stable key order, no null/undefined in request; UI null-safe.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Listing Detail — Category + Attributes Contract (FRONTEND + DOCS)
 
 - **Proof:** `docs/PROOFS/wp_listing_detail_contract_pass.md`

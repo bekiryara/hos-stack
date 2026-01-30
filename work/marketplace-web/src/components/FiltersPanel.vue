@@ -13,8 +13,8 @@
         </li>
       </ul>
     </div>
-    <form v-if="filters.length > 0" @submit.prevent="handleSubmit">
-      <div v-for="filter in filters" :key="filter.attribute_key" class="filter-item">
+    <form v-if="(filters || []).length > 0" @submit.prevent="handleSubmit">
+      <div v-for="filter in (filters || [])" :key="filter.attribute_key" class="filter-item">
         <label>
           {{ filter.attribute_key }}
           <span v-if="filter.required" class="required-badge">required</span>

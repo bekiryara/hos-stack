@@ -207,11 +207,10 @@ export default {
     },
     buildListingsApiParamsFromFilterState(schemaFilters, filterState) {
       // WP-75: build SPEC-aligned listing search params schema-driven (no hardcoded filter keys)
-      // - filters[KEY]=VALUE
-      // - filters[KEY][min|max]=... for range(number) filters
+      // WP-NEXT: empty-safe — never pass null/undefined; stable key order
       const params = {};
-      const state = filterState || {};
-      (schemaFilters || []).forEach((def) => {
+      const state = filterState ?? {};
+      (schemaFilters ?? []).forEach((def) => {
         const key = def?.attribute_key;
         if (!key) return;
 
@@ -340,8 +339,11 @@ export default {
         };
         if (this.q) params.q = String(this.q);
 
-        const filterParams = this.buildListingsApiParamsFromFilterState(this.filters, filterState || this.filterState);
-        Object.keys(filterParams).forEach((k) => {
+        // WP-NEXT: filters deterministic + empty-safe (single source, stable key order)
+        const state = filterState ?? this.filterState ?? {};
+        const schemaFilters = this.filters ?? [];
+        const filterParams = this.buildListingsApiParamsFromFilterState(schemaFilters, state);
+        Object.keys(filterParams).sort().forEach((k) => {
           params[k] = filterParams[k];
         });
         this.listings = await api.searchListings(params);
