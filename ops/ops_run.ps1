@@ -1,6 +1,7 @@
 param(
     [ValidateSet('Prototype', 'Full')]
-    [string]$Profile = 'Prototype'
+    [string]$Profile = 'Prototype',
+    [switch]$CheckDemoSeed
 )
 
 # WP-68: OPS Run Entrypoint
@@ -82,8 +83,15 @@ if ($Profile -eq 'Prototype') {
     
     # 4. Prototype Verification
     Write-Host "[4/4] Running prototype verification..." -ForegroundColor Yellow
+    if ($CheckDemoSeed) {
+        Write-Host "INFO: Demo seed check ENABLED" -ForegroundColor Gray
+    }
     try {
-        & .\ops\prototype_v1.ps1
+        if ($CheckDemoSeed) {
+            & .\ops\prototype_v1.ps1 -CheckDemoSeed
+        } else {
+            & .\ops\prototype_v1.ps1
+        }
         if ($LASTEXITCODE -eq 0) {
             $results += [PSCustomObject]@{ Check = 'Prototype Verification'; Status = 'PASS' }
             Write-Host "PASS: Prototype verification" -ForegroundColor Green

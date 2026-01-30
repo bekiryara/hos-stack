@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: ops_run — CheckDemoSeed (OPS + DOCS)
+
+- **Proof:** `docs/PROOFS/wp_ops_run_check_demo_seed_pass.md`
+- **Outcome:** ops_run Prototype artık -CheckDemoSeed ile demo seed doğruluyor (fast debug, no drift).
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Customer Account — Read-only Orders/Rentals/Reservations (FRONTEND + DOCS)
 
 - **Proof:** `docs/PROOFS/wp_customer_account_readonly_pass.md`
