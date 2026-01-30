@@ -47,9 +47,12 @@
       <!-- Orders (Step 6) -->
       <section class="portal-section">
         <h3>Gelen Siparişler</h3>
-        <div v-if="ordersLoading" class="section-loading">Yükleniyor...</div>
-        <div v-else-if="ordersError" class="section-error">{{ ordersError }}</div>
-        <div v-else-if="!orders.length" class="section-empty">Henüz sipariş yok</div>
+        <div v-if="ordersLoading" class="section-loading">Loading …</div>
+        <div v-else-if="ordersError" class="section-error-box">
+          <p>{{ ordersError }}</p>
+          <button type="button" class="btn-retry" @click="loadOrders">Retry</button>
+        </div>
+        <div v-else-if="!orders.length" class="section-empty">No orders yet</div>
         <div v-else class="section-list">
           <table class="data-table">
             <thead>
@@ -75,9 +78,12 @@
       <!-- Rentals (Step 6) -->
       <section class="portal-section">
         <h3>Gelen Kiralama Talepleri</h3>
-        <div v-if="rentalsLoading" class="section-loading">Yükleniyor...</div>
-        <div v-else-if="rentalsError" class="section-error">{{ rentalsError }}</div>
-        <div v-else-if="!rentals.length" class="section-empty">Henüz kiralama talebi yok</div>
+        <div v-if="rentalsLoading" class="section-loading">Loading …</div>
+        <div v-else-if="rentalsError" class="section-error-box">
+          <p>{{ rentalsError }}</p>
+          <button type="button" class="btn-retry" @click="loadRentals">Retry</button>
+        </div>
+        <div v-else-if="!rentals.length" class="section-empty">No rentals yet</div>
         <div v-else class="section-list">
           <table class="data-table">
             <thead>
@@ -103,9 +109,12 @@
       <!-- Reservations (Step 6) -->
       <section class="portal-section">
         <h3>Gelen Rezervasyonlar</h3>
-        <div v-if="reservationsLoading" class="section-loading">Yükleniyor...</div>
-        <div v-else-if="reservationsError" class="section-error">{{ reservationsError }}</div>
-        <div v-else-if="!reservations.length" class="section-empty">Henüz rezervasyon yok</div>
+        <div v-if="reservationsLoading" class="section-loading">Loading …</div>
+        <div v-else-if="reservationsError" class="section-error-box">
+          <p>{{ reservationsError }}</p>
+          <button type="button" class="btn-retry" @click="loadReservations">Retry</button>
+        </div>
+        <div v-else-if="!reservations.length" class="section-empty">No reservations yet</div>
         <div v-else class="section-list">
           <table class="data-table">
             <thead>
@@ -320,8 +329,58 @@ export default {
   color: #666;
 }
 
-.section-error {
+.section-error-box {
+  padding: 1rem;
+  background: #ffebee;
+  border: 1px solid #d32f2f;
+  border-radius: 4px;
   color: #c62828;
+}
+
+.section-error-box p {
+  margin: 0 0 0.75rem 0;
+}
+
+.btn-retry {
+  padding: 0.4rem 0.8rem;
+  background: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.btn-retry:hover {
+  background: #b71c1c;
+}
+
+.actions-cell {
+  white-space: nowrap;
+}
+
+.btn-action {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  text-decoration: none;
+  border-radius: 4px;
+  border: 1px solid #007bff;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+.btn-action:hover {
+  background: #0056b3;
+}
+
+.btn-action.btn-disabled {
+  background: #ccc;
+  border-color: #999;
+  color: #666;
+  cursor: not-allowed;
 }
 
 .section-empty {

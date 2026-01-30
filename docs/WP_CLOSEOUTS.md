@@ -5,6 +5,13 @@
 
 ---
 
+## WP-NEXT: Firm Portal — UX Standard + Actions (2026-01-30)
+- **Proof:** `docs/PROOFS/wp_firm_portal_ux_actions_pass.md`
+- **Outcome:** Firm Portal panelleri retry/error/empty standardına alındı; listings action linkleri (View, Message) ve Edit placeholder eklendi.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Firm Spine v1 (Store Portal) (2026-01-30)
 - **Proof:** `docs/PROOFS/wp_firm_spine_store_portal_pass.md`
 - **Outcome:** Firm Portal page `/firm` added; active tenant info + Listings/Orders/Rentals/Reservations (STORE scope); guard redirects to `/account?reason=firm_required` when no active tenant; Account "Firma Paneli" link → /firm. Frontend + docs only; conformance PASS.
