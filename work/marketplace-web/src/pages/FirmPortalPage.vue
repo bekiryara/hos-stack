@@ -1,0 +1,369 @@
+<template>
+  <div class="firm-portal">
+    <h2>Firma Paneli</h2>
+
+    <!-- No active tenant: show warning + redirect (Step 7) -->
+    <div v-if="!activeTenantId" class="no-tenant-warning">
+      <p>Aktif firma seçilmedi. Firma panelini kullanmak için önce hesabınızdan bir firma seçin.</p>
+      <router-link to="/account" class="btn-account">Hesaba Git</router-link>
+    </div>
+
+    <!-- With active tenant -->
+    <template v-else>
+      <div class="firm-info-bar">
+        <p><strong>Aktif Firma ID:</strong> {{ activeTenantId }}</p>
+        <p v-if="activeTenantName"><strong>Firma Adı:</strong> {{ activeTenantName }}</p>
+      </div>
+
+      <!-- Listings (Step 5) -->
+      <section class="portal-section">
+        <h3>İlanlarım</h3>
+        <div v-if="listingsLoading" class="section-loading">Yükleniyor...</div>
+        <div v-else-if="listingsError" class="section-error">{{ listingsError }}</div>
+        <div v-else-if="!listings.length" class="section-empty">Henüz ilan yok</div>
+        <div v-else class="section-list">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Başlık</th>
+                <th>Durum</th>
+                <th>Kategori ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in listings" :key="item.id">
+                <td>{{ item.id }}</td>
+                <td>{{ item.title || '—' }}</td>
+                <td>{{ item.status || '—' }}</td>
+                <td>{{ item.category_id || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <router-link v-if="activeTenantId" to="/listing/create" class="btn-primary">İlan Ver</router-link>
+      </section>
+
+      <!-- Orders (Step 6) -->
+      <section class="portal-section">
+        <h3>Gelen Siparişler</h3>
+        <div v-if="ordersLoading" class="section-loading">Yükleniyor...</div>
+        <div v-else-if="ordersError" class="section-error">{{ ordersError }}</div>
+        <div v-else-if="!orders.length" class="section-empty">Henüz sipariş yok</div>
+        <div v-else class="section-list">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Listing ID</th>
+                <th>Durum</th>
+                <th>Oluşturulma</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in orders" :key="item.id">
+                <td>{{ item.id }}</td>
+                <td>{{ item.listing_id || '—' }}</td>
+                <td>{{ item.status || '—' }}</td>
+                <td>{{ formatDate(item.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Rentals (Step 6) -->
+      <section class="portal-section">
+        <h3>Gelen Kiralama Talepleri</h3>
+        <div v-if="rentalsLoading" class="section-loading">Yükleniyor...</div>
+        <div v-else-if="rentalsError" class="section-error">{{ rentalsError }}</div>
+        <div v-else-if="!rentals.length" class="section-empty">Henüz kiralama talebi yok</div>
+        <div v-else class="section-list">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Listing ID</th>
+                <th>Durum</th>
+                <th>Oluşturulma</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in rentals" :key="item.id">
+                <td>{{ item.id }}</td>
+                <td>{{ item.listing_id || '—' }}</td>
+                <td>{{ item.status || '—' }}</td>
+                <td>{{ formatDate(item.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Reservations (Step 6) -->
+      <section class="portal-section">
+        <h3>Gelen Rezervasyonlar</h3>
+        <div v-if="reservationsLoading" class="section-loading">Yükleniyor...</div>
+        <div v-else-if="reservationsError" class="section-error">{{ reservationsError }}</div>
+        <div v-else-if="!reservations.length" class="section-empty">Henüz rezervasyon yok</div>
+        <div v-else class="section-list">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Listing ID</th>
+                <th>Durum</th>
+                <th>Oluşturulma</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in reservations" :key="item.id">
+                <td>{{ item.id }}</td>
+                <td>{{ item.listing_id || '—' }}</td>
+                <td>{{ item.status || '—' }}</td>
+                <td>{{ formatDate(item.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </template>
+  </div>
+</template>
+
+<script>
+import { getActiveTenantId } from '../lib/session.js';
+import { api } from '../api/client.js';
+import { normalizeListResponse } from '../api/client.js';
+
+function extractItems(resp) {
+  const { items } = normalizeListResponse(resp);
+  return Array.isArray(items) ? items : [];
+}
+
+export default {
+  name: 'FirmPortalPage',
+  data() {
+    return {
+      activeTenantId: null,
+      activeTenantName: null,
+      memberships: [],
+      listings: [],
+      orders: [],
+      rentals: [],
+      reservations: [],
+      listingsLoading: false,
+      ordersLoading: false,
+      rentalsLoading: false,
+      reservationsLoading: false,
+      listingsError: null,
+      ordersError: null,
+      rentalsError: null,
+      reservationsError: null,
+    };
+  },
+  async mounted() {
+    this.activeTenantId = getActiveTenantId();
+    if (!this.activeTenantId) return;
+    await this.loadMembershipsForName();
+    this.loadListings();
+    this.loadOrders();
+    this.loadRentals();
+    this.loadReservations();
+  },
+  methods: {
+    async loadMembershipsForName() {
+      try {
+        const response = await api.getMyMemberships();
+        const list = response.items || response.data || (Array.isArray(response) ? response : []);
+        this.memberships = list;
+        const active = list.find(m => m.tenant_id === this.activeTenantId);
+        this.activeTenantName = active ? (active.tenant_name || active.tenant_slug) : null;
+      } catch {
+        this.activeTenantName = null;
+      }
+    },
+    async loadListings() {
+      if (!this.activeTenantId) return;
+      this.listingsLoading = true;
+      this.listingsError = null;
+      try {
+        const resp = await api.getStoreListings(this.activeTenantId);
+        this.listings = extractItems(resp);
+      } catch (err) {
+        this.listingsError = err.message || 'İlanlar yüklenemedi';
+      } finally {
+        this.listingsLoading = false;
+      }
+    },
+    async loadOrders() {
+      if (!this.activeTenantId) return;
+      this.ordersLoading = true;
+      this.ordersError = null;
+      try {
+        const resp = await api.getStoreOrders(this.activeTenantId);
+        this.orders = extractItems(resp);
+      } catch (err) {
+        this.ordersError = err.message || 'Siparişler yüklenemedi';
+      } finally {
+        this.ordersLoading = false;
+      }
+    },
+    async loadRentals() {
+      if (!this.activeTenantId) return;
+      this.rentalsLoading = true;
+      this.rentalsError = null;
+      try {
+        const resp = await api.getStoreRentals(this.activeTenantId);
+        this.rentals = extractItems(resp);
+      } catch (err) {
+        this.rentalsError = err.message || 'Kiralamalar yüklenemedi';
+      } finally {
+        this.rentalsLoading = false;
+      }
+    },
+    async loadReservations() {
+      if (!this.activeTenantId) return;
+      this.reservationsLoading = true;
+      this.reservationsError = null;
+      try {
+        const resp = await api.getStoreReservations(this.activeTenantId);
+        this.reservations = extractItems(resp);
+      } catch (err) {
+        this.reservationsError = err.message || 'Rezervasyonlar yüklenemedi';
+      } finally {
+        this.reservationsLoading = false;
+      }
+    },
+    formatDate(dateStr) {
+      if (!dateStr) return '—';
+      try {
+        return new Date(dateStr).toLocaleString();
+      } catch {
+        return dateStr;
+      }
+    },
+  },
+};
+</script>
+
+<style scoped>
+.firm-portal {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.firm-portal h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.no-tenant-warning {
+  padding: 2rem;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.no-tenant-warning p {
+  margin: 0 0 1rem 0;
+  color: #856404;
+}
+
+.btn-account {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.btn-account:hover {
+  background: #0056b3;
+}
+
+.firm-info-bar {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.firm-info-bar p {
+  margin: 0.25rem 0;
+  color: #333;
+}
+
+.portal-section {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.portal-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.section-loading,
+.section-error,
+.section-empty {
+  padding: 1rem 0;
+  color: #666;
+}
+
+.section-error {
+  color: #c62828;
+}
+
+.section-empty {
+  font-style: italic;
+  color: #999;
+}
+
+.btn-primary {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #28a745;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.btn-primary:hover {
+  background: #218838;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.data-table thead {
+  background: #f5f5f5;
+}
+
+.data-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #ddd;
+}
+
+.data-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+</style>

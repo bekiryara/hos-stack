@@ -159,6 +159,14 @@ This ensures baseline remains stable and prevents breaking changes.
 5. User opens "My Account" (`/account`) → sees created records (reservations, rentals, orders)
 6. Logout works correctly
 7. Optional: User can create firm (`/firm/register`) → gains FIRM_OWNER role (additive, CUSTOMER remains)
+8. Firm Spine v1: User creates firm → selects active tenant on `/account` → opens Firm Portal (`/firm`) to see store listings, incoming orders, rentals, and reservations. No active tenant → guard redirects to `/account?reason=firm_required`.
+
+**Yerel gate koşumu:**
+- Yerel gate koşumu için Node.js + npm + Docker Desktop zorunludur.
+- Aşağıdaki script ile tek komut gate pack çalışır: `ops/run_wp_next_local_gates.ps1`.
+- Önce `ops/env_preflight.ps1` ile ortam kontrolü yapılır; FAIL ise gate paketi çalıştırılmaz.
+- Tüm gate çıktısı `docs/PROOFS/_logs/wp_next_gates_YYYYMMDD_HHMMSS.log` dosyasına yazılır.
+- PASS kanıtı yerel koşumdan sonra `docs/PROOFS/wp_firm_spine_store_portal_final_pass.md` ile doldurulur.
 
 ## Catalog / Search Final (Category → Catalog → Listing)
 

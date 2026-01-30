@@ -1,7 +1,19 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-01-29  
+**Last Updated:** 2026-01-30  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-NEXT: Firm Spine v1 (Store Portal) (2026-01-30)
+- **Proof:** `docs/PROOFS/wp_firm_spine_store_portal_pass.md`
+- **Outcome:** Firm Portal page `/firm` added; active tenant info + Listings/Orders/Rentals/Reservations (STORE scope); guard redirects to `/account?reason=firm_required` when no active tenant; Account "Firma Paneli" link → /firm. Frontend + docs only; conformance PASS.
+- **Status:** ENV-BLOCKED (frontend_smoke [G], verify docker pipe).
+- **Proof (blocked):** `docs/PROOFS/wp_firm_spine_store_portal_env_blocked.md`
+- **PASS proof pending local gate run.**
+- **Status:** PASS (local gates).
+- **Proof (final):** `docs/PROOFS/wp_firm_spine_store_portal_final_pass.md`
+- **Gates:** env_preflight + frontend_smoke + verify + conformance + update_code_index = PASS.
 
 ---
 

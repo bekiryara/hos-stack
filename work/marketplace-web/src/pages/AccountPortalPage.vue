@@ -39,7 +39,7 @@
             <p v-if="activeTenantId"><strong>Durum:</strong> <span class="status-active">AKTİF</span></p>
           </div>
           <div class="firm-actions">
-            <router-link v-if="activeTenantId" to="/listing/create" class="firm-panel-link">Firma Paneli</router-link>
+            <router-link v-if="activeTenantId" to="/firm" class="firm-panel-link">Firma Paneli</router-link>
             <span v-else class="firm-panel-disabled">Firma paneli için aktif firma seçin.</span>
           </div>
         </div>

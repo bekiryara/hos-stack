@@ -1,4 +1,4 @@
-﻿# Secrets / private
+# Secrets / private
 work/hos/secrets/*.txt
 **/secrets/*
 .env
@@ -37,6 +37,9 @@ ops/diffs/
 # Test results and temporary JSON files
 *_tests_results.json
 ops_gates_output.json
+
+# Gate run logs (never track; Public Ready requires clean repo)
+docs/PROOFS/_logs/
 
 # Temp files
 _temp_*.txt
