@@ -66,45 +66,28 @@
         </div>
       </div>
       
-      <!-- Refresh Button -->
+      <!-- Refresh Button (WP-NEXT: panel isolation — refresh all) -->
       <div class="button-group">
-        <button @click="refreshAll" :disabled="loading">
-          {{ loading ? 'Yükleniyor...' : 'Yenile' }}
+        <button @click="refreshAll" :disabled="anyPanelLoading">
+          {{ anyPanelLoading ? 'Yükleniyor...' : 'Yenile' }}
         </button>
       </div>
-      
-      <!-- Error State -->
-      <div v-if="error" class="error-box">
-        <h3>Hata</h3>
-        <div class="error-details">
-          <div><strong>Status:</strong> {{ error.status || 'N/A' }}</div>
-          <div v-if="error.endpoint"><strong>Endpoint:</strong> {{ error.endpoint }}</div>
-          <div><strong>Message:</strong> {{ error.message || 'Unknown error' }}</div>
+
+      <!-- Data Panels (WP-NEXT: per-panel loading + error + retry + empty) -->
+      <!-- Rezervasyonlarım -->
+      <div class="result-section">
+        <h3>Rezervasyonlarım</h3>
+        <div v-if="reservationsLoading" class="section-loading">Yükleniyor …</div>
+        <div v-else-if="panelErrors.reservations" class="error-box">
+          <div class="error-details">
+            <div><strong>Message:</strong> {{ panelErrors.reservations.message || 'Unknown error' }}</div>
+            <button type="button" class="btn-retry" @click="loadReservations">Yeniden dene</button>
+          </div>
         </div>
-      </div>
-      
-      <!-- Loading State -->
-      <div v-if="loading" class="loading-state">
-        <p>Yükleniyor...</p>
-      </div>
-      
-      <!-- Data Panels -->
-      <div v-if="!loading">
-        <!-- Rezervasyonlarım -->
-        <div class="result-section">
-          <h3>Rezervasyonlarım</h3>
-          <div v-if="panelErrors.reservations" class="error-box">
-            <h3>Hata</h3>
-            <div class="error-details">
-              <div><strong>Status:</strong> {{ panelErrors.reservations.status || 'N/A' }}</div>
-              <div v-if="panelErrors.reservations.endpoint"><strong>Endpoint:</strong> {{ panelErrors.reservations.endpoint }}</div>
-              <div><strong>Message:</strong> {{ panelErrors.reservations.message || 'Unknown error' }}</div>
-            </div>
-          </div>
-          <div v-else-if="reservations.length === 0" class="empty-state">
-            Henüz rezervasyon yok
-          </div>
-          <table v-else class="data-table">
+        <div v-else-if="(reservations || []).length === 0" class="empty-state">
+          Henüz rezervasyon yok
+        </div>
+        <table v-else class="data-table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -116,7 +99,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="reservation in reservations" :key="reservation.id">
+              <tr v-for="reservation in (reservations || [])" :key="reservation.id">
                 <td>{{ reservation.id }}</td>
                 <td>{{ reservation.listing_id }}</td>
                 <td>{{ formatDate(reservation.slot_start) }}</td>
@@ -126,23 +109,22 @@
               </tr>
             </tbody>
           </table>
+      </div>
+
+      <!-- Kiralamalarım -->
+      <div class="result-section">
+        <h3>Kiralamalarım</h3>
+        <div v-if="rentalsLoading" class="section-loading">Yükleniyor …</div>
+        <div v-else-if="panelErrors.rentals" class="error-box">
+          <div class="error-details">
+            <div><strong>Message:</strong> {{ panelErrors.rentals.message || 'Unknown error' }}</div>
+            <button type="button" class="btn-retry" @click="loadRentals">Yeniden dene</button>
+          </div>
         </div>
-        
-        <!-- Kiralamalarım -->
-        <div class="result-section">
-          <h3>Kiralamalarım</h3>
-          <div v-if="panelErrors.rentals" class="error-box">
-            <h3>Hata</h3>
-            <div class="error-details">
-              <div><strong>Status:</strong> {{ panelErrors.rentals.status || 'N/A' }}</div>
-              <div v-if="panelErrors.rentals.endpoint"><strong>Endpoint:</strong> {{ panelErrors.rentals.endpoint }}</div>
-              <div><strong>Message:</strong> {{ panelErrors.rentals.message || 'Unknown error' }}</div>
-            </div>
-          </div>
-          <div v-else-if="rentals.length === 0" class="empty-state">
-            Henüz kiralama yok
-          </div>
-          <table v-else class="data-table">
+        <div v-else-if="(rentals || []).length === 0" class="empty-state">
+          Henüz kiralama yok
+        </div>
+        <table v-else class="data-table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -153,7 +135,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="rental in rentals" :key="rental.id">
+              <tr v-for="rental in (rentals || [])" :key="rental.id">
                 <td>{{ rental.id }}</td>
                 <td>{{ rental.listing_id }}</td>
                 <td>{{ formatDate(rental.start_at) }}</td>
@@ -162,23 +144,22 @@
               </tr>
             </tbody>
           </table>
+      </div>
+
+      <!-- Siparişlerim -->
+      <div class="result-section">
+        <h3>Siparişlerim</h3>
+        <div v-if="ordersLoading" class="section-loading">Yükleniyor …</div>
+        <div v-else-if="panelErrors.orders" class="error-box">
+          <div class="error-details">
+            <div><strong>Message:</strong> {{ panelErrors.orders.message || 'Unknown error' }}</div>
+            <button type="button" class="btn-retry" @click="loadOrders">Yeniden dene</button>
+          </div>
         </div>
-        
-        <!-- Siparişlerim -->
-        <div class="result-section">
-          <h3>Siparişlerim</h3>
-          <div v-if="panelErrors.orders" class="error-box">
-            <h3>Hata</h3>
-            <div class="error-details">
-              <div><strong>Status:</strong> {{ panelErrors.orders.status || 'N/A' }}</div>
-              <div v-if="panelErrors.orders.endpoint"><strong>Endpoint:</strong> {{ panelErrors.orders.endpoint }}</div>
-              <div><strong>Message:</strong> {{ panelErrors.orders.message || 'Unknown error' }}</div>
-            </div>
-          </div>
-          <div v-else-if="orders.length === 0" class="empty-state">
-            Henüz sipariş yok
-          </div>
-          <table v-else class="data-table">
+        <div v-else-if="(orders || []).length === 0" class="empty-state">
+          Henüz sipariş yok
+        </div>
+        <table v-else class="data-table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -189,7 +170,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="order in orders" :key="order.id">
+              <tr v-for="order in (orders || [])" :key="order.id">
                 <td>{{ order.id }}</td>
                 <td>{{ order.listing_id }}</td>
                 <td>{{ order.status }}</td>
@@ -198,7 +179,6 @@
               </tr>
             </tbody>
           </table>
-        </div>
       </div>
     </div>
   </div>
@@ -220,10 +200,11 @@ export default {
       memberships: [],
       activeTenantIdValue: getActiveTenantId(),
       
-      // State
-      loading: false,
+      // State (WP-NEXT: per-panel loading for isolation)
+      ordersLoading: false,
+      rentalsLoading: false,
+      reservationsLoading: false,
       membershipsLoading: false, // WP-68: Separate loading state for memberships
-      error: null,
       panelErrors: {
         orders: null,
         rentals: null,
@@ -298,10 +279,90 @@ export default {
     setActiveTenant(tenantId) {
       setActiveTenantId(tenantId);
       this.activeTenantIdValue = tenantId || null;
-      // Refresh panels immediately when active firm changes (deterministic UX)
-      if (this.isAuthenticated) {
-        this.refreshAll();
+      if (this.isAuthenticated) this.refreshAll();
+    },
+    // WP-NEXT: null-safe extract (no crash on null/undefined response)
+    extractItems(resp) {
+      if (resp == null) return [];
+      return Array.isArray(resp) ? resp : (resp.data ?? resp.items ?? []) ?? [];
+    },
+    async loadOrders() {
+      const userId = getUserId();
+      if (!userId) {
+        clearSession();
+        this.$router.push('/login?reason=expired');
+        return;
       }
+      this.ordersLoading = true;
+      this.panelErrors.orders = null;
+      try {
+        const resp = await api.getMyOrders(userId);
+        this.orders = this.extractItems(resp);
+      } catch (err) {
+        if (err.status === 401) {
+          clearSession();
+          this.$router.push('/login?reason=expired');
+          return;
+        }
+        this.panelErrors = { ...this.panelErrors, orders: { panel: 'orders', status: err.status || 0, message: err.message || 'Failed to load orders', endpoint: '/v1/me/orders' } };
+        this.orders = [];
+      } finally {
+        this.ordersLoading = false;
+      }
+    },
+    async loadRentals() {
+      const userId = getUserId();
+      if (!userId) {
+        clearSession();
+        this.$router.push('/login?reason=expired');
+        return;
+      }
+      this.rentalsLoading = true;
+      this.panelErrors.rentals = null;
+      try {
+        const resp = await api.getMyRentals(userId);
+        this.rentals = this.extractItems(resp);
+      } catch (err) {
+        if (err.status === 401) {
+          clearSession();
+          this.$router.push('/login?reason=expired');
+          return;
+        }
+        this.panelErrors = { ...this.panelErrors, rentals: { panel: 'rentals', status: err.status || 0, message: err.message || 'Failed to load rentals', endpoint: '/v1/me/rentals' } };
+        this.rentals = [];
+      } finally {
+        this.rentalsLoading = false;
+      }
+    },
+    async loadReservations() {
+      const userId = getUserId();
+      if (!userId) {
+        clearSession();
+        this.$router.push('/login?reason=expired');
+        return;
+      }
+      this.reservationsLoading = true;
+      this.panelErrors.reservations = null;
+      try {
+        const resp = await api.getMyReservations(userId);
+        this.reservations = this.extractItems(resp);
+      } catch (err) {
+        if (err.status === 401) {
+          clearSession();
+          this.$router.push('/login?reason=expired');
+          return;
+        }
+        this.panelErrors = { ...this.panelErrors, reservations: { panel: 'reservations', status: err.status || 0, message: err.message || 'Failed to load reservations', endpoint: '/v1/me/reservations' } };
+        this.reservations = [];
+      } finally {
+        this.reservationsLoading = false;
+      }
+    },
+    refreshAll() {
+      if (!this.isAuthenticated) return;
+      this.loadOrders();
+      this.loadRentals();
+      this.loadReservations();
     },
     formatDate(dateStr) {
       if (!dateStr) return 'N/A';
@@ -309,118 +370,6 @@ export default {
         return new Date(dateStr).toLocaleString();
       } catch {
         return dateStr;
-      }
-    },
-    async refreshAll() {
-      if (!this.isAuthenticated) {
-        return;
-      }
-      
-      this.loading = true;
-      this.error = null;
-      this.panelErrors = { orders: null, rentals: null, reservations: null };
-      
-      // WP-68: Get userId from token (single source of truth)
-      const userId = getUserId();
-      if (!userId) {
-        // WP-68: No userId - clear session and redirect to login
-        clearSession();
-        this.$router.push('/login?reason=expired');
-        return;
-      }
-      
-      // WP-68: Token auto-attached by API wrapper, no need to pass manually
-      
-      // Clear previous data
-      this.orders = [];
-      this.rentals = [];
-      this.reservations = [];
-      
-      try {
-        // WP-68: Fetch all in parallel using client.js functions (auto-auth)
-        const [ordersResp, rentalsResp, reservationsResp] = await Promise.all([
-          api.getMyOrders(userId).catch(err => ({ ok: false, error: err })),
-          api.getMyRentals(userId).catch(err => ({ ok: false, error: err })),
-          api.getMyReservations(userId).catch(err => ({ ok: false, error: err })),
-        ]);
-        
-        // Helper: Extract items from various response formats
-        const extractItems = (r) => Array.isArray(r) ? r : (r?.data ?? r?.items ?? []);
-        
-        // Helper: Check if response is an error wrapper (only { ok: false } is treated as error)
-        const isErrWrapper = (r) => r && typeof r === 'object' && r.ok === false;
-        
-        // WP-67: Handle 401 - clear session and redirect
-        const errors = [];
-        
-        if (isErrWrapper(ordersResp)) {
-          const err = ordersResp.error || ordersResp;
-          if (err.status === 401) {
-            clearSession();
-            this.$router.push('/login?reason=expired');
-            return;
-          }
-          const e = { panel: 'orders', status: err.status || 0, message: err.message || 'Failed to load orders', endpoint: '/v1/me/orders' };
-          errors.push(e);
-          this.panelErrors.orders = e;
-        } else {
-          // Extract data (API returns {data: [...]} or array or {items: [...]})
-          this.orders = extractItems(ordersResp);
-        }
-        
-        if (isErrWrapper(rentalsResp)) {
-          const err = rentalsResp.error || rentalsResp;
-          if (err.status === 401) {
-            clearSession();
-            this.$router.push('/login?reason=expired');
-            return;
-          }
-          const e = { panel: 'rentals', status: err.status || 0, message: err.message || 'Failed to load rentals', endpoint: '/v1/me/rentals' };
-          errors.push(e);
-          this.panelErrors.rentals = e;
-        } else {
-          this.rentals = extractItems(rentalsResp);
-        }
-        
-        if (isErrWrapper(reservationsResp)) {
-          const err = reservationsResp.error || reservationsResp;
-          if (err.status === 401) {
-            clearSession();
-            this.$router.push('/login?reason=expired');
-            return;
-          }
-          const e = { panel: 'reservations', status: err.status || 0, message: err.message || 'Failed to load reservations', endpoint: '/v1/me/reservations' };
-          errors.push(e);
-          this.panelErrors.reservations = e;
-        } else {
-          this.reservations = extractItems(reservationsResp);
-        }
-        
-        // Show a summary error if any panels failed, but keep rendering other panels
-        if (errors.length > 0) {
-          const firstError = errors[0];
-          this.error = {
-            status: firstError.status,
-            message: firstError.message,
-            endpoint: firstError.endpoint,
-            allErrors: errors,
-          };
-        }
-
-        this.lastRefreshed = new Date();
-      } catch (error) {
-        // WP-67: Handle 401 in catch block too
-        if (error.status === 401) {
-          clearSession();
-          this.$router.push('/login?reason=expired');
-          return;
-        }
-        this.error = {
-          status: error.status || 0,
-          message: error.message || 'Unknown error',
-        };
-      } finally {
-        this.loading = false;
       }
     },
   },
@@ -710,6 +659,26 @@ export default {
   margin-top: 0;
   margin-bottom: 1rem;
   color: #333;
+}
+
+.section-loading {
+  padding: 1rem;
+  color: #666;
+}
+
+.btn-retry {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-retry:hover {
+  background: #0052a3;
 }
 
 .empty-state {

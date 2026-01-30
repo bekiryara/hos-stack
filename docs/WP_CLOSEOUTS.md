@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Customer Account — Read-only Orders/Rentals/Reservations (FRONTEND + DOCS)
+
+- **Proof:** `docs/PROOFS/wp_customer_account_readonly_pass.md`
+- **Outcome:** Customer account read-only lists (Orders, Rentals, Reservations) + panel error/empty standard; per-panel loading, retry, null-safe; panel isolation.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Search UI — Filters deterministic + empty-safe (FRONTEND + DOCS)
 
 - **Proof:** `docs/PROOFS/wp_search_ui_filters_deterministic_pass.md`
