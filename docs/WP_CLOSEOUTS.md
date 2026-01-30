@@ -1,7 +1,23 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-01-31  
+**Last Updated:** 2026-02-01  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-NEXT: HOS API — Split auth/me/tenant Routes (NO BEHAVIOR CHANGE)
+
+- **Proof:** `docs/PROOFS/wp_hos_api_routes_split_pass.md`
+- **Outcome:** auth_me_tenants.js split into auth_routes.js, me_routes.js, tenant_routes.js + request_auth.js; v1/index.js registers the three modules. Route modularization to prevent bloat; behavior unchanged.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype to be run (npm test: 18 pass, 7 pre-existing failures unrelated to split).
+
+---
+
+## WP-NEXT: HOS API — Route Modularization (NO BEHAVIOR CHANGE)
+
+- **Proof:** `docs/PROOFS/wp_hos_api_route_modularization_pass.md`
+- **Outcome:** app.js route monolith split into `routes/oidc_public.js` and `routes/v1/*` (core_world_contract, auth_me_tenants, admin_permits). Route surface, status codes, responses, validation, and legacy Deprecation header unchanged.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS (to be run).
 
 ---
 
