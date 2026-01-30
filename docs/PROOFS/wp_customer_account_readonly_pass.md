@@ -16,7 +16,7 @@
 .\ops\run_wp_next_local_gates.ps1
 === WP-NEXT LOCAL GATES: PASS ===
 
-.\ops\ops_run.ps1 -Profile Prototype
+.\ops\ops_run.ps1 -Profile Prototype -CheckDemoSeed
 OVERALL STATUS: PASS
 All checks passed.
 ```
