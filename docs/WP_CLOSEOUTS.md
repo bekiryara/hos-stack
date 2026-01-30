@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Listing Detail — Category + Attributes Contract (FRONTEND + DOCS)
+
+- **Proof:** `docs/PROOFS/wp_listing_detail_contract_pass.md`
+- **Outcome:** Listing detail page shows Category block (Category ID or —) and Attributes block (sorted key: value list or "No attributes"); empty/null safe; deterministic render.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype (PASS sonrası).
+
+---
+
 ## WP-NEXT: Firm Portal — UX Standard + Actions (2026-01-30)
 - **Proof:** `docs/PROOFS/wp_firm_portal_ux_actions_pass.md`
 - **Outcome:** Firm Portal panelleri retry/error/empty standardına alındı; listings action linkleri (View, Message) ve Edit placeholder eklendi.

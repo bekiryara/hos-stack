@@ -8,7 +8,6 @@
         <h3>Basic Info</h3>
         <p><strong>ID:</strong> {{ listing.id }}</p>
         <p><strong>Status:</strong> {{ listing.status }}</p>
-        <p v-if="listing.category_id"><strong>Category ID:</strong> {{ listing.category_id }}</p>
         <div v-if="listing.transaction_modes && listing.transaction_modes.length > 0" class="transaction-modes">
           <strong>Transaction Modes:</strong>
           <div class="transaction-badges">
@@ -23,9 +22,16 @@
           </div>
         </div>
       </div>
-      <div v-if="listing.attributes" class="detail-section">
+      <div class="detail-section">
+        <h3>Category</h3>
+        <p><strong>Category ID:</strong> {{ listing.category_id || '—' }}</p>
+      </div>
+      <div class="detail-section">
         <h3>Attributes</h3>
-        <pre class="attributes-json">{{ JSON.stringify(listing.attributes, null, 2) }}</pre>
+        <p v-if="!sortedAttributeKeys.length">No attributes</p>
+        <ul v-else class="attributes-list">
+          <li v-for="key in sortedAttributeKeys" :key="key"><strong>{{ key }}:</strong> {{ listing.attributes[key] }}</li>
+        </ul>
       </div>
       <div v-if="listing" class="detail-section">
         <h3>Full Data</h3>
@@ -77,6 +83,12 @@ export default {
     id: {
       type: String,
       required: true,
+    },
+  },
+  computed: {
+    sortedAttributeKeys() {
+      if (!this.listing || !this.listing.attributes || typeof this.listing.attributes !== 'object') return [];
+      return Object.keys(this.listing.attributes).sort();
     },
   },
   data() {
@@ -149,6 +161,16 @@ export default {
 
 .detail-section p {
   margin-bottom: 0.5rem;
+}
+
+.attributes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.attributes-list li {
+  margin-bottom: 0.25rem;
 }
 
 .attributes-json,
