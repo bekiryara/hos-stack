@@ -6,10 +6,6 @@
         <router-link to="/">Keşfet</router-link>
         <router-link to="/search">Ara</router-link>
         <template v-if="isAuthenticated">
-          <router-link to="/reservation/create">Rezervasyon</router-link>
-          <router-link to="/rental/create">Kiralama</router-link>
-          <router-link v-if="hasActiveTenant" to="/listing/create">İlan Ver</router-link>
-          <router-link v-else to="/firm/register">Firma Oluştur</router-link>
           <router-link to="/account">Hesabım</router-link>
           <span class="user-identity">{{ userIdentity }}</span>
           <button @click="handleLogout" class="logout-btn">Çıkış</button>
