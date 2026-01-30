@@ -1,6 +1,6 @@
 # WP-NEXT: Listing Detail — Category + Attributes Contract — PASS
 
-**Timestamp:** (fill after local gate run)  
+**Timestamp:** 2026-01-30 (local gate run)  
 **Scope:** Frontend + docs only. No backend changes.
 
 ## Summary
@@ -10,14 +10,15 @@
 - **Attributes block:** Replaced JSON dump with deterministic "key: value" list; keys sorted with `Object.keys().sort()`. Empty/null/`{}` shows "No attributes".
 - **UI:** Minimal; existing `.detail-section` style; no refactor.
 
-## Gate commands (placeholder — paste PASS output after run)
+## Gate commands (PASS evidence)
 
 ```
-run_wp_next_local_gates:
-( paste output )
+.\ops\run_wp_next_local_gates.ps1
+=== WP-NEXT LOCAL GATES: PASS ===
 
-ops_run -Profile Prototype:
-( paste output )
+.\ops\ops_run.ps1 -Profile Prototype
+OVERALL STATUS: PASS
+All checks passed.
 ```
 
 ## Files changed

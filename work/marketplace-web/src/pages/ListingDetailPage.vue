@@ -85,6 +85,7 @@ export default {
       required: true,
     },
   },
+  // WP: Listing Detail — Category + Attributes contract (deterministic, null-safe)
   computed: {
     sortedAttributeKeys() {
       if (!this.listing || !this.listing.attributes || typeof this.listing.attributes !== 'object') return [];
