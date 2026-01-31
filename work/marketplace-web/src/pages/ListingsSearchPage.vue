@@ -339,11 +339,11 @@ export default {
         };
         if (this.q) params.q = String(this.q);
 
-        // WP-NEXT: filters deterministic + empty-safe (single source, stable key order)
+        // WP-NEXT: filters empty-safe; determinism in API layer (toStableQueryString)
         const state = filterState ?? this.filterState ?? {};
         const schemaFilters = this.filters ?? [];
         const filterParams = this.buildListingsApiParamsFromFilterState(schemaFilters, state);
-        Object.keys(filterParams).sort().forEach((k) => {
+        Object.keys(filterParams).forEach((k) => {
           params[k] = filterParams[k];
         });
         this.listings = await api.searchListings(params);

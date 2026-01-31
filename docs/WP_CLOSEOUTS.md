@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: API stable query string — PASS
+
+- **Proof:** `docs/PROOFS/wp_api_stable_querystring_pass.md`
+- **Outcome:** Centralized deterministic query string builder (toStableQueryString in request.js); catalog searchListings and messaging getThreadByContext use it; removed redundant key sort in ListingsSearchPage. No force push rule added to RULES.md.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Listing Detail — Category + Attributes (contract-safe) — PASS
 
 - **Proof:** `docs/PROOFS/wp_listing_detail_category_attributes_pass.md`

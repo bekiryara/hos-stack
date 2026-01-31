@@ -1,6 +1,6 @@
 // Messaging domain: thread and message operations
 // WP-NEXT: Extracted from client.js (NO BEHAVIOR CHANGE)
-import { messagingApiRequest } from '../request.js';
+import { messagingApiRequest, toStableQueryString } from '../request.js';
 
 export async function messagingUpsertThread({ contextType, contextId, participants }) {
   return messagingApiRequest(
@@ -18,11 +18,8 @@ export async function messagingUpsertThread({ contextType, contextId, participan
 }
 
 export async function messagingGetThreadByContext({ contextType, contextId }) {
-  const qs = new URLSearchParams({
-    context_type: contextType,
-    context_id: contextId,
-  });
-  return messagingApiRequest(`/api/v1/threads/by-context?${qs.toString()}`, {}, false);
+  const qs = toStableQueryString({ context_type: contextType, context_id: contextId });
+  return messagingApiRequest(`/api/v1/threads/by-context?${qs}`, {}, false);
 }
 
 export async function messagingSendMessage(threadId, { senderType, senderId, body }) {

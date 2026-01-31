@@ -140,6 +140,43 @@ export function normalizeListResponse(resp) {
   return { items: resp, meta: null };
 }
 
+/**
+ * Deterministic query string builder (WP-NEXT: stable querystring).
+ * Keys sorted lexicographically (ASCII). Skips undefined/null.
+ * Primitives → string; array → repeated key (primitives sorted); object → JSON.stringify(deepSortKeys).
+ * Output: "a=1&b=2" (no leading "?").
+ */
+function deepSortKeys(obj) {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(deepSortKeys);
+  const sorted = {};
+  Object.keys(obj).sort().forEach((k) => { sorted[k] = deepSortKeys(obj[k]); });
+  return sorted;
+}
+
+export function toStableQueryString(params) {
+  if (params == null || typeof params !== 'object') return '';
+  const pairs = [];
+  const keys = Object.keys(params).filter((k) => params[k] !== undefined && params[k] !== null).sort();
+  for (const key of keys) {
+    const value = params[key];
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(value)));
+    } else if (Array.isArray(value)) {
+      const arr = value.every((x) => typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean')
+        ? [...value].sort((a, b) => String(a).localeCompare(String(b), 'en'))
+        : value;
+      arr.forEach((v) => {
+        const enc = (typeof v === 'object' && v !== null) ? encodeURIComponent(JSON.stringify(deepSortKeys(v))) : encodeURIComponent(String(v));
+        pairs.push(encodeURIComponent(key) + '=' + enc);
+      });
+    } else if (typeof value === 'object' && value !== null) {
+      pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(JSON.stringify(deepSortKeys(value))));
+    }
+  }
+  return pairs.join('&');
+}
+
 // Generate UUID v4 for idempotency keys
 export function generateIdempotencyKey() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

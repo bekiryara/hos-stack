@@ -1,6 +1,6 @@
 // Catalog domain: public guest browsing
 // WP-NEXT: Extracted from client.js (NO BEHAVIOR CHANGE)
-import { apiRequest } from '../request.js';
+import { apiRequest, toStableQueryString } from '../request.js';
 
 // GUEST persona: No headers required (SPEC §5.3)
 // WP-68: Public calls use skipAuth to avoid attaching token
@@ -13,7 +13,7 @@ export function getFilterSchema(categoryId) {
 }
 
 export function searchListings(params) {
-  const queryString = new URLSearchParams(params).toString();
+  const queryString = toStableQueryString(params);
   return apiRequest(`/api/v1/listings?${queryString}`, {}, true);
 }
 

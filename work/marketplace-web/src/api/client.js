@@ -10,6 +10,7 @@ export {
   messagingApiRequest,
   unwrapData,
   normalizeListResponse,
+  toStableQueryString,
 } from './request.js';
 
 // Re-export messaging domain functions
