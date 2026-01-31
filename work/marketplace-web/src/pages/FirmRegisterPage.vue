@@ -101,6 +101,8 @@
 <script>
 import { api } from '../api/client.js';
 import { isLoggedIn, setActiveTenantId, getActiveTenantId } from '../lib/session.js';
+import { normalizeApiError } from '../lib/errors/api_error.js';
+import { notifyApiSuccess, notifyApiError } from '../lib/toast/notify_api.js';
 
 export default {
   name: 'FirmRegisterPage',
@@ -209,6 +211,7 @@ export default {
           setActiveTenantId(response.tenant_id);
           
           this.success = `Firma başarıyla oluşturuldu! (${response.slug})`;
+          notifyApiSuccess('Firm registered');
           
           // Redirect to listing creation (single firm->listing flow)
           await new Promise(resolve => setTimeout(resolve, 1500)); // Brief delay for UX
@@ -217,6 +220,7 @@ export default {
           this.error = 'Firma oluşturulamadı. Lütfen tekrar deneyin.';
         }
       } catch (err) {
+        const normalized = normalizeApiError(err);
         if (err.status === 401) {
           this.error = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
           setTimeout(() => {
@@ -225,8 +229,9 @@ export default {
         } else if (err.status === 409) {
           this.error = 'Bu firma adı zaten kullanılıyor. Lütfen farklı bir ad seçin.';
         } else {
-          this.error = err.message || 'Firma oluşturulurken bir hata oluştu.';
+          this.error = normalized.message;
         }
+        notifyApiError(err, 'Firm register');
       } finally {
         this.submitting = false;
       }

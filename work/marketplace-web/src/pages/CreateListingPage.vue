@@ -35,6 +35,8 @@
 import { api } from '../api/client';
 import { getCategoriesTree, getFilterSchemaForCategory } from '../lib/catalogSpine';
 import { isLoggedIn, getActiveTenantId, setActiveTenantId } from '../lib/session.js';
+import { normalizeApiError } from '../lib/errors/api_error.js';
+import { notifyApiSuccess, notifyApiError } from '../lib/toast/notify_api.js';
 import CreateListingForm from '../components/listing/create/CreateListingForm.vue';
 import CreateListingSuccessBox from '../components/listing/create/CreateListingSuccessBox.vue';
 
@@ -148,9 +150,12 @@ export default {
         .createListing(payload, activeTenantId || null)
         .then((result) => {
           this.success = result;
+          notifyApiSuccess('Listing created');
         })
         .catch((err) => {
-          this.error = err;
+          const normalized = normalizeApiError(err);
+          this.error = { status: normalized.status, errorCode: normalized.code, message: normalized.message };
+          notifyApiError(err, 'Create listing');
         })
         .finally(() => {
           this.loading = false;

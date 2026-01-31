@@ -116,6 +116,7 @@
 <script>
 import { api } from '../api/client.js';
 import { isLoggedIn, getActiveTenantId, setActiveTenantId, clearSession } from '../lib/session.js';
+import { notifyApiSuccess } from '../lib/toast/notify_api.js';
 import MyReservationsPanel from '../components/account/MyReservationsPanel.vue';
 import MyRentalsPanel from '../components/account/MyRentalsPanel.vue';
 import MyOrdersPanel from '../components/account/MyOrdersPanel.vue';
@@ -204,6 +205,7 @@ export default {
     setActiveTenant(tenantId) {
       setActiveTenantId(tenantId);
       this.activeTenantIdValue = tenantId || null;
+      notifyApiSuccess('Tenant selected');
       if (this.isAuthenticated) this.refreshAll();
     },
     setTab(tab) {

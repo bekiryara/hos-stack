@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Toast WP-2 — API error standard + 3 flows — PASS
+
+- **Proof:** `docs/PROOFS/wp_toast_wp2_api_error_standard_pass.md`
+- **Outcome:** API error messages standardized (normalizeApiError); 3 action flows (Create Listing, Firm Register, Tenant select) use notifyApiError/notifyApiSuccess; no backend change.
+- **Gates:** local gates PASS + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Toast WP-1 — Core notifier + 2 integrations — PASS
 
 - **Proof:** `docs/PROOFS/wp_toast_wp1_core_pass.md`
