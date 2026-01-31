@@ -36,5 +36,5 @@ OVERALL STATUS: PASS  (clean tree ile doğrulandıktan sonra bu satır eklenebil
 exit 0
 ```
 
-**Commit:** `50e2b3c` — WP-NEXT: HOS API — auth_routes split PASS  
+**Commit:** `12e3316` — WP-NEXT: HOS API — auth_routes split PASS  
 **Push:** Yapılmadı — ops_run OVERALL STATUS: FAIL (Public Ready: git working directory not clean; repo’da bu WP dışı değişiklikler var). Tree temizlendikten veya diğer değişiklikler commit edildikten sonra `.\ops\ops_run.ps1 -Profile Prototype` tekrar çalıştırılıp OVERALL PASS alındığında push yapılabilir.
