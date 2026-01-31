@@ -5,7 +5,8 @@
       
       <!-- WP-NEXT: Google OAuth tenant slug input (only shown if Google enabled) -->
       <div v-if="googleOAuthEnabled" class="oauth-section">
-        <div class="form-group">
+        <!-- Only show tenant input if not provided via URL or localStorage -->
+        <div v-if="!tenantSlugFromContext" class="form-group">
           <label>
             Organizasyon (Tenant) <span v-if="!tenantSlug" class="required">*</span>
             <input
@@ -111,13 +112,26 @@ export default {
       error: null,
       // WP-NEXT: Google OAuth state
       tenantSlug: '',
+      tenantSlugFromContext: false, // true if slug came from URL or localStorage (hide input)
       googleOAuthEnabled: false,
       googleLoading: false,
     };
   },
   async mounted() {
     // WP-NEXT: Initialize tenantSlug from query > localStorage > empty
-    this.tenantSlug = this.$route.query.tenantSlug || getTenantSlug() || '';
+    const fromQuery = this.$route.query.tenantSlug;
+    const fromStorage = getTenantSlug();
+    
+    if (fromQuery) {
+      this.tenantSlug = fromQuery;
+      this.tenantSlugFromContext = true;
+    } else if (fromStorage) {
+      this.tenantSlug = fromStorage;
+      this.tenantSlugFromContext = true;
+    } else {
+      this.tenantSlug = '';
+      this.tenantSlugFromContext = false;
+    }
     
     // WP-NEXT: Fetch feature flags to check if Google OAuth is enabled
     await this.loadFeatureFlags();
