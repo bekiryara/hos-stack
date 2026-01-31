@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Create Listing split (form+success) — PASS
+
+- **Proof:** `docs/PROOFS/wp_create_listing_split_pass.md`
+- **Outcome:** Create Listing write-path modülerleşti (page orchestrator, form + success components). Davranış değişmedi.
+- **Gates:** local gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Marketplace — Account portal split panels — PASS
 
 - **Proof:** `docs/PROOFS/wp_account_portal_split_panels_pass.md`
