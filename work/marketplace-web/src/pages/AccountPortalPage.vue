@@ -73,10 +73,13 @@
         </button>
       </div>
 
-      <!-- Data Panels (WP-NEXT: per-panel loading + error + retry + empty via SectionShell) -->
-      <MyReservationsPanel ref="reservationsPanelRef" />
-      <MyRentalsPanel ref="rentalsPanelRef" />
-      <MyOrdersPanel ref="ordersPanelRef" />
+      <!-- Customer Records: read-only panels (account/) -->
+      <section class="customer-records-section">
+        <h3 class="customer-records-title">Kayıtlar</h3>
+        <MyReservationsPanel ref="reservationsPanelRef" />
+        <MyRentalsPanel ref="rentalsPanelRef" />
+        <MyOrdersPanel ref="ordersPanelRef" />
+      </section>
     </div>
   </div>
 </template>
@@ -84,9 +87,9 @@
 <script>
 import { api } from '../api/client.js';
 import { isLoggedIn, getActiveTenantId, setActiveTenantId, clearSession } from '../lib/session.js';
-import MyReservationsPanel from '../components/portal/MyReservationsPanel.vue';
-import MyRentalsPanel from '../components/portal/MyRentalsPanel.vue';
-import MyOrdersPanel from '../components/portal/MyOrdersPanel.vue';
+import MyReservationsPanel from '../components/account/MyReservationsPanel.vue';
+import MyRentalsPanel from '../components/account/MyRentalsPanel.vue';
+import MyOrdersPanel from '../components/account/MyOrdersPanel.vue';
 
 export default {
   name: 'AccountPortalPage',
@@ -414,5 +417,14 @@ export default {
 .status-active {
   color: #28a745;
   font-weight: 600;
+}
+
+.customer-records-section {
+  margin-top: 2rem;
+}
+
+.customer-records-title {
+  margin-bottom: 1rem;
+  color: #333;
 }
 </style>

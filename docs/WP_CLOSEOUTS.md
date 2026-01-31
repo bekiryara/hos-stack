@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Customer Account — Orders/Rentals/Reservations READ-ONLY panels — PASS
+
+- **Proof:** `docs/PROOFS/wp_customer_account_records_read_pass.md`
+- **Outcome:** Customer account now exposes read-only records panels (Orders, Rentals, Reservations) under `components/account/`; empty/error/retry standard; backend unchanged.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: HOS API — auth_routes split (NO BEHAVIOR CHANGE) — PASS
 
 - **Proof:** `docs/PROOFS/wp_hos_auth_routes_split_pass.md`
