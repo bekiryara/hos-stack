@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Portal records panels base — PASS
+
+- **Proof:** `docs/PROOFS/wp_portal_records_panel_base_pass.md`
+- **Outcome:** 6 panel (Firm + Account Orders/Rentals/Reservations) RecordsPanelBase ile merkezileştirildi; thin wrapper’lar scope+kind ile base kullanıyor; davranış aynı; backend yok.
+- **Gates:** local gates PASS + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Toast WP-3 — ActionResultBox standard — PASS
 
 - **Proof:** `docs/PROOFS/wp_toast_wp3_action_result_box_pass.md`
