@@ -32,11 +32,12 @@
       <label>
         Category <span class="required">*</span>
         <select v-model.number="local.category_id" required class="form-input" @change="emitCategoryChange">
-          <option value="">Select category...</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.slug }} ({{ cat.id }})
+          <option value="">Select leaf category...</option>
+          <option v-for="cat in leafCategories" :key="cat.id" :value="cat.id">
+            {{ cat.slug || cat.title }} ({{ cat.id }})
           </option>
         </select>
+        <small v-if="!leafCategories.length && categories.length" class="field-hint">Sadece yaprak kategoriler listelenir.</small>
       </label>
     </div>
 
@@ -92,36 +93,46 @@
         v-for="filter in filterSchema.filters"
         :key="filter.attribute_key"
         class="attribute-field"
+        :class="{ 'has-error': fieldError(filter.attribute_key) }"
       >
         <label>
-          {{ filter.attribute_key }}
+          {{ filter.label || filter.attribute_key }}
           <span v-if="filter.required" class="required-badge">required</span>
-          <span v-if="filter.value_type" class="type-badge">{{ filter.value_type }}</span>
+          <span v-if="filter.type || filter.value_type" class="type-badge">{{ filter.type || filter.value_type }}</span>
         </label>
+        <select
+          v-if="isSelectField(filter)"
+          v-model="local.attributes[filter.attribute_key]"
+          class="form-input"
+        >
+          <option value=""></option>
+          <option v-for="opt in getOptions(filter)" :key="String(opt)" :value="opt">{{ opt }}</option>
+        </select>
         <input
-          v-if="filter.value_type === 'string'"
+          v-else-if="filter.value_type === 'string' || (filter.type === 'text' && filter.value_type !== 'number')"
           v-model="local.attributes[filter.attribute_key]"
           type="text"
           :placeholder="filter.attribute_key"
           class="form-input"
         />
         <input
-          v-else-if="filter.value_type === 'boolean'"
+          v-else-if="filter.value_type === 'boolean' || filter.type === 'boolean'"
           v-model="local.attributes[filter.attribute_key]"
           type="checkbox"
           class="form-checkbox"
         />
         <input
-          v-else-if="filter.value_type === 'number'"
+          v-else-if="filter.value_type === 'number' || filter.type === 'number' || filter.type === 'range'"
           v-model.number="local.attributes[filter.attribute_key]"
           type="number"
           :placeholder="filter.attribute_key"
           class="form-input"
         />
+        <span v-if="fieldError(filter.attribute_key)" class="field-error">{{ fieldError(filter.attribute_key) }}</span>
       </div>
     </div>
 
-    <button type="submit" :disabled="loading || !tenantId" class="submit-button">
+    <button type="submit" :disabled="loading || !tenantId || !canSubmit" class="submit-button">
       {{ loading ? 'Creating...' : 'Create Listing (DRAFT)' }}
     </button>
   </form>
@@ -236,6 +247,24 @@ export default {
   padding: 1rem;
   background: #f9f9f9;
   border-radius: 4px;
+}
+
+.attribute-field.has-error {
+  border-left: 3px solid #d32f2f;
+}
+
+.field-error {
+  display: block;
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.field-hint {
+  display: block;
+  color: #666;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
 }
 
 .submit-button {

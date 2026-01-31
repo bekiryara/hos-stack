@@ -25,6 +25,7 @@
       :tenant-id="tenantId"
       :tenant-id-load-error="tenantIdLoadError"
       :loading="loading"
+      :backend-error="backendErrorDetails"
       @category-change="onCategoryChange"
       @submit="onFormSubmit"
     />
@@ -165,7 +166,12 @@ export default {
         })
         .catch((err) => {
           const normalized = normalizeApiError(err);
-          this.error = { status: normalized.status, errorCode: normalized.code, message: normalized.message };
+          this.error = {
+            status: normalized.status,
+            errorCode: normalized.code,
+            message: normalized.message,
+            data: err.data ?? err.response?.data ?? null,
+          };
           notifyApiError(err, 'Create listing');
         })
         .finally(() => {

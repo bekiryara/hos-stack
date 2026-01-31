@@ -5,6 +5,14 @@
 
 ---
 
+## P0 CORE: Category/Catalog → Schema-driven Create Listing → Publish → Search — PASS
+
+- **Proof:** `docs/PROOFS/p0_core_category_catalog_schema_driven_pass.md`
+- **Outcome:** Backend guardrails (unknown keys, required, enum, leaf-only, 422 tenant format, NUMERIC range); frontend schema-driven CreateListingForm (select/enum, number, boolean, leaf-only); ops listing_discovery_proof with P0 E2E + negative tests.
+- **Gates:** catalog_contract_check + listing_contract_check + listing_discovery_proof → all PASS.
+
+---
+
 ## WP-NEXT: Listing ActionBar (modes-aware) + Detail Fallback merkezileştirme — PASS
 
 - **Proof:** `docs/PROOFS/wp_listing_actionbar_modes_plus_detail_fallback_central_pass.md`

@@ -31,12 +31,14 @@ class TenantScope
         }
 
         // Validate tenant_id format (WP-8: store-scope endpoints require valid UUID format)
+        // P0 CORE: Invalid format -> 422 (validation); valid format but forbidden -> 403
         $membershipClient = new MembershipClient();
         if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
             return response()->json([
-                'error' => 'FORBIDDEN_SCOPE',
-                'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
-            ], 403);
+                'error' => 'invalid_tenant_id_format',
+                'message' => 'X-Active-Tenant-Id must be a valid UUID format',
+                'code' => 'invalid_tenant_id_format',
+            ], 422);
         }
 
         // WP-61B: In GENESIS mode, skip membership validation when unauthenticated
