@@ -98,6 +98,7 @@
 <script>
 import { login, hosApiRequest } from '../api/client.js';
 import { getTenantSlug, setTenantSlug } from '../lib/session.js';
+import { notifyError } from '../lib/toast/notify.js';
 
 export default {
   name: 'LoginPage',
@@ -135,6 +136,10 @@ export default {
     
     // WP-NEXT: Fetch feature flags to check if Google OAuth is enabled
     await this.loadFeatureFlags();
+    // Toast when redirected due to expired/missing auth
+    if (this.$route.query.reason === 'expired') {
+      notifyError('Auth required');
+    }
   },
   methods: {
     async loadFeatureFlags() {
@@ -231,6 +236,7 @@ export default {
           status: err.status || 0,
           message: err.message || 'Giriş başarısız',
         };
+        notifyError('Login failed');
       } finally {
         this.loading = false;
       }

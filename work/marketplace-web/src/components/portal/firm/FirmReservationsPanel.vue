@@ -38,6 +38,7 @@
 
 <script>
 import { api, normalizeListResponse } from '../../../api/client.js';
+import { notifySuccess, notifyError } from '../../../lib/toast/notify.js';
 
 function extractItems(resp) {
   const { items } = normalizeListResponse(resp);
@@ -94,9 +95,11 @@ export default {
       this.error = null;
       try {
         await api.acceptStoreReservation(id, this.activeTenantId);
+        notifySuccess('Accepted');
         await this.load();
       } catch (err) {
         this.error = err.message || err.data?.message || 'İşlem başarısız';
+        notifyError('Action failed');
       } finally {
         this.transitioning = { ...this.transitioning, [id]: false };
       }
@@ -107,9 +110,11 @@ export default {
       this.error = null;
       try {
         await api.rejectStoreReservation(id, this.activeTenantId);
+        notifySuccess('Rejected');
         await this.load();
       } catch (err) {
         this.error = err.message || err.data?.message || 'İşlem başarısız';
+        notifyError('Action failed');
       } finally {
         this.transitioning = { ...this.transitioning, [id]: false };
       }

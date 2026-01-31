@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Toast WP-1 — Core notifier + 2 integrations — PASS
+
+- **Proof:** `docs/PROOFS/wp_toast_wp1_core_pass.md`
+- **Outcome:** marketplace-web core notifier added (ToastHost + notifySuccess/notifyError/notifyInfo); 2 integrations: Firm accept/reject toasts, auth failure toasts (login/register + expired redirect). No backend changes.
+- **Gates:** local gates PASS + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Transactions detail — fetch-by-id + safe fallback — PASS
 
 - **Proof:** `docs/PROOFS/wp_transactions_detail_fetch_by_id_pass.md`

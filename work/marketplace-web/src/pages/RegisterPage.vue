@@ -70,6 +70,7 @@
 
 <script>
 import { register } from '../api/client.js';
+import { notifyError } from '../lib/toast/notify.js';
 
 export default {
   name: 'RegisterPage',
@@ -153,6 +154,7 @@ export default {
           status: err.status || 0,
           message: err.message || 'Kayıt başarısız',
         };
+        notifyError('Registration failed');
       } finally {
         this.loading = false;
       }

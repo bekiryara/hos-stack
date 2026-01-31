@@ -25,9 +25,11 @@
 <script>
 import { api } from './api/client.js';
 import { isLoggedIn, getUser, clearSession, getActiveTenantId } from './lib/session.js';
+import ToastHost from './components/ToastHost.vue';
 
 export default {
   name: 'App',
+  components: { ToastHost },
   data() {
     return {
       // Forces re-computation of computed properties when session changes.
