@@ -45,33 +45,7 @@
       <div class="actions">
         <button @click="openMessaging" class="action-button">Message Seller</button>
       </div>
-      <div v-if="listing" class="action-bar">
-        <p v-if="!listingId" class="action-bar-note">Listing id missing</p>
-        <button
-          type="button"
-          class="action-button"
-          :disabled="!listingId || transitioning"
-          @click="goToOrder"
-        >
-          Sipariş Ver
-        </button>
-        <button
-          type="button"
-          class="action-button"
-          :disabled="!listingId || transitioning"
-          @click="goToRental"
-        >
-          Kirala
-        </button>
-        <button
-          type="button"
-          class="action-button"
-          :disabled="!listingId || transitioning"
-          @click="goToReservation"
-        >
-          Rezervasyon Yap
-        </button>
-      </div>
+      <TransactionActionBar v-if="listing" :listing="listing" />
       
       <div v-if="listing && listing.status === 'draft'" class="publish-section">
         <h3>Publish Listing</h3>
@@ -85,6 +59,7 @@
 import { api } from '../api/client';
 import { getCategoriesTree } from '../lib/catalogSpine';
 import PublishListingAction from '../components/PublishListingAction.vue';
+import TransactionActionBar from '../components/listing/TransactionActionBar.vue';
 
 function findCategoryInTree(nodes, categoryId) {
   if (!Array.isArray(nodes)) return null;
@@ -103,6 +78,7 @@ export default {
   name: 'ListingDetailPage',
   components: {
     PublishListingAction,
+    TransactionActionBar,
   },
   props: {
     id: {
@@ -131,7 +107,6 @@ export default {
       loading: true,
       error: null,
       categoryName: null,
-      transitioning: false,
     };
   },
   async mounted() {
@@ -189,27 +164,6 @@ export default {
       }
       this.$router.push({ path: `/listing/${this.id}/message`, query });
     },
-    goToReservation() {
-      if (!this.listingId) return;
-      this.transitioning = true;
-      this.$router
-        .push({ path: '/reservation/create', query: { listing_id: this.listingId, from: 'listing' } })
-        .finally(() => { this.transitioning = false; });
-    },
-    goToRental() {
-      if (!this.listingId) return;
-      this.transitioning = true;
-      this.$router
-        .push({ path: '/rental/create', query: { listing_id: this.listingId, from: 'listing' } })
-        .finally(() => { this.transitioning = false; });
-    },
-    goToOrder() {
-      if (!this.listingId) return;
-      this.transitioning = true;
-      this.$router
-        .push({ path: '/order/create', query: { listing_id: this.listingId, quantity: '1', from: 'listing' } })
-        .finally(() => { this.transitioning = false; });
-    },
   },
 };
 </script>
@@ -264,20 +218,6 @@ export default {
   margin-top: 2rem;
   display: flex;
   gap: 1rem;
-}
-
-.action-bar {
-  margin-top: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.action-bar-note {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #666;
 }
 
 .action-button {

@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Listing ActionBar (modes-aware) + Detail Fallback merkezileştirme — PASS
+
+- **Proof:** `docs/PROOFS/wp_listing_actionbar_modes_plus_detail_fallback_central_pass.md`
+- **Outcome:** Listing action bar transaction_modes'a göre render (modes.js + TransactionActionBar); detail limited view + banner tek merkez (limited_view.js + LimitedViewBanner); drift riski azaldı; backend yok.
+- **Gates:** local gates PASS + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Listing Detail Action Bar → Create entrypoints — PASS
 
 - **Proof:** `docs/PROOFS/wp_listing_detail_action_bar_to_create_pass.md`
