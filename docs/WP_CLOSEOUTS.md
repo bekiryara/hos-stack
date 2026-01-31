@@ -1,7 +1,15 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-02-01  
+**Last Updated:** 2026-01-31  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-NEXT: Marketplace — api/client.js split (no behavior change) — PASS
+
+- **Proof:** `docs/PROOFS/wp_marketplace_api_client_split_pass.md`
+- **Outcome:** `api/client.js` (567 satır) → request wrapper + 5 domain modülleri (catalog, customer, store, hos, messaging). client.js şişmesi durduruldu; domain sınırları net; yeni endpoint eklemek artık bloat üretmiyor. Export yüzeyi ve davranış birebir aynı.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
 
 ---
 
