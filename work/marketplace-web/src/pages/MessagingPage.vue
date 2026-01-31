@@ -2,7 +2,8 @@
   <div class="messaging-page">
     <div class="header">
       <button @click="$router.back()" class="back-button">← Back</button>
-      <h2>Message Seller</h2>
+      <h2>{{ headerTitle }}</h2>
+      <span v-if="threadId" class="thread-id-debug">Thread: {{ threadId }}</span>
     </div>
     <div v-if="loading" class="loading">Loading conversation...</div>
     <div v-else-if="fatalError" class="error">
@@ -16,7 +17,7 @@
         <div
           v-for="message in messages"
           :key="message.id"
-          :class="['message', message.sender_type === 'user' ? 'message-user' : 'message-other']"
+          :class="['message', isMine(message) ? 'message-user' : 'message-other']"
         >
           <div class="message-body">{{ message.body }}</div>
           <div class="message-time">{{ formatTime(message.created_at) }}</div>
@@ -38,7 +39,7 @@
 </template>
 
 <script>
-import { getToken, getUserId, clearSession } from '../lib/session.js';
+import { getToken, getUserId, getActiveTenantId, clearSession } from '../lib/session.js';
 import { messagingUpsertThread, messagingGetThreadByContext, messagingSendMessage } from '../api/client.js';
 
 export default {
@@ -59,12 +60,23 @@ export default {
       sending: false,
       threadId: null,
       userId: null,
+      mode: 'customer', // 'customer' | 'firm'
+      senderType: 'user',
+      senderId: null,
     };
+  },
+  computed: {
+    headerTitle() {
+      return this.mode === 'firm' ? 'Reply to Customer' : 'Message Seller';
+    },
   },
   async mounted() {
     await this.initializeMessaging();
   },
   methods: {
+    isMine(message) {
+      return message && message.sender_type === this.senderType && String(message.sender_id) === String(this.senderId);
+    },
     handleAuthExpired() {
       clearSession();
       this.$router.push('/login?reason=expired');
@@ -75,24 +87,35 @@ export default {
         this.fatalError = null;
         this.inlineError = null;
 
-        // Get user ID from JWT token
         const token = getToken();
         if (!token) {
           this.fatalError = 'Not authenticated. Please login first.';
           return;
         }
 
-        const uid = getUserId();
-        if (!uid) {
-          this.fatalError = 'Invalid token. Please login again.';
-          return;
+        this.mode = this.$route.query.as === 'firm' ? 'firm' : 'customer';
+
+        if (this.mode === 'customer') {
+          const uid = getUserId();
+          if (!uid) {
+            this.fatalError = 'Invalid token. Please login again.';
+            return;
+          }
+          this.userId = uid;
+          this.senderType = 'user';
+          this.senderId = uid;
+        } else {
+          const tenantId = getActiveTenantId();
+          if (!tenantId) {
+            this.fatalError = 'Active firm required. Please select a firm from Account.';
+            this.$router.replace({ path: '/account', query: { reason: 'firm_required' } }).catch(() => {});
+            return;
+          }
+          this.senderType = 'tenant';
+          this.senderId = tenantId;
         }
-        this.userId = uid;
 
-        // Get or create thread (upsert ensures thread exists)
         await this.ensureThread();
-
-        // Load messages (by-context, will also set threadId from response)
         await this.loadMessages();
       } catch (err) {
         if (err?.status === 401) {
@@ -105,23 +128,25 @@ export default {
       }
     },
     async ensureThread() {
-      try {
-        // Upsert thread for this listing
-        const data = await messagingUpsertThread({
-          contextType: 'listing',
-          contextId: this.id,
-          participants: [{ type: 'user', id: this.userId }],
-        });
-        this.threadId = data?.thread_id || null;
-        if (!this.threadId) {
-          throw new Error('Missing thread_id in upsert response');
+      const listingTenantId = this.$route.query.tenant_id || null;
+      let participants = [];
+      if (this.mode === 'customer') {
+        participants = [{ type: 'user', id: this.senderId }];
+        if (listingTenantId) {
+          participants.push({ type: 'tenant', id: listingTenantId });
         }
-      } catch (err) {
-        if (err?.status === 401) {
-          this.handleAuthExpired();
-          return;
-        }
-        throw new Error('Failed to initialize thread: ' + err.message);
+      } else {
+        participants = [{ type: 'tenant', id: this.senderId }];
+      }
+
+      const data = await messagingUpsertThread({
+        contextType: 'listing',
+        contextId: this.id,
+        participants,
+      });
+      this.threadId = data?.thread_id || null;
+      if (!this.threadId) {
+        throw new Error('Missing thread_id in upsert response');
       }
     },
     async loadMessages() {
@@ -142,7 +167,7 @@ export default {
       }
     },
     async sendMessage() {
-      if (!this.newMessage.trim() || !this.threadId || !this.userId || this.sending) return;
+      if (!this.newMessage.trim() || !this.threadId || !this.senderId || this.sending) return;
 
       this.sending = true;
       this.inlineError = null;
@@ -151,8 +176,8 @@ export default {
 
       try {
         await messagingSendMessage(this.threadId, {
-          senderType: 'user',
-          senderId: this.userId,
+          senderType: this.senderType,
+          senderId: this.senderId,
           body: messageBody,
         });
         await this.loadMessages();
@@ -162,7 +187,6 @@ export default {
           return;
         }
         this.inlineError = 'Failed to send message: ' + (err?.message || String(err));
-        // Restore message on error
         this.newMessage = messageBody;
       } finally {
         this.sending = false;
@@ -205,6 +229,12 @@ export default {
 
 .back-button:hover {
   background: #e5e5e5;
+}
+
+.thread-id-debug {
+  font-size: 0.75rem;
+  color: #888;
+  margin-left: 0.5rem;
 }
 
 .loading {

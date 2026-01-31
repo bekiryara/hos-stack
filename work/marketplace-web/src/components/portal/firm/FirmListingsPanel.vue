@@ -26,7 +26,7 @@
             <td>{{ item.category_id || '—' }}</td>
             <td class="actions-cell">
               <router-link :to="`/listing/${item.id}`" class="btn-action">View</router-link>
-              <router-link :to="`/listing/${item.id}/message`" class="btn-action">Message</router-link>
+              <router-link :to="`/listing/${item.id}/message?as=firm`" class="btn-action">Messages</router-link>
               <button type="button" class="btn-action btn-disabled" disabled title="not implemented">Edit</button>
             </td>
           </tr>

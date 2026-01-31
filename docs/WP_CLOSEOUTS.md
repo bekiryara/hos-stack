@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Messaging v1 — Customer↔Firm round-trip (UI + minimal glue) — PASS
+
+- **Proof:** `docs/PROOFS/wp_messaging_roundtrip_customer_firm_pass.md`
+- **Outcome:** Messaging round-trip çalışıyor; upsert contract uyumlu (participants min 1); firm tenant reply mümkün; customer mesajı ve firm cevabı aynı thread’de görünür.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Customer Account — Orders/Rentals/Reservations READ-ONLY panels — PASS
 
 - **Proof:** `docs/PROOFS/wp_customer_account_records_read_pass.md`

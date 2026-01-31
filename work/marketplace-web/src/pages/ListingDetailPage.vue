@@ -173,7 +173,11 @@ export default {
       this.listing = updatedListing;
     },
     openMessaging() {
-      this.$router.push(`/listing/${this.id}/message`);
+      const query = { as: 'customer' };
+      if (this.listing?.tenant_id) {
+        query.tenant_id = this.listing.tenant_id;
+      }
+      this.$router.push({ path: `/listing/${this.id}/message`, query });
     },
     goToReservation() {
       this.$router.push({ path: '/reservation/create', query: { listing_id: this.id } });
