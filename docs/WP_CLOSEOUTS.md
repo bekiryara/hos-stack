@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Listing Detail — Category + Attributes (contract-safe) — PASS
+
+- **Proof:** `docs/PROOFS/wp_listing_detail_category_attributes_pass.md`
+- **Outcome:** Listing detail shows category name (best-effort from categories tree) and attributes with empty-safe, deterministically ordered render. Backend unchanged.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Firm Portal — Split panels (no behavior change) — PASS
 
 - **Proof:** `docs/PROOFS/wp_firm_portal_split_panels_pass.md`

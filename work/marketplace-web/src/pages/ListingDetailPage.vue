@@ -24,13 +24,18 @@
       </div>
       <div class="detail-section">
         <h3>Category</h3>
-        <p><strong>Category ID:</strong> {{ listing.category_id || '—' }}</p>
+        <p v-if="listing.category_id">
+          <strong>Category:</strong>
+          <template v-if="categoryName">{{ categoryName }} (ID: {{ listing.category_id }})</template>
+          <template v-else>Category ID: {{ listing.category_id }}</template>
+        </p>
+        <p v-else><strong>Category ID:</strong> —</p>
       </div>
       <div class="detail-section">
         <h3>Attributes</h3>
         <p v-if="!sortedAttributeKeys.length">No attributes</p>
         <ul v-else class="attributes-list">
-          <li v-for="key in sortedAttributeKeys" :key="key"><strong>{{ key }}:</strong> {{ listing.attributes[key] }}</li>
+          <li v-for="key in sortedAttributeKeys" :key="key"><strong>{{ key }}:</strong> {{ renderAttributeValue(normalizedAttributes[key]) }}</li>
         </ul>
       </div>
       <div v-if="listing" class="detail-section">
@@ -72,7 +77,21 @@
 
 <script>
 import { api } from '../api/client';
+import { getCategoriesTree } from '../lib/catalogSpine';
 import PublishListingAction from '../components/PublishListingAction.vue';
+
+function findCategoryInTree(nodes, categoryId) {
+  if (!Array.isArray(nodes)) return null;
+  const id = String(categoryId);
+  for (const node of nodes) {
+    if (String(node.id) === id) return node;
+    if (node.children?.length) {
+      const found = findCategoryInTree(node.children, categoryId);
+      if (found) return found;
+    }
+  }
+  return null;
+}
 
 export default {
   name: 'ListingDetailPage',
@@ -85,11 +104,14 @@ export default {
       required: true,
     },
   },
-  // WP: Listing Detail — Category + Attributes contract (deterministic, null-safe)
   computed: {
+    normalizedAttributes() {
+      const attrs = this.listing?.attributes;
+      if (attrs == null || typeof attrs !== 'object') return {};
+      return attrs;
+    },
     sortedAttributeKeys() {
-      if (!this.listing || !this.listing.attributes || typeof this.listing.attributes !== 'object') return [];
-      return Object.keys(this.listing.attributes).sort();
+      return Object.keys(this.normalizedAttributes).sort();
     },
   },
   data() {
@@ -97,15 +119,30 @@ export default {
       listing: null,
       loading: true,
       error: null,
+      categoryName: null,
     };
   },
   async mounted() {
     await this.loadListing();
   },
   methods: {
+    renderAttributeValue(value) {
+      if (value === '' || value === null || value === undefined) return '—';
+      return value;
+    },
     async loadListing() {
       try {
         this.listing = await api.getListing(this.id);
+        if (this.listing?.category_id) {
+          try {
+            const tree = await getCategoriesTree();
+            const nodes = Array.isArray(tree) ? tree : (tree?.items ?? []);
+            const found = findCategoryInTree(nodes, this.listing.category_id);
+            this.categoryName = found ? (found.name || found.slug || found.title || String(found.id)) : null;
+          } catch {
+            this.categoryName = null;
+          }
+        }
         this.loading = false;
       } catch (err) {
         // WP-62: Better error handling for 404 and other errors
