@@ -18,5 +18,7 @@
 
 ## Commands + outputs
 
-- `.\ops\run_wp_next_local_gates.ps1` => PASS (see gate run)
-- `.\ops\ops_run.ps1 -Profile Prototype` => OVERALL STATUS: PASS (see ops run)
+- `.\ops\run_wp_next_local_gates.ps1` => PASS
+- `.\ops\ops_run.ps1 -Profile Prototype` => OVERALL STATUS: PASS
+
+**Commit:** `fc3690b` (WP-NEXT: Account Records — detail links PASS)

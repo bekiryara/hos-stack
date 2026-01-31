@@ -33,6 +33,7 @@
 <script>
 import SectionShell from '../portal/SectionShell.vue';
 import { api } from '../../api/client.js';
+import { buildRentalDetailLink } from './account_record_links.js';
 
 function normalizeItems(res) {
   if (res == null) return [];
