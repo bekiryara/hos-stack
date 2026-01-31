@@ -1,21 +1,24 @@
 # Git attributes for line ending normalization
-# Ensures consistent line endings across platforms
+# WP-NEXT: repo eol policy — default auto; web sources LF; Windows scripts CRLF
 
-# Shell scripts: LF
-*.sh text eol=lf
+* text=auto
 
-# YAML files: LF
+# Web / source: LF
+*.vue text eol=lf
+*.js  text eol=lf
+*.ts  text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+*.md  text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
 
-# Markdown: LF
-*.md text eol=lf
-
-# PowerShell scripts: CRLF (Windows standard)
+# Windows scripts: CRLF
 *.ps1 text eol=crlf
 
-# JSON: LF
-*.json text eol=lf
+# Shell scripts: LF
+*.sh text eol=lf
 
 # PHP: LF
 *.php text eol=lf
