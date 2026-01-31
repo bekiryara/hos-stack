@@ -106,8 +106,10 @@ export default {
   },
   computed: {
     normalizedAttributes() {
-      const attrs = this.listing?.attributes;
-      if (attrs == null || typeof attrs !== 'object') return {};
+      const listing = this.listing;
+      const attrs = (listing && listing.attributes && typeof listing.attributes === 'object')
+        ? listing.attributes
+        : {};
       return attrs;
     },
     sortedAttributeKeys() {
@@ -127,7 +129,18 @@ export default {
   },
   methods: {
     renderAttributeValue(value) {
-      if (value === '' || value === null || value === undefined) return '—';
+      if (value === null || value === undefined || value === '') return '—';
+      if (value === 0 || value === false) return value;
+      if (Array.isArray(value)) {
+        return value.map((v) => (v != null && typeof v === 'object' ? JSON.stringify(v) : v)).join(', ');
+      }
+      if (typeof value === 'object') {
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return '[object]';
+        }
+      }
       return value;
     },
     async loadListing() {

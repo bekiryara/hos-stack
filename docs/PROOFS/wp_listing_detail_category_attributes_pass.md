@@ -1,13 +1,13 @@
 # WP-NEXT: Listing Detail — Category + Attributes (contract-safe) PASS
 
-**Timestamp:** 2026-02-01  
+**Timestamp:** 2026-01-31  
 **Summary:** Listing detail page now renders category name (best-effort from getCategoriesTree) and attributes with contract-safe normalization. No backend/API change; display only.
 
 ## Changes
 
 ### ListingDetailPage.vue
 - **Category:** Resolve category name via getCategoriesTree(); find node by listing.category_id (recursive walk). Display: "Category: categoryName (ID: x)" when found; fallback "Category ID: x". Fallback when no category_id: "Category ID: —".
-- **Attributes:** normalizedAttributes = listing.attributes ?? {} (null/undefined → {}). sortedAttributeKeys = Object.keys(normalizedAttributes).sort(). renderAttributeValue(value): "" / null / undefined → "—"; 0 and false preserved. Template uses normalizedAttributes and renderAttributeValue for each key.
+- **Attributes:** normalizedAttributes = (listing && listing.attributes && typeof listing.attributes === 'object') ? listing.attributes : {}. sortedAttributeKeys = Object.keys(normalizedAttributes).sort(). renderAttributeValue(value): "" / null / undefined → "—"; 0 and false preserved; array → join(", "); object → JSON.stringify (try/catch → "[object]"). Template uses normalizedAttributes and renderAttributeValue for each key.
 - **API:** api.getListing(id) unchanged. getCategoriesTree() from catalogSpine (uses api.getCategories()).
 - **UI language:** EN preserved (Loading listing..., No attributes, Category, etc.).
 - **Styles:** Existing detail-section / attributes-list scoped CSS; no new global CSS.
@@ -23,8 +23,8 @@
 From repo root (e.g. D:\stack):
 
 ```text
-.\ops\run_wp_next_local_gates.ps1   => WP-NEXT LOCAL GATES: PASS
+.\ops\run_wp_next_local_gates.ps1   => === WP-NEXT LOCAL GATES: PASS ===
 .\ops\ops_run.ps1 -Profile Prototype => OVERALL STATUS: PASS
 ```
 
-Commit: 564969b
+**Commit:** `19fdff6` — WP-NEXT: Listing detail category+attributes — PASS
