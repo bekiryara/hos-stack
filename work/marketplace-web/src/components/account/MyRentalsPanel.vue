@@ -83,6 +83,9 @@ export default {
       if (val == null || val === '') return '—';
       return val;
     },
+    detailLink(row) {
+      return buildRentalDetailLink(row);
+    },
   },
 };
 </script>

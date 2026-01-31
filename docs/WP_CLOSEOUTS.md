@@ -1,7 +1,15 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-01-31  
+**Last Updated:** 2026-02-01  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-NEXT: Account Records — Detail Links — PASS
+
+- **Proof:** `docs/PROOFS/wp_account_records_detail_links_pass.md`
+- **Outcome:** Account panellerinde ID → detail navigation düzeltildi; query standardize edildi (`account_record_links.js` util).
+- **Gates:** local gates PASS + ops_run Prototype PASS.
 
 ---
 
