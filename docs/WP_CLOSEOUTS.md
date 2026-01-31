@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Customer Create → Detail Redirect + Toast — PASS
+
+- **Proof:** `docs/PROOFS/wp_customer_create_redirect_to_detail_pass.md`
+- **Outcome:** Order/Rental/Reservation create sonrası otomatik detail redirect + toast; limited query fallback ile deterministik UX; backend yok.
+- **Gates:** local gates PASS + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Portal records panels base — PASS
 
 - **Proof:** `docs/PROOFS/wp_portal_records_panel_base_pass.md`
