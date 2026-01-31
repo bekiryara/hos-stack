@@ -364,28 +364,4 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     return response()->json(['id' => $row->id, 'status' => $row->status, 'updated_at' => $row->updated_at], 200);
 });
 
-// GET /v1/reservations/{id} - Get reservation
-Route::get('/v1/reservations/{id}', function ($id) {
-    $reservation = DB::table('reservations')->where('id', $id)->first();
-    
-    if (!$reservation) {
-        return response()->json([
-            'error' => 'reservation_not_found',
-            'message' => "Reservation with id {$id} not found"
-        ], 404);
-    }
-    
-    return response()->json([
-        'id' => $reservation->id,
-        'listing_id' => $reservation->listing_id,
-        'provider_tenant_id' => $reservation->provider_tenant_id,
-        'requester_user_id' => $reservation->requester_user_id,
-        'slot_start' => $reservation->slot_start,
-        'slot_end' => $reservation->slot_end,
-        'party_size' => $reservation->party_size,
-        'status' => $reservation->status,
-        'created_at' => $reservation->created_at,
-        'updated_at' => $reservation->updated_at
-    ]);
-});
 

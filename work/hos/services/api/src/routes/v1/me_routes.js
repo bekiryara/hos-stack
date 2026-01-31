@@ -63,6 +63,35 @@ export async function registerV1MeRoutes(app, { db }) {
     }
   });
 
+  app.get("/me/orders/:id", async (req, reply) => {
+    const payload = requireAuth(req, reply);
+    if (!payload) return;
+
+    const userId = payload.sub;
+    const id = req.params.id;
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+
+    try {
+      const response = await fetch(`${pazarBaseUrl}/api/v1/orders/${id}?buyer_user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": req.headers.authorization || "",
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        return reply.code(response.status).send({ error: "pazar_api_error", message: errorText });
+      }
+
+      const data = await response.json();
+      return reply.send(data);
+    } catch (e) {
+      return reply.code(502).send({ error: "pazar_api_unavailable", message: String(e.message) });
+    }
+  });
+
   app.get("/me/rentals", async (req, reply) => {
     const payload = requireAuth(req, reply);
     if (!payload) return;
@@ -91,6 +120,35 @@ export async function registerV1MeRoutes(app, { db }) {
     }
   });
 
+  app.get("/me/rentals/:id", async (req, reply) => {
+    const payload = requireAuth(req, reply);
+    if (!payload) return;
+
+    const userId = payload.sub;
+    const id = req.params.id;
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+
+    try {
+      const response = await fetch(`${pazarBaseUrl}/api/v1/rentals/${id}?renter_user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": req.headers.authorization || "",
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        return reply.code(response.status).send({ error: "pazar_api_error", message: errorText });
+      }
+
+      const data = await response.json();
+      return reply.send(data);
+    } catch (e) {
+      return reply.code(502).send({ error: "pazar_api_unavailable", message: String(e.message) });
+    }
+  });
+
   app.get("/me/reservations", async (req, reply) => {
     const payload = requireAuth(req, reply);
     if (!payload) return;
@@ -100,6 +158,35 @@ export async function registerV1MeRoutes(app, { db }) {
 
     try {
       const response = await fetch(`${pazarBaseUrl}/api/v1/reservations?requester_user_id=${userId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": req.headers.authorization || "",
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        return reply.code(response.status).send({ error: "pazar_api_error", message: errorText });
+      }
+
+      const data = await response.json();
+      return reply.send(data);
+    } catch (e) {
+      return reply.code(502).send({ error: "pazar_api_unavailable", message: String(e.message) });
+    }
+  });
+
+  app.get("/me/reservations/:id", async (req, reply) => {
+    const payload = requireAuth(req, reply);
+    if (!payload) return;
+
+    const userId = payload.sub;
+    const id = req.params.id;
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+
+    try {
+      const response = await fetch(`${pazarBaseUrl}/api/v1/reservations/${id}?requester_user_id=${userId}`, {
         method: "GET",
         headers: {
           "Authorization": req.headers.authorization || "",

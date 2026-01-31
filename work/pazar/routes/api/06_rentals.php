@@ -293,27 +293,4 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     return response()->json(['id' => $row->id, 'status' => $row->status, 'updated_at' => $row->updated_at], 200);
 });
 
-// GET /v1/rentals/{id} - Get rental
-Route::get('/v1/rentals/{id}', function ($id) {
-    $rental = DB::table('rentals')->where('id', $id)->first();
-    
-    if (!$rental) {
-        return response()->json([
-            'error' => 'rental_not_found',
-            'message' => "Rental with id {$id} not found"
-        ], 404);
-    }
-    
-    return response()->json([
-        'id' => $rental->id,
-        'listing_id' => $rental->listing_id,
-        'renter_user_id' => $rental->renter_user_id,
-        'provider_tenant_id' => $rental->provider_tenant_id,
-        'start_at' => $rental->start_at,
-        'end_at' => $rental->end_at,
-        'status' => $rental->status,
-        'created_at' => $rental->created_at,
-        'updated_at' => $rental->updated_at
-    ]);
-});
 

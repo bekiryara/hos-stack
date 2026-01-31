@@ -357,3 +357,172 @@ Route::middleware('auth.ctx')->get('/v1/reservations', function (\Illuminate\Htt
     }
 });
 
+// WP-NEXT: Transactions getById — GET /v1/orders/{id} (read-only, personal or store scope)
+Route::middleware('auth.ctx')->get('/v1/orders/{id}', function ($id, \Illuminate\Http\Request $request) {
+    if (!\Illuminate\Support\Str::isUuid($id)) {
+        return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Invalid id format'], 422);
+    }
+    if (!$request->has('buyer_user_id') && !$request->has('seller_tenant_id')) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'Either buyer_user_id or seller_tenant_id parameter is required'
+        ], 422);
+    }
+    $query = DB::table('orders')->where('id', $id);
+    if ($request->has('buyer_user_id')) {
+        $tokenUserId = $request->attributes->get('requester_user_id');
+        $buyerUserId = $request->input('buyer_user_id');
+        if (!$tokenUserId) {
+            return response()->json(['error' => 'AUTH_REQUIRED', 'message' => 'Authorization: Bearer token is required for personal scope queries'], 401);
+        }
+        if ($tokenUserId !== $buyerUserId) {
+            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Cannot query orders for other users (token user_id must match buyer_user_id)'], 403);
+        }
+        $query->where('buyer_user_id', $buyerUserId);
+    }
+    if ($request->has('seller_tenant_id')) {
+        $sellerTenantId = $request->input('seller_tenant_id');
+        $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+        if (!$tenantIdHeader) {
+            return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'X-Active-Tenant-Id header is required for store scope'], 400);
+        }
+        $membershipClient = new \App\Core\MembershipClient();
+        if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'], 403);
+        }
+        if ($tenantIdHeader !== $sellerTenantId) {
+            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id header must match seller_tenant_id parameter'], 403);
+        }
+        $query->where('seller_tenant_id', $sellerTenantId);
+    }
+    $order = $query->first();
+    if (!$order) {
+        return response()->json(['error' => 'order_not_found', 'message' => "Order with id {$id} not found"], 404);
+    }
+    $mapped = [
+        'id' => $order->id,
+        'listing_id' => $order->listing_id,
+        'buyer_user_id' => $order->buyer_user_id,
+        'seller_tenant_id' => $order->seller_tenant_id,
+        'quantity' => $order->quantity,
+        'status' => $order->status,
+        'totals' => $order->totals_json ? json_decode($order->totals_json, true) : null,
+        'created_at' => $order->created_at,
+        'updated_at' => $order->updated_at
+    ];
+    return response()->json(['data' => $mapped]);
+});
+
+// WP-NEXT: Transactions getById — GET /v1/rentals/{id} (read-only, personal or store scope)
+Route::middleware('auth.ctx')->get('/v1/rentals/{id}', function ($id, \Illuminate\Http\Request $request) {
+    if (!\Illuminate\Support\Str::isUuid($id)) {
+        return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Invalid id format'], 422);
+    }
+    if (!$request->has('renter_user_id') && !$request->has('provider_tenant_id')) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'Either renter_user_id or provider_tenant_id parameter is required'
+        ], 422);
+    }
+    $query = DB::table('rentals')->where('id', $id);
+    if ($request->has('renter_user_id')) {
+        $tokenUserId = $request->attributes->get('requester_user_id');
+        $renterUserId = $request->input('renter_user_id');
+        if (!$tokenUserId) {
+            return response()->json(['error' => 'AUTH_REQUIRED', 'message' => 'Authorization: Bearer token is required for personal scope queries'], 401);
+        }
+        if ($tokenUserId !== $renterUserId) {
+            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Cannot query rentals for other users (token user_id must match renter_user_id)'], 403);
+        }
+        $query->where('renter_user_id', $renterUserId);
+    }
+    if ($request->has('provider_tenant_id')) {
+        $providerTenantId = $request->input('provider_tenant_id');
+        $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+        if (!$tenantIdHeader) {
+            return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'X-Active-Tenant-Id header is required for store scope'], 400);
+        }
+        $membershipClient = new \App\Core\MembershipClient();
+        if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'], 403);
+        }
+        if ($tenantIdHeader !== $providerTenantId) {
+            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id header must match provider_tenant_id parameter'], 403);
+        }
+        $query->where('provider_tenant_id', $providerTenantId);
+    }
+    $rental = $query->first();
+    if (!$rental) {
+        return response()->json(['error' => 'rental_not_found', 'message' => "Rental with id {$id} not found"], 404);
+    }
+    $mapped = [
+        'id' => $rental->id,
+        'listing_id' => $rental->listing_id,
+        'renter_user_id' => $rental->renter_user_id,
+        'provider_tenant_id' => $rental->provider_tenant_id,
+        'start_at' => $rental->start_at,
+        'end_at' => $rental->end_at,
+        'status' => $rental->status,
+        'created_at' => $rental->created_at,
+        'updated_at' => $rental->updated_at
+    ];
+    return response()->json(['data' => $mapped]);
+});
+
+// WP-NEXT: Transactions getById — GET /v1/reservations/{id} (read-only, personal or store scope)
+Route::middleware('auth.ctx')->get('/v1/reservations/{id}', function ($id, \Illuminate\Http\Request $request) {
+    if (!\Illuminate\Support\Str::isUuid($id)) {
+        return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Invalid id format'], 422);
+    }
+    if (!$request->has('requester_user_id') && !$request->has('provider_tenant_id')) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'Either requester_user_id or provider_tenant_id parameter is required'
+        ], 422);
+    }
+    $query = DB::table('reservations')->where('id', $id);
+    if ($request->has('requester_user_id')) {
+        $tokenUserId = $request->attributes->get('requester_user_id');
+        $requesterUserId = $request->input('requester_user_id');
+        if (!$tokenUserId) {
+            return response()->json(['error' => 'AUTH_REQUIRED', 'message' => 'Authorization: Bearer token is required for personal scope queries'], 401);
+        }
+        if ($tokenUserId !== $requesterUserId) {
+            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Cannot query reservations for other users (token user_id must match requester_user_id)'], 403);
+        }
+        $query->where('requester_user_id', $requesterUserId);
+    }
+    if ($request->has('provider_tenant_id')) {
+        $providerTenantId = $request->input('provider_tenant_id');
+        $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+        if (!$tenantIdHeader) {
+            return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'X-Active-Tenant-Id header is required for store scope'], 400);
+        }
+        $membershipClient = new \App\Core\MembershipClient();
+        if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'], 403);
+        }
+        if ($tenantIdHeader !== $providerTenantId) {
+            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id header must match provider_tenant_id parameter'], 403);
+        }
+        $query->where('provider_tenant_id', $providerTenantId);
+    }
+    $reservation = $query->first();
+    if (!$reservation) {
+        return response()->json(['error' => 'reservation_not_found', 'message' => "Reservation with id {$id} not found"], 404);
+    }
+    $mapped = [
+        'id' => $reservation->id,
+        'listing_id' => $reservation->listing_id,
+        'provider_tenant_id' => $reservation->provider_tenant_id,
+        'requester_user_id' => $reservation->requester_user_id,
+        'slot_start' => $reservation->slot_start,
+        'slot_end' => $reservation->slot_end,
+        'party_size' => $reservation->party_size,
+        'status' => $reservation->status,
+        'created_at' => $reservation->created_at,
+        'updated_at' => $reservation->updated_at
+    ];
+    return response()->json(['data' => $mapped]);
+});
+

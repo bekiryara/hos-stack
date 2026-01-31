@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Transactions getById + Full Detail — PASS
+
+- **Proof:** `docs/PROOFS/wp_transactions_getbyid_full_detail_pass.md`
+- **Outcome:** Pazar by-id read endpoints (orders/rentals/reservations) + HOS /me proxy + frontend full fetch; limited banner only on fallback.
+- **Gates:** local gates PASS + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Account Records — Detail Links — PASS
 
 - **Proof:** `docs/PROOFS/wp_account_records_detail_links_pass.md`

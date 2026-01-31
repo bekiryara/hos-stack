@@ -30,6 +30,18 @@ export function getMyReservations(userId) {
   return hosApiRequest('/v1/me/reservations');
 }
 
+export function getMyOrderById(id) {
+  return hosApiRequest(`/v1/me/orders/${id}`);
+}
+
+export function getMyRentalById(id) {
+  return hosApiRequest(`/v1/me/rentals/${id}`);
+}
+
+export function getMyReservationById(id) {
+  return hosApiRequest(`/v1/me/reservations/${id}`);
+}
+
 // WP-68: Auto-attach Authorization header (no manual token needed)
 // PERSONAL persona: Authorization header required (SPEC §5.2)
 export function createReservation(data, userId) {

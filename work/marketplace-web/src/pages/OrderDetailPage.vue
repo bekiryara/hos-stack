@@ -16,6 +16,7 @@
       <ul class="detail-list">
         <li><strong>id:</strong> {{ safe(item.id) }}</li>
         <li><strong>listing_id:</strong> {{ safe(item.listing_id) }}</li>
+        <li><strong>quantity:</strong> {{ safe(item.quantity) }}</li>
         <li><strong>status:</strong> {{ safe(item.status) }}</li>
         <li><strong>created_at:</strong> {{ safe(item.created_at) }}</li>
         <li><strong>updated_at:</strong> {{ safe(item.updated_at) }}</li>
@@ -26,6 +27,7 @@
 
 <script>
 import SectionShell from '../components/portal/SectionShell.vue';
+import { api } from '../api/client.js';
 
 export default {
   name: 'OrderDetailPage',
@@ -47,19 +49,28 @@ export default {
       if (val == null || val === '') return '—';
       return val;
     },
-    load() {
+    async load() {
       this.loading = true;
       this.error = null;
-      const q = this.$route.query;
-      this.item = {
-        id: this.id,
-        listing_id: q.listing_id ?? null,
-        status: q.status ?? null,
-        created_at: q.created_at ?? null,
-        updated_at: q.updated_at ?? null,
-      };
-      this.limitedMode = true;
-      this.loading = false;
+      try {
+        const res = await api.getMyOrderById(this.id);
+        const item = res?.data ?? res?.item ?? res ?? {};
+        this.item = { ...item, id: this.id };
+        this.limitedMode = false;
+      } catch (err) {
+        this.error = err;
+        const q = this.$route.query;
+        this.item = {
+          id: this.id,
+          listing_id: q.listing_id ?? null,
+          status: q.status ?? null,
+          created_at: q.created_at ?? null,
+          updated_at: q.updated_at ?? null,
+        };
+        this.limitedMode = true;
+      } finally {
+        this.loading = false;
+      }
     },
   },
 };
