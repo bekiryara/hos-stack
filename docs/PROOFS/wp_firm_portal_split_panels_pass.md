@@ -55,7 +55,7 @@ From repo root (e.g. D:\stack):
 .\ops\ops_run.ps1 -Profile Prototype => OVERALL STATUS: PASS (after commit; git clean required)
 ```
 
-Commit: d03d198
+Commit: 27bd0dc
 
 ## Line Count
 
