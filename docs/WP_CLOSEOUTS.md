@@ -1,7 +1,15 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-01-31  
+**Last Updated:** 2026-02-01  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-NEXT: Firm Portal — Split panels (no behavior change) — PASS
+
+- **Proof:** `docs/PROOFS/wp_firm_portal_split_panels_pass.md`
+- **Outcome:** FirmPortalPage.vue split into page orchestrator + 4 panels (FirmListingsPanel, FirmOrdersPanel, FirmRentalsPanel, FirmReservationsPanel). Panel isolation: own load/error/retry/empty; one panel FAIL does not block others. Line count 577 → 120.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
 
 ---
 
