@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Transactions — detail pages (read-only) + account row links — PASS
+
+- **Proof:** `docs/PROOFS/wp_transactions_detail_pages_pass.md`
+- **Outcome:** Account rows link to /account/orders|rentals|reservations/:id; read-only detail pages; limited view fallback (no getById endpoint).
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Account — Records tabs + lazy-load — PASS
 
 - **Proof:** `docs/PROOFS/wp_account_tabs_lazyload_pass.md`

@@ -18,7 +18,9 @@
       </thead>
       <tbody>
         <tr v-for="row in items" :key="row.id">
-          <td>{{ safe(row.id) }}</td>
+          <td>
+            <router-link :to="detailLink(row)" class="id-link">{{ safe(row.id) }}</router-link>
+          </td>
           <td>{{ safe(row.listing_id) }}</td>
           <td>{{ safe(row.status) }}</td>
           <td>{{ safe(row.created_at) }}</td>
@@ -97,4 +99,6 @@ export default {
 .data-table th { padding: 0.75rem; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd; }
 .data-table td { padding: 0.75rem; border-bottom: 1px solid #eee; }
 .data-table tbody tr:hover { background: #f9f9f9; }
+.id-link { color: #0066cc; text-decoration: none; }
+.id-link:hover { text-decoration: underline; }
 </style>
