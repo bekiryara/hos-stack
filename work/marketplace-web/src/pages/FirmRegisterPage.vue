@@ -77,13 +77,13 @@
               />
             </div>
             
-            <div v-if="error" class="error-message">
-              {{ error }}
-            </div>
-            
-            <div v-if="success" class="success-message">
-              {{ success }}
-            </div>
+            <ActionResultBox
+              :loading="submitting"
+              :error="error"
+              :success="success"
+              retry-text="Tekrar Dene"
+              :on-retry="handleSubmit"
+            />
             
             <div class="form-actions">
               <button type="submit" :disabled="loading || submitting" class="submit-btn">
@@ -103,9 +103,11 @@ import { api } from '../api/client.js';
 import { isLoggedIn, setActiveTenantId, getActiveTenantId } from '../lib/session.js';
 import { normalizeApiError } from '../lib/errors/api_error.js';
 import { notifyApiSuccess, notifyApiError } from '../lib/toast/notify_api.js';
+import ActionResultBox from '../components/common/ActionResultBox.vue';
 
 export default {
   name: 'FirmRegisterPage',
+  components: { ActionResultBox },
   data() {
     return {
       formData: {
@@ -379,22 +381,6 @@ export default {
   margin-top: 0.25rem;
   color: #666;
   font-size: 0.875rem;
-}
-
-.error-message {
-  padding: 1rem;
-  background: #f8d7da;
-  color: #721c24;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-}
-
-.success-message {
-  padding: 1rem;
-  background: #d4edda;
-  color: #155724;
-  border-radius: 4px;
-  margin-bottom: 1rem;
 }
 
 .form-actions {

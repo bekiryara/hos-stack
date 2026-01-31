@@ -2,11 +2,11 @@
   <div class="create-listing-page">
     <h2>Create Listing (DRAFT)</h2>
 
-    <div v-if="error" class="error">
-      <strong>Error ({{ error.status }}):</strong> {{ error.errorCode || 'unknown' }}
-      <br />
-      {{ error.message }}
-    </div>
+    <ActionResultBox
+      :loading="loading"
+      :error="submitErrorMsg"
+      :on-retry="clearSubmitError"
+    />
 
     <CreateListingSuccessBox
       v-if="success"
@@ -37,14 +37,22 @@ import { getCategoriesTree, getFilterSchemaForCategory } from '../lib/catalogSpi
 import { isLoggedIn, getActiveTenantId, setActiveTenantId } from '../lib/session.js';
 import { normalizeApiError } from '../lib/errors/api_error.js';
 import { notifyApiSuccess, notifyApiError } from '../lib/toast/notify_api.js';
+import ActionResultBox from '../components/common/ActionResultBox.vue';
 import CreateListingForm from '../components/listing/create/CreateListingForm.vue';
 import CreateListingSuccessBox from '../components/listing/create/CreateListingSuccessBox.vue';
 
 export default {
   name: 'CreateListingPage',
   components: {
+    ActionResultBox,
     CreateListingForm,
     CreateListingSuccessBox,
+  },
+  computed: {
+    submitErrorMsg() {
+      if (!this.error) return null;
+      return typeof this.error === 'string' ? this.error : (this.error.message || null);
+    },
   },
   data() {
     return {
@@ -110,6 +118,9 @@ export default {
         console.error('Failed to load filter schema:', err);
         this.filterSchema = null;
       }
+    },
+    clearSubmitError() {
+      this.error = null;
     },
     onFormSubmit(formSnapshot) {
       if (!this.tenantId || !formSnapshot.category_id || !formSnapshot.title || (formSnapshot.transaction_modes || []).length === 0) {
@@ -217,13 +228,5 @@ export default {
 <style scoped>
 .create-listing-page {
   max-width: 800px;
-}
-
-.error {
-  background: #ffebee;
-  color: #d32f2f;
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
 }
 </style>

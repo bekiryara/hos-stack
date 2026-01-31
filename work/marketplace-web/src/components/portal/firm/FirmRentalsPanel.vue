@@ -2,13 +2,14 @@
   <section class="portal-section">
     <h3>Gelen Kiralama Talepleri</h3>
     <p class="section-hint">Onayla veya Reddet ile kiralama talebi durumunu güncelleyebilirsiniz.</p>
-    <div v-if="loading" class="section-loading">Loading …</div>
-    <div v-else-if="error" class="section-error-box">
-      <p>{{ error }}</p>
-      <button type="button" class="btn-retry" @click="load">Retry</button>
-    </div>
-    <div v-else-if="!items.length" class="section-empty">No rentals yet</div>
-    <div v-else class="section-list">
+    <ActionResultBox
+      :loading="loading"
+      :error="error"
+      :empty="items.length === 0"
+      empty-text="No rentals yet"
+      :on-retry="load"
+    />
+    <div v-if="!loading && !error && items.length" class="section-list">
       <table class="data-table">
         <thead>
           <tr>
@@ -47,6 +48,7 @@ function extractItems(resp) {
 
 export default {
   name: 'FirmRentalsPanel',
+  components: { ActionResultBox },
   props: {
     activeTenantId: { type: String, required: true },
   },
@@ -140,43 +142,6 @@ export default {
   margin: 0 0 0.75rem 0;
   font-size: 0.875rem;
   color: #666;
-}
-
-.section-loading,
-.section-empty {
-  padding: 1rem 0;
-  color: #666;
-}
-
-.section-error-box {
-  padding: 1rem;
-  background: #ffebee;
-  border: 1px solid #d32f2f;
-  border-radius: 4px;
-  color: #c62828;
-}
-
-.section-error-box p {
-  margin: 0 0 0.75rem 0;
-}
-
-.btn-retry {
-  padding: 0.4rem 0.8rem;
-  background: #d32f2f;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-.btn-retry:hover {
-  background: #b71c1c;
-}
-
-.section-empty {
-  font-style: italic;
-  color: #999;
 }
 
 .actions-cell {

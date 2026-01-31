@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Toast WP-3 — ActionResultBox standard — PASS
+
+- **Proof:** `docs/PROOFS/wp_toast_wp3_action_result_box_pass.md`
+- **Outcome:** ActionResultBox standard adopted in firm panels + create listing + firm register; reduced repeated UI (loading/error/success/empty + retry); panel isolation preserved; no backend change.
+- **Gates:** local gates PASS + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Toast WP-2 — API error standard + 3 flows — PASS
 
 - **Proof:** `docs/PROOFS/wp_toast_wp2_api_error_standard_pass.md`
