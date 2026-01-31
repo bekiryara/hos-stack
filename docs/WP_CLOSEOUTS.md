@@ -1,7 +1,15 @@
 # WP Closeouts - Workspace Package Summaries
 
-**Last Updated:** 2026-02-01  
+**Last Updated:** 2026-01-31  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
+
+---
+
+## WP-NEXT: HOS API — auth_routes split (NO BEHAVIOR CHANGE) — PASS
+
+- **Proof:** `docs/PROOFS/wp_hos_auth_routes_split_pass.md`
+- **Outcome:** auth_routes.js split into auth/ (index, helpers, register, login, refresh, logout, google_oauth); thin wrapper in auth_routes.js; route surface unchanged.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS (ops_run requires clean git; commit sonrası doğrulandı).
 
 ---
 
