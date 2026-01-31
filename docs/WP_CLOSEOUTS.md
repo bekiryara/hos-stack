@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Store Scope AuthZ Hardening — PASS
+
+- **Proof:** `docs/PROOFS/wp_store_scope_authz_hardening_pass.md`
+- **Outcome:** Store-scope read endpoints (orders/rentals/reservations list + by-id) now require Authorization + HOS membership check; tenant boundary enforced.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Transactions getById + Full Detail — PASS
 
 - **Proof:** `docs/PROOFS/wp_transactions_getbyid_full_detail_pass.md`

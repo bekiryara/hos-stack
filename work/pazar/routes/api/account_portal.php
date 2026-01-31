@@ -3,6 +3,60 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 
+// WP-NEXT: Store-scope authz hardening — require Authorization + HOS membership for tenant-bound reads.
+/**
+ * Enforce store-scope authz: X-Active-Tenant-Id + Authorization + HOS membership (me).
+ * Returns a JSON response to return (4xx/5xx) or null if authorized.
+ *
+ * @param \Illuminate\Http\Request $request
+ * @param \App\Core\MembershipClient $membershipClient
+ * @param string $tenantIdParam Value of tenant param (seller_tenant_id or provider_tenant_id)
+ * @return \Illuminate\Http\JsonResponse|null
+ */
+function requireStoreScopeAuthz(\Illuminate\Http\Request $request, \App\Core\MembershipClient $membershipClient, string $tenantIdParam): ?\Illuminate\Http\JsonResponse
+{
+    $tenantIdHeader = $request->header('X-Active-Tenant-Id');
+    if ($tenantIdHeader === null || $tenantIdHeader === '') {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'X-Active-Tenant-Id header is required for store scope'
+        ], 400);
+    }
+    if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'X-Active-Tenant-Id must be a valid UUID'
+        ], 422);
+    }
+    if ($tenantIdHeader !== $tenantIdParam) {
+        return response()->json([
+            'error' => 'FORBIDDEN',
+            'message' => 'X-Active-Tenant-Id header must match tenant parameter'
+        ], 403);
+    }
+    $authHeader = $request->header('Authorization');
+    if (!$authHeader || !preg_match('/^Bearer\s+.+/i', $authHeader)) {
+        return response()->json([
+            'error' => 'UNAUTHORIZED',
+            'message' => 'Authorization: Bearer token is required for store scope'
+        ], 401);
+    }
+    $result = $membershipClient->checkMembershipViaHos($tenantIdParam, $authHeader);
+    if ($result === null) {
+        return response()->json([
+            'error' => 'AUTHZ_UNAVAILABLE',
+            'message' => 'Membership check unavailable (HOS timeout or error)'
+        ], 503);
+    }
+    if (($result['allowed'] ?? false) !== true) {
+        return response()->json([
+            'error' => 'FORBIDDEN',
+            'message' => 'Invalid membership or tenant access denied'
+        ], 403);
+    }
+    return null;
+}
+
 // WP-12: Account Portal Read Endpoints (Read-Only)
 
 // WP-12.1: GET /v1/orders - List orders (Personal or Store scope)
@@ -44,36 +98,14 @@ Route::middleware('auth.ctx')->get('/v1/orders', function (\Illuminate\Http\Requ
             $query->where('buyer_user_id', $buyerUserId);
         }
         
-        // Store scope: Filter by seller_tenant_id (requires X-Active-Tenant-Id)
+        // Store scope: Filter by seller_tenant_id (WP-NEXT: auth + HOS membership required)
         if ($request->has('seller_tenant_id')) {
             $sellerTenantId = $request->input('seller_tenant_id');
-            $tenantIdHeader = $request->header('X-Active-Tenant-Id');
-            
-            // WP-12.1: Store scope requires X-Active-Tenant-Id header
-            if (!$tenantIdHeader) {
-                return response()->json([
-                    'error' => 'VALIDATION_ERROR',
-                    'message' => 'X-Active-Tenant-Id header is required for store scope'
-                ], 400);
-            }
-            
-            // WP-12.1: Validate tenant_id format (UUID format check)
             $membershipClient = new \App\Core\MembershipClient();
-            if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
-                return response()->json([
-                    'error' => 'FORBIDDEN_SCOPE',
-                    'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
-                ], 403);
+            $err = requireStoreScopeAuthz($request, $membershipClient, $sellerTenantId);
+            if ($err !== null) {
+                return $err;
             }
-            
-            // Verify X-Active-Tenant-Id matches seller_tenant_id for security
-            if ($tenantIdHeader !== $sellerTenantId) {
-                return response()->json([
-                    'error' => 'FORBIDDEN_SCOPE',
-                    'message' => 'X-Active-Tenant-Id header must match seller_tenant_id parameter'
-                ], 403);
-            }
-            
             $query->where('seller_tenant_id', $sellerTenantId);
         }
         
@@ -161,36 +193,14 @@ Route::middleware('auth.ctx')->get('/v1/rentals', function (\Illuminate\Http\Req
             $query->where('renter_user_id', $renterUserId);
         }
         
-        // Store scope: Filter by provider_tenant_id (requires X-Active-Tenant-Id)
+        // Store scope: Filter by provider_tenant_id (WP-NEXT: auth + HOS membership required)
         if ($request->has('provider_tenant_id')) {
             $providerTenantId = $request->input('provider_tenant_id');
-            $tenantIdHeader = $request->header('X-Active-Tenant-Id');
-            
-            // WP-12.1: Store scope requires X-Active-Tenant-Id header
-            if (!$tenantIdHeader) {
-                return response()->json([
-                    'error' => 'VALIDATION_ERROR',
-                    'message' => 'X-Active-Tenant-Id header is required for store scope'
-                ], 400);
-            }
-            
-            // WP-12.1: Validate tenant_id format (UUID format check)
             $membershipClient = new \App\Core\MembershipClient();
-            if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
-                return response()->json([
-                    'error' => 'FORBIDDEN_SCOPE',
-                    'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
-                ], 403);
+            $err = requireStoreScopeAuthz($request, $membershipClient, $providerTenantId);
+            if ($err !== null) {
+                return $err;
             }
-            
-            // Verify X-Active-Tenant-Id matches provider_tenant_id for security
-            if ($tenantIdHeader !== $providerTenantId) {
-                return response()->json([
-                    'error' => 'FORBIDDEN_SCOPE',
-                    'message' => 'X-Active-Tenant-Id header must match provider_tenant_id parameter'
-                ], 403);
-            }
-            
             $query->where('provider_tenant_id', $providerTenantId);
         }
         
@@ -278,36 +288,14 @@ Route::middleware('auth.ctx')->get('/v1/reservations', function (\Illuminate\Htt
             $query->where('requester_user_id', $requesterUserId);
         }
         
-        // Store scope: Filter by provider_tenant_id (requires X-Active-Tenant-Id)
+        // Store scope: Filter by provider_tenant_id (WP-NEXT: auth + HOS membership required)
         if ($request->has('provider_tenant_id')) {
             $providerTenantId = $request->input('provider_tenant_id');
-            $tenantIdHeader = $request->header('X-Active-Tenant-Id');
-            
-            // WP-12.1: Store scope requires X-Active-Tenant-Id header
-            if (!$tenantIdHeader) {
-                return response()->json([
-                    'error' => 'VALIDATION_ERROR',
-                    'message' => 'X-Active-Tenant-Id header is required for store scope'
-                ], 400);
-            }
-            
-            // WP-12.1: Validate tenant_id format (UUID format check)
             $membershipClient = new \App\Core\MembershipClient();
-            if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
-                return response()->json([
-                    'error' => 'FORBIDDEN_SCOPE',
-                    'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'
-                ], 403);
+            $err = requireStoreScopeAuthz($request, $membershipClient, $providerTenantId);
+            if ($err !== null) {
+                return $err;
             }
-            
-            // Verify X-Active-Tenant-Id matches provider_tenant_id for security
-            if ($tenantIdHeader !== $providerTenantId) {
-                return response()->json([
-                    'error' => 'FORBIDDEN_SCOPE',
-                    'message' => 'X-Active-Tenant-Id header must match provider_tenant_id parameter'
-                ], 403);
-            }
-            
             $query->where('provider_tenant_id', $providerTenantId);
         }
         
@@ -438,16 +426,10 @@ Route::middleware('auth.ctx')->get('/v1/rentals/{id}', function ($id, \Illuminat
     }
     if ($request->has('provider_tenant_id')) {
         $providerTenantId = $request->input('provider_tenant_id');
-        $tenantIdHeader = $request->header('X-Active-Tenant-Id');
-        if (!$tenantIdHeader) {
-            return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'X-Active-Tenant-Id header is required for store scope'], 400);
-        }
         $membershipClient = new \App\Core\MembershipClient();
-        if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
-            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'], 403);
-        }
-        if ($tenantIdHeader !== $providerTenantId) {
-            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id header must match provider_tenant_id parameter'], 403);
+        $err = requireStoreScopeAuthz($request, $membershipClient, $providerTenantId);
+        if ($err !== null) {
+            return $err;
         }
         $query->where('provider_tenant_id', $providerTenantId);
     }
@@ -494,16 +476,10 @@ Route::middleware('auth.ctx')->get('/v1/reservations/{id}', function ($id, \Illu
     }
     if ($request->has('provider_tenant_id')) {
         $providerTenantId = $request->input('provider_tenant_id');
-        $tenantIdHeader = $request->header('X-Active-Tenant-Id');
-        if (!$tenantIdHeader) {
-            return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'X-Active-Tenant-Id header is required for store scope'], 400);
-        }
         $membershipClient = new \App\Core\MembershipClient();
-        if (!$membershipClient->isValidTenantIdFormat($tenantIdHeader)) {
-            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id must be a valid UUID format for store-scope endpoints'], 403);
-        }
-        if ($tenantIdHeader !== $providerTenantId) {
-            return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id header must match provider_tenant_id parameter'], 403);
+        $err = requireStoreScopeAuthz($request, $membershipClient, $providerTenantId);
+        if ($err !== null) {
+            return $err;
         }
         $query->where('provider_tenant_id', $providerTenantId);
     }
