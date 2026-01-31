@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Transactions detail — fetch-by-id + safe fallback — PASS
+
+- **Proof:** `docs/PROOFS/wp_transactions_detail_fetch_by_id_pass.md`
+- **Outcome:** Transactions detail pages now fetch-by-id; deep-link stable; query fallback retained.
+- **Gates:** local gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Firm Portal — Transaction Decisions UI — PASS
 
 - **Proof:** `docs/PROOFS/wp_firm_portal_tx_decisions_ui_pass.md`

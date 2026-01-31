@@ -4,12 +4,14 @@
       <router-link :to="{ path: '/account', query: { tab: 'rentals' } }" class="back-link">← Back to Account</router-link>
       <h2>Rental {{ safe(item.id) }}</h2>
     </div>
-    <div v-if="limitedMode" class="limited-banner">Limited view (no detail endpoint)</div>
+    <div v-if="limitedMode" class="limited-banner">
+      {{ loadError ? `Limited view — API fetch failed: ${loadError}` : 'Limited view (no detail endpoint)' }}
+    </div>
     <SectionShell
       title="Details"
-      :status="loading ? 'loading' : (error ? 'error' : 'ready')"
-      :error-message="error ? (error.message || '') : ''"
-      :empty="!loading && !error && !item.id"
+      :status="loading ? 'loading' : (loadError ? 'error' : 'ready')"
+      :error-message="loadError || ''"
+      :empty="!loading && !item.id"
       empty-text="No data"
       @retry="load"
     >
@@ -36,13 +38,23 @@ export default {
   props: { id: { type: String, required: true } },
   data() {
     return {
-      item: {},
       loading: false,
-      error: null,
-      limitedMode: false,
+      loadError: null,
+      fetched: null,
+      limited: { id: this.id, listing_id: null, start_at: null, end_at: null, status: null, created_at: null, updated_at: null },
     };
   },
+  computed: {
+    item() {
+      if (this.fetched) return { ...this.fetched, id: this.id };
+      return this.limited;
+    },
+    limitedMode() {
+      return !this.fetched;
+    },
+  },
   mounted() {
+    this.buildLimitedFromQuery();
     this.load();
   },
   methods: {
@@ -50,25 +62,26 @@ export default {
       if (val == null || val === '') return '—';
       return val;
     },
+    buildLimitedFromQuery() {
+      const q = this.$route.query;
+      this.limited = {
+        id: this.id,
+        listing_id: q.listing_id ?? null,
+        start_at: q.start_at ?? null,
+        end_at: q.end_at ?? null,
+        status: q.status ?? null,
+        created_at: q.created_at ?? null,
+        updated_at: q.updated_at ?? null,
+      };
+    },
     async load() {
+      this.loadError = null;
       this.loading = true;
-      this.error = null;
       try {
         const res = await api.getMyRentalById(this.id);
-        const item = res?.data ?? res?.item ?? res ?? {};
-        this.item = { ...item, id: this.id };
-        this.limitedMode = false;
+        this.fetched = res?.data ?? res?.item ?? res ?? {};
       } catch (err) {
-        this.error = err;
-        const q = this.$route.query;
-        this.item = {
-          id: this.id,
-          listing_id: q.listing_id ?? null,
-          status: q.status ?? null,
-          created_at: q.created_at ?? null,
-          updated_at: q.updated_at ?? null,
-        };
-        this.limitedMode = true;
+        this.loadError = (err.message || err.status || 'Request failed').toString();
       } finally {
         this.loading = false;
       }
