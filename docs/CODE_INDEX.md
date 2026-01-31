@@ -1,4 +1,4 @@
-# Code Index - H-OS Stack
+﻿# Code Index - H-OS Stack
 
 **Purpose:** Central index for quick file location in repository zip. All paths are relative to repo root.
 
@@ -422,5 +422,5 @@
 
 ---
 
-**Last Updated:** 2026-01-29  
+**Last Updated:** 2026-01-31  
 **Index Status:** Complete - Repository scanned and indexed for quick navigation

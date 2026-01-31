@@ -3,6 +3,43 @@
     <div class="login-container">
       <h2>Giriş</h2>
       
+      <!-- WP-NEXT: Google OAuth tenant slug input (only shown if Google enabled) -->
+      <div v-if="googleOAuthEnabled" class="oauth-section">
+        <div class="form-group">
+          <label>
+            Organizasyon (Tenant) <span v-if="!tenantSlug" class="required">*</span>
+            <input
+              v-model="tenantSlug"
+              type="text"
+              placeholder="tenant-slug"
+              class="form-input"
+              :class="{ 'error': errors.tenantSlug }"
+            />
+          </label>
+          <span v-if="errors.tenantSlug" class="error-text">{{ errors.tenantSlug }}</span>
+          <span class="hint-text">Google ile giriş için organizasyon slug'ı gereklidir.</span>
+        </div>
+        
+        <button 
+          type="button" 
+          class="google-button"
+          :disabled="googleLoading"
+          @click="handleGoogleLogin"
+        >
+          <svg class="google-icon" viewBox="0 0 24 24" width="18" height="18">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          {{ googleLoading ? 'Yönlendiriliyor...' : 'Google ile Giriş Yap' }}
+        </button>
+        
+        <div class="divider">
+          <span>veya</span>
+        </div>
+      </div>
+      
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
           <label>
@@ -58,7 +95,8 @@
 </template>
 
 <script>
-import { login } from '../api/client.js';
+import { login, hosApiRequest } from '../api/client.js';
+import { getTenantSlug, setTenantSlug } from '../lib/session.js';
 
 export default {
   name: 'LoginPage',
@@ -71,9 +109,62 @@ export default {
       errors: {},
       loading: false,
       error: null,
+      // WP-NEXT: Google OAuth state
+      tenantSlug: '',
+      googleOAuthEnabled: false,
+      googleLoading: false,
     };
   },
+  async mounted() {
+    // WP-NEXT: Initialize tenantSlug from query > localStorage > empty
+    this.tenantSlug = this.$route.query.tenantSlug || getTenantSlug() || '';
+    
+    // WP-NEXT: Fetch feature flags to check if Google OAuth is enabled
+    await this.loadFeatureFlags();
+  },
   methods: {
+    async loadFeatureFlags() {
+      try {
+        // Use hosApiRequest for /v1/meta/features (same-origin proxy)
+        const features = await hosApiRequest('/v1/meta/features', {}, true);
+        this.googleOAuthEnabled = features?.googleOAuthConfigured === true;
+      } catch (err) {
+        // If feature flags fail to load, disable Google OAuth gracefully
+        console.warn('Failed to load feature flags:', err);
+        this.googleOAuthEnabled = false;
+      }
+    },
+    validateTenantSlug() {
+      const slug = this.tenantSlug.trim();
+      if (!slug) {
+        this.errors.tenantSlug = 'Google ile giriş için organizasyon slug gereklidir';
+        return false;
+      }
+      // Basic slug validation: lowercase, alphanumeric, hyphens
+      if (!/^[a-z0-9-]+$/.test(slug)) {
+        this.errors.tenantSlug = 'Geçerli bir slug giriniz (küçük harf, rakam, tire)';
+        return false;
+      }
+      delete this.errors.tenantSlug;
+      return true;
+    },
+    handleGoogleLogin() {
+      // Validate tenantSlug before redirect
+      if (!this.validateTenantSlug()) {
+        return;
+      }
+      
+      this.googleLoading = true;
+      
+      // Save tenantSlug to localStorage for future use
+      const slug = this.tenantSlug.trim();
+      setTenantSlug(slug);
+      
+      // Redirect to HOS Google OAuth start endpoint (via nginx proxy)
+      // /api proxies to HOS API (localhost:3000)
+      const redirectUrl = `/api/v1/auth/google/start?tenantSlug=${encodeURIComponent(slug)}`;
+      window.location.href = redirectUrl;
+    },
     validateEmail() {
       const email = this.formData.email.trim();
       if (!email) {
@@ -244,6 +335,69 @@ export default {
 
 .auth-links a:hover {
   text-decoration: underline;
+}
+
+/* WP-NEXT: Google OAuth styles */
+.oauth-section {
+  margin-bottom: 1.5rem;
+}
+
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.google-button:hover:not(:disabled) {
+  background: #f8f9fa;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.google-button:disabled {
+  background: #f1f3f4;
+  color: #80868b;
+  cursor: not-allowed;
+}
+
+.google-icon {
+  flex-shrink: 0;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.divider span {
+  padding: 0 1rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.hint-text {
+  display: block;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
 }
 </style>
 
