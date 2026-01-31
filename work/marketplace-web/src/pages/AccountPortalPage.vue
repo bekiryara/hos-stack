@@ -73,12 +73,41 @@
         </button>
       </div>
 
-      <!-- Customer Records: read-only panels (account/) -->
+      <!-- Customer Records: tabs + lazy-load panels (account/) -->
       <section class="customer-records-section">
         <h3 class="customer-records-title">Kayıtlar</h3>
-        <MyReservationsPanel ref="reservationsPanelRef" />
-        <MyRentalsPanel ref="rentalsPanelRef" />
-        <MyOrdersPanel ref="ordersPanelRef" />
+        <div class="tabs-row">
+          <button
+            type="button"
+            :class="['tab-btn', { active: activeTab === 'orders' }]"
+            @click="setTab('orders')"
+          >
+            Orders
+          </button>
+          <button
+            type="button"
+            :class="['tab-btn', { active: activeTab === 'rentals' }]"
+            @click="setTab('rentals')"
+          >
+            Rentals
+          </button>
+          <button
+            type="button"
+            :class="['tab-btn', { active: activeTab === 'reservations' }]"
+            @click="setTab('reservations')"
+          >
+            Reservations
+          </button>
+        </div>
+        <div v-show="activeTab === 'orders'">
+          <MyOrdersPanel ref="ordersPanelRef" :active="activeTab === 'orders'" />
+        </div>
+        <div v-show="activeTab === 'rentals'">
+          <MyRentalsPanel ref="rentalsPanelRef" :active="activeTab === 'rentals'" />
+        </div>
+        <div v-show="activeTab === 'reservations'">
+          <MyReservationsPanel ref="reservationsPanelRef" :active="activeTab === 'reservations'" />
+        </div>
       </section>
     </div>
   </div>
@@ -113,6 +142,13 @@ export default {
     },
     activeTenantId() {
       return this.activeTenantIdValue;
+    },
+    allowedTabs() {
+      return ['orders', 'rentals', 'reservations'];
+    },
+    activeTab() {
+      const tab = this.$route.query.tab || 'orders';
+      return this.allowedTabs.includes(tab) ? tab : 'orders';
     },
     activeTenantName() {
       if (!this.activeTenantId || this.memberships.length === 0) return null;
@@ -170,14 +206,15 @@ export default {
       this.activeTenantIdValue = tenantId || null;
       if (this.isAuthenticated) this.refreshAll();
     },
+    setTab(tab) {
+      if (!this.allowedTabs.includes(tab)) return;
+      this.$router.replace({ query: { ...this.$route.query, tab } }).catch(() => {});
+    },
     refreshAll() {
       if (!this.isAuthenticated) return;
       this.refreshing = true;
-      Promise.all([
-        this.$refs.reservationsPanelRef?.load?.() ?? Promise.resolve(),
-        this.$refs.rentalsPanelRef?.load?.() ?? Promise.resolve(),
-        this.$refs.ordersPanelRef?.load?.() ?? Promise.resolve(),
-      ]).finally(() => {
+      const ref = this.activeTab === 'orders' ? this.$refs.ordersPanelRef : this.activeTab === 'rentals' ? this.$refs.rentalsPanelRef : this.$refs.reservationsPanelRef;
+      (ref?.load?.() ?? Promise.resolve()).finally(() => {
         this.refreshing = false;
       });
     },
@@ -426,5 +463,30 @@ export default {
 .customer-records-title {
   margin-bottom: 1rem;
   color: #333;
+}
+
+.tabs-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f9f9f9;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.tab-btn:hover {
+  background: #eee;
+}
+
+.tab-btn.active {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
 }
 </style>

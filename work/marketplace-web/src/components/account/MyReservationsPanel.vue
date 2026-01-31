@@ -40,18 +40,30 @@ function normalizeItems(res) {
 export default {
   name: 'AccountMyReservationsPanel',
   components: { SectionShell },
+  props: {
+    active: { type: Boolean, default: false },
+  },
   data() {
     return {
       items: [],
       loading: false,
       error: null,
+      loadedOnce: false,
     };
   },
-  mounted() {
-    this.load();
+  watch: {
+    active: {
+      handler(val) {
+        if (val && !this.loadedOnce) {
+          this.load().then(() => { this.loadedOnce = true; }).catch(() => {});
+        }
+      },
+      immediate: true,
+    },
   },
   methods: {
     async load() {
+      if (!this.active) return;
       this.loading = true;
       this.error = null;
       try {
@@ -63,6 +75,7 @@ export default {
       } finally {
         this.loading = false;
       }
+      return Promise.resolve();
     },
     safe(val) {
       if (val == null || val === '') return '—';

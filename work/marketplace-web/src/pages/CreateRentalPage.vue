@@ -29,7 +29,7 @@
       Status: {{ success.status }}
       <br />
       <div class="success-actions">
-        <router-link to="/account" class="action-link">Go to Account</router-link>
+        <router-link :to="{ path: '/account', query: { tab: 'rentals' } }" class="action-link">Go to Account</router-link>
         <router-link v-if="success.listing_id" :to="`/listing/${success.listing_id}`" class="action-link">View Listing</router-link>
         <router-link v-if="listingCategoryId" :to="`/search/${listingCategoryId}`" class="action-link">Go to Search</router-link>
       </div>

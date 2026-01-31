@@ -29,7 +29,7 @@
       <br />
       <div class="success-actions">
         <router-link v-if="success.listing_id" :to="`/listing/${success.listing_id}`" class="action-link">View Listing</router-link>
-        <router-link to="/account" class="action-link">View My Orders</router-link>
+        <router-link :to="{ path: '/account', query: { tab: 'orders' } }" class="action-link">View My Orders</router-link>
       </div>
     </div>
     

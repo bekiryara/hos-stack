@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Account — Records tabs + lazy-load — PASS
+
+- **Proof:** `docs/PROOFS/wp_account_tabs_lazyload_pass.md`
+- **Outcome:** Account tabs (Orders/Rentals/Reservations) + lazy-load; Create success deep-link to correct tab; perf + UX iyileşti.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Messaging v1 — Customer↔Firm round-trip (UI + minimal glue) — PASS
 
 - **Proof:** `docs/PROOFS/wp_messaging_roundtrip_customer_firm_pass.md`
