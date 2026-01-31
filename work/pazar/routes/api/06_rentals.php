@@ -141,7 +141,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
 // WP-8: STORE persona requires X-Active-Tenant-Id header (persona.scope:store)
 // WP-26: Tenant scope enforced via tenant.scope middleware
 // WP-29: Auth required via auth.any middleware
-Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/rentals/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope', 'tenant.membership_strict'])->post('/v1/rentals/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     $tenantId = $request->attributes->get('tenant_id');
     
@@ -212,7 +212,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
 });
 
 // WP-NEXT: Transaction Decisions v1 — POST /v1/rentals/{id}/reject
-Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/rentals/{id}/reject', function ($id, \Illuminate\Http\Request $request) {
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope', 'tenant.membership_strict'])->post('/v1/rentals/{id}/reject', function ($id, \Illuminate\Http\Request $request) {
     $tenantId = $request->attributes->get('tenant_id');
     $rental = DB::table('rentals')->where('id', $id)->first();
     if (!$rental) {

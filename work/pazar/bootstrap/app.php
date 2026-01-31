@@ -68,6 +68,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.user' => \App\Http\Middleware\EnsureTenantUser::class,
             'tenant.role' => \App\Http\Middleware\EnsureTenantRole::class,
             'tenant.scope' => \App\Http\Middleware\TenantScope::class, // WP-26: Store-scope X-Active-Tenant-Id + membership enforcement
+            'tenant.membership_strict' => \App\Http\Middleware\TenantMembershipStrict::class, // WP-NEXT: Tx decisions strict HOS membership
             'persona.scope' => \App\Http\Middleware\PersonaScope::class, // WP-8: Persona-based header enforcement
             'auth.any' => \App\Http\Middleware\AuthAny::class,
             'auth.ctx' => \App\Http\Middleware\AuthContext::class, // WP-13: JWT auth context

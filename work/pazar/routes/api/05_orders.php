@@ -133,7 +133,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
 });
 
 // WP-NEXT: Transaction Decisions v1 — POST /v1/orders/{id}/accept
-Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/orders/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope', 'tenant.membership_strict'])->post('/v1/orders/{id}/accept', function ($id, \Illuminate\Http\Request $request) {
     $tenantId = $request->attributes->get('tenant_id');
     $order = DB::table('orders')->where('id', $id)->first();
     if (!$order) {
@@ -166,7 +166,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
 });
 
 // WP-NEXT: Transaction Decisions v1 — POST /v1/orders/{id}/reject
-Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope'])->post('/v1/orders/{id}/reject', function ($id, \Illuminate\Http\Request $request) {
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.any', 'auth.ctx', 'tenant.scope', 'tenant.membership_strict'])->post('/v1/orders/{id}/reject', function ($id, \Illuminate\Http\Request $request) {
     $tenantId = $request->attributes->get('tenant_id');
     $order = DB::table('orders')->where('id', $id)->first();
     if (!$order) {

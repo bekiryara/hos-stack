@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Store Scope AuthZ v2 — Transaction Decisions — PASS
+
+- **Proof:** `docs/PROOFS/wp_store_scope_authz_tx_decisions_pass.md`
+- **Outcome:** Transaction decisions (accept/reject) endpoints protected with store-scope membership strict (tenant boundary + HOS membership).
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Store Scope AuthZ Hardening — PASS
 
 - **Proof:** `docs/PROOFS/wp_store_scope_authz_hardening_pass.md`
