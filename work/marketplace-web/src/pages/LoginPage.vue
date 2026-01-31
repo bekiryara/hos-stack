@@ -5,8 +5,8 @@
       
       <!-- WP-NEXT: Google OAuth tenant slug input (only shown if Google enabled) -->
       <div v-if="googleOAuthEnabled" class="oauth-section">
-        <!-- Only show tenant input if not provided via URL or localStorage -->
-        <div v-if="!tenantSlugFromContext" class="form-group">
+        <!-- Only show tenant input if slug is empty -->
+        <div v-if="!tenantSlug" class="form-group">
           <label>
             Organizasyon (Tenant) <span v-if="!tenantSlug" class="required">*</span>
             <input
