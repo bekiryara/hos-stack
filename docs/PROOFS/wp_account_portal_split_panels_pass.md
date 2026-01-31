@@ -32,7 +32,7 @@
   - Kept: logged-out view, user summary card, firm status card, tenant selection, refresh button
   - Added: MyReservationsPanel, MyRentalsPanel, MyOrdersPanel (refs for refreshAll)
   - refreshAll() calls load() on each panel ref
-  - Line count: 657 → 377 (-43%)
+  - Line count: reduced (logic split + panels + shell)
 
 ## No Behavior Change
 
@@ -52,10 +52,12 @@ From repo root (D:\stack):
 
 ```text
 .\ops\run_wp_next_local_gates.ps1   => WP-NEXT LOCAL GATES: PASS
-.\ops\ops_run.ps1 -Profile Prototype => OVERALL STATUS: PASS (after commit)
+.\ops\ops_run.ps1 -Profile Prototype => Secret Scan, Conformance, Prototype Verification PASS (Public Ready PASS after commit)
 ```
+Commit: d217fb6
 
 ## Line Count
 
-- AccountPortalPage.vue: 657 → 377 (-280, -43%)
+- AccountPortalPage.vue: logic split + panels + shell (page shortened; panels hold own state).
+- Verified: `(Get-Content work/marketplace-web/src/pages/AccountPortalPage.vue | Measure-Object -Line).Lines` → 377 (at proof time).
 - New: SectionShell.vue (~95), MyOrdersPanel.vue (~115), MyRentalsPanel.vue (~115), MyReservationsPanel.vue (~120)

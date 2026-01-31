@@ -83,7 +83,7 @@
 
 <script>
 import { api } from '../api/client.js';
-import { isLoggedIn, getActiveTenantId, setActiveTenantId } from '../lib/session.js';
+import { isLoggedIn, getActiveTenantId, setActiveTenantId, clearSession } from '../lib/session.js';
 import MyReservationsPanel from '../components/portal/MyReservationsPanel.vue';
 import MyRentalsPanel from '../components/portal/MyRentalsPanel.vue';
 import MyOrdersPanel from '../components/portal/MyOrdersPanel.vue';

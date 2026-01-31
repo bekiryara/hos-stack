@@ -8,7 +8,7 @@
 ## WP-NEXT: Marketplace — Account portal split panels — PASS
 
 - **Proof:** `docs/PROOFS/wp_account_portal_split_panels_pass.md`
-- **Outcome:** AccountPortalPage.vue split into layout + SectionShell + MyOrdersPanel, MyRentalsPanel, MyReservationsPanel. Panel UX standard: loading + error + Retry + empty + table. Panel isolation: one panel FAIL does not block others. AccountPortalPage 657 → 377 lines (-43%).
+- **Outcome:** AccountPortalPage.vue split into layout + SectionShell + MyOrdersPanel, MyRentalsPanel, MyReservationsPanel. Panel UX standard: loading + error + Retry + empty + table. Panel isolation: one panel FAIL does not block others. Logic split + panels + shell.
 - **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
 
 ---
