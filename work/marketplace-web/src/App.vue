@@ -19,6 +19,7 @@
     <main>
       <router-view />
     </main>
+    <ToastHost />
   </div>
 </template>
 
