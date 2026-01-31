@@ -44,26 +44,32 @@
       </div>
       <div class="actions">
         <button @click="openMessaging" class="action-button">Message Seller</button>
+      </div>
+      <div v-if="listing" class="action-bar">
+        <p v-if="!listingId" class="action-bar-note">Listing id missing</p>
         <button
-          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('reservation')"
-          @click="goToReservation"
+          type="button"
           class="action-button"
-        >
-          Create Reservation
-        </button>
-        <button
-          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('rental')"
-          @click="goToRental"
-          class="action-button"
-        >
-          Create Rental
-        </button>
-        <button
-          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('sale')"
+          :disabled="!listingId || transitioning"
           @click="goToOrder"
-          class="action-button"
         >
-          Buy
+          Sipariş Ver
+        </button>
+        <button
+          type="button"
+          class="action-button"
+          :disabled="!listingId || transitioning"
+          @click="goToRental"
+        >
+          Kirala
+        </button>
+        <button
+          type="button"
+          class="action-button"
+          :disabled="!listingId || transitioning"
+          @click="goToReservation"
+        >
+          Rezervasyon Yap
         </button>
       </div>
       
@@ -105,6 +111,9 @@ export default {
     },
   },
   computed: {
+    listingId() {
+      return String(this.listing?.id ?? this.$route.params.id ?? '');
+    },
     normalizedAttributes() {
       const listing = this.listing;
       const attrs = (listing && listing.attributes && typeof listing.attributes === 'object')
@@ -122,6 +131,7 @@ export default {
       loading: true,
       error: null,
       categoryName: null,
+      transitioning: false,
     };
   },
   async mounted() {
@@ -180,13 +190,25 @@ export default {
       this.$router.push({ path: `/listing/${this.id}/message`, query });
     },
     goToReservation() {
-      this.$router.push({ path: '/reservation/create', query: { listing_id: this.id } });
+      if (!this.listingId) return;
+      this.transitioning = true;
+      this.$router
+        .push({ path: '/reservation/create', query: { listing_id: this.listingId, from: 'listing' } })
+        .finally(() => { this.transitioning = false; });
     },
     goToRental() {
-      this.$router.push({ path: '/rental/create', query: { listing_id: this.id } });
+      if (!this.listingId) return;
+      this.transitioning = true;
+      this.$router
+        .push({ path: '/rental/create', query: { listing_id: this.listingId, from: 'listing' } })
+        .finally(() => { this.transitioning = false; });
     },
     goToOrder() {
-      this.$router.push({ path: '/order/create', query: { listing_id: this.id } });
+      if (!this.listingId) return;
+      this.transitioning = true;
+      this.$router
+        .push({ path: '/order/create', query: { listing_id: this.listingId, quantity: '1', from: 'listing' } })
+        .finally(() => { this.transitioning = false; });
     },
   },
 };
@@ -242,6 +264,20 @@ export default {
   margin-top: 2rem;
   display: flex;
   gap: 1rem;
+}
+
+.action-bar {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.action-bar-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
 }
 
 .action-button {

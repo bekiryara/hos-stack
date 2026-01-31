@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Listing Detail Action Bar → Create entrypoints — PASS
+
+- **Proof:** `docs/PROOFS/wp_listing_detail_action_bar_to_create_pass.md`
+- **Outcome:** Listing detail now provides direct entrypoints to order/rental/reservation create flows via listing_id query; 3 buttons (Sipariş Ver, Kirala, Rezervasyon Yap); transitioning guard; backend yok.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Customer Create → Detail Redirect + Toast — PASS
 
 - **Proof:** `docs/PROOFS/wp_customer_create_redirect_to_detail_pass.md`
