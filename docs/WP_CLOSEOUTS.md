@@ -5,6 +5,14 @@
 
 ---
 
+## WP-NEXT: Firm Portal — Transaction Decisions UI — PASS
+
+- **Proof:** `docs/PROOFS/wp_firm_portal_tx_decisions_ui_pass.md`
+- **Outcome:** Firm portal can accept/reject orders, rentals, reservations via UI; deterministic refresh; action-level error isolation.
+- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
+
+---
+
 ## WP-NEXT: Store Scope AuthZ v2 — Transaction Decisions — PASS
 
 - **Proof:** `docs/PROOFS/wp_store_scope_authz_tx_decisions_pass.md`

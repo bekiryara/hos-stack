@@ -26,8 +26,8 @@
             <td>{{ item.status || '—' }}</td>
             <td>{{ formatDate(item.created_at) }}</td>
             <td class="actions-cell">
-              <button type="button" class="btn-action" :disabled="!canApprove(item) || transitioning[item.id]" @click="acceptRental(item.id)">Accept</button>
-              <button type="button" class="btn-action btn-reject" :disabled="!canReject(item) || transitioning[item.id]" @click="rejectRental(item.id)">Reject</button>
+              <button type="button" class="btn-action" :disabled="!canApprove(item) || transitioning[item.id]" @click="acceptRental(item.id)">{{ transitioning[item.id] === 'accept' ? 'Working…' : 'Accept' }}</button>
+              <button type="button" class="btn-action btn-reject" :disabled="!canReject(item) || transitioning[item.id]" @click="rejectRental(item.id)">{{ transitioning[item.id] === 'reject' ? 'Working…' : 'Reject' }}</button>
             </td>
           </tr>
         </tbody>
@@ -90,7 +90,7 @@ export default {
     },
     async acceptRental(id) {
       if (!this.activeTenantId) return;
-      this.transitioning = { ...this.transitioning, [id]: true };
+      this.transitioning = { ...this.transitioning, [id]: 'accept' };
       this.error = null;
       try {
         await api.acceptStoreRental(id, this.activeTenantId);
@@ -103,7 +103,7 @@ export default {
     },
     async rejectRental(id) {
       if (!this.activeTenantId) return;
-      this.transitioning = { ...this.transitioning, [id]: true };
+      this.transitioning = { ...this.transitioning, [id]: 'reject' };
       this.error = null;
       try {
         await api.rejectStoreRental(id, this.activeTenantId);
