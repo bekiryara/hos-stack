@@ -56,17 +56,31 @@ class ErrorEnvelope
             return (string) $requestId;
         };
 
-        // If standard envelope (ok:false), ensure request_id is always filled
+        // If standard envelope (ok:false), ensure request_id and code/error_code duality
         if (isset($decoded['ok']) && $decoded['ok'] === false) {
-            // Standard envelope format - ensure request_id is present and not null/empty/'-'
+            $modified = false;
             if (empty($decoded['request_id']) || $decoded['request_id'] === null || $decoded['request_id'] === '' || $decoded['request_id'] === '-') {
                 $decoded['request_id'] = $getRequestId();
+                $modified = true;
+            }
+            // WP-66: Ensure both code and error_code for stable contract
+            $ec = $decoded['error_code'] ?? $decoded['code'] ?? null;
+            if ($ec !== null && (string)$ec !== '') {
+                if (!isset($decoded['code']) || $decoded['code'] === null || $decoded['code'] === '') {
+                    $decoded['code'] = $ec;
+                    $modified = true;
+                }
+                if (!isset($decoded['error_code']) || $decoded['error_code'] === null || $decoded['error_code'] === '') {
+                    $decoded['error_code'] = $ec;
+                    $modified = true;
+                }
+            }
+            if ($modified) {
                 $status = $response->getStatusCode();
-                // Preserve all headers and status code
                 $headers = $response->headers->all();
                 return response()->json($decoded, $status, $headers);
             }
-            return $response; // Already in standard format with valid request_id
+            return $response; // Already in standard format
         }
 
         // Check if has legacy "error" key and no "ok" key
@@ -114,9 +128,10 @@ class ErrorEnvelope
             // Get request_id (never null, generate if missing)
             $requestId = $getRequestId();
 
-            // Build standard envelope
+            // WP-66: Include BOTH code and error_code for stable machine-readable contract
             $envelope = [
                 'ok' => false,
+                'code' => $errorCode,
                 'error_code' => $errorCode,
                 'message' => $message,
                 'request_id' => $requestId,
@@ -136,14 +151,28 @@ class ErrorEnvelope
             $response->headers->set('X-ErrorEnvelope-Status', (string)$response->getStatusCode());
         }
 
-        // Final check: Ensure request_id is filled for standard envelope (ok:false)
-        // Re-read body in case it was modified by legacy conversion
+        // Final check: Ensure request_id and code/error_code duality for standard envelope (ok:false)
         $finalBody = $response->getContent();
         if (!empty($finalBody) && str_starts_with(trim($finalBody), '{')) {
             $finalDecoded = json_decode($finalBody, true);
             if (is_array($finalDecoded) && isset($finalDecoded['ok']) && $finalDecoded['ok'] === false) {
+                $modified = false;
                 if (empty($finalDecoded['request_id']) || $finalDecoded['request_id'] === null || $finalDecoded['request_id'] === '' || $finalDecoded['request_id'] === '-') {
                     $finalDecoded['request_id'] = $getRequestId();
+                    $modified = true;
+                }
+                $ec = $finalDecoded['error_code'] ?? $finalDecoded['code'] ?? null;
+                if ($ec !== null && (string)$ec !== '') {
+                    if (!isset($finalDecoded['code']) || $finalDecoded['code'] === null || $finalDecoded['code'] === '') {
+                        $finalDecoded['code'] = $ec;
+                        $modified = true;
+                    }
+                    if (!isset($finalDecoded['error_code']) || $finalDecoded['error_code'] === null || $finalDecoded['error_code'] === '') {
+                        $finalDecoded['error_code'] = $ec;
+                        $modified = true;
+                    }
+                }
+                if ($modified) {
                     $status = $response->getStatusCode();
                     $headers = $response->headers->all();
                     return response()->json($finalDecoded, $status, $headers);

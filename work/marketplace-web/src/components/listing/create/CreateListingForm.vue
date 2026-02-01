@@ -147,6 +147,7 @@ export default {
     tenantId: { type: String, default: '' },
     tenantIdLoadError: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
+    backendError: { type: Object, default: null },
   },
   emits: ['category-change', 'submit'],
   data() {
@@ -160,18 +161,110 @@ export default {
       },
     };
   },
+  computed: {
+    flatCategories() {
+      const out = [];
+      const walk = (nodes) => {
+        if (!Array.isArray(nodes)) return;
+        for (const n of nodes) {
+          if (!n) continue;
+          out.push(n);
+          const children = Array.isArray(n.children) ? n.children : [];
+          if (children.length) walk(children);
+        }
+      };
+      walk(this.categories);
+      return out;
+    },
+    leafCategories() {
+      const flat = this.flatCategories || [];
+      return flat.filter((c) => {
+        const children = Array.isArray(c.children) ? c.children : [];
+        return children.length === 0;
+      });
+    },
+    canSubmit() {
+      const hasTenant = !!this.tenantId;
+      const hasCategory = !!this.local.category_id;
+      const hasTitle = !!(this.local.title && String(this.local.title).trim().length > 0);
+      return hasTenant && hasCategory && hasTitle;
+    },
+    backendCode() {
+      const b = this.backendError;
+      if (!b || typeof b !== 'object') return null;
+      return b.code || b.error_code || b.error || null;
+    },
+    backendDetails() {
+      const b = this.backendError;
+      if (!b || typeof b !== 'object') return null;
+      return b.details && typeof b.details === 'object' ? b.details : null;
+    },
+    fieldErrors() {
+      const code = this.backendCode;
+      const details = this.backendDetails;
+      const out = {};
+      if (!code || !details) return out;
+
+      if (code === 'missing_required_attribute' && Array.isArray(details.missing)) {
+        for (const k of details.missing) out[String(k)] = 'Required field is missing.';
+      }
+      if (code === 'invalid_attribute_value' && details.invalid_values && typeof details.invalid_values === 'object') {
+        for (const [k] of Object.entries(details.invalid_values)) out[String(k)] = 'Invalid value for this field.';
+      }
+      if (code === 'unknown_attribute_keys' && Array.isArray(details.unknown_keys)) {
+        for (const k of details.unknown_keys) out[String(k)] = 'Unknown attribute key for this category.';
+      }
+      return out;
+    },
+  },
+  watch: {
+    'local.category_id'(val) {
+      this.local.attributes = {};
+      this.$emit('category-change', val);
+    },
+    filterSchema: {
+      deep: true,
+      handler() {
+        this.local.attributes = {};
+      },
+    },
+  },
   methods: {
     emitCategoryChange() {
       this.$emit('category-change', this.local.category_id);
     },
+    isSelectField(filter) {
+      if (!filter || typeof filter !== 'object') return false;
+      const rules = filter.rules && typeof filter.rules === 'object' ? filter.rules : null;
+      if (rules && Array.isArray(rules.options) && rules.options.length) return true;
+      if (filter.value_type === 'enum') return true;
+      if (filter.ui_component === 'select') return true;
+      return false;
+    },
+    getOptions(filter) {
+      const rules = filter && filter.rules && typeof filter.rules === 'object' ? filter.rules : null;
+      const opts = rules && Array.isArray(rules.options) ? rules.options : [];
+      return opts.map((o) => (o == null ? '' : String(o))).filter((s) => s !== '');
+    },
+    fieldError(key) {
+      return this.fieldErrors[String(key)] || null;
+    },
     onSubmit() {
+      const normalizedAttributes = {};
+      for (const [k, v] of Object.entries(this.local.attributes || {})) {
+        if (v === null || v === undefined) continue;
+        if (typeof v === 'string' && v.trim() === '') continue;
+        normalizedAttributes[k] = v;
+      }
+
       const snapshot = {
         category_id: this.local.category_id,
-        title: this.local.title,
-        description: this.local.description,
-        transaction_modes: [...(this.local.transaction_modes || [])],
-        attributes: { ...(this.local.attributes || {}) },
+        title: (this.local.title || '').trim(),
+        description: this.local.description || '',
+        transaction_modes: Array.isArray(this.local.transaction_modes) ? [...this.local.transaction_modes] : [],
+        attributes: normalizedAttributes,
       };
+
       this.$emit('submit', snapshot);
     },
   },

@@ -54,6 +54,17 @@ export default {
       if (!this.error) return null;
       return typeof this.error === 'string' ? this.error : (this.error.message || null);
     },
+    backendErrorDetails() {
+      const d = this.error?.data ?? null;
+      if (!d || typeof d !== 'object') return null;
+      if (!(d.code || d.error_code || d.details || d.error || d.message)) return null;
+      // WP-66: If only error_code exists, map into { code, ... } for form
+      if (d.code) return d;
+      if (d.error_code && !d.code) {
+        return { ...d, code: d.error_code };
+      }
+      return d;
+    },
   },
   data() {
     return {
