@@ -76,8 +76,18 @@ class ErrorEnvelope
             $message = 'Request failed.';
             $details = null;
 
-            // Map error type to error_code
-            if (isset($errorData['type'])) {
+            // WP-65: Preserve P0 CORE 422 codes (unknown_attribute_keys, invalid_attribute_value, leaf_category_required)
+            if (isset($decoded['code']) && is_string($decoded['code']) && $decoded['code'] !== '') {
+                $errorCode = $decoded['code'];
+                if (isset($decoded['message']) && is_string($decoded['message'])) {
+                    $message = $decoded['message'];
+                }
+                if (isset($decoded['details']) && is_array($decoded['details'])) {
+                    $details = $decoded['details'];
+                }
+            }
+            // Map error type to error_code (when error is object)
+            elseif (is_array($errorData) && isset($errorData['type'])) {
                 $type = $errorData['type'];
                 $errorCode = match ($type) {
                     'validation' => 'VALIDATION_ERROR',
@@ -88,15 +98,17 @@ class ErrorEnvelope
                 };
             }
 
-            if (isset($errorData['message'])) {
+            if (is_array($errorData) && isset($errorData['message'])) {
                 $message = $errorData['message'];
             }
 
             // Extract details (fields for validation, status for HTTP errors)
-            if (isset($errorData['fields'])) {
-                $details = ['fields' => $errorData['fields']];
-            } elseif (isset($errorData['status'])) {
-                $details = ['status' => $errorData['status']];
+            if ($details === null && is_array($errorData)) {
+                if (isset($errorData['fields'])) {
+                    $details = ['fields' => $errorData['fields']];
+                } elseif (isset($errorData['status'])) {
+                    $details = ['status' => $errorData['status']];
+                }
             }
 
             // Get request_id (never null, generate if missing)

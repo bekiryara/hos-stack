@@ -18,6 +18,62 @@ if (-not (Test-Path $testAuthPath)) {
 }
 . $testAuthPath
 
+# WP-65: Robust HTTP error extraction (PS5.1 + PS7 compatible)
+function Get-HttpErrorInfo {
+    param([object]$ErrorRecord = $_)
+    $statusCode = $null
+    $rawBody = ""
+    $json = $null
+    $code = $null
+
+    if (-not $ErrorRecord) { return @{ statusCode = $null; rawBody = ""; json = $null; code = $null } }
+
+    # 1) Prefer ErrorDetails.Message (PowerShell 7)
+    try {
+        if ($ErrorRecord.ErrorDetails -and $ErrorRecord.ErrorDetails.Message) {
+            $rawBody = [string]$ErrorRecord.ErrorDetails.Message
+        }
+    } catch { }
+
+    # 2) Response body via GetResponseStream (PS5.1 / WebResponse)
+    $response = $null
+    try { $response = $ErrorRecord.Exception.Response } catch { }
+    if ($response) {
+        try { $statusCode = [int]$response.StatusCode } catch { }
+        if (-not $rawBody) {
+            try {
+                $stream = $response.GetResponseStream()
+                if ($stream) {
+                    $reader = New-Object System.IO.StreamReader($stream)
+                    $rawBody = $reader.ReadToEnd()
+                    $reader.Close()
+                }
+            } catch { }
+        }
+    }
+
+    # 3) Parse JSON and extract code (Pazar native + ErrorEnvelope wrapped)
+    if ($rawBody) {
+        try {
+            $json = $rawBody | ConvertFrom-Json
+            if ($json.PSObject.Properties['code']) { $code = $json.code }
+            if (-not $code -and $json.PSObject.Properties['error']) { $code = $json.error }
+            if (-not $code -and $json.PSObject.Properties['error_code']) { $code = $json.error_code }
+            if (-not $code -and $json.PSObject.Properties['message'] -and $json.PSObject.Properties['errors']) {
+                $code = "VALIDATION_ERROR"
+            }
+            if (-not $code -and $json.PSObject.Properties['details'] -and $json.details.PSObject.Properties['unknown_keys']) {
+                $code = "unknown_attribute_keys"
+            }
+            if (-not $code -and $json.PSObject.Properties['details'] -and $json.details.PSObject.Properties['invalid_values']) {
+                $code = "invalid_attribute_value"
+            }
+        } catch { }
+    }
+
+    return @{ statusCode = $statusCode; rawBody = $rawBody; json = $json; code = $code }
+}
+
 # Step 1: Bootstrap JWT token and tenant
 Write-Host "Step 1: Bootstrap JWT token and tenant..." -ForegroundColor Yellow
 $apiKey = $env:HOS_API_KEY
@@ -97,9 +153,10 @@ try {
     $categoriesResponse = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/categories" -Method GET -ContentType "application/json"
     
     function Find-LeafCategory($cats) {
+        if (-not ($cats -is [Array]) -or $cats.Count -eq 0) { return $null }
         foreach ($cat in $cats) {
             $children = $cat.children
-            if (-not $children -or $children.Count -eq 0) {
+            if (-not ($children -is [Array]) -or $children.Count -eq 0) {
                 return $cat
             }
             $found = Find-LeafCategory $children
@@ -151,6 +208,8 @@ Write-Host ""
 Write-Host "Step 3: Create listing (draft)..." -ForegroundColor Yellow
 $listingTitle = "WP-65 Discovery Test Listing $(Get-Date -Format 'yyyyMMdd-HHmmss')"
 $attributes = @{}
+$proofRangeKey = $null
+$proofRangeValue = $null
 if ($filterSchema) {
     foreach ($f in $filterSchema) {
         if ($f.required -eq $true) {
@@ -158,10 +217,26 @@ if ($filterSchema) {
                 $min = 1
                 if ($f.rules -and $f.rules.min -ne $null) { $min = $f.rules.min }
                 $attributes[$f.attribute_key] = $min
+                if (-not $proofRangeKey) {
+                    $proofRangeKey = $f.attribute_key
+                    $proofRangeValue = $min
+                }
             } elseif ($f.rules -and $f.rules.options -and $f.rules.options.Count -gt 0) {
                 $attributes[$f.attribute_key] = $f.rules.options[0]
             } else {
                 $attributes[$f.attribute_key] = "default"
+            }
+        }
+    }
+    if (-not $proofRangeKey) {
+        foreach ($f in $filterSchema) {
+            if (($f.filter_mode -eq "range" -or $f.type -eq "range") -and $f.attribute_key) {
+                $val = 1
+                if ($f.rules -and $f.rules.min -ne $null) { $val = $f.rules.min }
+                $attributes[$f.attribute_key] = $val
+                $proofRangeKey = $f.attribute_key
+                $proofRangeValue = $val
+                break
             }
         }
     }
@@ -294,35 +369,25 @@ try {
 }
 Write-Host ""
 
-# Step 7b: P0 - Verify listing visible with filters (schema-driven search)
+# Step 7b: P0 - Verify listing visible with filters (deterministic: min=max=proofRangeValue)
 Write-Host "Step 7b: Verify listing in GET /v1/listings with filters..." -ForegroundColor Yellow
-$rangeFilterKey = $null
-if ($filterSchema) {
-    foreach ($f in $filterSchema) {
-        if (($f.filter_mode -eq "range" -or $f.type -eq "range") -and $f.attribute_key) {
-            $rangeFilterKey = $f.attribute_key
-            break
-        }
-    }
-}
-if ($rangeFilterKey) {
+if ($proofRangeKey) {
+    $filtersUrl = "${pazarBaseUrl}/api/v1/listings?category_id=$categoryId&filters[$proofRangeKey][min]=$proofRangeValue&filters[$proofRangeKey][max]=$proofRangeValue"
     try {
-        $filtersUrl = "${pazarBaseUrl}/api/v1/listings?category_id=$categoryId&filters[$rangeFilterKey][min]=1"
         $filtersResponse = Invoke-RestMethod -Uri $filtersUrl -Method GET -ContentType "application/json"
         $foundWithFilters = $false
         if ($filtersResponse -is [Array]) {
             $foundWithFilters = ($filtersResponse | Where-Object { $_.id -eq $listingId }) -ne $null
         }
-        if ($foundWithFilters) {
-            Write-Host "  ✅ Listing found with filters[$rangeFilterKey][min]=1" -ForegroundColor Green
-        } else {
-            Write-Host "  WARN: Listing not in filter results (filter may not match)" -ForegroundColor Yellow
+        if (-not $foundWithFilters) {
+            throw "Listing not found with filters[$proofRangeKey][min]=$proofRangeValue,max=$proofRangeValue"
         }
+        Write-Host "  ✅ Listing found with filters[$proofRangeKey][min]=$proofRangeValue,[max]=$proofRangeValue" -ForegroundColor Green
     } catch {
-        Write-Host "  WARN: Filters check failed (non-fatal): $_" -ForegroundColor Yellow
+        throw "Step 7b FAIL: $_"
     }
 } else {
-    Write-Host "  SKIP: No range filter in schema for this category" -ForegroundColor Gray
+    Write-Host "  SKIP: No range/number filter in schema for this category" -ForegroundColor Gray
 }
 Write-Host ""
 
@@ -377,7 +442,7 @@ try {
 }
 Write-Host ""
 
-# Step 10: P0 Negative - unknown attribute key -> 422 unknown_attribute_keys
+# Step 10: P0 Negative - unknown attribute key -> 422 unknown_attribute_keys (STRICT)
 Write-Host "Step 10: Negative - unknown attribute key (422)..." -ForegroundColor Yellow
 try {
     $unknownPayload = @{
@@ -395,29 +460,15 @@ try {
     Write-Host "FAIL: Expected 422 for unknown attribute key" -ForegroundColor Red
     exit 1
 } catch {
-    $statusCode = $null
-    $errBody = $null
-    if ($_.Exception.Response) {
-        try {
-            $statusCode = [int]$_.Exception.Response.StatusCode
-            $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-            $errBody = $reader.ReadToEnd()
-            $reader.Close()
-        } catch { }
+    $info = Get-HttpErrorInfo -ErrorRecord $_
+    $sc = $info.statusCode
+    $code = $info.code
+    $body = $info.rawBody
+    if ($sc -ne 422 -or $code -ne "unknown_attribute_keys") {
+        $snippet = if ($body.Length -gt 200) { $body.Substring(0, 200) + "..." } else { $body }
+        throw "Step 10 FAIL: expected 422+unknown_attribute_keys, got status=$sc code=$code. Body: $snippet"
     }
-    $code = $null
-    if ($errBody) {
-        try {
-            $errObj = $errBody | ConvertFrom-Json
-            $code = $errObj.error
-            if (-not $code) { $code = $errObj.code }
-        } catch { }
-    }
-    if ($statusCode -eq 422 -and ($code -eq "unknown_attribute_keys" -or $code -eq "VALIDATION_ERROR")) {
-        Write-Host "  ✅ 422 unknown_attribute_keys correctly returned" -ForegroundColor Green
-    } else {
-        Write-Host "  WARN: Got status=$statusCode code=$code (expected 422 unknown_attribute_keys)" -ForegroundColor Yellow
-    }
+    Write-Host "  ✅ 422 unknown_attribute_keys correctly returned" -ForegroundColor Green
 }
 Write-Host ""
 
@@ -425,9 +476,10 @@ Write-Host ""
 Write-Host "Step 11: Negative - invalid enum value (422)..." -ForegroundColor Yellow
 $restaurantId = $null
 function FindCategoryBySlug($tree, $slug) {
+    if (-not ($tree -is [Array])) { return $null }
     foreach ($item in $tree) {
         if ($item.slug -eq $slug) { return $item }
-        if ($item.children) {
+        if ($item.children -is [Array] -and $item.children.Count -gt 0) {
             $found = FindCategoryBySlug $item.children $slug
             if ($found) { return $found }
         }
@@ -437,7 +489,7 @@ function FindCategoryBySlug($tree, $slug) {
 try {
     $catTree = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/categories" -Method GET
     $restaurant = FindCategoryBySlug $catTree "restaurant"
-    if ($restaurant -and ($restaurant.children -eq $null -or $restaurant.children.Count -eq 0)) {
+    if ($restaurant -and (-not ($restaurant.children -is [Array]) -or $restaurant.children.Count -eq 0)) {
         $restaurantId = $restaurant.id
     }
 } catch { }
@@ -458,29 +510,15 @@ if ($restaurantId) {
         Write-Host "FAIL: Expected 422 for invalid enum value" -ForegroundColor Red
         exit 1
     } catch {
-        $statusCode = $null
-        $errBody = $null
-        if ($_.Exception.Response) {
-            try {
-                $statusCode = [int]$_.Exception.Response.StatusCode
-                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-                $errBody = $reader.ReadToEnd()
-                $reader.Close()
-            } catch { }
+        $info = Get-HttpErrorInfo -ErrorRecord $_
+        $sc = $info.statusCode
+        $code = $info.code
+        $body = $info.rawBody
+        if ($sc -ne 422 -or $code -ne "invalid_attribute_value") {
+            $snippet = if ($body.Length -gt 200) { $body.Substring(0, 200) + "..." } else { $body }
+            throw "Step 11 FAIL: expected 422+invalid_attribute_value, got status=$sc code=$code. Body: $snippet"
         }
-        $code = $null
-        if ($errBody) {
-            try {
-                $errObj = $errBody | ConvertFrom-Json
-                $code = $errObj.error
-                if (-not $code) { $code = $errObj.code }
-            } catch { }
-        }
-        if ($statusCode -eq 422 -and ($code -eq "invalid_attribute_value" -or $code -eq "VALIDATION_ERROR")) {
-            Write-Host "  ✅ 422 invalid_attribute_value correctly returned" -ForegroundColor Green
-        } else {
-            Write-Host "  WARN: Got status=$statusCode code=$code (expected 422 invalid_attribute_value)" -ForegroundColor Yellow
-        }
+        Write-Host "  ✅ 422 invalid_attribute_value correctly returned" -ForegroundColor Green
     }
 } else {
     Write-Host "  SKIP: restaurant (enum category) not found" -ForegroundColor Gray
@@ -493,7 +531,7 @@ $serviceId = $null
 try {
     $catTree = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/categories" -Method GET
     $service = FindCategoryBySlug $catTree "service"
-    if ($service -and $service.children -and $service.children.Count -gt 0) {
+    if ($service -and ($service.children -is [Array]) -and $service.children.Count -gt 0) {
         $serviceId = $service.id
     }
 } catch { }
@@ -514,32 +552,18 @@ if ($serviceId) {
         Write-Host "FAIL: Expected 422 for non-leaf category" -ForegroundColor Red
         exit 1
     } catch {
-        $statusCode = $null
-        $errBody = $null
-        if ($_.Exception.Response) {
-            try {
-                $statusCode = [int]$_.Exception.Response.StatusCode
-                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-                $errBody = $reader.ReadToEnd()
-                $reader.Close()
-            } catch { }
+        $info = Get-HttpErrorInfo -ErrorRecord $_
+        $sc = $info.statusCode
+        $code = $info.code
+        $body = $info.rawBody
+        if ($sc -ne 422 -or $code -ne "leaf_category_required") {
+            $snippet = if ($body.Length -gt 200) { $body.Substring(0, 200) + "..." } else { $body }
+            throw "Step 12 FAIL: expected 422+leaf_category_required, got status=$sc code=$code. Body: $snippet"
         }
-        $code = $null
-        if ($errBody) {
-            try {
-                $errObj = $errBody | ConvertFrom-Json
-                $code = $errObj.error
-                if (-not $code) { $code = $errObj.code }
-            } catch { }
-        }
-        if ($statusCode -eq 422 -and $code -eq "leaf_category_required") {
-            Write-Host "  ✅ 422 leaf_category_required correctly returned" -ForegroundColor Green
-        } else {
-            Write-Host "  WARN: Got status=$statusCode code=$code (expected 422 leaf_category_required)" -ForegroundColor Yellow
-        }
+        Write-Host "  ✅ 422 leaf_category_required correctly returned" -ForegroundColor Green
     }
 } else {
-    Write-Host "  SKIP: service (non-leaf) not found" -ForegroundColor Gray
+    throw "Step 12 FAIL: service (non-leaf) category not found - cannot validate leaf_category_required"
 }
 Write-Host ""
 
