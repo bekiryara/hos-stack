@@ -34,27 +34,15 @@
           </span>
         </div>
         <div class="listing-actions" @click.stop>
-          <button @click="goToDetail(listing.id)" class="action-btn view-btn">View</button>
           <button
-            v-if="listing.transaction_modes && listing.transaction_modes.includes('reservation')"
-            @click="goToReservation(listing.id)"
-            class="action-btn reserve-btn"
+            v-for="a in actionsFor(listing)"
+            :key="a.key"
+            type="button"
+            class="action-btn"
+            :class="a.uiClass"
+            @click="runAction(a)"
           >
-            Reserve
-          </button>
-          <button
-            v-if="listing.transaction_modes && listing.transaction_modes.includes('rental')"
-            @click="goToRental(listing.id)"
-            class="action-btn rent-btn"
-          >
-            Rent
-          </button>
-          <button
-            v-if="listing.transaction_modes && listing.transaction_modes.includes('sale')"
-            @click="goToOrder(listing.id)"
-            class="action-btn buy-btn"
-          >
-            Buy
+            {{ a.label }}
           </button>
         </div>
       </div>
@@ -64,6 +52,8 @@
 </template>
 
 <script>
+import { resolveListingActions } from '../lib/listingActions';
+
 export default {
   name: 'ListingsGrid',
   props: {
@@ -73,17 +63,12 @@ export default {
     },
   },
   methods: {
-    goToDetail(id) {
-      this.$router.push(`/listing/${id}`);
+    actionsFor(listing) {
+      return resolveListingActions(listing, { context: 'grid' });
     },
-    goToReservation(listingId) {
-      this.$router.push({ path: '/reservation/create', query: { listing_id: listingId } });
-    },
-    goToRental(listingId) {
-      this.$router.push({ path: '/rental/create', query: { listing_id: listingId } });
-    },
-    goToOrder(listingId) {
-      this.$router.push({ path: '/order/create', query: { listing_id: listingId } });
+    runAction(action) {
+      if (!action || !action.to) return;
+      this.$router.push(action.to);
     },
     copyListingId(id, evt) {
       if (navigator.clipboard && navigator.clipboard.writeText) {

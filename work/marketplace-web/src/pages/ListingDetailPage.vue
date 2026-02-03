@@ -83,27 +83,14 @@
         <pre class="full-json">{{ JSON.stringify(listing, null, 2) }}</pre>
       </div>
       <div class="actions">
-        <button @click="openMessaging" class="action-button">Message Seller</button>
         <button
-          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('reservation')"
-          @click="goToReservation"
+          v-for="a in resolvedActions"
+          :key="a.key"
+          type="button"
           class="action-button"
+          @click="runAction(a)"
         >
-          Create Reservation
-        </button>
-        <button
-          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('rental')"
-          @click="goToRental"
-          class="action-button"
-        >
-          Create Rental
-        </button>
-        <button
-          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('sale')"
-          @click="goToOrder"
-          class="action-button"
-        >
-          Buy
+          {{ a.label }}
         </button>
       </div>
       
@@ -118,6 +105,7 @@
 <script>
 import { api } from '../api/client';
 import { getCategoriesTree } from '../lib/catalogSpine';
+import { resolveListingActions } from '../lib/listingActions';
 import PublishListingAction from '../components/PublishListingAction.vue';
 
 function findCategoryInTree(nodes, categoryId) {
@@ -154,6 +142,10 @@ export default {
     },
     sortedAttributeKeys() {
       return Object.keys(this.normalizedAttributes).sort();
+    },
+    resolvedActions() {
+      if (!this.listing) return [];
+      return resolveListingActions(this.listing, { context: 'detail' });
     },
   },
   data() {
@@ -233,21 +225,9 @@ export default {
     handlePublished(updatedListing) {
       this.listing = updatedListing;
     },
-    openMessaging() {
-      const query = { as: 'customer' };
-      if (this.listing?.tenant_id) {
-        query.tenant_id = this.listing.tenant_id;
-      }
-      this.$router.push({ path: `/listing/${this.id}/message`, query });
-    },
-    goToReservation() {
-      this.$router.push({ path: '/reservation/create', query: { listing_id: this.id } });
-    },
-    goToRental() {
-      this.$router.push({ path: '/rental/create', query: { listing_id: this.id } });
-    },
-    goToOrder() {
-      this.$router.push({ path: '/order/create', query: { listing_id: this.id } });
+    runAction(action) {
+      if (!action || !action.to) return;
+      this.$router.push(action.to);
     },
   },
 };
