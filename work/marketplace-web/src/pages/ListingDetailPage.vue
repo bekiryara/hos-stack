@@ -38,14 +38,74 @@
           <li v-for="key in sortedAttributeKeys" :key="key"><strong>{{ key }}:</strong> {{ renderAttributeValue(normalizedAttributes[key]) }}</li>
         </ul>
       </div>
+      <div class="detail-section">
+        <h3>Paketler (Offers)</h3>
+        <p class="muted">
+          Bu bölüm sadece tıklayınca yüklenir (sistemi zorlamaz).
+        </p>
+        <div class="offers-actions">
+          <button
+            type="button"
+            class="action-button"
+            :disabled="offersLoading || offersLoaded"
+            @click="loadOffers"
+          >
+            <template v-if="offersLoaded">Paketler yüklendi</template>
+            <template v-else-if="offersLoading">Yükleniyor...</template>
+            <template v-else>Paketleri Göster</template>
+          </button>
+        </div>
+        <div v-if="offersError" class="error">{{ offersError }}</div>
+        <div v-else-if="offersLoaded">
+          <p v-if="!offers || offers.length === 0">Bu ilan için paket yok</p>
+          <ul v-else class="offers-list">
+            <li v-for="o in offers" :key="o.id" class="offer-item">
+              <div class="offer-title">
+                <strong>{{ o.name }}</strong>
+                <span class="muted">({{ o.code }})</span>
+              </div>
+              <div class="muted">
+                {{ o.price_amount }} {{ o.price_currency }} • {{ o.billing_model }}
+              </div>
+              <div v-if="o.attributes && o.attributes.includes">
+                <strong>Dahil:</strong> {{ Array.isArray(o.attributes.includes) ? o.attributes.includes.join(', ') : o.attributes.includes }}
+              </div>
+              <details v-if="o.attributes" class="offer-details">
+                <summary>attributes</summary>
+                <pre class="full-json">{{ JSON.stringify(o.attributes, null, 2) }}</pre>
+              </details>
+            </li>
+          </ul>
+        </div>
+      </div>
       <div v-if="listing" class="detail-section">
         <h3>Full Data</h3>
         <pre class="full-json">{{ JSON.stringify(listing, null, 2) }}</pre>
       </div>
       <div class="actions">
         <button @click="openMessaging" class="action-button">Message Seller</button>
+        <button
+          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('reservation')"
+          @click="goToReservation"
+          class="action-button"
+        >
+          Create Reservation
+        </button>
+        <button
+          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('rental')"
+          @click="goToRental"
+          class="action-button"
+        >
+          Create Rental
+        </button>
+        <button
+          v-if="listing && listing.transaction_modes && listing.transaction_modes.includes('sale')"
+          @click="goToOrder"
+          class="action-button"
+        >
+          Buy
+        </button>
       </div>
-      <TransactionActionBar v-if="listing" :listing="listing" />
       
       <div v-if="listing && listing.status === 'draft'" class="publish-section">
         <h3>Publish Listing</h3>
@@ -59,7 +119,6 @@
 import { api } from '../api/client';
 import { getCategoriesTree } from '../lib/catalogSpine';
 import PublishListingAction from '../components/PublishListingAction.vue';
-import TransactionActionBar from '../components/listing/TransactionActionBar.vue';
 
 function findCategoryInTree(nodes, categoryId) {
   if (!Array.isArray(nodes)) return null;
@@ -78,7 +137,6 @@ export default {
   name: 'ListingDetailPage',
   components: {
     PublishListingAction,
-    TransactionActionBar,
   },
   props: {
     id: {
@@ -87,9 +145,6 @@ export default {
     },
   },
   computed: {
-    listingId() {
-      return String(this.listing?.id ?? this.$route.params.id ?? '');
-    },
     normalizedAttributes() {
       const listing = this.listing;
       const attrs = (listing && listing.attributes && typeof listing.attributes === 'object')
@@ -107,6 +162,10 @@ export default {
       loading: true,
       error: null,
       categoryName: null,
+      offers: [],
+      offersLoading: false,
+      offersLoaded: false,
+      offersError: null,
     };
   },
   async mounted() {
@@ -154,6 +213,23 @@ export default {
         this.loading = false;
       }
     },
+    async loadOffers() {
+      // Avoid background load; only fetch on user action.
+      if (this.offersLoading || this.offersLoaded) return;
+      try {
+        this.offersLoading = true;
+        this.offersError = null;
+        const data = await api.getListingOffers(this.id);
+        this.offers = Array.isArray(data) ? data : [];
+        this.offersLoaded = true;
+      } catch (err) {
+        const msg = err?.message || 'Failed to load offers';
+        this.offersError = msg;
+        this.offersLoaded = true; // loaded (but failed) prevents retry loops; user can refresh page if needed
+      } finally {
+        this.offersLoading = false;
+      }
+    },
     handlePublished(updatedListing) {
       this.listing = updatedListing;
     },
@@ -163,6 +239,15 @@ export default {
         query.tenant_id = this.listing.tenant_id;
       }
       this.$router.push({ path: `/listing/${this.id}/message`, query });
+    },
+    goToReservation() {
+      this.$router.push({ path: '/reservation/create', query: { listing_id: this.id } });
+    },
+    goToRental() {
+      this.$router.push({ path: '/rental/create', query: { listing_id: this.id } });
+    },
+    goToOrder() {
+      this.$router.push({ path: '/order/create', query: { listing_id: this.id } });
     },
   },
 };
@@ -192,6 +277,37 @@ export default {
 
 .detail-section p {
   margin-bottom: 0.5rem;
+}
+
+.muted {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.offers-actions {
+  margin: 0.75rem 0 0.5rem;
+}
+
+.offers-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.offer-item {
+  padding: 0.75rem;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.offer-title {
+  margin-bottom: 0.25rem;
+}
+
+.offer-details {
+  margin-top: 0.5rem;
 }
 
 .attributes-list {

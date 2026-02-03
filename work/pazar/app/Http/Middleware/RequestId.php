@@ -20,7 +20,7 @@ class RequestId
 
         $request->attributes->set('request_id', $requestId);
 
-        // Structured log context: ts, level, service, request_id, route, method, status, user_id, world
+        // Structured log context: ts, level, service, request_id, route, method, status, user_id, world_key
         Log::withContext([
             'service' => 'pazar',
             'request_id' => $requestId,
@@ -28,7 +28,10 @@ class RequestId
             'method' => $request->method(),
             'tenant_id' => $request->tenant?->id,
             'user_id' => $request->user()?->id,
-            'world' => $request->header('X-World') ?? $request->input('world'),
+            // Pazar is always the marketplace world (world_key); do not log X-World as a world_key.
+            'world_key' => 'marketplace',
+            // If some caller still sends X-World/world params (legacy), keep it as a hint only.
+            'world_hint' => $request->header('X-World') ?? $request->input('world'),
         ]);
 
         /** @var \Symfony\Component\HttpFoundation\Response $response */

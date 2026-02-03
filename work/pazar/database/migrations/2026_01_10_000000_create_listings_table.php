@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('listings', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('tenant_id');
-            $table->string('world', 20); // commerce|food|rentals
+            $table->string('world', 20); // marketplace (H-OS world_key; Pazar is marketplace)
             $table->string('title', 120);
             $table->text('description')->nullable();
             $table->bigInteger('price_amount')->nullable();

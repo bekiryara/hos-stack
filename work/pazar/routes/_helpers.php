@@ -110,3 +110,86 @@ if (!function_exists('pazar_category_descendant_cte_in_clause_sql')) {
     }
 }
 
+// Resolve category intent schema (CONTACT_ONLY vs FLOW) via config/category_flow_policy.php
+// Walks up ancestors and matches by slug; returns a deterministic response shape.
+if (!function_exists('pazar_category_intent_schema')) {
+    function pazar_category_intent_schema(int $categoryId): array {
+        // Default: allow all transaction modes, but treat reservation as FLOW.
+        $default = [
+            'allowed_transaction_modes' => ['sale', 'rental', 'reservation'],
+            'default_offer_variant' => 'sale',
+            'offer_variants' => [
+                ['key' => 'sale', 'label' => 'Satılık', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only'],
+                ['key' => 'rental', 'label' => 'Kiralık', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only'],
+                ['key' => 'reservation', 'label' => 'Rezervasyon', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow'],
+            ],
+        ];
+
+        $policy = config('category_flow_policy');
+        $rules = is_array($policy) && isset($policy['rules']) && is_array($policy['rules']) ? $policy['rules'] : [];
+
+        // Build ancestor chain from leaf to root
+        $chain = [];
+        $currentId = $categoryId;
+        $guard = 0;
+        while ($currentId && $guard < 50) {
+            $guard++;
+            $row = DB::table('categories')->where('id', $currentId)->first();
+            if (!$row) break;
+            $chain[] = $row;
+            $currentId = $row->parent_id ? (int) $row->parent_id : 0;
+        }
+
+        $resolved = null;
+        $resolvedFrom = null;
+        foreach ($chain as $cat) {
+            $slug = isset($cat->slug) ? (string) $cat->slug : '';
+            if ($slug !== '' && isset($rules[$slug]) && is_array($rules[$slug])) {
+                $resolved = $rules[$slug];
+                $resolvedFrom = $cat;
+                break;
+            }
+        }
+
+        $schema = $resolved ? array_merge($default, $resolved) : $default;
+
+        // Normalize offer_variants (array of objects with required keys)
+        $variants = [];
+        $seen = [];
+        $rawVariants = isset($schema['offer_variants']) && is_array($schema['offer_variants']) ? $schema['offer_variants'] : [];
+        foreach ($rawVariants as $v) {
+            if (!is_array($v)) continue;
+            $key = isset($v['key']) ? (string) $v['key'] : '';
+            if ($key === '' || isset($seen[$key])) continue;
+            $seen[$key] = true;
+            $variants[] = [
+                'key' => $key,
+                'label' => isset($v['label']) ? (string) $v['label'] : $key,
+                'transaction_mode' => isset($v['transaction_mode']) ? (string) $v['transaction_mode'] : 'sale',
+                'interaction_mode' => isset($v['interaction_mode']) ? (string) $v['interaction_mode'] : 'contact_only',
+            ];
+        }
+        if (empty($variants)) {
+            $variants = $default['offer_variants'];
+        }
+
+        $allowedModes = isset($schema['allowed_transaction_modes']) && is_array($schema['allowed_transaction_modes'])
+            ? array_values(array_filter(array_map('strval', $schema['allowed_transaction_modes'])))
+            : $default['allowed_transaction_modes'];
+
+        $defaultOfferVariant = isset($schema['default_offer_variant']) ? (string) $schema['default_offer_variant'] : $default['default_offer_variant'];
+        if ($defaultOfferVariant === '') $defaultOfferVariant = $default['default_offer_variant'];
+
+        return [
+            'category_id' => (int) $categoryId,
+            'resolved_from' => $resolvedFrom ? [
+                'category_id' => (int) $resolvedFrom->id,
+                'category_slug' => (string) $resolvedFrom->slug,
+            ] : null,
+            'allowed_transaction_modes' => $allowedModes,
+            'default_offer_variant' => $defaultOfferVariant,
+            'offer_variants' => $variants,
+        ];
+    }
+}
+

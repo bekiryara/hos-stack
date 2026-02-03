@@ -137,10 +137,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 if (!is_string($key) || $key === '') continue;
                 if (is_array($value)) {
                     if (array_key_exists('min', $value) && $value['min'] !== null && $value['min'] !== '') {
-                        $query->whereRaw("CAST(attributes_json->>? AS NUMERIC) >= ?", [$key, $value['min']]);
+                        $query->whereRaw("CAST(attributes_json->>? AS INTEGER) >= ?", [$key, (int) $value['min']]);
                     }
                     if (array_key_exists('max', $value) && $value['max'] !== null && $value['max'] !== '') {
-                        $query->whereRaw("CAST(attributes_json->>? AS NUMERIC) <= ?", [$key, $value['max']]);
+                        $query->whereRaw("CAST(attributes_json->>? AS INTEGER) <= ?", [$key, (int) $value['max']]);
                     }
                 } else {
                     if ($value === null || $value === '') continue;
@@ -158,9 +158,9 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                     $baseKey = $m[1];
                     $rangeType = $m[2]; // min|max
                     if ($rangeType === 'min') {
-                        $query->whereRaw("CAST(attributes_json->>? AS NUMERIC) >= ?", [$baseKey, $value]);
+                        $query->whereRaw("CAST(attributes_json->>? AS INTEGER) >= ?", [$baseKey, (int) $value]);
                     } else {
-                        $query->whereRaw("CAST(attributes_json->>? AS NUMERIC) <= ?", [$baseKey, $value]);
+                        $query->whereRaw("CAST(attributes_json->>? AS INTEGER) <= ?", [$baseKey, (int) $value]);
                     }
                 } else {
                     $query->whereRaw("attributes_json->>? = ?", [$key, $value]);

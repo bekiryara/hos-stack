@@ -19,18 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    // Register class-based Artisan commands (keep routes/console.php minimal).
-    ->withCommands([
-        __DIR__.'/../app/Console/Commands',
-    ])
+    // Artisan commands: app/Console/Commands removed (was empty). Schedule: no pazar commands.
     ->withSchedule(function (Schedule $schedule): void {
-        // Airbnb feel: short reservation hold that expires if checkout/payment never starts.
-        $schedule->command('reservations:expire-holds')->everyMinute();
-
-        // H-OS outbox dispatcher (hybrid/remote). In embedded mode this command is a no-op.
-        $schedule->command('hos:outbox-dispatch --limit=50')
-            ->everyMinute()
-            ->withoutOverlapping();
+        // Reserved for future: reservations:expire-holds, etc.
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // CORS and security headers (early) - global middleware
@@ -54,41 +45,24 @@ return Application::configure(basePath: dirname(__DIR__))
         // This project is a JSON API (no browser forms). Exempt API endpoints from CSRF protection
         // so token-authenticated requests (and webhooks) work in real HTTP clients.
         $middleware->validateCsrfTokens(except: [
-            'auth/*',
-            'admin/*',
-            'panel/*',
-            'products',
+            'api/*',
             'orders*',
             'reservations*',
             'payments*',
         ]);
 
         $middleware->alias([
-            'resolve.tenant' => \App\Http\Middleware\ResolveTenant::class,
-            'tenant.user' => \App\Http\Middleware\EnsureTenantUser::class,
-            'tenant.role' => \App\Http\Middleware\EnsureTenantRole::class,
             'tenant.scope' => \App\Http\Middleware\TenantScope::class, // WP-26: Store-scope X-Active-Tenant-Id + membership enforcement
             'tenant.membership_strict' => \App\Http\Middleware\TenantMembershipStrict::class, // WP-NEXT: Tx decisions strict HOS membership
             'persona.scope' => \App\Http\Middleware\PersonaScope::class, // WP-8: Persona-based header enforcement
             'auth.any' => \App\Http\Middleware\AuthAny::class,
             'auth.ctx' => \App\Http\Middleware\AuthContext::class, // WP-13: JWT auth context
-            'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
-            // UI (session-based) helpers
-            'ui.super_admin' => \App\Http\Middleware\EnsureUiSuperAdmin::class,
-            'ui.tenant' => \App\Http\Middleware\ResolveUiTenant::class,
-            // World resolver
-            'world.resolve' => \App\Http\Middleware\WorldResolver::class,
-            'world.lock' => \App\Http\Middleware\WorldLock::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $isApiRequest = function (Request $request): bool {
             return $request->expectsJson()
-                || $request->is('admin/*')
-                || $request->is('panel/*')
                 || $request->is('api/*')
-                || $request->is('auth/*')
-                || $request->is('products')
                 || $request->is('orders*')
                 || $request->is('reservations*')
                 || $request->is('payments*');
@@ -150,7 +124,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 'request_id' => $requestId,
                 'route' => $request->route()?->getName() ?? $request->path(),
                 'method' => $request->method(),
-                'world' => $request->header('X-World') ?? $request->input('world'),
+                // Pazar is always the marketplace world (world_key); do not log X-World as a world_key.
+                'world_key' => 'marketplace',
+                // If some caller still sends X-World/world params (legacy), keep it as a hint only.
+                'world_hint' => $request->header('X-World') ?? $request->input('world'),
                 'user_id' => $request->user()?->id,
                 'exception_class' => get_class($e),
                 'message' => $e->getMessage(),

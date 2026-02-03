@@ -158,3 +158,22 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
     ]);
 });
 
+// GET /v1/categories/{id}/intent-schema
+// Purpose: drive "2nd column" (offer/intents) without encoding it in categories
+// WP-8: GUEST+ persona (no headers required)
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/categories/{id}/intent-schema', function ($id) {
+    $category = DB::table('categories')->where('id', $id)->first();
+    if (!$category) {
+        return response()->json([
+            'error' => 'category_not_found',
+            'message' => "Category with id {$id} not found"
+        ], 404);
+    }
+
+    $schema = pazar_category_intent_schema((int) $id);
+    // Additive: include the requested category slug for client convenience
+    $schema['category_slug'] = (string) $category->slug;
+
+    return response()->json($schema);
+});
+

@@ -1,23 +1,25 @@
 # WORLD REGISTRY
 
-Canonical source of truth for world definitions in Pazar application.
+Canonical mirror of the H-OS world directory enablement for this stack.
+
+IMPORTANT:
+- Pazar application itself is the `marketplace` world.
+- This file exists for governance/conformance and must match `work/pazar/config/worlds.php` exactly.
+- Do not interpret this as “Pazar manages all worlds internally”.
 
 ## World Status
 
 ### Enabled Worlds
 - marketplace
-- messaging
 
 ### Disabled Worlds
-- social
+<!-- None (Pazar does not declare other worlds here) -->
 
 **Enabled Worlds (detailed):**
 - `marketplace` - Marketplace (Pazar)
-  - Verticals: commerce (E-commerce), food (Food delivery), rentals (Rental/Reservation)
-- `messaging` - Mesajlaşma
-
-**Disabled Worlds (planned but closed):**
-- `social` - Sosyal
+  - Verticals (catalog roots): vehicle, real-estate, service
+ 
+Other worlds (e.g. `messaging`, `social`) are owned by the H-OS world directory and are not declared here.
 
 ## World Definitions
 
@@ -26,14 +28,10 @@ Canonical source of truth for world definitions in Pazar application.
 **world_id:** `marketplace`  
 **label_tr:** Pazar  
 **status:** enabled  
-**verticals:** commerce (E-commerce), food (Food delivery), rentals (Rental/Reservation)
+**verticals (catalog roots):** vehicle, real-estate, service
 
 ### Disabled Worlds
-
-**world_id:** `social`  
-**label_tr:** Sosyal  
-**status:** disabled  
-**note:** Planned but currently closed
+<!-- None (Pazar does not declare other worlds here) -->
 
 ## Canonical Rules
 

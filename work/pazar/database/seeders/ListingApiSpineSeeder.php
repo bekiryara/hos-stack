@@ -9,8 +9,7 @@ use Illuminate\Support\Str;
 /**
  * Listing API Spine Seeder
  * 
- * Lightweight seed for Product API Spine READ MVP.
- * Inserts 3 sample rows per enabled world (commerce, food, rentals) if table is empty.
+ * Inserts sample listings for marketplace world if table is empty.
  * Dev-only safe: checks if data exists before inserting.
  */
 final class ListingApiSpineSeeder extends Seeder
@@ -27,22 +26,12 @@ final class ListingApiSpineSeeder extends Seeder
             return;
         }
 
-        $enabledWorlds = ['commerce', 'food', 'rentals'];
+        $enabledWorlds = ['marketplace'];
         $sampleData = [
-            'commerce' => [
-                ['Laptop Computer', 15000.00, 'TRY'],
-                ['Wireless Mouse', 250.00, 'TRY'],
-                ['USB-C Cable', 150.00, 'TRY'],
-            ],
-            'food' => [
-                ['Pizza Margherita', 120.00, 'TRY'],
-                ['Caesar Salad', 85.00, 'TRY'],
-                ['Chocolate Cake', 60.00, 'TRY'],
-            ],
-            'rentals' => [
-                ['Studio Apartment', 5000.00, 'TRY'],
-                ['Office Space', 8000.00, 'TRY'],
-                ['Conference Room', 500.00, 'TRY'],
+            'marketplace' => [
+                ['Sample Listing A', 15000.00, 'TRY'],
+                ['Sample Listing B', 250.00, 'TRY'],
+                ['Sample Listing C', 150.00, 'TRY'],
             ],
         ];
 
@@ -66,7 +55,7 @@ final class ListingApiSpineSeeder extends Seeder
             }
         }
 
-        $this->command->info('Inserted 3 sample listings for each enabled world (commerce, food, rentals).');
+        $this->command->info('Inserted 3 sample listings for marketplace world.');
     }
 }
 

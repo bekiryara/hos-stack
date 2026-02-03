@@ -120,6 +120,22 @@ Response format:
 ]
 ```
 
+#### §4.1.1. Terminology Lock: World vs Vertical vs Transaction Mode
+
+To prevent drift and “same word, different meaning” bugs, these terms are locked:
+
+- **World (`world_key` / `world_id`)**: top-level product/service boundary in H-OS world directory.
+  - Canonical source: H-OS world directory (`GET /v1/worlds`).
+  - Pazar’s local `work/pazar/config/worlds.php` is NOT a world directory; it only controls `marketplace` enablement for Pazar itself.
+
+- **Vertical (catalog tree root / category grouping)**: marketplace-internal classification carried by the category tree.
+  - Contract-locked root slugs (gate): `vehicle`, `real-estate`, `service`.
+  - NOTE: This is a catalog shape contract, not the H-OS world registry.
+
+- **Transaction mode**: cross-vertical transaction intent for listings.
+  - Allowed: `sale`, `rental`, `reservation`.
+  - NOTE: Transaction modes are independent from vertical; they are validated by schema and transaction spines.
+
 **World Disabled Response (§17.5):**
 
 HTTP 503 Service Unavailable:

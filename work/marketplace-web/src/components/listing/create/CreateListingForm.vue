@@ -29,16 +29,15 @@
     </div>
 
     <div class="form-group">
-      <label>
-        Category <span class="required">*</span>
-        <select v-model.number="local.category_id" required class="form-input" @change="emitCategoryChange">
-          <option value="">Select leaf category...</option>
-          <option v-for="cat in leafCategories" :key="cat.id" :value="cat.id">
-            {{ cat.slug || cat.title }} ({{ cat.id }})
-          </option>
-        </select>
-        <small v-if="!leafCategories.length && categories.length" class="field-hint">Sadece yaprak kategoriler listelenir.</small>
+      <label class="category-label">
+        Kategori <span class="required">*</span>
       </label>
+      <CategoryPickerStepper
+        v-model="local.category_id"
+        :categories-tree="categoriesTree"
+        mode="create"
+        @category-change="emitCategoryChange"
+      />
     </div>
 
     <div class="form-group">
@@ -69,21 +68,28 @@
 
     <div class="form-group">
       <label>
-        Transaction Modes <span class="required">*</span>
-        <div class="checkbox-group">
-          <label>
-            <input v-model="local.transaction_modes" type="checkbox" value="sale" />
-            Sale
-          </label>
-          <label>
-            <input v-model="local.transaction_modes" type="checkbox" value="rental" />
-            Rental
-          </label>
-          <label>
-            <input v-model="local.transaction_modes" type="checkbox" value="reservation" />
-            Reservation
-          </label>
-        </div>
+        İlan Türü <span class="required">*</span>
+        <select
+          v-model="local.offer_variant"
+          class="form-input"
+          required
+          :disabled="!intentSchema || !intentSchema.offer_variants || intentSchema.offer_variants.length === 0"
+          @change="onOfferVariantChange"
+        >
+          <option value="" disabled>Seçiniz...</option>
+          <option
+            v-for="v in (intentSchema && intentSchema.offer_variants ? intentSchema.offer_variants : [])"
+            :key="v.key"
+            :value="v.key"
+          >
+            {{ v.label || v.key }}
+          </option>
+        </select>
+        <small v-if="selectedOfferVariant" class="hint">
+          <strong>Mode:</strong> {{ selectedOfferVariant.transaction_mode }}
+          <span class="dot">•</span>
+          <strong>Workflow:</strong> {{ selectedOfferVariant.interaction_mode }}
+        </small>
       </label>
     </div>
 
@@ -93,61 +99,38 @@
         v-for="filter in filterSchema.filters"
         :key="filter.attribute_key"
         class="attribute-field"
-        :class="{ 'has-error': fieldError(filter.attribute_key) }"
       >
-        <label>
-          {{ filter.label || filter.attribute_key }}
-          <span v-if="filter.required" class="required-badge">required</span>
-          <span v-if="filter.type || filter.value_type" class="type-badge">{{ filter.type || filter.value_type }}</span>
-        </label>
-        <select
-          v-if="isSelectField(filter)"
+        <FilterField
+          :filter="filter"
+          mode="create"
           v-model="local.attributes[filter.attribute_key]"
-          class="form-input"
-        >
-          <option value=""></option>
-          <option v-for="opt in getOptions(filter)" :key="String(opt)" :value="opt">{{ opt }}</option>
-        </select>
-        <input
-          v-else-if="filter.value_type === 'string' || (filter.type === 'text' && filter.value_type !== 'number')"
-          v-model="local.attributes[filter.attribute_key]"
-          type="text"
-          :placeholder="filter.attribute_key"
-          class="form-input"
         />
-        <input
-          v-else-if="filter.value_type === 'boolean' || filter.type === 'boolean'"
-          v-model="local.attributes[filter.attribute_key]"
-          type="checkbox"
-          class="form-checkbox"
-        />
-        <input
-          v-else-if="filter.value_type === 'number' || filter.type === 'number' || filter.type === 'range'"
-          v-model.number="local.attributes[filter.attribute_key]"
-          type="number"
-          :placeholder="filter.attribute_key"
-          class="form-input"
-        />
-        <span v-if="fieldError(filter.attribute_key)" class="field-error">{{ fieldError(filter.attribute_key) }}</span>
       </div>
     </div>
 
-    <button type="submit" :disabled="loading || !tenantId || !canSubmit" class="submit-button">
+    <button type="submit" :disabled="loading || !tenantId" class="submit-button">
       {{ loading ? 'Creating...' : 'Create Listing (DRAFT)' }}
     </button>
   </form>
 </template>
 
 <script>
+import CategoryPickerStepper from '../../catalog/CategoryPickerStepper.vue';
+import FilterField from '../../common/FilterField.vue';
+
 export default {
   name: 'CreateListingForm',
+  components: {
+    CategoryPickerStepper,
+    FilterField,
+  },
   props: {
-    categories: { type: Array, default: () => [] },
+    categoriesTree: { type: Array, default: () => [] },
     filterSchema: { type: Object, default: null },
+    intentSchema: { type: Object, default: null },
     tenantId: { type: String, default: '' },
     tenantIdLoadError: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
-    backendError: { type: Object, default: null },
   },
   emits: ['category-change', 'submit'],
   data() {
@@ -157,114 +140,64 @@ export default {
         title: '',
         description: '',
         transaction_modes: [],
+        offer_variant: '',
         attributes: {},
       },
     };
   },
   computed: {
-    flatCategories() {
-      const out = [];
-      const walk = (nodes) => {
-        if (!Array.isArray(nodes)) return;
-        for (const n of nodes) {
-          if (!n) continue;
-          out.push(n);
-          const children = Array.isArray(n.children) ? n.children : [];
-          if (children.length) walk(children);
-        }
-      };
-      walk(this.categories);
-      return out;
-    },
-    leafCategories() {
-      const flat = this.flatCategories || [];
-      return flat.filter((c) => {
-        const children = Array.isArray(c.children) ? c.children : [];
-        return children.length === 0;
-      });
-    },
-    canSubmit() {
-      const hasTenant = !!this.tenantId;
-      const hasCategory = !!this.local.category_id;
-      const hasTitle = !!(this.local.title && String(this.local.title).trim().length > 0);
-      return hasTenant && hasCategory && hasTitle;
-    },
-    backendCode() {
-      const b = this.backendError;
-      if (!b || typeof b !== 'object') return null;
-      return b.code || b.error_code || b.error || null;
-    },
-    backendDetails() {
-      const b = this.backendError;
-      if (!b || typeof b !== 'object') return null;
-      return b.details && typeof b.details === 'object' ? b.details : null;
-    },
-    fieldErrors() {
-      const code = this.backendCode;
-      const details = this.backendDetails;
-      const out = {};
-      if (!code || !details) return out;
-
-      if (code === 'missing_required_attribute' && Array.isArray(details.missing)) {
-        for (const k of details.missing) out[String(k)] = 'Required field is missing.';
-      }
-      if (code === 'invalid_attribute_value' && details.invalid_values && typeof details.invalid_values === 'object') {
-        for (const [k] of Object.entries(details.invalid_values)) out[String(k)] = 'Invalid value for this field.';
-      }
-      if (code === 'unknown_attribute_keys' && Array.isArray(details.unknown_keys)) {
-        for (const k of details.unknown_keys) out[String(k)] = 'Unknown attribute key for this category.';
-      }
-      return out;
+    selectedOfferVariant() {
+      const schema = this.intentSchema;
+      const key = this.local.offer_variant || '';
+      const list = schema && Array.isArray(schema.offer_variants) ? schema.offer_variants : [];
+      return list.find((v) => v && v.key === key) || null;
     },
   },
   watch: {
-    'local.category_id'(val) {
-      this.local.attributes = {};
-      this.$emit('category-change', val);
-    },
-    filterSchema: {
-      deep: true,
-      handler() {
-        this.local.attributes = {};
+    intentSchema: {
+      handler(newSchema) {
+        const list = newSchema && Array.isArray(newSchema.offer_variants) ? newSchema.offer_variants : [];
+        if (list.length === 0) return;
+        if (this.local.offer_variant) return;
+        const defKey = (newSchema && newSchema.default_offer_variant) ? String(newSchema.default_offer_variant) : '';
+        const fallback = defKey && list.find((v) => v && v.key === defKey) ? defKey : String(list[0].key);
+        this.local.offer_variant = fallback;
+        this.applyOfferVariant();
       },
+      immediate: true,
     },
   },
   methods: {
     emitCategoryChange() {
+      // Reset offer selection when category changes (policy is category-scoped)
+      this.local.offer_variant = '';
+      this.local.transaction_modes = [];
+      if (this.local.attributes) {
+        delete this.local.attributes.offer_variant;
+        delete this.local.attributes.interaction_mode;
+      }
       this.$emit('category-change', this.local.category_id);
     },
-    isSelectField(filter) {
-      if (!filter || typeof filter !== 'object') return false;
-      const rules = filter.rules && typeof filter.rules === 'object' ? filter.rules : null;
-      if (rules && Array.isArray(rules.options) && rules.options.length) return true;
-      if (filter.value_type === 'enum') return true;
-      if (filter.ui_component === 'select') return true;
-      return false;
+    onOfferVariantChange() {
+      this.applyOfferVariant();
     },
-    getOptions(filter) {
-      const rules = filter && filter.rules && typeof filter.rules === 'object' ? filter.rules : null;
-      const opts = rules && Array.isArray(rules.options) ? rules.options : [];
-      return opts.map((o) => (o == null ? '' : String(o))).filter((s) => s !== '');
-    },
-    fieldError(key) {
-      return this.fieldErrors[String(key)] || null;
+    applyOfferVariant() {
+      const v = this.selectedOfferVariant;
+      if (!v) return;
+      const mode = v.transaction_mode || 'sale';
+      this.local.transaction_modes = [mode];
+      this.local.attributes = this.local.attributes || {};
+      this.local.attributes.offer_variant = v.key;
+      this.local.attributes.interaction_mode = (v.interaction_mode === 'flow') ? 'flow' : 'contact_only';
     },
     onSubmit() {
-      const normalizedAttributes = {};
-      for (const [k, v] of Object.entries(this.local.attributes || {})) {
-        if (v === null || v === undefined) continue;
-        if (typeof v === 'string' && v.trim() === '') continue;
-        normalizedAttributes[k] = v;
-      }
-
       const snapshot = {
         category_id: this.local.category_id,
-        title: (this.local.title || '').trim(),
-        description: this.local.description || '',
-        transaction_modes: Array.isArray(this.local.transaction_modes) ? [...this.local.transaction_modes] : [],
-        attributes: normalizedAttributes,
+        title: this.local.title,
+        description: this.local.description,
+        transaction_modes: [...(this.local.transaction_modes || [])],
+        attributes: { ...(this.local.attributes || {}) },
       };
-
       this.$emit('submit', snapshot);
     },
   },
@@ -315,6 +248,18 @@ export default {
   font-weight: normal;
 }
 
+.hint {
+  display: block;
+  margin-top: 0.35rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.dot {
+  margin: 0 0.35rem;
+  color: #999;
+}
+
 .required-badge {
   display: inline-block;
   background: #ff9800;
@@ -340,24 +285,6 @@ export default {
   padding: 1rem;
   background: #f9f9f9;
   border-radius: 4px;
-}
-
-.attribute-field.has-error {
-  border-left: 3px solid #d32f2f;
-}
-
-.field-error {
-  display: block;
-  color: #d32f2f;
-  font-size: 0.85rem;
-  margin-top: 0.25rem;
-}
-
-.field-hint {
-  display: block;
-  color: #666;
-  font-size: 0.85rem;
-  margin-top: 0.25rem;
 }
 
 .submit-button {
@@ -419,5 +346,11 @@ export default {
   padding: 0.5rem;
   border-radius: 4px;
   border-left: 3px solid #ff9800;
+}
+
+.category-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 </style>

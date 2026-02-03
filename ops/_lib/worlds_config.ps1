@@ -20,8 +20,8 @@ function Get-WorldsConfig {
     
     .EXAMPLE
     $worlds = Get-WorldsConfig
-    $worlds.Enabled  # @('commerce', 'food', 'rentals')
-    $worlds.Disabled # @('services', 'real_estate', 'vehicle')
+    $worlds.Enabled  # @('marketplace')
+    $worlds.Disabled # @()
     #>
     param(
         [string]$WorldsConfigPath = "work\pazar\config\worlds.php"

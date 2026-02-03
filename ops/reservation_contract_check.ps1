@@ -21,6 +21,7 @@ $hosBaseUrl = "http://localhost:3000"
 $tenantId = $null
 $authToken = $null
 $listingId = $null
+$offerId = $null
 $reservationId = $null
 
 # Load test_auth helper
@@ -96,6 +97,70 @@ function Get-TenantIdFromMemberships {
     }
     
     return $null
+}
+
+# Helper: Create reservation with retry on 409 CONFLICT (slot overlap)
+function New-HighEntropySlotWindow {
+    param(
+        [int]$DaysAhead,
+        [int]$DurationHours
+    )
+    $now = Get-Date
+    $guid = [System.Guid]::NewGuid().ToString("N")
+    $hash = [System.Security.Cryptography.MD5]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($guid))
+    $offset = [Math]::Abs([BitConverter]::ToInt32($hash, 0)) % 200000  # spread across many days
+    $base = $now.AddDays($DaysAhead).AddMinutes($offset)
+    $start = $base.ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $end = $base.AddHours($DurationHours).ToString("yyyy-MM-ddTHH:mm:ssZ")
+    return @{ slot_start = $start; slot_end = $end }
+}
+
+function Invoke-CreateReservationWithRetry {
+    param(
+        [string]$PazarBaseUrl,
+        [string]$AuthToken,
+        [string]$ListingId,
+        [int]$PartySize,
+        [string]$OfferId,
+        [string]$IdempotencyPrefix,
+        [int]$DaysAhead = 90,
+        [int]$DurationHours = 4,
+        [int]$MaxAttempts = 6
+    )
+    $url = "${PazarBaseUrl}/api/v1/reservations"
+    for ($i = 1; $i -le $MaxAttempts; $i++) {
+        $now = Get-Date
+        $key = "${IdempotencyPrefix}-" + $now.ToString("yyyyMMddHHmmss") + "-" + $now.Millisecond.ToString("D3") + "-" + [System.Guid]::NewGuid().ToString("N").Substring(0, 8)
+        $slot = New-HighEntropySlotWindow -DaysAhead $DaysAhead -DurationHours $DurationHours
+        $bodyObj = @{
+            listing_id = $ListingId
+            slot_start = $slot.slot_start
+            slot_end = $slot.slot_end
+            party_size = $PartySize
+        }
+        if ($OfferId) { $bodyObj.offer_id = $OfferId }
+        $body = $bodyObj | ConvertTo-Json
+        $headers = @{
+            "Content-Type" = "application/json"
+            "Authorization" = $AuthToken
+            "Idempotency-Key" = $key
+        }
+        try {
+            $resp = Invoke-RestMethod -Uri $url -Method Post -Body $body -Headers $headers -TimeoutSec 10 -ErrorAction Stop
+            return @{ response = $resp; body = $body; idempotency_key = $key; slot_start = $slot.slot_start; slot_end = $slot.slot_end }
+        } catch {
+            $statusCode = $null
+            if ($_.Exception.Response) {
+                try { $statusCode = $_.Exception.Response.StatusCode.value__ } catch {}
+            }
+            if ($statusCode -eq 409) {
+                # slot overlap; retry with a different slot/key
+                continue
+            }
+            throw
+        }
+    }
+    throw "Could not create reservation without slot conflict after $MaxAttempts attempts"
 }
 
 # Bootstrap JWT token and get tenant_id
@@ -217,10 +282,17 @@ try {
     $listingsResponse = Invoke-RestMethod -Uri $searchUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
     
     if ($listingsResponse -is [Array] -and $listingsResponse.Count -gt 0) {
-        $listingId = $listingsResponse[0].id
+        # Prefer a listing owned by our active tenant so we can attach offers/packages.
+        $owned = $listingsResponse | Where-Object { $_.tenant_id -eq $tenantId } | Select-Object -First 1
+        $picked = $owned
+        if (-not $picked) { $picked = $listingsResponse[0] }
+        $listingId = $picked.id
         Write-Host "PASS: Found existing published listing: $listingId" -ForegroundColor Green
-        Write-Host "  Title: $($listingsResponse[0].title)" -ForegroundColor Gray
-        Write-Host "  Capacity Max: $($listingsResponse[0].attributes.capacity_max)" -ForegroundColor Gray
+        Write-Host "  Title: $($picked.title)" -ForegroundColor Gray
+        Write-Host "  Capacity Max: $($picked.attributes.capacity_max)" -ForegroundColor Gray
+        if ($picked.tenant_id -ne $tenantId) {
+            Write-Host "  WARN: Picked listing is not owned by active tenant; offer (package) create may fail. Will create our own listing if needed." -ForegroundColor Yellow
+        }
     } else {
         # Create a new listing if none exists
         Write-Host "  No published listing found. Creating new listing..." -ForegroundColor Yellow
@@ -294,36 +366,119 @@ if (-not $listingId) {
 
 Write-Host ""
 
+# MVP: Create a package offer for the listing (offer_id)
+# This enables reservation to reference the selected package.
+Write-Host "[0b] Creating a package offer for reservation (offer_id)..." -ForegroundColor Yellow
+try {
+    $offerKey = "test-offer-" + (Get-Date).ToString("yyyyMMddHHmmss") + "-" + (Get-Date).Millisecond.ToString("D3")
+    $offerCode = "pkg-" + (Get-Date).ToString("yyyyMMddHHmmss") + "-" + (Get-Date).Millisecond.ToString("D3")
+    $offerBody = @{
+        code = $offerCode
+        name = "Test Package (WP-4)"
+        price_amount = 100000
+        price_currency = "TRY"
+        billing_model = "one_time"
+        # Keep attributes null in contract check to avoid any hardcoded package content.
+        attributes = $null
+    } | ConvertTo-Json -Compress
+
+    $offerHeaders = @{
+        "Content-Type" = "application/json"
+        "Authorization" = $authToken
+        "X-Active-Tenant-Id" = $tenantId
+        "Idempotency-Key" = $offerKey
+    }
+
+    $offerResp = Invoke-RestMethod -Uri "${pazarBaseUrl}/api/v1/listings/${listingId}/offers" -Method Post -Headers $offerHeaders -Body $offerBody -TimeoutSec 10 -ErrorAction Stop
+    if ($offerResp -and $offerResp.id) {
+        $offerId = $offerResp.id
+        Write-Host "PASS: Offer created for listing" -ForegroundColor Green
+        Write-Host "  Offer ID: $offerId" -ForegroundColor Gray
+    } else {
+        Write-Host "WARN: Offer create returned invalid response; continuing without offer_id" -ForegroundColor Yellow
+        $offerId = $null
+    }
+} catch {
+    # If the picked listing is not owned by tenant, offer create will 403.
+    # In that case, create our own listing+publish and retry once.
+    $statusCode = $null
+    if ($_.Exception.Response) {
+        try { $statusCode = $_.Exception.Response.StatusCode.value__ } catch {}
+    }
+    if ($statusCode -eq 403) {
+        Write-Host "WARN: Offer create forbidden (listing not owned). Creating our own published listing and retrying..." -ForegroundColor Yellow
+        try {
+            # Create+publish a fresh listing owned by this tenant
+            $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
+            $listingBody = @{
+                category_id = $weddingHallCategoryId
+                title = "Test Wedding Hall Listing (WP-4.1 Owned)"
+                description = "Owned listing for reservation+offer linking"
+                transaction_modes = @("reservation")
+                attributes = @{
+                    capacity_max = 500
+                    city = "Istanbul"
+                }
+            } | ConvertTo-Json -Compress
+            $listingHeaders = @{
+                "Authorization" = $authToken
+                "X-Active-Tenant-Id" = $tenantId
+                "Content-Type" = "application/json"
+            }
+            $createListingResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Headers $listingHeaders -Body $listingBody -TimeoutSec 10 -ErrorAction Stop
+            $listingId = $createListingResponse.id
+            Invoke-RestMethod -Uri "${pazarBaseUrl}/api/v1/listings/${listingId}/publish" -Method Post -Headers @{ "Authorization" = $authToken; "X-Active-Tenant-Id" = $tenantId } -TimeoutSec 10 -ErrorAction Stop | Out-Null
+
+            # Retry offer create
+            $offerKey = "test-offer-" + (Get-Date).ToString("yyyyMMddHHmmss") + "-" + (Get-Date).Millisecond.ToString("D3")
+            $offerHeaders = @{
+                "Content-Type" = "application/json"
+                "Authorization" = $authToken
+                "X-Active-Tenant-Id" = $tenantId
+                "Idempotency-Key" = $offerKey
+            }
+            $offerBody = @{
+                code = $offerCode
+                name = "Test Package (WP-4)"
+                price_amount = 100000
+                price_currency = "TRY"
+                billing_model = "one_time"
+                attributes = $null
+            } | ConvertTo-Json -Compress
+            $offerResp = Invoke-RestMethod -Uri "${pazarBaseUrl}/api/v1/listings/${listingId}/offers" -Method Post -Headers $offerHeaders -Body $offerBody -TimeoutSec 10 -ErrorAction Stop
+            if ($offerResp -and $offerResp.id) {
+                $offerId = $offerResp.id
+                Write-Host "PASS: Offer created for owned listing" -ForegroundColor Green
+                Write-Host "  Offer ID: $offerId" -ForegroundColor Gray
+            } else {
+                Write-Host "WARN: Offer create returned invalid response after retry; continuing without offer_id" -ForegroundColor Yellow
+                $offerId = $null
+            }
+        } catch {
+            Write-Host "WARN: Could not create owned listing/offer: $($_.Exception.Message) (continuing without offer_id)" -ForegroundColor Yellow
+            $offerId = $null
+        }
+    } else {
+        Write-Host "WARN: Could not create offer: $($_.Exception.Message) (continuing without offer_id)" -ForegroundColor Yellow
+        $offerId = $null
+    }
+}
+
+Write-Host ""
+
 # Test 1: Create reservation (party_size <= capacity_max) => PASS 201
 Write-Host "[1] Testing POST /api/v1/reservations (party_size <= capacity_max)..." -ForegroundColor Yellow
 $createReservationUrl = "${pazarBaseUrl}/api/v1/reservations"
 
-# Generate unique future slot window: now + 30 days + unique offset
-# Use idempotency key hash to ensure uniqueness across runs
-$testNow = Get-Date
-# Create unique offset based on idempotency key hash (ensures each run gets unique slot)
-$idempotencyHash = [System.Security.Cryptography.MD5]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($idempotencyKey))
-$slotOffsetMinutes = [BitConverter]::ToInt32($idempotencyHash, 0) % 1440  # 0-1439 minutes (24 hours)
-if ($slotOffsetMinutes -lt 0) { $slotOffsetMinutes += 1440 }  # Ensure positive
-$slotBase = $testNow.AddDays(90).AddMinutes($slotOffsetMinutes)
-$slotStart = $slotBase.Date.AddHours($slotBase.Hour).AddMinutes($slotBase.Minute).ToString("yyyy-MM-ddTHH:mm:ssZ")
-$slotEnd = $slotBase.Date.AddHours($slotBase.Hour).AddMinutes($slotBase.Minute).AddHours(4).ToString("yyyy-MM-ddTHH:mm:ssZ")
 $partySize = 100  # Should be <= capacity_max
 
-$reservationBody = @{
-    listing_id = $listingId
-    slot_start = $slotStart
-    slot_end = $slotEnd
-    party_size = $partySize
-} | ConvertTo-Json
-
 try {
-    $headers = @{
-        "Content-Type" = "application/json"
-        "Authorization" = $authToken
-        "Idempotency-Key" = $idempotencyKey
-    }
-    $createResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $reservationBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
+    $created = Invoke-CreateReservationWithRetry -PazarBaseUrl $pazarBaseUrl -AuthToken $authToken -ListingId $listingId -PartySize $partySize -OfferId $offerId -IdempotencyPrefix "test-reservation-key" -DaysAhead 120 -DurationHours 4 -MaxAttempts 8
+    $createResponse = $created.response
+    $reservationBody = $created.body
+    $idempotencyKey = $created.idempotency_key
+    $slotStart = $created.slot_start
+    $slotEnd = $created.slot_end
     
     if (-not $createResponse.id) {
         Write-Host "FAIL: Create reservation response missing 'id'" -ForegroundColor Red
@@ -331,12 +486,20 @@ try {
     } elseif ($createResponse.status -ne "requested") {
         Write-Host "FAIL: Expected status='requested', got '$($createResponse.status)'" -ForegroundColor Red
         $hasFailures = $true
+    } elseif ($offerId -and $createResponse.offer_id -ne $offerId) {
+        Write-Host "FAIL: Expected offer_id to match created offer" -ForegroundColor Red
+        Write-Host "  Expected: $offerId" -ForegroundColor Yellow
+        Write-Host "  Got: $($createResponse.offer_id)" -ForegroundColor Yellow
+        $hasFailures = $true
     } else {
         $reservationId = $createResponse.id
         Write-Host "PASS: Reservation created successfully" -ForegroundColor Green
         Write-Host "  Reservation ID: $reservationId" -ForegroundColor Gray
         Write-Host "  Status: $($createResponse.status)" -ForegroundColor Gray
         Write-Host "  Party Size: $($createResponse.party_size)" -ForegroundColor Gray
+        if ($offerId) {
+            Write-Host "  Offer ID: $($createResponse.offer_id)" -ForegroundColor Gray
+        }
     }
 } catch {
     $statusCode = $null
@@ -515,32 +678,9 @@ Write-Host ""
 if ($listingId) {
     Write-Host "[5] Testing POST /api/v1/reservations/{id}/accept (correct tenant)..." -ForegroundColor Yellow
     
-    # Create a fresh reservation for accept test (different slot, different idempotency key)
-    # Use high-entropy slot generation to avoid conflicts with existing reservations
-    $acceptTestNow = Get-Date
-    $acceptTestIdempotencyKey = "test-accept-key-" + $acceptTestNow.ToString("yyyyMMddHHmmss") + "-" + $acceptTestNow.Millisecond.ToString("D3") + "-" + [System.Guid]::NewGuid().ToString("N").Substring(0, 8)
-    # Use timestamp + random offset for unique slot (ensures each run gets different slot)
-    $acceptTotalSeconds = (($acceptTestNow.Hour * 3600) + ($acceptTestNow.Minute * 60) + $acceptTestNow.Second + $acceptTestNow.Millisecond / 1000.0)
-    $acceptSlotOffsetMinutes = ([Math]::Floor($acceptTotalSeconds / 60) + ([System.Guid]::NewGuid().GetHashCode() % 1000)) % 1440
-    $acceptTestSlotBase = $acceptTestNow.AddDays(92).AddHours(1).AddMinutes($acceptSlotOffsetMinutes)
-    $acceptTestSlotStart = $acceptTestSlotBase.Date.AddHours($acceptTestSlotBase.Hour).AddMinutes($acceptTestSlotBase.Minute).ToString("yyyy-MM-ddTHH:mm:ssZ")
-    $acceptTestSlotEnd = $acceptTestSlotBase.Date.AddHours($acceptTestSlotBase.Hour).AddMinutes($acceptTestSlotBase.Minute).AddHours(4).ToString("yyyy-MM-ddTHH:mm:ssZ")
-    
-    $acceptTestReservationBody = @{
-        listing_id = $listingId
-        slot_start = $acceptTestSlotStart
-        slot_end = $acceptTestSlotEnd
-        party_size = 50
-    } | ConvertTo-Json
-    
     try {
-        # Create reservation for accept test
-        $acceptTestHeaders = @{
-            "Content-Type" = "application/json"
-            "Authorization" = $authToken
-            "Idempotency-Key" = $acceptTestIdempotencyKey
-        }
-        $acceptTestCreateResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $acceptTestReservationBody -Headers $acceptTestHeaders -TimeoutSec 10 -ErrorAction Stop
+        $acceptCreated = Invoke-CreateReservationWithRetry -PazarBaseUrl $pazarBaseUrl -AuthToken $authToken -ListingId $listingId -PartySize 50 -OfferId $null -IdempotencyPrefix "test-accept-key" -DaysAhead 140 -DurationHours 4 -MaxAttempts 8
+        $acceptTestCreateResponse = $acceptCreated.response
         $acceptTestReservationId = $acceptTestCreateResponse.id
         
         # Now test accept
@@ -589,32 +729,9 @@ Write-Host ""
 if ($listingId) {
     Write-Host "[6] Testing POST /api/v1/reservations/{id}/accept (missing header)..." -ForegroundColor Yellow
     
-    # Create a fresh reservation for reject test (different slot, different idempotency key)
-    # Use high-entropy slot generation to avoid conflicts with existing reservations
-    $rejectTestNow = Get-Date
-    $rejectTestIdempotencyKey = "test-reject-key-" + $rejectTestNow.ToString("yyyyMMddHHmmss") + "-" + $rejectTestNow.Millisecond.ToString("D3") + "-" + [System.Guid]::NewGuid().ToString("N").Substring(0, 8)
-    # Use timestamp + random offset for unique slot (ensures each run gets different slot)
-    $rejectTotalSeconds = (($rejectTestNow.Hour * 3600) + ($rejectTestNow.Minute * 60) + $rejectTestNow.Second + $rejectTestNow.Millisecond / 1000.0)
-    $rejectSlotOffsetMinutes = ([Math]::Floor($rejectTotalSeconds / 60) + ([System.Guid]::NewGuid().GetHashCode() % 1000)) % 1440
-    $rejectTestSlotBase = $rejectTestNow.AddDays(93).AddHours(2).AddMinutes($rejectSlotOffsetMinutes)
-    $rejectTestSlotStart = $rejectTestSlotBase.Date.AddHours($rejectTestSlotBase.Hour).AddMinutes($rejectTestSlotBase.Minute).ToString("yyyy-MM-ddTHH:mm:ssZ")
-    $rejectTestSlotEnd = $rejectTestSlotBase.Date.AddHours($rejectTestSlotBase.Hour).AddMinutes($rejectTestSlotBase.Minute).AddHours(4).ToString("yyyy-MM-ddTHH:mm:ssZ")
-    
-    $rejectTestReservationBody = @{
-        listing_id = $listingId
-        slot_start = $rejectTestSlotStart
-        slot_end = $rejectTestSlotEnd
-        party_size = 50
-    } | ConvertTo-Json
-    
     try {
-        # Create reservation for reject test
-        $rejectTestHeaders = @{
-            "Content-Type" = "application/json"
-            "Authorization" = $authToken
-            "Idempotency-Key" = $rejectTestIdempotencyKey
-        }
-        $rejectTestCreateResponse = Invoke-RestMethod -Uri $createReservationUrl -Method Post -Body $rejectTestReservationBody -Headers $rejectTestHeaders -TimeoutSec 10 -ErrorAction Stop
+        $rejectCreated = Invoke-CreateReservationWithRetry -PazarBaseUrl $pazarBaseUrl -AuthToken $authToken -ListingId $listingId -PartySize 50 -OfferId $null -IdempotencyPrefix "test-reject-key" -DaysAhead 150 -DurationHours 4 -MaxAttempts 8
+        $rejectTestCreateResponse = $rejectCreated.response
         $rejectTestReservationId = $rejectTestCreateResponse.id
         
         # Now test reject (missing header)

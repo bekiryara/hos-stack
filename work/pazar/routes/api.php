@@ -17,5 +17,4 @@ require_once __DIR__.'/api/03b_listings_read.php';
 require_once __DIR__.'/api/04_reservations.php';
 require_once __DIR__.'/api/05_orders.php';
 require_once __DIR__.'/api/06_rentals.php';
-require_once __DIR__.'/api/messaging.php';
 require_once __DIR__.'/api/account_portal.php';

@@ -12,6 +12,10 @@ export function getFilterSchema(categoryId) {
   return apiRequest(`/api/v1/categories/${categoryId}/filter-schema`, {}, true);
 }
 
+export function getIntentSchema(categoryId) {
+  return apiRequest(`/api/v1/categories/${categoryId}/intent-schema`, {}, true);
+}
+
 export function searchListings(params) {
   const queryString = toStableQueryString(params);
   return apiRequest(`/api/v1/listings?${queryString}`, {}, true);
@@ -19,4 +23,9 @@ export function searchListings(params) {
 
 export function getListing(id) {
   return apiRequest(`/api/v1/listings/${id}`, {}, true);
+}
+
+// Offers (packages) are public read for listing detail pages
+export function getListingOffers(listingId) {
+  return apiRequest(`/api/v1/listings/${listingId}/offers`, {}, true);
 }

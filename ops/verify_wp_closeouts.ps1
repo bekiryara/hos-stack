@@ -68,7 +68,8 @@ Write-Host ""
 
 # 3. Check route files (WP-17)
 Write-Host "[3] Route dosyalari kontrol ediliyor (WP-17)..." -ForegroundColor Yellow
-$routeFiles = @("00_ping.php", "00_metrics.php", "01_world_status.php", "02_catalog.php", "03a_listings_write.php", "03b_listings_read.php", "03c_offers.php", "04_reservations.php", "05_orders.php", "06_rentals.php", "account_portal.php", "messaging.php")
+# Pazar API routes only; messaging is separate (messaging-api service), not a route file here
+$routeFiles = @("00_ping.php", "00_metrics.php", "01_world_status.php", "02_catalog.php", "03a_listings_write.php", "03b_listings_read.php", "03c_offers.php", "04_reservations.php", "05_orders.php", "06_rentals.php", "account_portal.php")
 $missingRoutes = @()
 foreach ($route in $routeFiles) {
     $found = Get-ChildItem -Path work/pazar/routes/api -Filter $route -ErrorAction SilentlyContinue

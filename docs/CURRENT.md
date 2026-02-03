@@ -179,6 +179,12 @@ This ensures baseline remains stable and prevents breaking changes.
 
 ## Catalog / Search Final (Category → Catalog → Listing)
 
+**Terminology (locked):**
+- **World (`world_key`)**: H-OS world directory key. Examples: `core`, `marketplace`, `messaging`, `social`.
+- **Pazar enablement**: Pazar only controls its own world (`marketplace`) locally; other worlds are owned by H-OS.
+- **Vertical**: marketplace-internal classification carried by the category tree roots (contract-locked): `vehicle`, `real-estate`, `service`.
+- **Transaction mode**: `sale | rental | reservation` (cross-vertical intent; driven by schema + transaction spines).
+
 **Category (tree-only):**
 - `GET /api/v1/categories` returns nodes with: `id`, `slug`, `parent_id` (plus optional nested `children`).
 

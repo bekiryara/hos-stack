@@ -96,8 +96,6 @@
 <script>
 import { api } from '../api/client.js';
 import { getUserId } from '../lib/session.js';
-import { notifyApiSuccess, notifyApiError } from '../lib/toast/notify_api.js';
-import { normalizeApiError } from '../lib/errors/api_error.js';
 
 export default {
   name: 'CreateReservationPage',
@@ -184,40 +182,20 @@ export default {
           payload,
           userId || null
         );
-        notifyApiSuccess('Reservation created');
-        if (result.id) {
-          this.$router.push({
-            path: `/account/reservations/${result.id}`,
-            query: {
-              listing_id: result.listing_id ?? this.formData.listing_id ?? '',
-              slot_start: result.slot_start ?? slotStart ?? '',
-              slot_end: result.slot_end ?? slotEnd ?? '',
-              party_size: result.party_size ?? this.formData.party_size ?? '',
-              status: result.status ?? '',
-              created_at: result.created_at ?? '',
-              updated_at: result.updated_at ?? '',
-              from: 'create',
-            },
-          });
-        } else {
-          this.success = result;
-          // Load category if not already loaded
-          if (result.listing_id && !this.listingCategoryId) {
-            await this.loadListingCategory(result.listing_id);
-          }
+        this.success = result;
+        
+        // Load category if not already loaded
+        if (result.listing_id && !this.listingCategoryId) {
+          await this.loadListingCategory(result.listing_id);
         }
       } catch (err) {
-        notifyApiError(err, 'Create reservation');
-        const normalized = normalizeApiError(err);
-        const hint = normalized.status === 401 ? '401 → Token missing or invalid. Check Authorization Token.' : 
-                     normalized.status === 404 ? '404 → Listing not found. Check Listing ID.' :
-                     normalized.status === 422 ? '422 → Validation error. Check all required fields.' : null;
+        // Improve error display with hint
+        const hint = err.status === 401 ? '401 → Token missing or invalid. Check Authorization Token.' : 
+                     err.status === 404 ? '404 → Listing not found. Check Listing ID.' :
+                     err.status === 422 ? '422 → Validation error. Check all required fields.' : null;
         this.error = {
-          status: normalized.status,
-          message: normalized.message || 'Failed to create reservation',
-          errorCode: normalized.code || 'unknown',
-          hint: hint || normalized.message || 'Unknown error',
-          data: err.data,
+          ...err,
+          hint: hint || (err.message || 'Unknown error'),
         };
       } finally {
         this.loading = false;

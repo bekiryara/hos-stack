@@ -20,12 +20,12 @@
 
     <CreateListingForm
       v-else
-      :categories="categories"
+      :categories-tree="categoriesTree"
       :filter-schema="filterSchema"
+      :intent-schema="intentSchema"
       :tenant-id="tenantId"
       :tenant-id-load-error="tenantIdLoadError"
       :loading="loading"
-      :backend-error="backendErrorDetails"
       @category-change="onCategoryChange"
       @submit="onFormSubmit"
     />
@@ -34,7 +34,7 @@
 
 <script>
 import { api } from '../api/client';
-import { getCategoriesTree, getFilterSchemaForCategory } from '../lib/catalogSpine';
+import { getCategoriesTree, getFilterSchemaForCategory, getIntentSchemaForCategory } from '../lib/catalogSpine';
 import { isLoggedIn, getActiveTenantId, setActiveTenantId } from '../lib/session.js';
 import { normalizeApiError } from '../lib/errors/api_error.js';
 import { notifyApiSuccess, notifyApiError } from '../lib/toast/notify_api.js';
@@ -54,22 +54,12 @@ export default {
       if (!this.error) return null;
       return typeof this.error === 'string' ? this.error : (this.error.message || null);
     },
-    backendErrorDetails() {
-      const d = this.error?.data ?? null;
-      if (!d || typeof d !== 'object') return null;
-      if (!(d.code || d.error_code || d.details || d.error || d.message)) return null;
-      // WP-66: If only error_code exists, map into { code, ... } for form
-      if (d.code) return d;
-      if (d.error_code && !d.code) {
-        return { ...d, code: d.error_code };
-      }
-      return d;
-    },
   },
   data() {
     return {
-      categories: [],
+      categoriesTree: [],
       filterSchema: null,
+      intentSchema: null,
       tenantId: '',
       tenantIdLoadError: false,
       loading: false,
@@ -81,7 +71,7 @@ export default {
   },
   async mounted() {
     try {
-      this.categories = await getCategoriesTree();
+      this.categoriesTree = await getCategoriesTree();
 
       if (!this.tenantId) {
         const activeTenantId = getActiveTenantId();
@@ -122,13 +112,20 @@ export default {
     async onCategoryChange(categoryId) {
       if (!categoryId) {
         this.filterSchema = null;
+        this.intentSchema = null;
         return;
       }
       try {
-        this.filterSchema = await getFilterSchemaForCategory(categoryId);
+        const [filterSchema, intentSchema] = await Promise.all([
+          getFilterSchemaForCategory(categoryId),
+          getIntentSchemaForCategory(categoryId),
+        ]);
+        this.filterSchema = filterSchema;
+        this.intentSchema = intentSchema;
       } catch (err) {
         console.error('Failed to load filter schema:', err);
         this.filterSchema = null;
+        this.intentSchema = null;
       }
     },
     clearSubmitError() {
@@ -177,12 +174,7 @@ export default {
         })
         .catch((err) => {
           const normalized = normalizeApiError(err);
-          this.error = {
-            status: normalized.status,
-            errorCode: normalized.code,
-            message: normalized.message,
-            data: err.data ?? err.response?.data ?? null,
-          };
+          this.error = { status: normalized.status, errorCode: normalized.code, message: normalized.message };
           notifyApiError(err, 'Create listing');
         })
         .finally(() => {

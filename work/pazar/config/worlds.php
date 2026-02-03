@@ -3,21 +3,25 @@
 /**
  * World Configuration
  * 
- * Canonical source of truth for enabled/disabled worlds.
- * Must match work/pazar/WORLD_REGISTRY.md exactly.
+ * IMPORTANT TERMINOLOGY LOCK:
+ * - This is NOT “Pazar’ın kendi içindeki world listesi”.
+ * - This is a MIRROR of the H-OS world directory enablement for the stack.
+ * - Pazar application itself is the `marketplace` world.
+ *
+ * Purpose:
+ * - Governance/conformance gate input (must match work/pazar/WORLD_REGISTRY.md exactly).
+ * - Prevents drift in the stack’s enabled/disabled world set.
  * 
- * This file is used for governance/conformance checks.
- * Application code may use this config or maintain its own source.
+ * Application code should NOT treat this file as a domain router.
  */
 
 return [
     'enabled' => [
         'marketplace',
-        'messaging',
     ],
     
     'disabled' => [
-        'social',
+        // Pazar does not own/declare other worlds here.
     ],
 ];
 

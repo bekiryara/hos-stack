@@ -5,38 +5,6 @@
 
 ---
 
-## P0 CORE: Category/Catalog → Schema-driven Create Listing → Publish → Search — PASS
-
-- **Proof:** `docs/PROOFS/p0_core_category_catalog_schema_driven_pass.md`
-- **Outcome:** Backend guardrails (unknown keys, required, enum, leaf-only, 422 tenant format, NUMERIC range); frontend schema-driven CreateListingForm (select/enum, number, boolean, leaf-only); ops listing_discovery_proof with P0 E2E + negative tests.
-- **Gates:** catalog_contract_check + listing_contract_check + listing_discovery_proof → all PASS.
-
----
-
-## WP-NEXT: Listing ActionBar (modes-aware) + Detail Fallback merkezileştirme — PASS
-
-- **Proof:** `docs/PROOFS/wp_listing_actionbar_modes_plus_detail_fallback_central_pass.md`
-- **Outcome:** Listing action bar transaction_modes'a göre render (modes.js + TransactionActionBar); detail limited view + banner tek merkez (limited_view.js + LimitedViewBanner); drift riski azaldı; backend yok.
-- **Gates:** local gates PASS + ops_run Prototype PASS.
-
----
-
-## WP-NEXT: Listing Detail Action Bar → Create entrypoints — PASS
-
-- **Proof:** `docs/PROOFS/wp_listing_detail_action_bar_to_create_pass.md`
-- **Outcome:** Listing detail now provides direct entrypoints to order/rental/reservation create flows via listing_id query; 3 buttons (Sipariş Ver, Kirala, Rezervasyon Yap); transitioning guard; backend yok.
-- **Gates:** run_wp_next_local_gates + ops_run Prototype PASS.
-
----
-
-## WP-NEXT: Customer Create → Detail Redirect + Toast — PASS
-
-- **Proof:** `docs/PROOFS/wp_customer_create_redirect_to_detail_pass.md`
-- **Outcome:** Order/Rental/Reservation create sonrası otomatik detail redirect + toast; limited query fallback ile deterministik UX; backend yok.
-- **Gates:** local gates PASS + ops_run Prototype PASS.
-
----
-
 ## WP-NEXT: Portal records panels base — PASS
 
 - **Proof:** `docs/PROOFS/wp_portal_records_panel_base_pass.md`

@@ -9,6 +9,7 @@ let categoriesPromise = null;
 let categoriesValue = null;
 
 const filterSchemaPromises = new Map(); // categoryId -> Promise<schema>
+const intentSchemaPromises = new Map(); // categoryId -> Promise<schema>
 
 export async function getCategoriesTree() {
   if (categoriesValue) return categoriesValue;
@@ -32,5 +33,18 @@ export async function getFilterSchemaForCategory(categoryId) {
     filterSchemaPromises.set(key, p);
   }
   return filterSchemaPromises.get(key);
+}
+
+export async function getIntentSchemaForCategory(categoryId) {
+  const key = String(categoryId);
+  if (!intentSchemaPromises.has(key)) {
+    const p = api.getIntentSchema(key).catch((err) => {
+      // allow retry after transient failures
+      intentSchemaPromises.delete(key);
+      throw err;
+    });
+    intentSchemaPromises.set(key, p);
+  }
+  return intentSchemaPromises.get(key);
 }
 

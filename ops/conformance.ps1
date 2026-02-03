@@ -196,11 +196,113 @@ try {
                 } else {
                     Write-PassCheck "A" "World registry matches config (enabled: $($registryEnabled.Count), disabled: $($registryDisabled.Count))"
                 }
+
+                # A1) Ownership lock: Pazar MUST only declare its own world enablement (marketplace).
+                # Prevents re-introducing multi-world lists inside Pazar (source of recurring confusion).
+                $mustEnabled = @('marketplace')
+                $mustDisabled = @()
+
+                $badEnabled = Compare-Object -ReferenceObject ($mustEnabled | Sort-Object) -DifferenceObject ($configEnabled | Sort-Object) -SyncWindow 0
+                $badDisabled = $null
+                if ($configDisabled.Count -gt 0) {
+                    $badDisabled = $configDisabled
+                }
+
+                if (($null -ne $badEnabled -and $badEnabled.Count -gt 0) -or ($null -ne $badDisabled -and $badDisabled.Count -gt 0)) {
+                    $enabledStr = if ($configEnabled) { $configEnabled -join ', ' } else { '<empty>' }
+                    $disabledStr = if ($configDisabled) { $configDisabled -join ', ' } else { '<empty>' }
+                    Write-FailCheck "A1" "Pazar world ownership lock violated. Expected enabled=[marketplace], disabled=[]. Got enabled=[$enabledStr], disabled=[$disabledStr]." @($configPath, $registryPath)
+                } else {
+                    Write-PassCheck "A1" "Pazar declares only marketplace (ownership lock)"
+                }
             }
         }
     }
 } catch {
     Write-FailCheck "A" "Error checking world registry: $($_.Exception.Message)" @($registryPath, $configPath)
+}
+
+# A2) Messaging world ownership lock (JSON + registry)
+Write-Host "`n[A2] Messaging world ownership lock..." -ForegroundColor Yellow
+try {
+    $mRegistryPath = "work\messaging\WORLD_REGISTRY.md"
+    $mConfigPath = "work\messaging\config\worlds.json"
+
+    if (-not (Test-Path $mRegistryPath)) {
+        Write-FailCheck "A2" "Messaging WORLD_REGISTRY.md not found" @($mRegistryPath)
+    } elseif (-not (Test-Path $mConfigPath)) {
+        Write-FailCheck "A2" "Messaging config/worlds.json not found" @($mConfigPath)
+    } else {
+        $mRegistryContent = Get-Content $mRegistryPath -Raw -ErrorAction Stop
+        if ($null -eq $mRegistryContent -or $mRegistryContent.Length -eq 0) {
+            Write-FailCheck "A2" "Messaging WORLD_REGISTRY.md is empty or unreadable" @($mRegistryPath)
+        } else {
+            $mEnabled = @()
+            $mDisabled = @()
+
+            # Enabled section
+            $parts = $mRegistryContent -split "### Enabled Worlds"
+            if ($parts.Count -gt 1) {
+                $enabledSection = $parts[1]
+                if ($enabledSection -match '(?s)^(.*?)(?:### Disabled Worlds|$)') {
+                    $enabledContent = $matches[1]
+                    $enabledLines = $enabledContent -split "`r?`n" | Where-Object { $_ -match '^\s*-\s+([a-z0-9_]+)\s*$' }
+                    foreach ($line in $enabledLines) {
+                        if ($line -match '^\s*-\s+([a-z0-9_]+)\s*$') { $mEnabled += $matches[1].Trim() }
+                    }
+                }
+            }
+            $mEnabled = $mEnabled | Sort-Object
+
+            # Disabled section
+            $parts = $mRegistryContent -split "### Disabled Worlds"
+            if ($parts.Count -gt 1) {
+                $disabledSection = $parts[1]
+                $disabledLines = $disabledSection -split "`r?`n" | Where-Object { $_ -match '^\s*-\s+([a-z0-9_]+)\s*$' }
+                foreach ($line in $disabledLines) {
+                    if ($line -match '^\s*-\s+([a-z0-9_]+)\s*$') { $mDisabled += $matches[1].Trim() }
+                }
+            }
+            $mDisabled = $mDisabled | Sort-Object
+
+            $mConfigRaw = Get-Content $mConfigPath -Raw -ErrorAction Stop
+            $mConfig = $mConfigRaw | ConvertFrom-Json
+            $mConfigEnabled = @()
+            $mConfigDisabled = @()
+            if ($mConfig.enabled) { $mConfigEnabled = @($mConfig.enabled) }
+            if ($mConfig.disabled) { $mConfigDisabled = @($mConfig.disabled) }
+            $mConfigEnabled = $mConfigEnabled | Sort-Object
+            $mConfigDisabled = $mConfigDisabled | Sort-Object
+
+            # Drift check: registry vs config
+            $diffEnabled = $null
+            if ($mEnabled.Count -gt 0 -or $mConfigEnabled.Count -gt 0) {
+                $diffEnabled = Compare-Object -ReferenceObject $mEnabled -DifferenceObject $mConfigEnabled -SyncWindow 0
+            }
+            $diffDisabled = $null
+            if ($mDisabled.Count -gt 0 -or $mConfigDisabled.Count -gt 0) {
+                $diffDisabled = Compare-Object -ReferenceObject $mDisabled -DifferenceObject $mConfigDisabled -SyncWindow 0
+            }
+            $hasDrift = (($null -ne $diffEnabled -and $diffEnabled.Count -gt 0) -or ($null -ne $diffDisabled -and $diffDisabled.Count -gt 0))
+            if ($hasDrift) {
+                Write-FailCheck "A2" "Messaging world registry drift detected (WORLD_REGISTRY.md vs worlds.json)" @($mRegistryPath, $mConfigPath)
+            }
+
+            # Ownership lock: enabled=[messaging], disabled=[]
+            $expectedEnabled = @("messaging")
+            $enabledStr = if ($mConfigEnabled) { $mConfigEnabled -join ', ' } else { '<empty>' }
+            $disabledStr = if ($mConfigDisabled) { $mConfigDisabled -join ', ' } else { '<empty>' }
+
+            $enabledDiff = Compare-Object -ReferenceObject ($expectedEnabled | Sort-Object) -DifferenceObject $mConfigEnabled -SyncWindow 0
+            if (($null -ne $enabledDiff -and $enabledDiff.Count -gt 0) -or ($mConfigDisabled.Count -gt 0)) {
+                Write-FailCheck "A2" "Messaging world ownership lock violated. Expected enabled=[messaging], disabled=[]. Got enabled=[$enabledStr], disabled=[$disabledStr]." @($mConfigPath, $mRegistryPath)
+            } elseif (-not $hasDrift) {
+                Write-PassCheck "A2" "Messaging declares only messaging (ownership lock)"
+            }
+        }
+    }
+} catch {
+    Write-FailCheck "A2" "Error checking messaging world ownership: $($_.Exception.Message)" @("work\\messaging\\WORLD_REGISTRY.md", "work\\messaging\\config\\worlds.json")
 }
 
 # B) Forbidden artifacts

@@ -70,8 +70,6 @@
 <script>
 import { api } from '../api/client.js';
 import { getUserId, clearSession } from '../lib/session.js';
-import { notifyApiSuccess, notifyApiError } from '../lib/toast/notify_api.js';
-import { normalizeApiError } from '../lib/errors/api_error.js';
 
 export default {
   name: 'CreateOrderPage',
@@ -125,32 +123,15 @@ export default {
       
       try {
         const result = await api.createOrder(this.formData.listing_id, this.formData.quantity);
-        notifyApiSuccess('Order created');
-        if (result.id) {
-          this.$router.push({
-            path: `/account/orders/${result.id}`,
-            query: {
-              listing_id: result.listing_id ?? this.formData.listing_id ?? '',
-              quantity: result.quantity ?? this.formData.quantity ?? '',
-              status: result.status ?? '',
-              created_at: result.created_at ?? '',
-              updated_at: result.updated_at ?? '',
-              from: 'create',
-            },
-          });
-        } else {
-          this.success = result;
-        }
+        this.success = result;
       } catch (err) {
-        notifyApiError(err, 'Create order');
         if (err.status === 401) {
           clearSession();
           this.$router.push('/login?reason=expired');
           return;
         }
-        const normalized = normalizeApiError(err);
-        const status = normalized.status || 0;
-        const errorCode = normalized.code || 'unknown';
+        const status = err.status || 0;
+        const errorCode = err.errorCode || 'unknown';
         let hint = null;
         if (status === 404) {
           hint = 'Listing not found. Check the Listing ID and try again.';
@@ -161,7 +142,7 @@ export default {
         }
         this.error = {
           status,
-          message: normalized.message || 'Failed to create order',
+          message: err.message || 'Failed to create order',
           errorCode,
           hint,
         };

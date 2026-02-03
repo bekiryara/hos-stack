@@ -15,57 +15,12 @@
     </div>
     <form v-if="(filters || []).length > 0" @submit.prevent="handleSubmit">
       <div v-for="filter in (filters || [])" :key="filter.attribute_key" class="filter-item">
-        <label>
-          {{ filter.attribute_key }}
-          <span v-if="filter.required" class="required-badge">required</span>
-        </label>
-        <div v-if="filter.filter_mode === 'range' && filter.value_type === 'number'">
-          <input
-            v-model.number="localFormData[filter.attribute_key + '_min']"
-            type="number"
-            :placeholder="`Min ${filter.attribute_key}`"
-            class="filter-input"
-          />
-          <input
-            v-model.number="localFormData[filter.attribute_key + '_max']"
-            type="number"
-            :placeholder="`Max ${filter.attribute_key}`"
-            class="filter-input"
-          />
-        </div>
-        <select
-          v-else-if="isSelectFilter(filter)"
+        <FilterField
+          :filter="filter"
+          mode="search"
           v-model="localFormData[filter.attribute_key]"
-          class="filter-input"
-        >
-          <option value="">Select {{ filter.attribute_key }}</option>
-          <option
-            v-for="opt in getSelectOptions(filter)"
-            :key="opt.value"
-            :value="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-        <input
-          v-else-if="filter.value_type === 'string'"
-          v-model="localFormData[filter.attribute_key]"
-          type="text"
-          :placeholder="filter.attribute_key"
-          class="filter-input"
-        />
-        <input
-          v-else-if="filter.value_type === 'boolean'"
-          v-model="localFormData[filter.attribute_key]"
-          type="checkbox"
-          class="filter-checkbox"
-        />
-        <input
-          v-else-if="filter.value_type === 'number'"
-          v-model.number="localFormData[filter.attribute_key]"
-          type="number"
-          :placeholder="filter.attribute_key"
-          class="filter-input"
+          v-model:min="localFormData[filter.attribute_key + '_min']"
+          v-model:max="localFormData[filter.attribute_key + '_max']"
         />
       </div>
       <button type="submit" class="search-button">Search</button>
@@ -79,8 +34,11 @@
 </template>
 
 <script>
+import FilterField from './common/FilterField.vue';
+
 export default {
   name: 'FiltersPanel',
+  components: { FilterField },
   props: {
     filters: {
       type: Array,
@@ -134,29 +92,6 @@ export default {
     },
   },
   methods: {
-    isSelectFilter(filter) {
-      // WP-NEXT: enum/select support (schema-driven)
-      return filter && (filter.ui_component === 'select' || filter.value_type === 'enum' || filter.value_type === 'select');
-    },
-    getSelectOptions(filter) {
-      // Prefer schema rules.options (current backend shape), fallback to enum/options if present
-      const raw =
-        (filter && filter.rules && Array.isArray(filter.rules.options) && filter.rules.options) ||
-        (filter && Array.isArray(filter.options) && filter.options) ||
-        (filter && Array.isArray(filter.enum) && filter.enum) ||
-        [];
-
-      return raw
-        .map((opt) => {
-          if (opt && typeof opt === 'object') {
-            const value = opt.value ?? opt.key ?? opt.id ?? '';
-            const label = opt.label ?? opt.name ?? String(value);
-            return { value: String(value), label: String(label) };
-          }
-          return { value: String(opt), label: String(opt) };
-        })
-        .filter((o) => o.value !== '');
-    },
     handleSubmit() {
       const attrs = {};
       Object.keys(this.localFormData).forEach((key) => {

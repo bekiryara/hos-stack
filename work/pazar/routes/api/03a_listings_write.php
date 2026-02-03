@@ -40,156 +40,158 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
         'location' => 'nullable|array'
     ]);
     
-    $categoryId = (int) $validated['category_id'];
+    // Get category filter schema to validate required attributes
+    $categoryId = $validated['category_id'];
+    // WP-28: Guard schema/table checks (hasTable before hasColumn)
+    $hasNewFields = Schema::hasTable('category_filter_schema') && Schema::hasColumn('category_filter_schema', 'required');
+    
+    $requiredAttributes = [];
+    if ($hasNewFields) {
+        $requiredAttributes = DB::table('category_filter_schema')
+            ->where('category_id', $categoryId)
+            ->where('status', 'active')
+            ->where('required', true)
+            ->pluck('attribute_key')
+            ->toArray();
+    }
+    
+    // Validate required attributes exist in attributes_json
     $attributes = $validated['attributes'] ?? [];
-    
-    // P0 CORE: Leaf-only category rule (server-side hard lock)
-    $hasChildren = DB::table('categories')->where('parent_id', $categoryId)->exists();
-    if ($hasChildren) {
+    foreach ($requiredAttributes as $attrKey) {
+        if (!isset($attributes[$attrKey])) {
+            return response()->json([
+                'error' => 'missing_required_attribute',
+                'message' => "Required attribute '{$attrKey}' is missing",
+                'required_attributes' => $requiredAttributes
+            ], 422);
+        }
+    }
+
+    // Resolve category intent schema (CONTACT_ONLY vs FLOW) and validate transaction_modes + offer_variant
+    $intentSchema = pazar_category_intent_schema((int) $categoryId);
+    $allowedModes = isset($intentSchema['allowed_transaction_modes']) && is_array($intentSchema['allowed_transaction_modes'])
+        ? $intentSchema['allowed_transaction_modes']
+        : ['sale', 'rental', 'reservation'];
+
+    $requestedModes = $validated['transaction_modes'] ?? [];
+    $requestedModes = is_array($requestedModes) ? array_values(array_filter(array_map('strval', $requestedModes))) : [];
+    if (empty($requestedModes)) {
         return response()->json([
-            'error' => 'leaf_category_required',
-            'message' => 'Listing can only be created under leaf categories (categories without children)',
-            'code' => 'leaf_category_required',
-            'details' => ['category_id' => $categoryId],
+            'error' => 'invalid_transaction_modes',
+            'message' => 'transaction_modes must include at least one mode'
         ], 422);
     }
+
+    // Offer variant lives in attributes (schema-driven UI "2nd column" selection)
+    $offerVariant = isset($attributes['offer_variant']) ? (string) $attributes['offer_variant'] : '';
+    $resolvedVariant = null;
+    if ($offerVariant !== '') {
+        $variants = isset($intentSchema['offer_variants']) && is_array($intentSchema['offer_variants']) ? $intentSchema['offer_variants'] : [];
+        foreach ($variants as $v) {
+            if (is_array($v) && isset($v['key']) && (string) $v['key'] === $offerVariant) {
+                $resolvedVariant = $v;
+                break;
+            }
+        }
+        if (!$resolvedVariant) {
+            return response()->json([
+                'error' => 'invalid_offer_variant',
+                'message' => "Offer variant '{$offerVariant}' is not allowed for this category",
+                'allowed_offer_variants' => array_map(function ($v) {
+                    return is_array($v) && isset($v['key']) ? (string) $v['key'] : null;
+                }, $variants),
+            ], 422);
+        }
+
+        $impliedMode = isset($resolvedVariant['transaction_mode']) ? (string) $resolvedVariant['transaction_mode'] : '';
+        if ($impliedMode === '' || !in_array($impliedMode, ['sale', 'rental', 'reservation'], true)) {
+            return response()->json([
+                'error' => 'invalid_offer_variant',
+                'message' => "Offer variant '{$offerVariant}' does not define a valid transaction_mode"
+            ], 422);
+        }
+        if (!in_array($impliedMode, $allowedModes, true)) {
+            return response()->json([
+                'error' => 'invalid_transaction_modes',
+                'message' => "Transaction mode '{$impliedMode}' is not allowed for this category"
+            ], 422);
+        }
+        // Deterministic: for now, listings have exactly one transaction mode (avoid ambiguous UX)
+        if (count($requestedModes) !== 1 || $requestedModes[0] !== $impliedMode) {
+            return response()->json([
+                'error' => 'invalid_transaction_modes',
+                'message' => "transaction_modes must match offer_variant '{$offerVariant}'",
+                'expected' => [$impliedMode],
+                'received' => $requestedModes,
+            ], 422);
+        }
+
+        // Normalize interaction_mode from policy
+        $interactionMode = isset($resolvedVariant['interaction_mode']) ? (string) $resolvedVariant['interaction_mode'] : '';
+        if ($interactionMode !== 'flow') $interactionMode = 'contact_only';
+        $attributes['interaction_mode'] = $interactionMode;
+    } else {
+        // If no offer_variant provided, still validate requested modes are allowed.
+        foreach ($requestedModes as $m) {
+            if (!in_array($m, $allowedModes, true)) {
+                return response()->json([
+                    'error' => 'invalid_transaction_modes',
+                    'message' => "Transaction mode '{$m}' is not allowed for this category",
+                    'allowed_transaction_modes' => $allowedModes,
+                ], 422);
+            }
+        }
+
+        // Normalize to a single mode (first) to keep listing semantics deterministic.
+        $requestedModes = [$requestedModes[0]];
+
+        // Auto-fill offer_variant if it matches a default key (sale/rental/reservation)
+        $attributes['offer_variant'] = $requestedModes[0];
+        $attributes['interaction_mode'] = ($requestedModes[0] === 'reservation') ? 'flow' : 'contact_only';
+    }
     
-    // P0 CORE: Build schemaMap from category_filter_schema (+ attributes.value_type)
-    $hasSchemaTable = Schema::hasTable('category_filter_schema') && Schema::hasColumn('category_filter_schema', 'required');
-    $allowedKeys = [];
-    $requiredKeys = [];
-    $optionsMap = [];
-    $typeMap = [];
-    
-    if ($hasSchemaTable) {
-        $schemaRows = DB::table('category_filter_schema')
-            ->leftJoin('attributes', 'category_filter_schema.attribute_key', '=', 'attributes.key')
-            ->where('category_filter_schema.category_id', $categoryId)
-            ->where('category_filter_schema.status', 'active')
-            ->select(
-                'category_filter_schema.attribute_key',
-                'category_filter_schema.required',
-                'category_filter_schema.rules_json',
-                'attributes.value_type'
-            )
-            ->get();
+    // Type check attributes against attribute definitions
+    if (!empty($attributes)) {
+        $attributeDefs = DB::table('attributes')
+            ->whereIn('key', array_keys($attributes))
+            ->pluck('value_type', 'key')
+            ->toArray();
         
-        foreach ($schemaRows as $row) {
-            $key = $row->attribute_key;
-            $allowedKeys[] = $key;
-            if ($row->required) {
-                $requiredKeys[] = $key;
-            }
-            $typeMap[$key] = $row->value_type ?? 'string';
-            if ($row->rules_json) {
-                $rules = json_decode($row->rules_json, true);
-                if (isset($rules['options']) && is_array($rules['options'])) {
-                    $optionsMap[$key] = array_map('strval', array_values(array_filter($rules['options'], function ($o) {
-                        return $o !== null && $o !== '';
-                    })));
+        foreach ($attributes as $key => $value) {
+            if (isset($attributeDefs[$key])) {
+                $valueType = $attributeDefs[$key];
+                $isValid = false;
+                
+                switch ($valueType) {
+                    case 'number':
+                        $isValid = is_numeric($value);
+                        break;
+                    case 'string':
+                        $isValid = is_string($value);
+                        break;
+                    case 'boolean':
+                        $isValid = is_bool($value) || in_array(strtolower($value), ['true', 'false', '1', '0', 'yes', 'no']);
+                        break;
+                    default:
+                        $isValid = true; // Unknown types pass
+                }
+                
+                if (!$isValid) {
+                    return response()->json([
+                        'error' => 'invalid_attribute_type',
+                        'message' => "Attribute '{$key}' must be of type '{$valueType}'",
+                        'attribute' => $key,
+                        'value' => $value,
+                        'expected_type' => $valueType
+                    ], 422);
                 }
             }
         }
     }
     
-    $allowedSet = array_flip($allowedKeys);
-    
-    // Reject unknown attribute keys
-    $unknownKeys = [];
-    foreach (array_keys($attributes) as $k) {
-        if (!isset($allowedSet[$k])) {
-            $unknownKeys[] = $k;
-        }
-    }
-    if (!empty($unknownKeys)) {
-        return response()->json([
-            'error' => 'unknown_attribute_keys',
-            'message' => 'Unknown attribute keys for this category',
-            'code' => 'unknown_attribute_keys',
-            'details' => ['unknown_keys' => $unknownKeys],
-        ], 422);
-    }
-    
-    // Reject missing required (boolean false counts as present)
-    $missing = [];
-    foreach ($requiredKeys as $k) {
-        if (!array_key_exists($k, $attributes)) {
-            $missing[] = $k;
-        } else {
-            $v = $attributes[$k];
-            if ($v === null || $v === '' || (is_string($v) && trim($v) === '')) {
-                $missing[] = $k;
-            }
-        }
-    }
-    if (!empty($missing)) {
-        return response()->json([
-            'error' => 'missing_required_attribute',
-            'message' => 'Required attributes are missing',
-            'code' => 'missing_required_attribute',
-            'details' => ['missing' => $missing],
-        ], 422);
-    }
-    
-    // Enforce enum/select options and type checks
-    $invalidValues = [];
-    foreach ($attributes as $key => $value) {
-        // Skip empty optional (already validated required above)
-        if ($value === null || $value === '' || (is_string($value) && trim($value) === '')) {
-            continue;
-        }
-        // Boolean false counts as present and valid
-        if ($value === false || $value === 'false' || $value === '0' || $value === 0) {
-            if (isset($typeMap[$key]) && $typeMap[$key] === 'boolean') {
-                continue;
-            }
-            if (isset($optionsMap[$key])) {
-                if (in_array('false', $optionsMap[$key], true) || in_array('0', $optionsMap[$key], true)) {
-                    continue;
-                }
-            }
-        }
-        if (isset($optionsMap[$key]) && !empty($optionsMap[$key])) {
-            $strVal = is_string($value) ? $value : (string) $value;
-            if (!in_array($strVal, $optionsMap[$key], true)) {
-                $invalidValues[$key] = $value;
-            }
-        } elseif (isset($typeMap[$key])) {
-            $valueType = $typeMap[$key];
-            $isValid = false;
-            switch ($valueType) {
-                case 'number':
-                    $isValid = is_numeric($value);
-                    break;
-                case 'string':
-                    $isValid = is_string($value) || is_numeric($value);
-                    break;
-                case 'boolean':
-                    $isValid = is_bool($value) || in_array(strtolower((string) $value), ['true', 'false', '1', '0', 'yes', 'no']);
-                    break;
-                case 'enum':
-                    $isValid = isset($optionsMap[$key]) ? in_array((string) $value, $optionsMap[$key], true) : true;
-                    break;
-                default:
-                    $isValid = true;
-            }
-            if (!$isValid) {
-                $invalidValues[$key] = $value;
-            }
-        }
-    }
-    if (!empty($invalidValues)) {
-        return response()->json([
-            'error' => 'invalid_attribute_value',
-            'message' => 'Invalid attribute value(s)',
-            'code' => 'invalid_attribute_value',
-            'details' => ['invalid_values' => $invalidValues],
-        ], 422);
-    }
-    
-    // Get category to determine world/vertical
-    $category = DB::table('categories')->where('id', $categoryId)->first();
-    $world = $category->vertical ?? 'commerce'; // Default to 'commerce' if vertical not set
+    // listings.world is the H-OS world key for Pazar listings.
+    // Pazar is the Marketplace world, so listings in this service are always marketplace-scoped.
+    $world = 'marketplace';
     
     // Create listing as DRAFT
     $listingId = \Illuminate\Support\Str::uuid()->toString();
@@ -201,7 +203,7 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
         'category_id' => $categoryId,
         'title' => $validated['title'],
         'description' => $validated['description'] ?? null,
-        'transaction_modes_json' => json_encode($validated['transaction_modes']),
+        'transaction_modes_json' => json_encode($requestedModes),
         'attributes_json' => !empty($attributes) ? json_encode($attributes) : null,
         'location_json' => isset($validated['location']) ? json_encode($validated['location']) : null,
         'status' => 'draft',

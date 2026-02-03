@@ -7,7 +7,10 @@
           class="category-link"
           :class="{ 'has-children': category.children && category.children.length > 0 }"
         >
-          {{ category.slug }} ({{ category.id }})
+          {{ category.title || category.slug }}
+          <span v-if="category.slug && category.title && category.slug !== category.title" class="slug-hint">
+            ({{ category.slug }})
+          </span>
         </router-link>
         <CategoryTree
           v-if="category.children && category.children.length > 0"
@@ -56,6 +59,13 @@ export default {
 
 .category-link.has-children {
   font-weight: 600;
+}
+
+.slug-hint {
+  color: #666;
+  font-weight: normal;
+  margin-left: 0.35rem;
+  font-size: 0.9em;
 }
 
 .empty-state {

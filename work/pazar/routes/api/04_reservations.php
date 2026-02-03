@@ -24,6 +24,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     // Validate required fields
     $validated = $request->validate([
         'listing_id' => 'required|uuid',
+        // MVP: optional single package selection for this reservation
+        'offer_id' => 'nullable|uuid',
         'slot_start' => 'required|date',
         'slot_end' => 'required|date|after:slot_start',
         'party_size' => 'required|integer|min:1'
@@ -44,6 +46,33 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
             'error' => 'listing_not_published',
             'message' => "Listing must be published to create reservations. Current status: {$listing->status}"
         ], 422);
+    }
+
+    // Validate offer_id (package) if provided:
+    // - must exist
+    // - must belong to the same listing
+    // - must be active
+    $offerId = $validated['offer_id'] ?? null;
+    if ($offerId) {
+        $offer = DB::table('listing_offers')->where('id', $offerId)->first();
+        if (!$offer) {
+            return response()->json([
+                'error' => 'offer_not_found',
+                'message' => "Offer with id {$offerId} not found"
+            ], 404);
+        }
+        if ((string) $offer->listing_id !== (string) $validated['listing_id']) {
+            return response()->json([
+                'error' => 'VALIDATION_ERROR',
+                'message' => 'offer_id must belong to listing_id'
+            ], 422);
+        }
+        if ((string) $offer->status !== 'active') {
+            return response()->json([
+                'error' => 'VALIDATION_ERROR',
+                'message' => 'offer_id must be active'
+            ], 422);
+        }
     }
     
     // Idempotency check (MUST be before overlap check to avoid false conflicts)
@@ -119,6 +148,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     DB::table('reservations')->insert([
         'id' => $reservationId,
         'listing_id' => $validated['listing_id'],
+        'offer_id' => $offerId,
         'provider_tenant_id' => $providerTenantId,
         'requester_user_id' => $requesterUserId,
         'slot_start' => $slotStart->format('Y-m-d H:i:s'),
@@ -132,6 +162,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     $response = [
         'id' => $reservationId,
         'listing_id' => $validated['listing_id'],
+        'offer_id' => $offerId,
         'provider_tenant_id' => $providerTenantId,
         'requester_user_id' => $requesterUserId,
         'slot_start' => $slotStart->format('Y-m-d\TH:i:s\Z'),
@@ -255,6 +286,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     return response()->json([
         'id' => $reservation->id,
         'listing_id' => $reservation->listing_id,
+        'offer_id' => $reservation->offer_id ?? null,
         'provider_tenant_id' => $reservation->provider_tenant_id,
         'requester_user_id' => $reservation->requester_user_id,
         'slot_start' => $reservation->slot_start,
@@ -308,6 +340,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     return response()->json([
         'id' => $reservation->id,
         'listing_id' => $reservation->listing_id,
+        'offer_id' => $reservation->offer_id ?? null,
         'provider_tenant_id' => $reservation->provider_tenant_id,
         'requester_user_id' => $reservation->requester_user_id,
         'slot_start' => $reservation->slot_start,
