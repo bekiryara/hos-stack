@@ -114,7 +114,7 @@ export async function registerV1CoreWorldContractRoutes(app, { db, legacy = fals
   });
 
   // REGISTER v1.2 world enforcement (FOUNDING_SPEC)
-  const CANONICAL_WORLDS = ["marketplace", "messaging", "social", "commerce"];
+  const CANONICAL_WORLDS = ["marketplace", "messaging", "social"];
   const allowedWorlds = new Set(
     String(process.env.HOS_WORLD_ALLOWLIST ?? "")
       .split(",")

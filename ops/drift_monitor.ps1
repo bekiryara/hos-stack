@@ -161,7 +161,7 @@ $governanceFiles = @(
     "docs\ARCHITECTURE.md",
     "docs\REPO_LAYOUT.md",
     "CHANGELOG.md",
-    "docs\product\PRODUCT_API_SPINE.md"
+    "docs\PRODUCT\PRODUCT_API_SPINE.md"
 )
 
 # Ops scripts to hash

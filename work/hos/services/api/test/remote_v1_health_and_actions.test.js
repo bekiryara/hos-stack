@@ -27,7 +27,7 @@ test("remote H-OS: POST /v1/allowed-actions returns canonical actions[] (owner s
     payload: {
       actor_id: "u1",
       subject_ref: { type: "reservation", id: "r1", tenant_id: "t1", status: "requested" },
-      ctx: { tenant_id: "t1", actor_role: "tenant_owner", world: "commerce" }
+      ctx: { tenant_id: "t1", actor_role: "tenant_owner", world: "marketplace" }
     }
   });
   assert.equal(owner.statusCode, 200);
@@ -40,7 +40,7 @@ test("remote H-OS: POST /v1/allowed-actions returns canonical actions[] (owner s
     payload: {
       actor_id: "u2",
       subject_ref: { type: "reservation", id: "r1", tenant_id: "t1", status: "requested" },
-      ctx: { tenant_id: "t1", actor_role: "tenant_staff", world: "commerce" }
+      ctx: { tenant_id: "t1", actor_role: "tenant_staff", world: "marketplace" }
     }
   });
   assert.equal(staff.statusCode, 200);

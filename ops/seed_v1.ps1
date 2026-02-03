@@ -2,7 +2,7 @@
 # Ensures deterministic seed data for local E2E prototype: 3 specific listings
 # - bando takimi / bando presto (reservation)
 # - kiralik tekne / ruyam (rental)
-# - food / adana kebap (purchase/order)
+# - adana kebap (purchase/order)
 # Uses APIs only (no direct DB writes), idempotent (checks by title)
 
 $ErrorActionPreference = "Stop"

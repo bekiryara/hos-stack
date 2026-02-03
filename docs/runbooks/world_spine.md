@@ -19,7 +19,7 @@ Before enabling a world in `config/worlds.php`, ensure:
 For each enabled world, the check validates:
 
 1. **Routes Surface**:
-   - Routes snapshot contains routes for the world (e.g., `/commerce`, `/food`, `/rentals`)
+   - Routes snapshot contains routes for the world (Pazar reality: `marketplace` routes live under `/api/v1/*` like `/api/v1/listings`)
    - OR route file exists: `routes/world_<world>.php`
    - OR controller directory exists: `app/Http/Controllers/World/<WorldName>/`
 
@@ -63,31 +63,20 @@ Config: work/pazar/config/worlds.php
 Routes: ops/snapshots/routes.pazar.json
 
 Parsing worlds config...
-Enabled worlds: commerce, rentals, food
-Disabled worlds: services, real_estate, vehicles
+Enabled worlds: marketplace
+Disabled worlds: (none)
 
 === Checking Enabled Worlds ===
 
-Checking world: commerce
-Checking world: rentals
-Checking world: food
+Checking world: marketplace
 
 === Checking Disabled Worlds ===
-
-Checking disabled world: services
-Checking disabled world: real_estate
-Checking disabled world: vehicles
 
 === WORLD SPINE CHECK RESULTS ===
 
 World        Enabled RoutesSurface CtxWorldLock Status Notes
 -----        ------- ------------- ------------ ------ -----
-commerce     Yes     Yes           Yes          PASS   Route surface OK; Ctx.world lock OK
-rentals      Yes     Yes           Yes          PASS   Route surface OK; Ctx.world lock OK
-food         Yes     Yes           No           WARN   Route surface OK; Missing ctx.world lock evidence
-services     No      N/A           N/A          PASS   No controller directory (OK for disabled world)
-real_estate  No      N/A           N/A          PASS   No controller directory (OK for disabled world)
-vehicles     No      N/A           N/A          PASS   No controller directory (OK for disabled world)
+marketplace  Yes     Yes           No           WARN   Route surface OK; Missing ctx.world lock evidence
 
 OVERALL STATUS: WARN (1 warnings)
 ```

@@ -31,7 +31,7 @@ test("REGISTER v1.2: closed world is rejected (410 WORLD_CLOSED) on /v1/contract
   const prevKey = process.env.HOS_API_KEY;
   const prevClosed = process.env.HOS_WORLD_CLOSED;
   process.env.HOS_API_KEY = "test-api-key";
-  process.env.HOS_WORLD_CLOSED = "services";
+  process.env.HOS_WORLD_CLOSED = "social";
 
   const app = await buildApp({ db: { query: async () => ({ rowCount: 1, rows: [{ ok: true }] }) } });
   const res = await app.inject({
@@ -44,7 +44,7 @@ test("REGISTER v1.2: closed world is rejected (410 WORLD_CLOSED) on /v1/contract
       meta: {},
       attrs: {},
       idempotency_key: "pazar:test:idem:1",
-      ctx: { tenant_id: "t1", world: "services", from: "requested" }
+      ctx: { tenant_id: "t1", world: "social", from: "requested" }
     }
   });
 

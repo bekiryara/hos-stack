@@ -1,3 +1,13 @@
+# Product Roadmap (HISTORICAL)
+
+> **HISTORICAL / DO NOT USE AS CANON**  
+> This document contains outdated references to “verticals” (`commerce/food/rentals`) and assumes a world navigation UI.  
+> Canonical today:
+> - **World**: `marketplace` (Pazar)
+> - **Catalog roots (NOT worlds/verticals)**: `service`, `real-estate`, `vehicle`
+>
+> Canonical sources: `docs/CURRENT.md`, `docs/SPEC.md`, `docs/PRODUCT/PRODUCT_API_SPINE.md`, `docs/PRODUCT/openapi.yaml`
+
 # Product Roadmap
 
 **Status:** Post-RC0 Planning

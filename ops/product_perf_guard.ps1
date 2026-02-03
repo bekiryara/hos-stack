@@ -16,6 +16,9 @@ param(
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$ScriptDir\_lib\ops_output.ps1"
 . "$ScriptDir\_lib\ops_exit.ps1"
+if (Test-Path "$ScriptDir\_lib\worlds_config.ps1") {
+    . "$ScriptDir\_lib\worlds_config.ps1"
+}
 
 # Result tracking
 $checkResults = @()
@@ -38,35 +41,62 @@ Write-Info "Base URL: ${BaseUrl}"
 Write-Info "Iterations: ${Iterations} (warmup: ${Warmup}, measured: $($Iterations - $Warmup))"
 Write-Info ""
 
-# Check 1: Parse enabled worlds from config
+# Check 1: Parse enabled worlds from config (Pazar expects marketplace only)
 $enabledWorlds = @()
-if (Test-Path $WorldsConfigPath) {
-    $content = Get-Content $WorldsConfigPath -Raw
-    if ($content -match "'enabled'\s*=>\s*\[(.*?)\]") {
-        $enabledStr = $matches[1]
-        if ($enabledStr -match "'commerce'") { $enabledWorlds += "commerce" }
-        if ($enabledStr -match "'food'") { $enabledWorlds += "food" }
-        if ($enabledStr -match "'rentals'") { $enabledWorlds += "rentals" }
+$disabledWorlds = @()
+try {
+    if (-not (Test-Path $WorldsConfigPath)) {
+        Write-Fail "Worlds config not found: $WorldsConfigPath"
+        Add-CheckResult -CheckName "Worlds Config" -Status "FAIL" -Notes "Missing config"
+        Invoke-OpsExit 1
+        return
     }
-}
 
-if ($enabledWorlds.Count -eq 0) {
-    Write-Warn "No enabled worlds found in config. Using defaults: commerce, food, rentals"
-    $enabledWorlds = @("commerce", "food", "rentals")
-}
+    if (Get-Command Get-WorldsConfig -ErrorAction SilentlyContinue) {
+        $wc = Get-WorldsConfig -WorldsConfigPath $WorldsConfigPath
+        $enabledWorlds = $wc.Enabled
+        $disabledWorlds = $wc.Disabled
+    } else {
+        $content = Get-Content $WorldsConfigPath -Raw
+        if ($content -match "(?s)'enabled'\s*=>\s*\[(.*?)\]") {
+            $matchesEnabled = [regex]::Matches($matches[1], "['""]([a-z0-9_]+)['""]")
+            foreach ($m in $matchesEnabled) { $enabledWorlds += $m.Groups[1].Value }
+        }
+        if ($content -match "(?s)'disabled'\s*=>\s*\[(.*?)\]") {
+            $matchesDisabled = [regex]::Matches($matches[1], "['""]([a-z0-9_]+)['""]")
+            foreach ($m in $matchesDisabled) { $disabledWorlds += $m.Groups[1].Value }
+        }
+    }
 
-Write-Pass "Enabled worlds: $($enabledWorlds -join ', ')"
-Add-CheckResult -CheckName "Worlds Config" -Status "PASS" -Notes "Found $($enabledWorlds.Count) enabled world(s)"
+    $enabledWorlds = @($enabledWorlds | Sort-Object -Unique)
+    $disabledWorlds = @($disabledWorlds | Sort-Object -Unique)
 
-# Check 2: Verify credentials
-if (-not $TestTenantId -or -not $TestAuth) {
-    Write-Warn "PRODUCT_TEST_TENANT_ID or PRODUCT_TEST_AUTH not provided. Skipping perf checks."
-    Add-CheckResult -CheckName "Credentials Check" -Status "WARN" -Notes "Skipped (credentials missing)"
-    Invoke-OpsExit 2
+    if ($enabledWorlds.Count -ne 1 -or $enabledWorlds[0] -ne "marketplace" -or $disabledWorlds.Count -ne 0) {
+        $en = if ($enabledWorlds) { $enabledWorlds -join ", " } else { "<empty>" }
+        $di = if ($disabledWorlds) { $disabledWorlds -join ", " } else { "<empty>" }
+        Write-Fail "Worlds config drift. Expected enabled=[marketplace], disabled=[]. Got enabled=[$en], disabled=[$di]"
+        Add-CheckResult -CheckName "Worlds Config" -Status "FAIL" -Notes "Drift detected"
+        Invoke-OpsExit 1
+        return
+    }
+
+    Write-Pass "Enabled worlds: marketplace"
+    Add-CheckResult -CheckName "Worlds Config" -Status "PASS" -Notes "enabled=[marketplace]"
+} catch {
+    Write-Fail "Error parsing worlds config: $($_.Exception.Message)"
+    Add-CheckResult -CheckName "Worlds Config" -Status "FAIL" -Notes "Parse error"
+    Invoke-OpsExit 1
     return
 }
-Write-Pass "Credentials provided. Proceeding with perf checks."
-Add-CheckResult -CheckName "Credentials Check" -Status "PASS" -Notes "Credentials provided"
+
+# Check 2: Credentials are optional for guest read path
+if (-not $TestTenantId -or -not $TestAuth) {
+    Write-Warn "PRODUCT_TEST_TENANT_ID or PRODUCT_TEST_AUTH missing. Using guest read path (no auth)."
+    Add-CheckResult -CheckName "Credentials Check" -Status "WARN" -Notes "Missing credentials; guest mode"
+} else {
+    Write-Pass "Credentials provided (optional)."
+    Add-CheckResult -CheckName "Credentials Check" -Status "PASS" -Notes "Credentials provided"
+}
 
 # Check 3: Docker reachable (optional check)
 try {
@@ -109,18 +139,23 @@ function Measure-RequestLatency {
     }
 }
 
-# Check 4: Run perf tests for each enabled world
+# Check 4: Run perf tests (guest read path: GET /api/v1/listings)
 $overallPass = $true
 foreach ($world in $enabledWorlds) {
     Write-Info "Running perf checks for world: ${world}"
     
     $headers = @{
-        "Authorization" = "Bearer $TestAuth"
-        "X-Tenant-Id" = $TestTenantId
         "Accept" = "application/json"
     }
+    if ($TestAuth) {
+        $headers["Authorization"] = if ($TestAuth.StartsWith("Bearer ")) { $TestAuth } else { "Bearer $TestAuth" }
+    }
+    if ($TestTenantId) {
+        # Store-scope reads use X-Active-Tenant-Id (optional for this perf gate)
+        $headers["X-Active-Tenant-Id"] = $TestTenantId
+    }
     
-    $url = "${BaseUrl}/api/v1/${world}/listings?limit=${Limit}"
+    $url = "${BaseUrl}/api/v1/listings?limit=${Limit}"
     
     # Warmup (not measured)
     for ($i = 1; $i -le $Warmup; $i++) {

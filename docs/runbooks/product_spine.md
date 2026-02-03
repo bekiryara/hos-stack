@@ -1,17 +1,22 @@
 # Product Spine Gate Runbook
 
-**Purpose**: Validates Product API spine through static checks (routes, middleware) and end-to-end tests (create → list → show + tenant boundary).
+**Purpose**: Validates the **current marketplace listings spine reality** (not the retired multiworld prototype).
+
+Reality lock:
+- **World**: Pazar service world is `marketplace`
+- **Listings API**: `/api/v1/listings` (NOT world-prefixed listing paths)
 
 **Scripts**: 
-- `ops/product_spine_check.ps1` - Static checks (routes, middleware, write-path lock)
-- `ops/product_spine_e2e_check.ps1` - E2E tests (create → list → show + tenant boundary)
+- `ops/product_spine_check.ps1` - Wrapper gate (world governance + listings read-path + smoke)
+- `ops/product_read_path_check.ps1` - Read-path surface (`GET /api/v1/listings`)
+- `ops/product_api_smoke.ps1` - Create → publish → show (store scope)
 
 ## What It Checks
 
 1. **Enabled Worlds Discovery**: Reads enabled worlds from `work/pazar/config/worlds.php`
 2. **Route Discovery**: Validates routes exist for each enabled world:
-   - `GET /api/v1/{world}/listings`
-   - `GET /api/v1/{world}/listings/{id}`
+   - `GET /api/v1/listings`
+   - `GET /api/v1/listings/{id}`
 3. **Middleware Policy**: Validates required middleware is present:
    - `auth.any` (authentication required)
    - `resolve.tenant` (tenant context resolution)
@@ -106,7 +111,7 @@ Step 3: Validating routes and middleware for enabled worlds
 OVERALL STATUS: FAIL
 
 Remediation:
-1. Ensure all enabled worlds have routes: GET /api/v1/{world}/listings and GET /api/v1/{world}/listings/{id}
+1. Ensure listings routes exist: GET /api/v1/listings and GET /api/v1/listings/{id}
 2. Ensure routes have required middleware: auth.any, resolve.tenant, tenant.user
 3. Run routes_snapshot.ps1 to generate routes snapshot
 ```
@@ -237,7 +242,7 @@ OVERALL STATUS: WARN
 
 **Solution**:
 1. Check `work/pazar/routes/api.php` for route definitions
-2. Ensure routes match pattern: `GET /api/v1/{world}/listings` and `GET /api/v1/{world}/listings/{id}`
+2. Ensure routes match pattern: `GET /api/v1/listings` and `GET /api/v1/listings/{id}`
 3. Verify enabled worlds in `work/pazar/config/worlds.php`
 
 ### Middleware Missing

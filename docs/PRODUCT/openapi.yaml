@@ -1,877 +1,369 @@
 openapi: 3.1.0
 info:
-  title: Pazar Product API Spine
-  version: 1.0.0
-  description: |
-    Product API Spine for enabled worlds (commerce, food, rentals).
-    All endpoints require authentication (`auth.any` middleware) and tenant context (`resolve.tenant` + `tenant.user` middleware).
-    
-    **Tenant Resolution**: Tenant ID must be provided via `X-Tenant-Id` header or session.
-    
-    **World Context**: World is determined from route path (`/api/v1/{world}/listings`).
-    
-    **Error Contract**: All error responses follow the `ErrorEnvelope` schema with `ok:false`, `error_code`, `message`, and `request_id`.
+  title: Pazar Marketplace API (Canonical)
+  version: 1.4.0
+  description: >
+    Canonical OpenAPI contract for the Pazar service (world: marketplace).
+    This spec intentionally does NOT describe any retired multiworld routing such as /api/v1/{world}/...
 
 servers:
   - url: http://localhost:8080
-    description: Local development server
-  - url: https://api.example.com
-    description: Production server (example)
 
 tags:
-  - name: Commerce Listings
-    description: Commerce world listings API
-  - name: Food Listings
-    description: Food world listings API
-  - name: Rentals Listings
-    description: Rentals world listings API
+  - name: World
+    description: World status / service identity
+  - name: Catalog
+    description: Categories and filter schema (guest)
+  - name: Listings
+    description: Marketplace listings (read + write spine)
 
 paths:
-  /api/v1/commerce/listings:
+  /api/world/status:
     get:
-      tags:
-        - Commerce Listings
-      summary: List commerce listings
-      description: Returns tenant-scoped, world-scoped commerce listings with cursor pagination.
-      operationId: listCommerceListings
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
+      tags: [World]
+      summary: World status for Pazar (marketplace)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorldStatus"
+        default:
+          $ref: "#/components/responses/ErrorEnvelope"
+
+  /api/v1/categories:
+    get:
+      tags: [Catalog]
+      summary: Get category tree
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryNode"
+        default:
+          $ref: "#/components/responses/ErrorEnvelope"
+
+  /api/v1/categories/{id}/filter-schema:
+    get:
+      tags: [Catalog]
+      summary: Get filter schema for a category
       parameters:
-        - name: limit
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryFilterSchema"
+        "404":
+          $ref: "#/components/responses/ErrorEnvelope"
+        default:
+          $ref: "#/components/responses/ErrorEnvelope"
+
+  /api/v1/listings:
+    get:
+      tags: [Listings]
+      summary: Search listings (guest)
+      parameters:
+        - name: category_id
           in: query
-          description: Number of items per page (default 20, max 100)
           required: false
           schema:
             type: integer
             minimum: 1
-            maximum: 100
-            default: 20
-        - name: cursor
-          in: query
-          description: Cursor for pagination (opaque string)
-          required: false
-          schema:
-            type: string
       responses:
-        '200':
-          description: Success
-          headers:
-            X-Request-Id:
-              schema:
-                type: string
-              description: Request ID for tracing
+        "200":
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '500':
-          description: Internal server error (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-  /api/v1/commerce/listings/{id}:
-    get:
-      tags:
-        - Commerce Listings
-      summary: Get commerce listing by ID
-      description: Returns a single commerce listing (tenant-scoped, world-scoped).
-      operationId: getCommerceListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Listing ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Success
-          headers:
-            X-Request-Id:
-              schema:
-                type: string
-              description: Request ID for tracing
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponseItem'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '404':
-          description: Not found (listing not found or cross-tenant access)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '500':
-          description: Internal server error (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
+                type: array
+                items:
+                  $ref: "#/components/schemas/Listing"
+        default:
+          $ref: "#/components/responses/ErrorEnvelope"
     post:
-      tags:
-        - Commerce Listings
-      summary: Create commerce listing (NOT IMPLEMENTED)
-      description: Write endpoint stub - returns 501 NOT_IMPLEMENTED.
-      operationId: createCommerceListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
+      tags: [Listings]
+      summary: Create listing (draft by default)
+      description: >
+        Requires store persona and X-Active-Tenant-Id. In GENESIS mode, Authorization may be optional
+        depending on environment policy.
+      parameters:
+        - $ref: "#/components/parameters/XActiveTenantId"
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
-              type: object
+              $ref: "#/components/schemas/ListingCreateRequest"
       responses:
-        '401':
-          description: Unauthorized
+        "201":
+          description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '501':
-          description: Not Implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
+                $ref: "#/components/schemas/Listing"
+        "400":
+          $ref: "#/components/responses/ErrorEnvelope"
+        "401":
+          $ref: "#/components/responses/ErrorEnvelope"
+        "403":
+          $ref: "#/components/responses/ErrorEnvelope"
+        "422":
+          $ref: "#/components/responses/ErrorEnvelope"
+        default:
+          $ref: "#/components/responses/ErrorEnvelope"
 
-    patch:
-      tags:
-        - Commerce Listings
-      summary: Update commerce listing (NOT IMPLEMENTED)
-      description: Write endpoint stub - returns 501 NOT_IMPLEMENTED.
-      operationId: updateCommerceListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Listing ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '501':
-          description: Not Implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-    delete:
-      tags:
-        - Commerce Listings
-      summary: Delete commerce listing (NOT IMPLEMENTED)
-      description: Write endpoint stub - returns 501 NOT_IMPLEMENTED.
-      operationId: deleteCommerceListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Listing ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '501':
-          description: Not Implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-  /api/v1/food/listings:
+  /api/v1/listings/{id}:
     get:
-      tags:
-        - Food Listings
-      summary: List food listings
-      description: Returns tenant-scoped, world-scoped food listings with cursor pagination.
-      operationId: listFoodListings
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      parameters:
-        - name: limit
-          in: query
-          description: Number of items per page (default 20, max 100)
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: cursor
-          in: query
-          description: Cursor for pagination (opaque string)
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success
-          headers:
-            X-Request-Id:
-              schema:
-                type: string
-              description: Request ID for tracing
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '500':
-          description: Internal server error (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-  /api/v1/food/listings/{id}:
-    get:
-      tags:
-        - Food Listings
-      summary: Get food listing by ID
-      description: Returns a single food listing (tenant-scoped, world-scoped).
-      operationId: getFoodListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
+      tags: [Listings]
+      summary: Get listing detail (guest)
       parameters:
         - name: id
           in: path
           required: true
-          description: Listing ID (UUID)
           schema:
             type: string
-            format: uuid
       responses:
-        '200':
-          description: Success
-          headers:
-            X-Request-Id:
-              schema:
-                type: string
-              description: Request ID for tracing
+        "200":
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseItem'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '404':
-          description: Not found (listing not found or cross-tenant access)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '500':
-          description: Internal server error (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
+                $ref: "#/components/schemas/Listing"
+        "404":
+          $ref: "#/components/responses/ErrorEnvelope"
+        default:
+          $ref: "#/components/responses/ErrorEnvelope"
 
+  /api/v1/listings/{id}/publish:
     post:
-      tags:
-        - Food Listings
-      summary: Create food listing (NOT IMPLEMENTED)
-      description: Write endpoint stub - returns 501 NOT_IMPLEMENTED.
-      operationId: createFoodListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '501':
-          description: Not Implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-    patch:
-      tags:
-        - Food Listings
-      summary: Update food listing (NOT IMPLEMENTED)
-      description: Write endpoint stub - returns 501 NOT_IMPLEMENTED.
-      operationId: updateFoodListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
+      tags: [Listings]
+      summary: Publish a draft listing
       parameters:
         - name: id
           in: path
           required: true
-          description: Listing ID (UUID)
           schema:
             type: string
-            format: uuid
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
+        - $ref: "#/components/parameters/XActiveTenantId"
       responses:
-        '401':
-          description: Unauthorized
+        "200":
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '501':
-          description: Not Implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-    delete:
-      tags:
-        - Food Listings
-      summary: Delete food listing (NOT IMPLEMENTED)
-      description: Write endpoint stub - returns 501 NOT_IMPLEMENTED.
-      operationId: deleteFoodListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Listing ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '501':
-          description: Not Implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-  /api/v1/rentals/listings:
-    get:
-      tags:
-        - Rentals Listings
-      summary: List rentals listings
-      description: Returns tenant-scoped, world-scoped rentals listings with cursor pagination.
-      operationId: listRentalsListings
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      parameters:
-        - name: limit
-          in: query
-          description: Number of items per page (default 20, max 100)
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: cursor
-          in: query
-          description: Cursor for pagination (opaque string)
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Success
-          headers:
-            X-Request-Id:
-              schema:
-                type: string
-              description: Request ID for tracing
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '500':
-          description: Internal server error (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-  /api/v1/rentals/listings/{id}:
-    get:
-      tags:
-        - Rentals Listings
-      summary: Get rentals listing by ID
-      description: Returns a single rentals listing (tenant-scoped, world-scoped).
-      operationId: getRentalsListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Listing ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Success
-          headers:
-            X-Request-Id:
-              schema:
-                type: string
-              description: Request ID for tracing
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponseItem'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '404':
-          description: Not found (listing not found or cross-tenant access)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '500':
-          description: Internal server error (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-    post:
-      tags:
-        - Rentals Listings
-      summary: Create rentals listing (NOT IMPLEMENTED)
-      description: Write endpoint stub - returns 501 NOT_IMPLEMENTED.
-      operationId: createRentalsListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '501':
-          description: Not Implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-    patch:
-      tags:
-        - Rentals Listings
-      summary: Update rentals listing (NOT IMPLEMENTED)
-      description: Write endpoint stub - returns 501 NOT_IMPLEMENTED.
-      operationId: updateRentalsListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Listing ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '501':
-          description: Not Implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-
-    delete:
-      tags:
-        - Rentals Listings
-      summary: Delete rentals listing (NOT IMPLEMENTED)
-      description: Write endpoint stub - returns 501 NOT_IMPLEMENTED.
-      operationId: deleteRentalsListing
-      security:
-        - bearerAuth: []
-        - sessionAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Listing ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '403':
-          description: Forbidden (tenant context missing)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '501':
-          description: Not Implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
+                $ref: "#/components/schemas/Listing"
+        "400":
+          $ref: "#/components/responses/ErrorEnvelope"
+        "401":
+          $ref: "#/components/responses/ErrorEnvelope"
+        "403":
+          $ref: "#/components/responses/ErrorEnvelope"
+        "404":
+          $ref: "#/components/responses/ErrorEnvelope"
+        "409":
+          $ref: "#/components/responses/ErrorEnvelope"
+        "422":
+          $ref: "#/components/responses/ErrorEnvelope"
+        default:
+          $ref: "#/components/responses/ErrorEnvelope"
 
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Bearer token authentication (via Authorization header)
-    sessionAuth:
-      type: apiKey
-      in: cookie
-      name: session
-      description: Session-based authentication
+  parameters:
+    XActiveTenantId:
+      name: X-Active-Tenant-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      description: Active tenant id (required for store/write persona).
+
+  responses:
+    ErrorEnvelope:
+      description: Error envelope
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
 
   schemas:
     ErrorEnvelope:
       type: object
-      required:
-        - ok
-        - error_code
-        - message
-        - request_id
+      required: [request_id, error]
       properties:
-        ok:
-          type: boolean
-          enum: [false]
-          description: Always false for error responses
-        error_code:
-          type: string
-          description: Machine-readable error code
-          examples:
-            - UNAUTHORIZED
-            - FORBIDDEN
-            - NOT_FOUND
-            - NOT_IMPLEMENTED
-            - VALIDATION_ERROR
-            - TENANT_CONTEXT_MISSING
-            - WORLD_CONTEXT_INVALID
-        message:
-          type: string
-          description: Human-readable error message
         request_id:
           type: string
-          format: uuid
-          description: Request ID for tracing (matches X-Request-Id header)
+          description: Correlation id for tracing/debugging.
+        error:
+          $ref: "#/components/schemas/ErrorObject"
         details:
           type: object
-          description: Optional additional error details
           additionalProperties: true
 
-    SuccessResponse:
+    ErrorObject:
       type: object
-      required:
-        - ok
-        - data
-        - request_id
+      required: [code, message]
       properties:
-        ok:
-          type: boolean
-          enum: [true]
-          description: Always true for success responses
-        data:
-          type: object
-          required:
-            - items
-            - cursor
-            - meta
-          properties:
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/ListingItem'
-            cursor:
-              type: object
-              required:
-                - next
-              properties:
-                next:
-                  type: string
-                  nullable: true
-                  description: Cursor for next page (null if no more pages)
-            meta:
-              type: object
-              required:
-                - count
-                - limit
-              properties:
-                count:
-                  type: integer
-                  description: Number of items in current page
-                limit:
-                  type: integer
-                  description: Maximum items per page
-        request_id:
+        code:
           type: string
-          format: uuid
-          description: Request ID for tracing (matches X-Request-Id header)
+        message:
+          type: string
 
-    SuccessResponseItem:
+    WorldStatus:
       type: object
-      required:
-        - ok
-        - data
-        - request_id
+      required: [world_key, availability, phase, version]
       properties:
-        ok:
-          type: boolean
-          enum: [true]
-          description: Always true for success responses
-        data:
-          type: object
-          required:
-            - item
-          properties:
-            item:
-              $ref: '#/components/schemas/ListingItem'
-        request_id:
+        world_key:
           type: string
-          format: uuid
-          description: Request ID for tracing (matches X-Request-Id header)
+          example: marketplace
+        availability:
+          type: string
+          example: ONLINE
+        phase:
+          type: string
+          example: GENESIS
+        version:
+          type: string
 
-    ListingItem:
+    CategoryNode:
       type: object
-      required:
-        - id
-        - title
-        - status
-        - created_at
-        - updated_at
+      required: [id, parent_id, slug, title, status, children]
       properties:
         id:
+          type: integer
+        parent_id:
+          anyOf:
+            - type: integer
+            - type: "null"
+        slug:
           type: string
-          format: uuid
-          description: Listing ID
         title:
           type: string
-          description: Listing title
-          maxLength: 255
+        status:
+          type: string
+          example: active
+        children:
+          anyOf:
+            - type: array
+              items:
+                $ref: "#/components/schemas/CategoryNode"
+            - type: string
+              description: Legacy empty string from seed data (kept for compatibility).
+
+    CategoryFilterSchema:
+      type: object
+      required: [category_id, category_slug, filters]
+      properties:
+        category_id:
+          type: integer
+        category_slug:
+          type: string
+        filters:
+          type: array
+          items:
+            $ref: "#/components/schemas/FilterSchemaItem"
+
+    FilterSchemaItem:
+      type: object
+      required: [attribute_key, key, label, value_type, status, sort_order, ui_component, required, filter_mode, type]
+      properties:
+        attribute_key:
+          type: string
+        key:
+          type: string
+        label:
+          type: string
+        value_type:
+          type: string
+        unit:
+          type: string
+          nullable: true
         description:
           type: string
           nullable: true
-          description: Listing description
-        price_amount:
+        status:
+          type: string
+        sort_order:
           type: integer
-          nullable: true
-          description: Price in smallest currency unit (e.g., cents for USD, kuruş for TRY)
-        currency:
+        ui_component:
+          type: string
+        ui_type:
           type: string
           nullable: true
-          description: Currency code (ISO 4217, e.g., TRY, USD)
-          maxLength: 8
+        required:
+          type: boolean
+        filter_mode:
+          type: string
+        rules:
+          type: object
+          additionalProperties: true
+        type:
+          type: string
+
+    ListingCreateRequest:
+      type: object
+      required: [title, category_id]
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        category_id:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+          nullable: true
+        price_amount:
+          type: integer
+          minimum: 0
+          nullable: true
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          nullable: true
+        attributes:
+          type: object
+          additionalProperties: true
+
+    Listing:
+      type: object
+      required: [id, world, status, title, category_id, attributes]
+      properties:
+        id:
+          type: string
+        world:
+          type: string
+          example: marketplace
         status:
           type: string
           enum: [draft, published]
-          description: Listing status
-        created_at:
+        title:
           type: string
-          format: date-time
-          description: Creation timestamp (ISO 8601)
-        updated_at:
+        category_id:
+          type: integer
+        description:
           type: string
-          format: date-time
-          description: Last update timestamp (ISO 8601)
-
-
-
-
-
+          nullable: true
+        price_amount:
+          type: integer
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        attributes:
+          type: object
+          additionalProperties: true

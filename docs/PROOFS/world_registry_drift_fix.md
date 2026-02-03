@@ -9,8 +9,8 @@
 **Problem:** Conformance check A (World registry drift) was failing due to mismatch between WORLD_REGISTRY.md and config/worlds.php.
 
 **Expected State:**
-- **Enabled worlds:** commerce, food, rentals
-- **Disabled worlds:** services, real_estate, vehicle
+- **Enabled worlds:** marketplace
+- **Disabled worlds:** (none)
 
 **Canonical Source:** `work/pazar/config/worlds.php` (code enforcement depends on it)
 
@@ -22,30 +22,22 @@
 ```
 ## Enabled Worlds
 
-**world_id:** `commerce`
-**world_id:** `food`
-**world_id:** `rentals`
+**world_id:** `marketplace`
 
 ## Disabled Worlds
 
-**world_id:** `services`
-**world_id:** `real_estate`
-**world_id:** `vehicle`
+<!-- None -->
 ```
 
 **config/worlds.php Format:**
 ```php
 return [
     'enabled' => [
-        'commerce',
-        'food',
-        'rentals',
+        'marketplace',
     ],
     
     'disabled' => [
-        'services',
-        'real_estate',
-        'vehicle',
+        // none
     ],
 ];
 ```
@@ -68,8 +60,8 @@ return [
 
 **Expected Result:**
 - No drift detected
-- All enabled worlds match: commerce, food, rentals
-- All disabled worlds match: services, real_estate, vehicle
+- All enabled worlds match: marketplace
+- All disabled worlds match: (none)
 
 ## Acceptance Evidence
 
@@ -89,8 +81,8 @@ return [
 ```
 
 **Validation:**
-- Enabled count: 3 (commerce, food, rentals)
-- Disabled count: 3 (services, real_estate, vehicle)
+- Enabled count: 1 (marketplace)
+- Disabled count: 0
 - No drift messages
 - Exit code: 0
 
@@ -123,7 +115,7 @@ $registryContent = Get-Content work/pazar/WORLD_REGISTRY.md -Raw
 $enabledSection = $registryContent -split "## Enabled Worlds" | Select-Object -Index 1
 $enabledMatches = [regex]::Matches($enabledSection, '\*\*world_id\*\*:\s*`([a-z0-9_]+)`')
 $registryEnabled = $enabledMatches | ForEach-Object { $_.Groups[1].Value } | Sort-Object
-# Expected: commerce, food, rentals
+# Expected: marketplace
 ```
 
 **Config Enabled Worlds:**
@@ -132,7 +124,7 @@ $configContent = Get-Content work/pazar/config/worlds.php -Raw
 $enabledConfigMatch = [regex]::Match($configContent, "'enabled'\s*=>\s*\[(.*?)\]", [System.Text.RegularExpressions.RegexOptions]::Singleline)
 $configEnabledMatches = [regex]::Matches($enabledConfigMatch.Groups[1].Value, "'([a-z0-9_]+)'")
 $configEnabled = $configEnabledMatches | ForEach-Object { $_.Groups[1].Value } | Sort-Object
-# Expected: commerce, food, rentals
+# Expected: marketplace
 ```
 
 **Comparison:**
@@ -156,8 +148,8 @@ Compare-Object $registryEnabled $configEnabled
 
 World registry drift is fixed:
 - WORLD_REGISTRY.md matches config/worlds.php exactly
-- Enabled worlds: commerce, food, rentals (3)
-- Disabled worlds: services, real_estate, vehicle (3)
+- Enabled worlds: marketplace (1)
+- Disabled worlds: (none) (0)
 - Conformance check A now PASSes
 - RC0 gate conformance check now PASSes
 

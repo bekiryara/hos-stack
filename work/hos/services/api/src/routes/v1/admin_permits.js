@@ -37,7 +37,7 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
     return sha256Hex(json);
   }
 
-  const CANONICAL_WORLDS = ["marketplace", "messaging", "social", "commerce"];
+  const CANONICAL_WORLDS = ["marketplace", "messaging", "social"];
   const allowedWorlds = new Set(
     String(process.env.HOS_WORLD_ALLOWLIST ?? "")
       .split(",")

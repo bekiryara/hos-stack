@@ -77,12 +77,9 @@ repo/
 │  └─ ci-guards/
 │
 └─ apps/*                                       # WORLDS = DOMAIN TRUTH (iş verisi + commit)
-   ├─ commerce/
-   ├─ rentals/
-   ├─ food/
-   ├─ services/
-   ├─ real_estate/
-   └─ vehicles/
+   ├─ marketplace/
+   ├─ messaging/
+   └─ social/
       ├─ domain/
       ├─ ui/
       ├─ services/Mutations/
@@ -111,8 +108,9 @@ Register is considered DONE if and only if the following rules hold in BOTH syst
 
 1) World list consistency (no drift)
 - `WORLD_REGISTRY.md` defines the canonical set:
-  { commerce, rentals, food, services, real_estate, vehicles }  (world_id are English)
-- Pazar MUST use exactly the same keys in `config/worlds.php` (case-sensitive).
+  { core, marketplace, messaging, social }  (world_id are English)
+- Pazar MUST declare only its own world enablement locally:
+  enabled=[marketplace], disabled=[] in `work/pazar/config/worlds.php` (case-sensitive).
 - Any mismatch is drift and is not allowed.
 
 2) Closed-world law (H‑OS hard stop)

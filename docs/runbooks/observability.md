@@ -29,7 +29,7 @@ Laravel log'larında structured context şu şekilde görünür:
     "method": "POST",
     "tenant_id": 1,
     "user_id": 42,
-    "world": "commerce"
+    "world": "marketplace"
   }
 }
 ```

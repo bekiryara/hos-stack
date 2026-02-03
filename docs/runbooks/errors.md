@@ -182,7 +182,7 @@ docker compose exec pazar-app grep "123e4567-e89b-12d3-a456-426614174000" storag
     "request_id": "123e4567-e89b-12d3-a456-426614174000",
     "route": "api.products.store",
     "method": "POST",
-    "world": "commerce",
+    "world": "marketplace",
     "user_id": 42,
     "exception_class": "App\\Exceptions\\ProductException",
     "message": "Failed to create product"

@@ -93,9 +93,33 @@ if (Test-Path $ROUTES_SNAPSHOT) {
 function Test-WorldRouteSurface {
     param([string]$WorldId)
     
+    # Pazar routing reality:
+    # - Pazar is the Marketplace world, but routes are NOT namespaced as /{world}/...
+    # - API routes live under /api/v1/* (Laravel api.php prefix + /v1/* routes)
+    # So "marketplace" route surface must be detected by presence of /v1 routes.
+    if ($WorldId -eq "marketplace") {
+        # Check routes snapshot first (preferred)
+        if ($routes.Count -gt 0) {
+            $marketplaceRoute = $routes | Where-Object {
+                $_.uri -like "*/api/v1/*" -or
+                $_.uri -like "/api/v1/*" -or
+                $_.uri -like "*/v1/*" -or
+                $_.uri -like "/v1/*"
+            } | Select-Object -First 1
+            if ($marketplaceRoute) {
+                return $true
+            }
+        }
+
+        # Fallback: filesystem check for canonical API modules
+        if ((Test-Path "work/pazar/routes/api.php") -and (Test-Path "work/pazar/routes/api/03b_listings_read.php")) {
+            return $true
+        }
+    }
+
     # Check routes snapshot first
     if ($routes.Count -gt 0) {
-        # Look for routes containing world path (e.g., /commerce, /food, /rentals)
+        # Look for routes containing the world path
         $worldRoute = $routes | Where-Object { 
             $_.uri -eq $WorldId -or 
             $_.uri -like "/$WorldId" -or

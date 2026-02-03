@@ -66,7 +66,7 @@ function Add-CheckResult {
 # Check 1: File exists
 Write-Host "Check 1: OpenAPI spec file exists" -ForegroundColor Cyan
 
-$openApiPath = "docs\product\openapi.yaml"
+$openApiPath = "docs\PRODUCT\openapi.yaml"
 if (-not (Test-Path $openApiPath)) {
     Add-CheckResult -CheckName "File exists" -Status "FAIL" -Notes "OpenAPI spec file not found: $openApiPath"
 } else {
@@ -131,39 +131,39 @@ Write-Host "Check 3: Write endpoints in OpenAPI spec" -ForegroundColor Cyan
 if (Test-Path $openApiPath) {
     try {
         $content = Get-Content $openApiPath -Raw -Encoding UTF8
-        
-        $enabledWorlds = @("commerce", "food", "rentals")
-        $allWriteEndpointsFound = $true
-        $missingEndpoints = @()
-        
-        foreach ($world in $enabledWorlds) {
-            # Check POST /api/v1/{world}/listings
-            # Simple pattern: look for post: after the path definition
-            $hasPost = $content -match "/api/v1/${world}/listings" -and $content -match "`r?`n\s+post:"
-            if (-not $hasPost) {
-                $allWriteEndpointsFound = $false
-                $missingEndpoints += "POST /api/v1/${world}/listings"
+
+        function Get-OpenApiPathBlock {
+            param([string]$All, [string]$Path)
+            $escaped = [regex]::Escape($Path)
+            $m = [regex]::Match($All, "(?ms)^\s*${escaped}\s*:\s*\r?\n(?:(?!^\s*/).*\r?\n)*")
+            if ($m.Success) { return $m.Value }
+            return $null
+        }
+
+        $required = @(
+            @{ Path = "/api/v1/listings"; Methods = @("get", "post") },
+            @{ Path = "/api/v1/listings/{id}"; Methods = @("get") },
+            @{ Path = "/api/v1/listings/{id}/publish"; Methods = @("post") }
+        )
+
+        $missing = @()
+        foreach ($req in $required) {
+            $block = Get-OpenApiPathBlock -All $content -Path $req.Path
+            if ($null -eq $block) {
+                $missing += "$($req.Path) (path)"
+                continue
             }
-            
-            # Check PATCH /api/v1/{world}/listings/{id}
-            $hasPatch = $content -match "/api/v1/${world}/listings/\{id\}" -and $content -match "`r?`n\s+patch:"
-            if (-not $hasPatch) {
-                $allWriteEndpointsFound = $false
-                $missingEndpoints += "PATCH /api/v1/${world}/listings/{id}"
-            }
-            
-            # Check DELETE /api/v1/{world}/listings/{id}
-            $hasDelete = $content -match "/api/v1/${world}/listings/\{id\}" -and $content -match "`r?`n\s+delete:"
-            if (-not $hasDelete) {
-                $allWriteEndpointsFound = $false
-                $missingEndpoints += "DELETE /api/v1/${world}/listings/{id}"
+            foreach ($method in $req.Methods) {
+                if ($block -notmatch "(?m)^\s{2,}${method}\s*:") {
+                    $missing += "$($req.Path) ($method)"
+                }
             }
         }
-        
-        if ($allWriteEndpointsFound) {
-            Add-CheckResult -CheckName "Write endpoints in OpenAPI" -Status "PASS" -Notes "All write endpoints (POST/PATCH/DELETE) found for enabled worlds"
+
+        if ($missing.Count -eq 0) {
+            Add-CheckResult -CheckName "Write endpoints in OpenAPI" -Status "PASS" -Notes "Listings endpoints found (list/show/publish)."
         } else {
-            Add-CheckResult -CheckName "Write endpoints in OpenAPI" -Status "FAIL" -Notes "Missing write endpoints: $($missingEndpoints -join ', ')"
+            Add-CheckResult -CheckName "Write endpoints in OpenAPI" -Status "FAIL" -Notes "Missing from OpenAPI: $($missing -join ', ')"
         }
     } catch {
         Add-CheckResult -CheckName "Write endpoints in OpenAPI" -Status "WARN" -Notes "Could not check write endpoints: $($_.Exception.Message)" -Blocking $false
@@ -177,7 +177,7 @@ Write-Host ""
 # Check 4: Drift guard vs implemented spine doc
 Write-Host "Check 4: Documentation drift guard" -ForegroundColor Cyan
 
-$spineDocPath = "docs\product\PRODUCT_API_SPINE.md"
+$spineDocPath = "docs\PRODUCT\PRODUCT_API_SPINE.md"
 if (Test-Path $spineDocPath) {
     try {
         $spineContent = Get-Content $spineDocPath -Raw -Encoding UTF8
@@ -221,38 +221,23 @@ try {
     } else {
         # Stack is reachable, test endpoint
         try {
-            $endpointResponse = Invoke-WebRequest -Uri "$BaseUrl/api/v1/commerce/listings" -Method GET -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
-            
-            # Should not reach here (should be 401/403)
-            Add-CheckResult -CheckName "Endpoint probe (unauthorized response)" -Status "WARN" -Notes "Unexpected response (expected 401/403, got $($endpointResponse.StatusCode))" -Blocking $false
+            $endpointResponse = Invoke-WebRequest -Uri "$BaseUrl/api/v1/listings" -Method GET -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+            if ($endpointResponse.StatusCode -eq 200) {
+                Add-CheckResult -CheckName "Endpoint probe (listings index)" -Status "PASS" -Notes "GET /api/v1/listings returns 200"
+            } else {
+                Add-CheckResult -CheckName "Endpoint probe (listings index)" -Status "WARN" -Notes "Unexpected status: $($endpointResponse.StatusCode)" -Blocking $false
+            }
         } catch {
             $webException = $_.Exception
             if ($webException.Response) {
                 $statusCode = [int]$webException.Response.StatusCode.value__
-                
                 if ($statusCode -eq 401 -or $statusCode -eq 403) {
-                    # Expected unauthorized response
-                    try {
-                        $stream = $webException.Response.GetResponseStream()
-                        $reader = New-Object System.IO.StreamReader($stream)
-                        $responseBody = $reader.ReadToEnd()
-                        $reader.Close()
-                        $stream.Close()
-                        
-                        # Check if response contains request_id
-                        if ($responseBody -match "request_id" -or $responseBody -match "requestId") {
-                            Add-CheckResult -CheckName "Endpoint probe (unauthorized response)" -Status "PASS" -Notes "Unauthorized endpoint returns 401/403 with request_id in body"
-                        } else {
-                            Add-CheckResult -CheckName "Endpoint probe (unauthorized response)" -Status "WARN" -Notes "Unauthorized endpoint returns $statusCode but missing request_id in body" -Blocking $false
-                        }
-                    } catch {
-                        Add-CheckResult -CheckName "Endpoint probe (unauthorized response)" -Status "WARN" -Notes "Could not read response body: $($_.Exception.Message)" -Blocking $false
-                    }
+                    Add-CheckResult -CheckName "Endpoint probe (listings index)" -Status "WARN" -Notes "GET /api/v1/listings requires auth in this environment ($statusCode)" -Blocking $false
                 } else {
-                    Add-CheckResult -CheckName "Endpoint probe (unauthorized response)" -Status "WARN" -Notes "Unexpected status code: $statusCode (expected 401/403)" -Blocking $false
+                    Add-CheckResult -CheckName "Endpoint probe (listings index)" -Status "WARN" -Notes "Unexpected status code: $statusCode" -Blocking $false
                 }
             } else {
-                Add-CheckResult -CheckName "Endpoint probe (unauthorized response)" -Status "WARN" -Notes "Request failed: $($_.Exception.Message)" -Blocking $false
+                Add-CheckResult -CheckName "Endpoint probe (listings index)" -Status "WARN" -Notes "Request failed: $($_.Exception.Message)" -Blocking $false
             }
         }
     }

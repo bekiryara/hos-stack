@@ -5,7 +5,7 @@
 
 ## What is the Stack?
 
-This repository runs **H-OS** (universe governance) and **Pazar** (first commerce world) services together.
+This repository runs **H-OS** (universe governance) and **Pazar** (marketplace world) services together.
 
 ### Core Services (Required for Baseline)
 

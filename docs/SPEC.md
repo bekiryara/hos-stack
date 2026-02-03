@@ -280,8 +280,8 @@ Worlds are enabled/disabled via:
 - `work/pazar/config/worlds.php` (canonical source)
 - `work/pazar/WORLD_REGISTRY.md` (documentation)
 
-Enabled worlds: `commerce`, `food`, `rentals`  
-Disabled worlds: `services`, `real_estate`, `vehicle`
+Enabled worlds: `marketplace`  
+Disabled worlds: *(none)*
 
 ---
 

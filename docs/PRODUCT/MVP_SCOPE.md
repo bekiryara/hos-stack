@@ -1,3 +1,13 @@
+# MVP Scope (HISTORICAL)
+
+> **HISTORICAL / DO NOT USE AS CANON**  
+> This document was written under a now-retired “multiworld + verticals (commerce/food/rentals)” model.  
+> Canonical today:
+> - **World**: `marketplace` (Pazar)
+> - **Catalog roots (NOT worlds/verticals)**: `service`, `real-estate`, `vehicle`
+>
+> Canonical sources: `docs/CURRENT.md`, `docs/SPEC.md`, `docs/PRODUCT/PRODUCT_API_SPINE.md`, `docs/PRODUCT/openapi.yaml`
+
 # MVP Scope: Marketplace (Commerce Vertical) Slice
 
 **World:** marketplace (commerce vertical)
