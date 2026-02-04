@@ -50,7 +50,7 @@ export function resolveListingActions(listing, opts = {}) {
   if (context === 'grid') {
     actions.push({
       key: 'view',
-      label: 'View',
+      label: 'Görüntüle',
       to: { path: `/listing/${listingId}` },
       uiClass: 'view-btn',
     });
@@ -73,7 +73,7 @@ export function resolveListingActions(listing, opts = {}) {
   if (modes.includes('reservation')) {
     actions.push({
       key: 'reservation',
-      label: context === 'detail' ? 'Create Reservation' : 'Reserve',
+      label: context === 'detail' ? 'Rezervasyon Yap' : 'Rezerve Et',
       to: { path: '/reservation/create', query: { listing_id: listingId } },
       uiClass: context === 'grid' ? 'reserve-btn' : 'action-button',
     });
@@ -81,7 +81,7 @@ export function resolveListingActions(listing, opts = {}) {
   if (modes.includes('rental')) {
     actions.push({
       key: 'rental',
-      label: context === 'detail' ? 'Create Rental' : 'Rent',
+      label: context === 'detail' ? 'Kiralama Yap' : 'Kirala',
       to: { path: '/rental/create', query: { listing_id: listingId } },
       uiClass: context === 'grid' ? 'rent-btn' : 'action-button',
     });
@@ -89,7 +89,7 @@ export function resolveListingActions(listing, opts = {}) {
   if (modes.includes('sale')) {
     actions.push({
       key: 'sale',
-      label: 'Buy',
+      label: 'Satın Al',
       to: { path: '/order/create', query: { listing_id: listingId } },
       uiClass: context === 'grid' ? 'buy-btn' : 'action-button',
     });
@@ -99,7 +99,7 @@ export function resolveListingActions(listing, opts = {}) {
   if (context === 'detail') {
     actions.unshift({
       key: 'message',
-      label: 'Message Seller',
+      label: 'Mesaj Gönder',
       to: msgTo,
       uiClass: 'action-button',
     });

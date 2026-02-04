@@ -106,20 +106,8 @@
 import { api } from '../api/client';
 import { getCategoriesTree } from '../lib/catalogSpine';
 import { resolveListingActions } from '../lib/listingActions';
+import { categoryLabel, findCategoryById } from '../lib/categoryTree';
 import PublishListingAction from '../components/PublishListingAction.vue';
-
-function findCategoryInTree(nodes, categoryId) {
-  if (!Array.isArray(nodes)) return null;
-  const id = String(categoryId);
-  for (const node of nodes) {
-    if (String(node.id) === id) return node;
-    if (node.children?.length) {
-      const found = findCategoryInTree(node.children, categoryId);
-      if (found) return found;
-    }
-  }
-  return null;
-}
 
 export default {
   name: 'ListingDetailPage',
@@ -186,8 +174,8 @@ export default {
           try {
             const tree = await getCategoriesTree();
             const nodes = Array.isArray(tree) ? tree : (tree?.items ?? []);
-            const found = findCategoryInTree(nodes, this.listing.category_id);
-            this.categoryName = found ? (found.name || found.slug || found.title || String(found.id)) : null;
+            const found = findCategoryById(nodes, this.listing.category_id);
+            this.categoryName = found ? (categoryLabel(found) || String(found.id)) : null;
           } catch {
             this.categoryName = null;
           }

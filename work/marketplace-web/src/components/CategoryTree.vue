@@ -7,7 +7,7 @@
           class="category-link"
           :class="{ 'has-children': category.children && category.children.length > 0 }"
         >
-          {{ category.title || category.slug }}
+          {{ labelFor(category) }}
           <span v-if="category.slug && category.title && category.slug !== category.title" class="slug-hint">
             ({{ category.slug }})
           </span>
@@ -23,12 +23,19 @@
 </template>
 
 <script>
+import { categoryLabel } from '../lib/categoryTree';
+
 export default {
   name: 'CategoryTree',
   props: {
     categories: {
       type: Array,
       default: () => [],
+    },
+  },
+  methods: {
+    labelFor(node) {
+      return categoryLabel(node);
     },
   },
 };

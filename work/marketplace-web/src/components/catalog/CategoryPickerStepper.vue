@@ -52,7 +52,7 @@
           :class="{ clickable: idx < breadcrumbs.length - 1 }"
           @click="goToLevel(idx)"
         >
-          {{ crumb.title || crumb.slug }}
+          {{ labelFor(crumb) }}
         </span>
       </template>
     </div>
@@ -75,7 +75,7 @@
           }"
           @click="selectCategory(cat)"
         >
-          <span class="cat-name">{{ cat.title || cat.slug }}</span>
+          <span class="cat-name">{{ labelFor(cat) }}</span>
           <span v-if="!isLeaf(cat)" class="arrow">&rarr;</span>
           <span v-else-if="mode === 'create'" class="check-icon">&#10003;</span>
         </button>
@@ -97,6 +97,7 @@
 
 <script>
 import {
+  categoryLabel,
   flattenCategoriesTree,
   findCategoryAncestorPathIds,
   getBreadcrumbsForPath,
@@ -189,6 +190,9 @@ export default {
     },
   },
   methods: {
+    labelFor(node) {
+      return categoryLabel(node);
+    },
     // Check if category is a leaf (no children)
     isLeaf(cat) {
       return isLeafCategory(cat);

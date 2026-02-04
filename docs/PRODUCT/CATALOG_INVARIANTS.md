@@ -2,6 +2,14 @@
 
 Bu doküman, **kategori → catalog schema → listing** zincirindeki “bozulursa sistem dağılır” kuralları tek yerde toplar.
 
+### İnsan diliyle (neden var?)
+
+Amaç: Kategori sayısı büyürken sistem bozulmasın.
+
+- Yanlış veri oluşmasın (ilan yanlış kategoriye/kapalı kategoriye bağlanmasın)
+- UI’da butonlar yanlış çıkmasın (flow vs iletişim sapmasın)
+- Zamanla “her yere ayrı kural” yazılıp sistem karışmasın
+
 - **Leaf-only**: Listing `category_id` **yalnız leaf** kategoriye bağlanabilir.
 - **Active-only**: Listing `category_id` **yalnız `status=active`** kategoriye bağlanabilir.
 - **Schema-driven attributes**: Listing `attributes_json` içindeki key’ler **yalnız** `category_filter_schema` ile izinli olmalı (whitelist). Bilinmeyen key → reject.

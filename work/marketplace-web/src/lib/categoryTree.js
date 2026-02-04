@@ -100,3 +100,27 @@ export function getChildrenAtPath(categoriesTree, pathIds) {
   return safeArray(nodes);
 }
 
+/**
+ * Find a category node by id anywhere in the tree.
+ * Returns the node (original object) or null.
+ */
+export function findCategoryById(categoriesTree, targetId) {
+  const wanted = targetId !== null && targetId !== undefined ? Number(targetId) : null;
+  if (!wanted) return null;
+
+  const walk = (nodes) => {
+    for (const node of safeArray(nodes)) {
+      if (!node) continue;
+      if (Number(node.id) === wanted) return node;
+      const children = safeArray(node.children);
+      if (children.length > 0) {
+        const found = walk(children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  return walk(categoriesTree);
+}
+
