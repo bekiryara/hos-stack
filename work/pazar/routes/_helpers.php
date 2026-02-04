@@ -193,3 +193,250 @@ if (!function_exists('pazar_category_intent_schema')) {
     }
 }
 
+/**
+ * Single-source-of-truth guard for listing write paths that can change:
+ * - category_id
+ * - attributes_json
+ * - transaction_modes_json
+ *
+ * All entrypoints (Create / Update / Admin edits / Import) MUST call this guard to prevent drift.
+ *
+ * Returns:
+ * - On success: array with normalized 'attributes' and 'transaction_modes'
+ * - On failure: JSON response (422/4xx) with the same error shapes used by existing routes
+ */
+if (!function_exists('pazar_guard_listing_catalog_write')) {
+    function pazar_guard_listing_catalog_write(int $categoryId, array $attributes, array $transactionModes) {
+        // Guard must be self-sufficient: category must exist + be active.
+        if (!\Illuminate\Support\Facades\Schema::hasTable('categories')) {
+            return response()->json([
+                'error' => 'catalog_unavailable',
+                'message' => 'Catalog tables are not available',
+            ], 500);
+        }
+        $categoryRow = \Illuminate\Support\Facades\DB::table('categories')
+            ->where('id', $categoryId)
+            ->where('status', 'active')
+            ->first();
+        if (!$categoryRow) {
+            return response()->json([
+                'error' => 'invalid_category',
+                'message' => 'Listing write requires an active category',
+                'category_id' => (int) $categoryId,
+            ], 422);
+        }
+
+        // Phase-1 enforcement: leaf-only category selection for write paths.
+        $hasActiveChild = \Illuminate\Support\Facades\DB::table('categories')
+            ->where('parent_id', $categoryId)
+            ->where('status', 'active')
+            ->exists();
+        if ($hasActiveChild) {
+            return response()->json([
+                'error' => 'non_leaf_category_not_allowed',
+                'message' => 'Listing write requires a leaf category (category must not have active children)',
+                'category_id' => (int) $categoryId,
+            ], 422);
+        }
+
+        // Required attributes (if schema table + new fields exist).
+        $hasNewFields = \Illuminate\Support\Facades\Schema::hasTable('category_filter_schema')
+            && \Illuminate\Support\Facades\Schema::hasColumn('category_filter_schema', 'required');
+
+        $requiredAttributes = [];
+        if ($hasNewFields) {
+            $requiredAttributes = \Illuminate\Support\Facades\DB::table('category_filter_schema')
+                ->where('category_id', $categoryId)
+                ->where('status', 'active')
+                ->where('required', true)
+                ->pluck('attribute_key')
+                ->toArray();
+        }
+
+        // Phase-1 enforcement: attributes must be schema-driven (whitelist by category_filter_schema).
+        // Always allow policy meta keys (offer_variant, interaction_mode).
+        $policyKeys = ['offer_variant' => true, 'interaction_mode' => true];
+        $allowedKeys = [];
+        if (\Illuminate\Support\Facades\Schema::hasTable('category_filter_schema')) {
+            $allowedKeys = \Illuminate\Support\Facades\DB::table('category_filter_schema')
+                ->where('category_id', $categoryId)
+                ->where('status', 'active')
+                ->pluck('attribute_key')
+                ->map(function ($k) { return (string) $k; })
+                ->values()
+                ->all();
+        }
+        $allowedSet = $policyKeys;
+        foreach ($allowedKeys as $k) { $allowedSet[$k] = true; }
+
+        $unknownAttrKeys = [];
+        foreach ($attributes as $k => $v) {
+            if (!is_string($k) || $k === '') { continue; }
+            if (!isset($allowedSet[$k])) {
+                $unknownAttrKeys[] = $k;
+            }
+        }
+        $unknownAttrKeys = array_values(array_unique($unknownAttrKeys));
+        if (!empty($unknownAttrKeys)) {
+            return response()->json([
+                'error' => 'unknown_attribute_keys',
+                'message' => 'Unknown attribute keys for this category (allowed keys are defined by catalog schema)',
+                'category_id' => (int) $categoryId,
+                'unknown_keys' => $unknownAttrKeys,
+            ], 422);
+        }
+
+        foreach ($requiredAttributes as $attrKey) {
+            if (!array_key_exists($attrKey, $attributes)) {
+                return response()->json([
+                    'error' => 'missing_required_attribute',
+                    'message' => "Required attribute '{$attrKey}' is missing",
+                    'required_attributes' => $requiredAttributes
+                ], 422);
+            }
+            $v = $attributes[$attrKey];
+            $isEmpty = $v === null
+                || (is_string($v) && trim($v) === '')
+                || (is_array($v) && count($v) === 0);
+            if ($isEmpty) {
+                return response()->json([
+                    'error' => 'missing_required_attribute',
+                    'message' => "Required attribute '{$attrKey}' is missing or empty",
+                    'required_attributes' => $requiredAttributes
+                ], 422);
+            }
+        }
+
+        // Resolve category intent schema and validate transaction_modes + offer_variant
+        $intentSchema = pazar_category_intent_schema((int) $categoryId);
+        $allowedModes = isset($intentSchema['allowed_transaction_modes']) && is_array($intentSchema['allowed_transaction_modes'])
+            ? $intentSchema['allowed_transaction_modes']
+            : ['sale', 'rental', 'reservation'];
+
+        $requestedModes = is_array($transactionModes)
+            ? array_values(array_filter(array_map('strval', $transactionModes)))
+            : [];
+        if (empty($requestedModes)) {
+            return response()->json([
+                'error' => 'invalid_transaction_modes',
+                'message' => 'transaction_modes must include at least one mode'
+            ], 422);
+        }
+
+        // Offer variant lives in attributes (schema-driven UI "2nd column" selection)
+        $offerVariant = isset($attributes['offer_variant']) ? (string) $attributes['offer_variant'] : '';
+        $resolvedVariant = null;
+        if ($offerVariant !== '') {
+            $variants = isset($intentSchema['offer_variants']) && is_array($intentSchema['offer_variants']) ? $intentSchema['offer_variants'] : [];
+            foreach ($variants as $v) {
+                if (is_array($v) && isset($v['key']) && (string) $v['key'] === $offerVariant) {
+                    $resolvedVariant = $v;
+                    break;
+                }
+            }
+            if (!$resolvedVariant) {
+                return response()->json([
+                    'error' => 'invalid_offer_variant',
+                    'message' => "Offer variant '{$offerVariant}' is not allowed for this category",
+                    'allowed_offer_variants' => array_map(function ($v) {
+                        return is_array($v) && isset($v['key']) ? (string) $v['key'] : null;
+                    }, $variants),
+                ], 422);
+            }
+
+            $impliedMode = isset($resolvedVariant['transaction_mode']) ? (string) $resolvedVariant['transaction_mode'] : '';
+            if ($impliedMode === '' || !in_array($impliedMode, ['sale', 'rental', 'reservation'], true)) {
+                return response()->json([
+                    'error' => 'invalid_offer_variant',
+                    'message' => "Offer variant '{$offerVariant}' does not define a valid transaction_mode"
+                ], 422);
+            }
+            if (!in_array($impliedMode, $allowedModes, true)) {
+                return response()->json([
+                    'error' => 'invalid_transaction_modes',
+                    'message' => "Transaction mode '{$impliedMode}' is not allowed for this category"
+                ], 422);
+            }
+            // Deterministic: for now, listings have exactly one transaction mode (avoid ambiguous UX)
+            if (count($requestedModes) !== 1 || $requestedModes[0] !== $impliedMode) {
+                return response()->json([
+                    'error' => 'invalid_transaction_modes',
+                    'message' => "transaction_modes must match offer_variant '{$offerVariant}'",
+                    'expected' => [$impliedMode],
+                    'received' => $requestedModes,
+                ], 422);
+            }
+
+            // Normalize interaction_mode from policy
+            $interactionMode = isset($resolvedVariant['interaction_mode']) ? (string) $resolvedVariant['interaction_mode'] : '';
+            if ($interactionMode !== 'flow') $interactionMode = 'contact_only';
+            $attributes['interaction_mode'] = $interactionMode;
+        } else {
+            // If no offer_variant provided, still validate requested modes are allowed.
+            foreach ($requestedModes as $m) {
+                if (!in_array($m, $allowedModes, true)) {
+                    return response()->json([
+                        'error' => 'invalid_transaction_modes',
+                        'message' => "Transaction mode '{$m}' is not allowed for this category",
+                        'allowed_transaction_modes' => $allowedModes,
+                    ], 422);
+                }
+            }
+
+            // Normalize to a single mode (first) to keep listing semantics deterministic.
+            $requestedModes = [$requestedModes[0]];
+
+            // Auto-fill offer_variant if it matches a default key (sale/rental/reservation)
+            $attributes['offer_variant'] = $requestedModes[0];
+            $attributes['interaction_mode'] = ($requestedModes[0] === 'reservation') ? 'flow' : 'contact_only';
+        }
+
+        // Type check attributes against attribute definitions
+        if (!empty($attributes)) {
+            $attributeDefs = \Illuminate\Support\Facades\DB::table('attributes')
+                ->whereIn('key', array_keys($attributes))
+                ->pluck('value_type', 'key')
+                ->toArray();
+
+            foreach ($attributes as $key => $value) {
+                if (isset($attributeDefs[$key])) {
+                    $valueType = $attributeDefs[$key];
+                    $isValid = false;
+
+                    switch ($valueType) {
+                        case 'number':
+                            $isValid = is_numeric($value);
+                            break;
+                        case 'string':
+                            $isValid = is_string($value);
+                            break;
+                        case 'boolean':
+                            $lower = is_string($value) ? strtolower($value) : (is_scalar($value) ? strtolower((string) $value) : '');
+                            $isValid = is_bool($value) || in_array($lower, ['true', 'false', '1', '0', 'yes', 'no'], true);
+                            break;
+                        default:
+                            $isValid = true; // Unknown types pass
+                    }
+
+                    if (!$isValid) {
+                        return response()->json([
+                            'error' => 'invalid_attribute_type',
+                            'message' => "Attribute '{$key}' must be of type '{$valueType}'",
+                            'attribute' => $key,
+                            'value' => $value,
+                            'expected_type' => $valueType
+                        ], 422);
+                    }
+                }
+            }
+        }
+
+        return [
+            'category_id' => (int) $categoryId,
+            'attributes' => $attributes,
+            'transaction_modes' => $requestedModes,
+            'intent_schema' => $intentSchema,
+        ];
+    }
+}
+
