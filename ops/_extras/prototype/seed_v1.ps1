@@ -111,7 +111,8 @@ function Find-CategoryBySlug {
 # Step 1: Bootstrap JWT token
 Write-Host "[1] Acquiring JWT token..." -ForegroundColor Yellow
 try {
-    . "$PSScriptRoot\_lib\test_auth.ps1"
+    $opsRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot) # .../ops
+    . (Join-Path $opsRoot "_lib\test_auth.ps1")
     $apiKey = $env:HOS_API_KEY
     if (-not $apiKey) {
         $apiKey = "dev-api-key"

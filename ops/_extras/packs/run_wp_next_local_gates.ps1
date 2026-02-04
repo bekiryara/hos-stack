@@ -4,7 +4,8 @@
 
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Split-Path -Parent $scriptDir
+$opsRoot = Split-Path -Parent (Split-Path -Parent $scriptDir) # .../ops
+$repoRoot = Split-Path -Parent $opsRoot
 $logsDir = Join-Path $repoRoot "docs\PROOFS\_logs"
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $logFile = Join-Path $logsDir "wp_next_gates_$timestamp.log"

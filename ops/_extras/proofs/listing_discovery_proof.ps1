@@ -12,7 +12,8 @@ $pazarBaseUrl = "http://localhost:8080"
 $hosBaseUrl = "http://localhost:3000"
 
 # Source test_auth helper
-$testAuthPath = Join-Path $PSScriptRoot "_lib\test_auth.ps1"
+$opsRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot) # .../ops
+$testAuthPath = Join-Path $opsRoot "_lib\test_auth.ps1"
 if (-not (Test-Path $testAuthPath)) {
     throw "test_auth.ps1 not found at $testAuthPath"
 }

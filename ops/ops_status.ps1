@@ -24,12 +24,14 @@ if (Test-Path "${scriptDir}\_lib\core_availability.ps1") {
 
 $ErrorActionPreference = "Continue"
 
-# WP-68C: Golden 4 Commands Banner
-Write-Host "=== GOLDEN 4 COMMANDS (WP-68C) ===" -ForegroundColor Yellow
-Write-Host "(1) Prototype:      .\ops\prototype_v1.ps1" -ForegroundColor White
-Write-Host "(2) Status/Audit:   .\ops\ops_status.ps1" -ForegroundColor White
-Write-Host "(3) Publish:        .\ops\ship_main.ps1" -ForegroundColor White
-Write-Host "(4) Frontend Apply: .\ops\frontend_refresh.ps1 [-Build]" -ForegroundColor White
+# WP-68C: Golden Commands Banner (keep stable)
+Write-Host "=== GOLDEN COMMANDS ===" -ForegroundColor Yellow
+Write-Host "(0) Dispatcher:    .\\ops\\ops.ps1 full|status|run|..." -ForegroundColor White
+Write-Host "(1) FULL GATES:     .\\ops\\full_gates.ps1" -ForegroundColor White
+Write-Host "(2) Status/Audit:   .\\ops\\ops_status.ps1" -ForegroundColor White
+Write-Host "(3) Publish:        .\\ops\\ship_main.ps1" -ForegroundColor White
+Write-Host "(4) Frontend Apply: .\\ops\\frontend_refresh.ps1 [-Build]" -ForegroundColor White
+Write-Host "Docs: docs\\ops\\OPS_ENTRYPOINTS.md and ops\\README.md" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "=== UNIFIED OPS STATUS DASHBOARD ===" -ForegroundColor Cyan
@@ -84,7 +86,6 @@ $checkRegistry = @(
     @{ Id = "product_spine_governance"; Name = "Product Spine Governance"; ScriptPath = ".\ops\product_spine_governance.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "product_write_spine"; Name = "Product Write Spine"; ScriptPath = ".\ops\product_write_spine_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "session_posture"; Name = "Session Posture"; ScriptPath = ".\ops\session_posture_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $true },
-    @{ Id = "product_read_path"; Name = "Product Read-Path"; ScriptPath = ".\ops\product_read_path_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "product_spine_smoke"; Name = "Product Spine Smoke"; ScriptPath = ".\ops\product_spine_smoke.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "openapi_contract"; Name = "OpenAPI Contract"; ScriptPath = ".\ops\openapi_contract.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "smoke_surface"; Name = "Smoke Surface Gate"; ScriptPath = ".\ops\smoke_surface.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },

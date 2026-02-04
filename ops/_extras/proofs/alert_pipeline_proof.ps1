@@ -8,22 +8,24 @@ param(
 
 # Load shared output helper
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
-    . "${scriptDir}\_lib\ops_output.ps1"
+$opsRoot = Split-Path -Parent (Split-Path -Parent $scriptDir) # .../ops
+$libDir = Join-Path $opsRoot "_lib"
+if (Test-Path "${libDir}\ops_output.ps1") {
+    . "${libDir}\ops_output.ps1"
     Initialize-OpsOutput
 }
-if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
-    . "${scriptDir}\_lib\ops_exit.ps1"
+if (Test-Path "${libDir}\ops_exit.ps1") {
+    . "${libDir}\ops_exit.ps1"
     Initialize-OpsExit
 }
 
 $ErrorActionPreference = "Continue"
 
 # Ensure we're in repo root
-$repoRoot = Split-Path -Parent $scriptDir
+$repoRoot = Split-Path -Parent $opsRoot
 Push-Location $repoRoot
 try {
-    if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {
+    if (Test-Path "${libDir}\ops_output.ps1") {
         Write-Info "=== Alert Pipeline Proof ==="
     } else {
         Write-Host "=== Alert Pipeline Proof ===" -ForegroundColor Cyan

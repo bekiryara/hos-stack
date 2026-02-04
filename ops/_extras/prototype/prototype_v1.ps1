@@ -94,7 +94,7 @@ if ($CheckDemoSeed) {
         }
         
         if ($foundCount -eq 0) {
-            Write-Host "  INFO: Seed listings not found. Run: .\ops\seed_v1.ps1" -ForegroundColor Yellow
+            Write-Host "  INFO: Seed listings not found. Run: .\ops\_extras\prototype\seed_v1.ps1" -ForegroundColor Yellow
         } else {
             Write-Host "PASS: Seed check ($foundCount seed listings found)" -ForegroundColor Green
         }

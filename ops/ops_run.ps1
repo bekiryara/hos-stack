@@ -88,9 +88,9 @@ if ($Profile -eq 'Prototype') {
     }
     try {
         if ($CheckDemoSeed) {
-            & .\ops\prototype_v1.ps1 -CheckDemoSeed
+            & .\ops\_extras\prototype\prototype_v1.ps1 -CheckDemoSeed
         } else {
-            & .\ops\prototype_v1.ps1
+            & .\ops\_extras\prototype\prototype_v1.ps1
         }
         if ($LASTEXITCODE -eq 0) {
             $results += [PSCustomObject]@{ Check = 'Prototype Verification'; Status = 'PASS' }
