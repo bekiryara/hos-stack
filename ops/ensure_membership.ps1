@@ -32,7 +32,7 @@ function Mask-Token {
     return "***"
 }
 
-# Helper: Extract tenant_id robustly from memberships (same as prototype_flow_smoke.ps1)
+# Helper: Extract tenant_id robustly from memberships
 function Get-TenantIdFromMemberships {
     param([object]$Memberships)
     

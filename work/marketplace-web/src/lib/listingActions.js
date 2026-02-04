@@ -57,11 +57,12 @@ export function resolveListingActions(listing, opts = {}) {
   }
 
   // If policy explicitly says contact_only, do not show flow actions.
-  // Instead, elevate contact as the primary CTA.
+  // Instead, show only messaging CTA (no call/phone infrastructure yet).
   if (!canFlow) {
+    const label = context === 'detail' ? 'Mesaj Gönder' : 'İletişime geç';
     actions.push({
-      key: 'contact',
-      label: 'İletişime geç',
+      key: 'message',
+      label,
       to: msgTo,
       uiClass: context === 'grid' ? 'contact-btn' : 'action-button',
     });

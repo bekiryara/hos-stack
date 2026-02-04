@@ -224,6 +224,11 @@ This ensures baseline remains stable and prevents breaking changes.
 - Multi-tenant switching UI
 - Admin dashboard for firms
 
+## Catalog Invariants (Drift Guard)
+
+**Locked rules** (leaf-only, active-only, schema-driven attributes, required non-empty, CTA determinism):
+- `docs/PRODUCT/CATALOG_INVARIANTS.md`
+
 ## Related Docs
 
 - **Source Map:** `docs/SRC.md` (repo entrypoints, minimal navigation map)

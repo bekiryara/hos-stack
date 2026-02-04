@@ -55,3 +55,7 @@ See `work/pazar/routes/api.php` which includes:
 - Smoke gate: `ops/product_api_smoke.ps1` (creates + publishes a listing using real payload/headers)
 - Perf guard: `ops/product_perf_guard.ps1` (measures `GET /api/v1/listings`)
 
+## Catalog invariants (drift guard)
+
+- Locked rules: `docs/PRODUCT/CATALOG_INVARIANTS.md`
+

@@ -839,6 +839,51 @@ if ($invalidWorlds -and $invalidWorlds.Trim().Length -gt 0) {
 
 Write-Host ""
 
+# [14] Published listings must have interaction_mode (CTA determinism drift guard)
+# NOTE: This is a hard invariant. If missing, UI may show wrong CTAs (flow vs contact_only).
+Write-Host "[14] Checking published listings missing interaction_mode (must be 0)..." -ForegroundColor Yellow
+
+$missingInteractionModeQuery = @"
+SELECT COUNT(*) AS missing_count
+FROM listings
+WHERE status = 'published'
+  AND COALESCE(NULLIF(attributes_json::jsonb->>'interaction_mode',''), '') = '';
+"@
+
+$missingCountRaw = Invoke-ListingWorldQuery -Query $missingInteractionModeQuery
+$missingCount = 0
+if ($missingCountRaw -and $missingCountRaw.Trim().Length -gt 0) {
+    [int]::TryParse($missingCountRaw.Trim(), [ref]$missingCount) | Out-Null
+}
+
+if ($missingCount -gt 0) {
+    Write-Host "FAIL: Found $missingCount published listing(s) missing attributes.interaction_mode (CTA may drift)" -ForegroundColor Red
+
+    $sampleQuery = @"
+SELECT l.id, l.title, l.category_id, COALESCE(c.slug,'') AS category_slug, COALESCE(p.slug,'') AS parent_slug
+FROM listings l
+LEFT JOIN categories c ON c.id = l.category_id
+LEFT JOIN categories p ON p.id = c.parent_id
+WHERE l.status = 'published'
+  AND COALESCE(NULLIF(l.attributes_json::jsonb->>'interaction_mode',''), '') = ''
+ORDER BY l.updated_at DESC NULLS LAST, l.id DESC
+LIMIT 10;
+"@
+    $sampleRaw = Invoke-ListingWorldQuery -Query $sampleQuery
+    if ($sampleRaw -and $sampleRaw.Trim().Length -gt 0) {
+        Write-Host "  Sample (id|title|category_id|category_slug|parent_slug):" -ForegroundColor Yellow
+        ($sampleRaw -split "`n" | Where-Object { $_.Trim().Length -gt 0 }) | ForEach-Object {
+            Write-Host "    - $($_.Trim())" -ForegroundColor Yellow
+        }
+    }
+
+    $hasFailures = $true
+} else {
+    Write-Host "PASS: published listings missing interaction_mode = 0" -ForegroundColor Green
+}
+
+Write-Host ""
+
 # Summary
 if ($hasFailures) {
     Write-Host "=== LISTING CONTRACT CHECK: FAIL ===" -ForegroundColor Red
