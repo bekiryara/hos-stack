@@ -30,8 +30,6 @@ Pazar API routes are **not** namespaced as `/api/v1/{world}/...`.
 
 - `GET /api/v1/categories`
 - `GET /api/v1/categories/{id}/filter-schema`
-- `GET /api/v1/categories/{id}/intent-schema`
-- Full category system state (DB, frontend, ops): **docs/PRODUCT/KATEGORI_SISTEMI_MEVCUT_DURUM.md**
 
 ### Listings (marketplace)
 

@@ -31,7 +31,8 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
     
     // Validate required fields
     $validated = $request->validate([
-        'category_id' => 'required|integer|exists:categories,id',
+        // Phase-1 enforcement: category must be active (aligns with read path semantics).
+        'category_id' => 'required|integer|exists:categories,id,status,active',
         'title' => 'required|string|max:120',
         'description' => 'nullable|string',
         'transaction_modes' => 'required|array|min:1',
@@ -42,6 +43,18 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
     
     // Get category filter schema to validate required attributes
     $categoryId = $validated['category_id'];
+    // Phase-1 enforcement: leaf-only category selection for create (prevents root/branch drift).
+    $hasActiveChild = DB::table('categories')
+        ->where('parent_id', $categoryId)
+        ->where('status', 'active')
+        ->exists();
+    if ($hasActiveChild) {
+        return response()->json([
+            'error' => 'non_leaf_category_not_allowed',
+            'message' => 'Create listing requires a leaf category (category must not have active children)',
+            'category_id' => (int) $categoryId,
+        ], 422);
+    }
     // WP-28: Guard schema/table checks (hasTable before hasColumn)
     $hasNewFields = Schema::hasTable('category_filter_schema') && Schema::hasColumn('category_filter_schema', 'required');
     
@@ -57,6 +70,38 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
     
     // Validate required attributes exist in attributes_json
     $attributes = $validated['attributes'] ?? [];
+
+    // Phase-1 enforcement: attributes must be schema-driven (whitelist by category_filter_schema).
+    // Always allow policy meta keys (offer_variant, interaction_mode).
+    $policyKeys = ['offer_variant' => true, 'interaction_mode' => true];
+    $allowedKeys = [];
+    if (Schema::hasTable('category_filter_schema')) {
+        $allowedKeys = DB::table('category_filter_schema')
+            ->where('category_id', $categoryId)
+            ->where('status', 'active')
+            ->pluck('attribute_key')
+            ->map(function ($k) { return (string) $k; })
+            ->values()
+            ->all();
+    }
+    $allowedSet = $policyKeys;
+    foreach ($allowedKeys as $k) { $allowedSet[$k] = true; }
+    $unknownAttrKeys = [];
+    foreach ($attributes as $k => $v) {
+        if (!is_string($k) || $k === '') { continue; }
+        if (!isset($allowedSet[$k])) {
+            $unknownAttrKeys[] = $k;
+        }
+    }
+    $unknownAttrKeys = array_values(array_unique($unknownAttrKeys));
+    if (!empty($unknownAttrKeys)) {
+        return response()->json([
+            'error' => 'unknown_attribute_keys',
+            'message' => 'Unknown attribute keys for this category (allowed keys are defined by catalog schema)',
+            'unknown_keys' => $unknownAttrKeys,
+        ], 422);
+    }
+
     foreach ($requiredAttributes as $attrKey) {
         if (!isset($attributes[$attrKey])) {
             return response()->json([

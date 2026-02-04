@@ -187,7 +187,6 @@ This ensures baseline remains stable and prevents breaking changes.
 
 **Category (tree-only):**
 - `GET /api/v1/categories` returns nodes with: `id`, `slug`, `parent_id` (plus optional nested `children`).
-- Full current-state reference (DB, API, frontend, ops, limitations): **docs/PRODUCT/KATEGORI_SISTEMI_MEVCUT_DURUM.md**.
 
 **Catalog (filter definitions):**
 - `GET /api/v1/categories/{id}/filter-schema` returns `filters[]` describing allowed filter keys and types.
