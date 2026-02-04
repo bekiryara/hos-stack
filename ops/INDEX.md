@@ -76,3 +76,9 @@ Non-core / one-off scripts are grouped under `ops/_extras/` to reduce root noise
 - `ops/_extras/maintenance/` - one-time maintenance/freeze scripts
 - `ops/_extras/packs/` - local packs (dev convenience)
 
+---
+
+## Audit / Why so many scripts?
+
+- `docs/ops/OPS_SYSTEM_AUDIT.md`
+

@@ -36,6 +36,7 @@ function Show-Help {
   Write-Host ""
   Write-Host "Commands:" -ForegroundColor Yellow
   Write-Host "  full       Run FULL_GATES pack (recommended)" -ForegroundColor White
+  Write-Host "  prototype  Run prototype/demo verification" -ForegroundColor White
   Write-Host "  status     Run ops_status dashboard" -ForegroundColor White
   Write-Host "  run        Run daily pack (ops_run) with -Profile Prototype|Full" -ForegroundColor White
   Write-Host "  verify     Run verify.ps1 (stack health)" -ForegroundColor White
@@ -46,6 +47,7 @@ function Show-Help {
   Write-Host ""
   Write-Host "Examples:" -ForegroundColor Yellow
   Write-Host "  .\ops\ops.ps1 full" -ForegroundColor White
+  Write-Host "  .\ops\ops.ps1 prototype" -ForegroundColor White
   Write-Host "  .\ops\ops.ps1 run -Profile Full" -ForegroundColor White
   Write-Host "  .\ops\ops.ps1 run -Profile Prototype -CheckDemoSeed" -ForegroundColor White
 }
@@ -72,6 +74,21 @@ if (-not [string]::IsNullOrWhiteSpace($Command)) {
 switch ($cmd) {
   { $_ -in @("help", "-h", "--help", "/?") } { Show-Help; Invoke-OpsExit 0; break }
   { $_ -in @("full", "full_gates") } { Invoke-TargetScript -RelPath "full_gates.ps1"; break }
+  { $_ -in @("prototype", "demo", "prototype_v1") } {
+    $path = Join-Path $scriptDir "_extras\prototype\prototype_v1.ps1"
+    if (-not (Test-Path $path)) {
+      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
+      Invoke-OpsExit 1
+      break
+    }
+    if ($CheckDemoSeed) {
+      & $path -CheckDemoSeed
+    } else {
+      & $path
+    }
+    Invoke-OpsExit ([int]$global:LASTEXITCODE)
+    break
+  }
   { $_ -in @("status", "ops_status") } { Invoke-TargetScript -RelPath "ops_status.ps1"; break }
   { $_ -in @("run", "ops_run") } {
     $path = Join-Path $scriptDir "ops_run.ps1"

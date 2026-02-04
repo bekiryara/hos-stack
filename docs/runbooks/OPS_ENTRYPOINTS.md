@@ -10,7 +10,7 @@
 
 ### (1) Prototype / Demo Verification
 ```powershell
-.\ops\prototype_v1.ps1
+.\ops\ops.ps1 prototype
 ```
 
 **When to use:**
@@ -105,7 +105,7 @@
 | UI change not showing | `.\ops\frontend_refresh.ps1` + Ctrl+F5 | Default restart is usually sufficient |
 | New dependencies or build assets | `.\ops\frontend_refresh.ps1 -Build` | Full rebuild required |
 | Gate fails | `.\ops\ops_status.ps1` + read FAIL section | Review output for specific failures |
-| Before demo/presentation | `.\ops\prototype_v1.ps1` | Verify environment is ready |
+| Before demo/presentation | `.\ops\ops.ps1 prototype` | Verify environment is ready |
 | Ready to publish | `.\ops\ship_main.ps1` | Runs all gates before publishing |
 | General health check | `.\ops\ops_status.ps1` | Comprehensive status overview |
 

@@ -34,6 +34,9 @@ _verify_output*.txt
 ops/*.backup
 ops/diffs/
 
+# Draft / local-only category seed helpers (not wired yet)
+work/pazar/database/seed_data/
+
 # Test results and temporary JSON files
 *_tests_results.json
 ops_gates_output.json
