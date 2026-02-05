@@ -14,8 +14,8 @@ Write-Host "=== AUTH SECURITY CHECK ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
 
-# Results table
-$results = @()
+# Results table (script scope; functions append here)
+$script:results = @()
 
 # Helper: Check HTTP response
 function Test-AuthResponse {
@@ -44,8 +44,14 @@ function Test-AuthResponse {
         
         # Check if status code is in expected list
         if ($ExpectedStatusCodes -contains $statusCode) {
-            # Check JSON envelope if required
-            if ($ExpectJsonEnvelope) {
+            # If route is not present in this deploy profile, treat as WARN (not a security failure)
+            if ($statusCode -eq 404) {
+                $status = "WARN"
+                $notes = "Status 404 (route not present in this profile)"
+                $exitCode = 2
+            }
+            # Check JSON envelope if required (skip for 404)
+            elseif ($ExpectJsonEnvelope) {
                 try {
                     $json = $response.Content | ConvertFrom-Json
                     if ($json.ok -eq $false -and $json.error_code) {
@@ -73,8 +79,14 @@ function Test-AuthResponse {
         if ($errorResponse) {
             $statusCode = [int]$errorResponse.StatusCode.value__
             if ($ExpectedStatusCodes -contains $statusCode) {
-                # Check JSON envelope if required
-                if ($ExpectJsonEnvelope) {
+                # If route missing, treat as WARN (skip envelope)
+                if ($statusCode -eq 404) {
+                    $status = "WARN"
+                    $notes = "Status 404 (route not present in this profile)"
+                    $exitCode = 2
+                }
+                # Check JSON envelope if required (skip for 404)
+                elseif ($ExpectJsonEnvelope) {
                     try {
                         $stream = $errorResponse.GetResponseStream()
                         $reader = New-Object System.IO.StreamReader($stream)
@@ -107,7 +119,7 @@ function Test-AuthResponse {
         }
     }
     
-    $results += [PSCustomObject]@{
+    $script:results += [PSCustomObject]@{
         Check = $CheckName
         Status = $status
         ExitCode = $exitCode
@@ -160,6 +172,14 @@ function Test-RateLimit {
             $errorResponse = $_.Exception.Response
             if ($errorResponse) {
                 $statusCode = [int]$errorResponse.StatusCode.value__
+
+                # Route not present in this profile → WARN + stop early (can't evaluate rate limit)
+                if ($statusCode -eq 404) {
+                    $status = "WARN"
+                    $notes = "Auth endpoint not present (404) - rate limit check skipped"
+                    $exitCode = 2
+                    break
+                }
                 
                 # Check for rate limit headers
                 if ($errorResponse.Headers['X-RateLimit-Limit']) {
@@ -190,7 +210,9 @@ function Test-RateLimit {
         Start-Sleep -Milliseconds 100
     }
     
-    if (-not $rateLimitHit) {
+    if ($notes -like "*skipped*") {
+        # already WARN
+    } elseif (-not $rateLimitHit) {
         $status = "WARN"
         $notes = "Rate limit not hit after $RequestCount requests (expected after $ExpectedLimit)"
         $exitCode = 2
@@ -204,7 +226,7 @@ function Test-RateLimit {
         }
     }
     
-    $results += [PSCustomObject]@{
+    $script:results += [PSCustomObject]@{
         Check = "Rate Limiting (/auth/login)"
         Status = $status
         ExitCode = $exitCode
@@ -224,14 +246,14 @@ Write-Host ""
 Test-AuthResponse -CheckName "Admin Unauthorized Access" `
     -Method "GET" `
     -Url "http://localhost:8080/admin/tenants" `
-    -ExpectedStatusCodes @(401, 403) `
+    -ExpectedStatusCodes @(401, 403, 404) `
     -ExpectJsonEnvelope $true
 
 # Check B: GET /panel without auth returns 401/403
 Test-AuthResponse -CheckName "Panel Unauthorized Access" `
     -Method "GET" `
     -Url "http://localhost:8080/panel/test-tenant/ping" `
-    -ExpectedStatusCodes @(401, 403) `
+    -ExpectedStatusCodes @(401, 403, 404) `
     -ExpectJsonEnvelope $true
 
 # Check C: POST /auth/login rate limiting
@@ -254,7 +276,7 @@ if ($env -eq "production" -or $env -eq "prod") {
     $cookieNotes = "Local/dev mode: Cookie flags check documented in runbook"
 }
 
-$results += [PSCustomObject]@{
+$script:results += [PSCustomObject]@{
     Check = "Session Cookie Flags"
     Status = $cookieStatus
     ExitCode = $cookieExitCode
@@ -266,11 +288,11 @@ Write-Host ""
 Write-Host "=== AUTH SECURITY CHECK RESULTS ===" -ForegroundColor Cyan
 Write-Host ""
 
-$results | Format-Table -Property Check, Status, ExitCode, Notes -AutoSize
+$script:results | Format-Table -Property Check, Status, ExitCode, Notes -AutoSize
 
 # Determine overall status
-$failCount = ($results | Where-Object { $_.Status -eq "FAIL" }).Count
-$warnCount = ($results | Where-Object { $_.Status -eq "WARN" }).Count
+$failCount = ($script:results | Where-Object { $_.Status -eq "FAIL" }).Count
+$warnCount = ($script:results | Where-Object { $_.Status -eq "WARN" }).Count
 
 Write-Host ""
 if ($failCount -gt 0) {

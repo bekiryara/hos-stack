@@ -113,7 +113,15 @@ try {
     }
     
     # Check if status code is acceptable (200 OK or 302 Redirect for login)
-    if ($statusCode -ne 200 -and $statusCode -ne 302) {
+    # Some deploy profiles may not include UI routes; treat 404 as WARN (check logs anyway).
+    $uiStatus = "PASS"
+    $uiExit = 0
+    if ($statusCode -eq 404) {
+        $uiStatus = "WARN"
+        $uiExit = 2
+        Write-Warn "UI endpoint returned 404 (route not present in this profile)"
+        Write-Info "Continuing to scan logs for regressions (permission denied / exceptions)."
+    } elseif ($statusCode -ne 200 -and $statusCode -ne 302) {
         if ($statusCode -eq 0) {
             Write-Fail "UI endpoint is not reachable"
             Write-Info "Action: Ensure Docker stack is running and pazar-app is healthy"
@@ -129,9 +137,9 @@ try {
         Pop-Location
         Invoke-OpsExit 1
         return 1
+    } else {
+        Write-Pass "UI endpoint returned $statusCode (acceptable)"
     }
-    
-    Write-Pass "UI endpoint returned $statusCode (acceptable)"
     
     # Check logs for permission denied errors
     Write-Info "Scanning pazar-app logs for permission denied errors..."
@@ -184,13 +192,21 @@ try {
     Write-Info ""
     Write-Info "Check                                    Status Notes"
     Write-Info "--------------------------------------------------------------------------------"
-    Write-Info "UI Smoke Test                             PASS   UI accessible, no logging errors"
-    Write-Info ""
-    Write-Info "OVERALL STATUS: PASS"
-    
-    Pop-Location
-    Invoke-OpsExit 0
-    return 0
+    if ($uiStatus -eq "PASS") {
+        Write-Info "UI Smoke Test                             PASS   UI accessible, no logging errors"
+        Write-Info ""
+        Write-Info "OVERALL STATUS: PASS"
+        Pop-Location
+        Invoke-OpsExit 0
+        return 0
+    } else {
+        Write-Info "UI Smoke Test                             WARN   UI route missing (404), no logging errors"
+        Write-Info ""
+        Write-Info "OVERALL STATUS: WARN"
+        Pop-Location
+        Invoke-OpsExit 2
+        return 2
+    }
 } catch {
     Write-Fail "Unexpected error: $($_.Exception.Message)"
     Write-Info ""

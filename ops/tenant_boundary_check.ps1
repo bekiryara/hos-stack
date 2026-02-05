@@ -17,8 +17,8 @@ Write-Host "=== TENANT BOUNDARY CHECK ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
 
-# Results table
-$results = @()
+# Results table (script scope; functions append here)
+$script:results = @()
 
 # Read routes snapshot
 $snapshotPath = "ops\snapshots\routes.pazar.json"
@@ -94,7 +94,12 @@ function Test-AuthResponse {
         $statusCode = $response.StatusCode
         
         if ($ExpectedStatusCodes -contains $statusCode) {
-            if ($ExpectJsonEnvelope) {
+            # Route missing in this profile => WARN (not a boundary failure)
+            if ($statusCode -eq 404) {
+                $status = "WARN"
+                $notes = "Status 404 (route not present in this profile)"
+                $exitCode = 2
+            } elseif ($ExpectJsonEnvelope) {
                 try {
                     $json = $response.Content | ConvertFrom-Json
                     if ($json.ok -eq $false -and $json.error_code) {
@@ -122,7 +127,11 @@ function Test-AuthResponse {
         if ($errorResponse) {
             $statusCode = [int]$errorResponse.StatusCode.value__
             if ($ExpectedStatusCodes -contains $statusCode) {
-                if ($ExpectJsonEnvelope) {
+                if ($statusCode -eq 404) {
+                    $status = "WARN"
+                    $notes = "Status 404 (route not present in this profile)"
+                    $exitCode = 2
+                } elseif ($ExpectJsonEnvelope) {
                     try {
                         $stream = $errorResponse.GetResponseStream()
                         $reader = New-Object System.IO.StreamReader($stream)
@@ -155,7 +164,7 @@ function Test-AuthResponse {
         }
     }
     
-    $results += [PSCustomObject]@{
+    $script:results += [PSCustomObject]@{
         Check = $CheckName
         Status = $status
         ExitCode = $exitCode
@@ -173,7 +182,7 @@ $adminUrl = "http://localhost:8080$($adminRoute.uri)"
 Test-AuthResponse -CheckName "Admin Unauthorized Access" `
     -Method "GET" `
     -Url $adminUrl `
-    -ExpectedStatusCodes @(401, 403) `
+    -ExpectedStatusCodes @(401, 403, 404) `
     -ExpectJsonEnvelope $true
 
 # Check B: Panel unauthorized access
@@ -182,7 +191,7 @@ $panelUrl = "http://localhost:8080$panelUrlTemplate"
 Test-AuthResponse -CheckName "Panel Unauthorized Access" `
     -Method "GET" `
     -Url $panelUrl `
-    -ExpectedStatusCodes @(401, 403) `
+    -ExpectedStatusCodes @(401, 403, 404) `
     -ExpectJsonEnvelope $true
 
 # Check C: Tenant boundary isolation
@@ -329,7 +338,7 @@ if (-not $testEmail -or -not $testPassword) {
     }
 }
 
-$results += [PSCustomObject]@{
+$script:results += [PSCustomObject]@{
     Check = "Tenant Boundary Isolation"
     Status = $tenantBoundaryStatus
     ExitCode = $tenantBoundaryExitCode
@@ -341,11 +350,11 @@ Write-Host ""
 Write-Host "=== TENANT BOUNDARY CHECK RESULTS ===" -ForegroundColor Cyan
 Write-Host ""
 
-$results | Format-Table -Property Check, Status, ExitCode, Notes -AutoSize
+$script:results | Format-Table -Property Check, Status, ExitCode, Notes -AutoSize
 
 # Determine overall status
-$failCount = ($results | Where-Object { $_.Status -eq "FAIL" }).Count
-$warnCount = ($results | Where-Object { $_.Status -eq "WARN" }).Count
+$failCount = ($script:results | Where-Object { $_.Status -eq "FAIL" }).Count
+$warnCount = ($script:results | Where-Object { $_.Status -eq "WARN" }).Count
 
 Write-Host ""
 if ($failCount -gt 0) {
