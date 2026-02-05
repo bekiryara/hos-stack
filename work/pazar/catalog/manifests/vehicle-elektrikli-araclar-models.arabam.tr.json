@@ -1,0 +1,788 @@
+{
+  "source": "arabam.com GetFacets (elektrikli-araclar subtypes)",
+  "generated_at": "2026-02-05T23:34:21.554Z",
+  "stats": {
+    "brand_categories_with_models_total": 102,
+    "brand_categories_without_models_total": 59,
+    "models_total": 573
+  },
+  "brand_slug_to_models": {
+    "elektrikli-araclar-otomobil-audi": [
+      "100 Serisi",
+      "80 Serisi",
+      "90 Serisi",
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "A6",
+      "A7",
+      "A8",
+      "E-Tron GT",
+      "R8",
+      "RS",
+      "S",
+      "TT",
+      "TTS"
+    ],
+    "elektrikli-araclar-otomobil-bmw": [
+      "1 Serisi",
+      "2 Serisi",
+      "3 Serisi",
+      "4 Serisi",
+      "5 Serisi",
+      "6 Serisi",
+      "7 Serisi",
+      "8 Serisi",
+      "i Serisi",
+      "M Serisi",
+      "Z Serisi"
+    ],
+    "elektrikli-araclar-otomobil-byd": [
+      "Dolphin",
+      "Han",
+      "Seal",
+      "Seal U"
+    ],
+    "elektrikli-araclar-otomobil-citroen": [
+      "AMİ",
+      "BX",
+      "C-Elysée",
+      "C1",
+      "C2",
+      "C3",
+      "C3 Picasso",
+      "C4",
+      "C4 Grand Picasso",
+      "C4 Picasso",
+      "C4 X",
+      "C5",
+      "C6",
+      "C8",
+      "e-C3",
+      "e-C4",
+      "e-C4 X",
+      "Evasion",
+      "Saxo",
+      "Xantia",
+      "XM",
+      "Xsara",
+      "ZX"
+    ],
+    "elektrikli-araclar-otomobil-cupra": [
+      "Born",
+      "Leon"
+    ],
+    "elektrikli-araclar-otomobil-ferrari": [
+      "348",
+      "360",
+      "430",
+      "458",
+      "599",
+      "F8"
+    ],
+    "elektrikli-araclar-otomobil-fiat": [
+      "124 Spider",
+      "126 Bis",
+      "500 Ailesi",
+      "Albea",
+      "Brava",
+      "Bravo",
+      "Coupe",
+      "Croma",
+      "Egea",
+      "Idea",
+      "Linea",
+      "Marea",
+      "Palio",
+      "Panda",
+      "Punto",
+      "Sedici",
+      "Siena",
+      "Stilo",
+      "Tempra",
+      "Tipo",
+      "Topolino",
+      "Uno"
+    ],
+    "elektrikli-araclar-otomobil-honda": [
+      "Accord",
+      "City",
+      "Civic",
+      "CRX",
+      "E",
+      "Integra",
+      "Jazz",
+      "Legend",
+      "Prelude",
+      "S2000",
+      "Shuttle",
+      "Stream"
+    ],
+    "elektrikli-araclar-otomobil-hyundai": [
+      "Accent",
+      "Accent Blue",
+      "Accent Era",
+      "Atos",
+      "Coupe",
+      "Elantra",
+      "Excel",
+      "Genesis",
+      "Getz",
+      "Ioniq",
+      "i10",
+      "i20",
+      "i20 Active",
+      "i20 N",
+      "i20 Troy",
+      "i30",
+      "i40",
+      "ix20",
+      "Matrix",
+      "Sonata",
+      "Trajet"
+    ],
+    "elektrikli-araclar-otomobil-kia": [
+      "Capital",
+      "Carens",
+      "Carnival",
+      "Ceed",
+      "Cerato",
+      "Clarus",
+      "Magentis",
+      "Opirus",
+      "Optima",
+      "Picanto",
+      "Pride",
+      "Pro Ceed",
+      "Rio",
+      "Sephia",
+      "Shuma",
+      "Venga"
+    ],
+    "elektrikli-araclar-otomobil-kuba": [
+      "City"
+    ],
+    "elektrikli-araclar-otomobil-lexus": [
+      "CT",
+      "ES",
+      "GS",
+      "IS",
+      "LM"
+    ],
+    "elektrikli-araclar-otomobil-mercedes-benz": [
+      "190",
+      "200",
+      "220",
+      "230",
+      "240",
+      "250",
+      "260",
+      "280",
+      "300",
+      "420",
+      "500",
+      "560",
+      "A",
+      "AMG GT",
+      "B",
+      "C",
+      "CL",
+      "CLA",
+      "CLC",
+      "CLE",
+      "CLK",
+      "CLS",
+      "E",
+      "EQE",
+      "EQS",
+      "Maybach S",
+      "R",
+      "S",
+      "SL",
+      "SLK",
+      "SLS"
+    ],
+    "elektrikli-araclar-otomobil-mini": [
+      "Cooper",
+      "Cooper Clubman",
+      "Cooper S",
+      "John Cooper",
+      "One"
+    ],
+    "elektrikli-araclar-otomobil-nieve": [
+      "Evzoom"
+    ],
+    "elektrikli-araclar-otomobil-opel": [
+      "Adam",
+      "Agila",
+      "Ascona",
+      "Astra",
+      "Astra-e",
+      "Calibra",
+      "Corsa",
+      "Corsa-e",
+      "GT",
+      "Insignia",
+      "Kadett",
+      "Manta",
+      "Meriva",
+      "Omega",
+      "Rekord",
+      "Tigra",
+      "Vectra",
+      "Zafira"
+    ],
+    "elektrikli-araclar-otomobil-peugeot": [
+      "106",
+      "107",
+      "205",
+      "206",
+      "206+",
+      "207",
+      "208",
+      "301",
+      "306",
+      "307",
+      "308",
+      "309",
+      "405",
+      "406",
+      "407",
+      "508",
+      "605",
+      "607",
+      "806",
+      "807",
+      "e-208",
+      "e-308",
+      "RCZ"
+    ],
+    "elektrikli-araclar-otomobil-porsche": [
+      "718",
+      "911",
+      "Boxster",
+      "Cayman",
+      "Panamera",
+      "Taycan"
+    ],
+    "elektrikli-araclar-otomobil-reeder": [
+      "Reev Fancy"
+    ],
+    "elektrikli-araclar-otomobil-regal-raptor": [
+      "K4",
+      "K5 Long"
+    ],
+    "elektrikli-araclar-otomobil-relive": [
+      "EZI"
+    ],
+    "elektrikli-araclar-otomobil-renault": [
+      "Clio",
+      "Espace",
+      "Fluence",
+      "Fluence Z.E",
+      "Grand Scenic",
+      "Laguna",
+      "Latitude",
+      "Megane",
+      "Megane E-Tech",
+      "Modus",
+      "R 11",
+      "R 12",
+      "R 19",
+      "R 21",
+      "R 25",
+      "R 5",
+      "R 9",
+      "R5 E-Tech",
+      "Safrane",
+      "Scenic",
+      "Symbol",
+      "Taliant",
+      "Talisman",
+      "Twingo",
+      "Twizy",
+      "Vel Satis",
+      "Zoe"
+    ],
+    "elektrikli-araclar-otomobil-rks": [
+      "A1",
+      "M5",
+      "MT3"
+    ],
+    "elektrikli-araclar-otomobil-rolls-royce": [
+      "Ghost",
+      "Phantom",
+      "Spectre"
+    ],
+    "elektrikli-araclar-otomobil-smart": [
+      "ForFour",
+      "ForTwo"
+    ],
+    "elektrikli-araclar-otomobil-tesla": [
+      "Model 3",
+      "Model S",
+      "Model X",
+      "Model Y"
+    ],
+    "elektrikli-araclar-otomobil-the-london-taxi": [
+      "TX4"
+    ],
+    "elektrikli-araclar-otomobil-togg": [
+      "T10F"
+    ],
+    "elektrikli-araclar-otomobil-toyota": [
+      "Auris",
+      "Avensis",
+      "Camry",
+      "Carina",
+      "Celica",
+      "Corolla",
+      "Corona",
+      "GT86",
+      "Prius",
+      "Starlet",
+      "Urban Cruiser",
+      "Verso",
+      "Yaris"
+    ],
+    "elektrikli-araclar-otomobil-volkswagen": [
+      "Arteon",
+      "Bora",
+      "EOS",
+      "Golf",
+      "ID.3",
+      "ID.7",
+      "Jetta",
+      "Lupo",
+      "New Beetle",
+      "Passat",
+      "Passat Alltrack",
+      "Passat Variant",
+      "Phaeton",
+      "Polo",
+      "Scirocco",
+      "Sharan",
+      "The Beetle",
+      "Touran",
+      "Up Club",
+      "Vento",
+      "VW CC"
+    ],
+    "elektrikli-araclar-otomobil-volta": [
+      "EV1"
+    ],
+    "elektrikli-araclar-otomobil-yuki": [
+      "Amy",
+      "Hector"
+    ],
+    "elektrikli-araclar-motosiklet-akeso": [
+      "Nanny"
+    ],
+    "elektrikli-araclar-motosiklet-altai": [
+      "Elexra",
+      "Pars 3000"
+    ],
+    "elektrikli-araclar-motosiklet-apachi": [
+      "Ece",
+      "Hera",
+      "Kont"
+    ],
+    "elektrikli-araclar-motosiklet-ape-ryder": [
+      "Colobus",
+      "Gibbon"
+    ],
+    "elektrikli-araclar-motosiklet-apec": [
+      "APM2",
+      "APM5",
+      "APS2",
+      "APT4"
+    ],
+    "elektrikli-araclar-motosiklet-arnica": [
+      "ARN 3100",
+      "Gezgin 5500"
+    ],
+    "elektrikli-araclar-motosiklet-arora": [
+      "Angel Pro",
+      "Anka 7000",
+      "AR 1500 Herkül",
+      "AR 15000 Moped",
+      "AR01",
+      "AR02",
+      "Atak 249",
+      "Casper",
+      "Felix",
+      "Jaguar",
+      "JNW",
+      "Kaplan",
+      "Panter",
+      "TDL 01-Z",
+      "TDL 25Z Derya",
+      "TDR40Z Sport",
+      "TDR41Z Rüzgar",
+      "Tiger 250W"
+    ],
+    "elektrikli-araclar-motosiklet-bisan": [
+      "E-Cross"
+    ],
+    "elektrikli-araclar-motosiklet-citycoco": [
+      "City",
+      "Comfort V2 Family",
+      "S"
+    ],
+    "elektrikli-araclar-motosiklet-crnbiker": [
+      "Hayya 6800"
+    ],
+    "elektrikli-araclar-motosiklet-csn-motor": [
+      "Fayton",
+      "Tornado"
+    ],
+    "elektrikli-araclar-motosiklet-diger-markalar": [
+      "Diğer Modeller"
+    ],
+    "elektrikli-araclar-motosiklet-e-mon": [
+      "Buddy",
+      "Capri",
+      "Duo Bike",
+      "Reactor",
+      "Rigby",
+      "Ritual",
+      "Tigray"
+    ],
+    "elektrikli-araclar-motosiklet-e-ton": [
+      "Drago"
+    ],
+    "elektrikli-araclar-motosiklet-ekobis": [
+      "Maxi"
+    ],
+    "elektrikli-araclar-motosiklet-evoke": [
+      "Urban Classic"
+    ],
+    "elektrikli-araclar-motosiklet-falcon": [
+      "Active 1200",
+      "Dynamic 4000",
+      "Enjoy Plus",
+      "Family 8000",
+      "Frida 7000",
+      "Handy 249",
+      "Leo 6800",
+      "New Handy"
+    ],
+    "elektrikli-araclar-motosiklet-fcm": [
+      "Jett",
+      "Titan 66000",
+      "Twingo"
+    ],
+    "elektrikli-araclar-motosiklet-fiat": [
+      "Topolino"
+    ],
+    "elektrikli-araclar-motosiklet-galaxy": [
+      "Galaxy Car",
+      "Venüs"
+    ],
+    "elektrikli-araclar-motosiklet-goe": [
+      "X8 Max"
+    ],
+    "elektrikli-araclar-motosiklet-govecs": [
+      "Schwalbe"
+    ],
+    "elektrikli-araclar-motosiklet-horwin": [
+      "SK3"
+    ],
+    "elektrikli-araclar-motosiklet-hrc-a": [
+      "Cargo",
+      "TW"
+    ],
+    "elektrikli-araclar-motosiklet-jpn-motor": [
+      "JP 6000"
+    ],
+    "elektrikli-araclar-motosiklet-kanuni": [
+      "Explorer"
+    ],
+    "elektrikli-araclar-motosiklet-karoval": [
+      "Kitty"
+    ],
+    "elektrikli-araclar-motosiklet-kimmi": [
+      "Triporter"
+    ],
+    "elektrikli-araclar-motosiklet-kral-motor": [
+      "Ankaa",
+      "EB-10",
+      "KR- 305 Truva 8000 L",
+      "KR-04",
+      "KR-12",
+      "KR-204 Castor",
+      "KR-205 Alya",
+      "KR-22 Leonis 4500",
+      "KR-301 Mira L",
+      "KR-35 Florence",
+      "KR-39 Grande 5000",
+      "KR-40 Grande 5 7000",
+      "KR-43 Truva 8000",
+      "KR13-L TRUVA-6 7000"
+    ],
+    "elektrikli-araclar-motosiklet-kuba": [
+      "City",
+      "Didi",
+      "E-Pickup",
+      "Eco Pikap",
+      "Estima",
+      "GL 18000",
+      "GT5",
+      "GT5000",
+      "K12",
+      "K4",
+      "K4-C",
+      "Vip Rider",
+      "Viper 5000"
+    ],
+    "elektrikli-araclar-motosiklet-kymco": [
+      "I-One"
+    ],
+    "elektrikli-araclar-motosiklet-lampago": [
+      "Desert Gold"
+    ],
+    "elektrikli-araclar-motosiklet-leksas": [
+      "Dali",
+      "Rose"
+    ],
+    "elektrikli-araclar-motosiklet-lenazzo": [
+      "HL6"
+    ],
+    "elektrikli-araclar-motosiklet-luqi": [
+      "HL 3.0"
+    ],
+    "elektrikli-araclar-motosiklet-miku": [
+      "Max"
+    ],
+    "elektrikli-araclar-motosiklet-milyon-moto": [
+      "Kurye 680",
+      "Kurye 68200"
+    ],
+    "elektrikli-araclar-motosiklet-mobilette": [
+      "Flash 10000"
+    ],
+    "elektrikli-araclar-motosiklet-mondial": [
+      "Bomber",
+      "E-Mon Assist DS",
+      "E-Mon Assist SS",
+      "E-Mon Buddy",
+      "E-Mon Capri",
+      "E-Mon Classic",
+      "E-Mon Cyclone 3000",
+      "E-Mon Duo Bike",
+      "E-Mon E-Cub 3000",
+      "E-Mon G5",
+      "E-Mon Miracle",
+      "E-Mon Mocha",
+      "E-Mon Moneta",
+      "E-Mon Rank 3000",
+      "E-Mon Reactor",
+      "E-Mon Rigby",
+      "E-Mon Sempre",
+      "E-Mon Tigray"
+    ],
+    "elektrikli-araclar-motosiklet-motolux": [
+      "ALF Plus",
+      "ALF Plus Lüx",
+      "Alf-Cup",
+      "Cargo 5000",
+      "Cargo 7300 S",
+      "Cargo 9800",
+      "Cargo 9800 Turbo",
+      "E-CEO",
+      "F4",
+      "F7",
+      "F8",
+      "Fayton 7700 X",
+      "Fayton 8100",
+      "Fayton Fx 11",
+      "Gogo",
+      "Kangoo 77",
+      "Latte",
+      "Pıtton",
+      "Roma"
+    ],
+    "elektrikli-araclar-motosiklet-motoran": [
+      "MTZ 3000",
+      "MX 1200"
+    ],
+    "elektrikli-araclar-motosiklet-musatti": [
+      "Dora 4000",
+      "Marsilya 1600",
+      "Marsilya Max 1600",
+      "SMD EEC-3",
+      "SMD EEC-6",
+      "Sport 701 Pro (3000 W)"
+    ],
+    "elektrikli-araclar-motosiklet-regal-raptor": [
+      "K1",
+      "K3",
+      "K3 KLS",
+      "K5",
+      "K5 Long",
+      "K5 Pro"
+    ],
+    "elektrikli-araclar-motosiklet-relive": [
+      "Baw1",
+      "N1"
+    ],
+    "elektrikli-araclar-motosiklet-rks": [
+      "A1",
+      "City-Bike",
+      "D 2",
+      "Eco Rider Mx Pro",
+      "M 5",
+      "M2",
+      "MT3",
+      "MT3 Pro",
+      "My Force XS GT-3",
+      "Neron X",
+      "Optimus",
+      "REE 1500",
+      "Xigma"
+    ],
+    "elektrikli-araclar-motosiklet-rmg-moto-gusto": [
+      "Flamingo",
+      "Flamingo Long"
+    ],
+    "elektrikli-araclar-motosiklet-sam-motor": [
+      "Jaguar 5000"
+    ],
+    "elektrikli-araclar-motosiklet-sfm": [
+      "Express E 2000",
+      "Express Max",
+      "Express Plus E 2000",
+      "Ihlara SF 400",
+      "Lili YK",
+      "Magneta E 1800",
+      "TBX Pro Max"
+    ],
+    "elektrikli-araclar-motosiklet-silence": [
+      "S01"
+    ],
+    "elektrikli-araclar-motosiklet-skyjet": [
+      "EBike 1 S",
+      "EBike Light",
+      "EBike Nitro",
+      "EBike Nitro Pro",
+      "EBike Robusto",
+      "EBike S 25",
+      "Eco Line",
+      "Optimus Ultra",
+      "Re Van",
+      "RT3000",
+      "Sky Car",
+      "Super Truck",
+      "Twister"
+    ],
+    "elektrikli-araclar-motosiklet-slane": [
+      "Slane"
+    ],
+    "elektrikli-araclar-motosiklet-smarda": [
+      "Pro 701",
+      "SE 03",
+      "SE 04"
+    ],
+    "elektrikli-araclar-motosiklet-stanford": [
+      "STF"
+    ],
+    "elektrikli-araclar-motosiklet-stmax": [
+      "Dora / Alfa 1200",
+      "Elit 2000",
+      "Elit 3000",
+      "Elit 960",
+      "GF 500",
+      "GF 910",
+      "GF 960",
+      "Klas 5000",
+      "Kobra 1500",
+      "Kobra 2000"
+    ],
+    "elektrikli-araclar-motosiklet-sunra": [
+      "Miku Max"
+    ],
+    "elektrikli-araclar-motosiklet-super-soco": [
+      "CUX",
+      "TC",
+      "TC Max"
+    ],
+    "elektrikli-araclar-motosiklet-tbike": [
+      "EBike V8 Pro"
+    ],
+    "elektrikli-araclar-motosiklet-vespa": [
+      "Elettrica"
+    ],
+    "elektrikli-araclar-motosiklet-victory": [
+      "Compact"
+    ],
+    "elektrikli-araclar-motosiklet-volta": [
+      "GreenE",
+      "ReVolt",
+      "VC3",
+      "VM1",
+      "VM4",
+      "VM5",
+      "VS1",
+      "VS2",
+      "VS3",
+      "VSC",
+      "VSM",
+      "VSX",
+      "VT5"
+    ],
+    "elektrikli-araclar-motosiklet-yiben": [
+      "YB 1500DZH"
+    ],
+    "elektrikli-araclar-motosiklet-yuki": [
+      "Amy",
+      "EM 04 Jüpiter",
+      "Hector",
+      "My Friend-S",
+      "Mypad",
+      "Orion 2000",
+      "Pony Twin",
+      "Tria",
+      "YD-EBX042",
+      "YK EB02",
+      "YK-03 Halley",
+      "YK-12 Midilli-L",
+      "YK-16 Ilgaz 3000",
+      "YK-16 Ilgaz 7000",
+      "YK-24 Aydos",
+      "YK-30 Windy",
+      "YK-32 Aponyx",
+      "YK-35 Boss",
+      "YK-42 Lucky-S"
+    ],
+    "elektrikli-araclar-motosiklet-zeeho": [
+      "AE8 S+"
+    ],
+    "elektrikli-araclar-motosiklet-zelsun": [
+      "ZLS A2 Mars",
+      "ZLS V6 Venüs"
+    ],
+    "elektrikli-araclar-motosiklet-zlin": [
+      "EW1",
+      "Mutluluk1",
+      "Mutluluk2",
+      "Şahin1"
+    ],
+    "elektrikli-araclar-minivan-panelvan-elektrikli-minivan-panelvan-piaggio": [
+      "Electric Power"
+    ],
+    "elektrikli-araclar-atv-utv-rine": [
+      "RN Mini ATV"
+    ],
+    "elektrikli-araclar-hizmet-araclari-ecocar": [
+      "H4"
+    ],
+    "elektrikli-araclar-hizmet-araclari-pilotcar": [
+      "PC W"
+    ],
+    "elektrikli-araclar-hizmet-araclari-regal-raptor": [
+      "K5 Van"
+    ]
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "category_slugs": [
+    "elektrikli-araclar-atv-utv-indeks",
+    "elektrikli-araclar-atv-utv-kral-motor",
+    "elektrikli-araclar-hizmet-araclari-clubcar",
+    "elektrikli-araclar-hizmet-araclari-sgms",
+    "elektrikli-araclar-hizmet-araclari-volta",
+    "elektrikli-araclar-hizmet-araclari-yamaha",
+    "elektrikli-araclar-kickscooter-blade-gt",
+    "elektrikli-araclar-kickscooter-citycoco",
+    "elektrikli-araclar-kickscooter-cybersoul",
+    "elektrikli-araclar-kickscooter-diger-markalar",
+    "elektrikli-araclar-kickscooter-dualtron",
+    "elektrikli-araclar-kickscooter-electro-wind",
+    "elektrikli-araclar-kickscooter-electroll",
+    "elektrikli-araclar-kickscooter-hifree",
+    "elektrikli-araclar-kickscooter-kaabo",
+    "elektrikli-araclar-kickscooter-kral-motor",
+    "elektrikli-araclar-kickscooter-kuba",
+    "elektrikli-araclar-kickscooter-meka-motor",
+    "elektrikli-araclar-kickscooter-mypet",
+    "elektrikli-araclar-kickscooter-navee",
+    "elektrikli-araclar-kickscooter-ninebot",
+    "elektrikli-araclar-kickscooter-okai",
+    "elektrikli-araclar-kickscooter-onvo",
+    "elektrikli-araclar-kickscooter-rks",
+    "elektrikli-araclar-kickscooter-segway",
+    "elektrikli-araclar-kickscooter-sky",
+    "elektrikli-araclar-kickscooter-stmax",
+    "elektrikli-araclar-kickscooter-sway",
+    "elektrikli-araclar-kickscooter-volta",
+    "elektrikli-araclar-kickscooter-vsett",
+    "elektrikli-araclar-kickscooter-wawasaky",
+    "elektrikli-araclar-kickscooter-xiaomi",
+    "elektrikli-araclar-kickscooter-yuki",
+    "elektrikli-araclar-scooter-elektrikli-scooter-airwheel",
+    "elektrikli-araclar-scooter-elektrikli-scooter-bmw",
+    "elektrikli-araclar-scooter-elektrikli-scooter-citycoco",
+    "elektrikli-araclar-scooter-elektrikli-scooter-citymate",
+    "elektrikli-araclar-scooter-elektrikli-scooter-diger-markalar",
+    "elektrikli-araclar-scooter-elektrikli-scooter-e-rider",
+    "elektrikli-araclar-scooter-elektrikli-scooter-electro-wind",
+    "elektrikli-araclar-scooter-elektrikli-scooter-kral-motor",
+    "elektrikli-araclar-scooter-elektrikli-scooter-kuba",
+    "elektrikli-araclar-scooter-elektrikli-scooter-maserati",
+    "elektrikli-araclar-scooter-elektrikli-scooter-mypet",
+    "elektrikli-araclar-scooter-elektrikli-scooter-ninebot",
+    "elektrikli-araclar-scooter-elektrikli-scooter-nitro",
+    "elektrikli-araclar-scooter-elektrikli-scooter-odisu",
+    "elektrikli-araclar-scooter-elektrikli-scooter-rks",
+    "elektrikli-araclar-scooter-elektrikli-scooter-scoowy",
+    "elektrikli-araclar-scooter-elektrikli-scooter-seat",
+    "elektrikli-araclar-scooter-elektrikli-scooter-segway",
+    "elektrikli-araclar-scooter-elektrikli-scooter-sky",
+    "elektrikli-araclar-scooter-elektrikli-scooter-stmax",
+    "elektrikli-araclar-scooter-elektrikli-scooter-tne",
+    "elektrikli-araclar-scooter-elektrikli-scooter-volta",
+    "elektrikli-araclar-scooter-elektrikli-scooter-walkerbug",
+    "elektrikli-araclar-scooter-elektrikli-scooter-xiaomi",
+    "elektrikli-araclar-scooter-elektrikli-scooter-yuki",
+    "elektrikli-araclar-scooter-elektrikli-scooter-zero"
+  ],
+  "fields": [
+    {
+      "attribute_key": "city",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "cities.tr.json",
+      "sort_order": 5,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_model",
+      "ui_component": "text",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "sort_order": 20,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_year",
+      "ui_component": "number",
+      "required": false,
+      "filter_mode": "range",
+      "rules": {
+        "min": 1950,
+        "max": 2035
+      },
+      "sort_order": 30,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_color",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/elektrikli-araclar/vehicle_color.tr.json",
+      "sort_order": 56,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_condition",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/elektrikli-araclar/vehicle_condition.tr.json",
+      "sort_order": 58,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_seller_type",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/elektrikli-araclar/vehicle_seller_type.tr.json",
+      "sort_order": 59,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_km",
+      "ui_component": "number",
+      "required": false,
+      "filter_mode": "range",
+      "rules": {
+        "min": 0,
+        "max": 2000000
+      },
+      "sort_order": 60,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_swap",
+      "ui_component": "boolean",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "sort_order": 65,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_listing_age",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/elektrikli-araclar/vehicle_listing_age.tr.json",
+      "sort_order": 66,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_price",
+      "ui_component": "number",
+      "required": false,
+      "filter_mode": "range",
+      "rules": {
+        "min": 0,
+        "max": 1000000000
+      },
+      "sort_order": 70,
+      "applies_to_transaction_modes": [
+        "sale"
+      ]
+    }
+  ]
+}
