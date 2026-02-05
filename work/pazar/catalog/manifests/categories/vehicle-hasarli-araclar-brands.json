@@ -1,0 +1,702 @@
+[
+  {
+    "slug": "hasarli-araclar-otomobil-alfa-romeo",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Alfa Romeo",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-audi",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Audi",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-bmw",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "BMW",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-chevrolet",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Chevrolet",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-chrysler",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Chrysler",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-citroen",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Citroen",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-dacia",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Dacia",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-daewoo",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Daewoo",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-fiat",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Fiat",
+    "status": "active",
+    "sort_order": 90
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-ford",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Ford",
+    "status": "active",
+    "sort_order": 100
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-honda",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Honda",
+    "status": "active",
+    "sort_order": 110
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-hyundai",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Hyundai",
+    "status": "active",
+    "sort_order": 120
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-kia",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Kia",
+    "status": "active",
+    "sort_order": 130
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-lada",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Lada",
+    "status": "active",
+    "sort_order": 140
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-mazda",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Mazda",
+    "status": "active",
+    "sort_order": 150
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-mercedes-benz",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Mercedes - Benz",
+    "status": "active",
+    "sort_order": 160
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-mitsubishi",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Mitsubishi",
+    "status": "active",
+    "sort_order": 170
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-nissan",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Nissan",
+    "status": "active",
+    "sort_order": 180
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-opel",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Opel",
+    "status": "active",
+    "sort_order": 190
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-peugeot",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Peugeot",
+    "status": "active",
+    "sort_order": 200
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-renault",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Renault",
+    "status": "active",
+    "sort_order": 210
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-rover",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Rover",
+    "status": "active",
+    "sort_order": 220
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-seat",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Seat",
+    "status": "active",
+    "sort_order": 230
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-skoda",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Skoda",
+    "status": "active",
+    "sort_order": 240
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-subaru",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Subaru",
+    "status": "active",
+    "sort_order": 250
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-suzuki",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Suzuki",
+    "status": "active",
+    "sort_order": 260
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-tata",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Tata",
+    "status": "active",
+    "sort_order": 270
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-tofas",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Tofaş",
+    "status": "active",
+    "sort_order": 280
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-toyota",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Toyota",
+    "status": "active",
+    "sort_order": 290
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-volkswagen",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Volkswagen",
+    "status": "active",
+    "sort_order": 300
+  },
+  {
+    "slug": "hasarli-araclar-otomobil-volvo",
+    "parent_slug": "hasarli-araclar-otomobil",
+    "title": "Volvo",
+    "status": "active",
+    "sort_order": 310
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-audi",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Audi",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-bmw",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "BMW",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-chery",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Chery",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-dacia",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Dacia",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-diger-markalar",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Diğer Markalar",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-fiat",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Fiat",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-jeep",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Jeep",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-kia",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Kia",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-land-rover",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Land Rover",
+    "status": "active",
+    "sort_order": 90
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-lincoln",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Lincoln",
+    "status": "active",
+    "sort_order": 100
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-mazda",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Mazda",
+    "status": "active",
+    "sort_order": 110
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-mg",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "MG",
+    "status": "active",
+    "sort_order": 120
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-nissan",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Nissan",
+    "status": "active",
+    "sort_order": 130
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-porsche",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Porsche",
+    "status": "active",
+    "sort_order": 140
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-skoda",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Skoda",
+    "status": "active",
+    "sort_order": 150
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-ssangyong",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Ssangyong",
+    "status": "active",
+    "sort_order": 160
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-toyota",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Toyota",
+    "status": "active",
+    "sort_order": 170
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up-volkswagen",
+    "parent_slug": "hasarli-araclar-arazi-suv-pick-up",
+    "title": "Volkswagen",
+    "status": "active",
+    "sort_order": 180
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-citroen",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Citroen",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-dacia",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Dacia",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-fiat",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Fiat",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-ford-otosan",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Ford - Otosan",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-hyundai",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Hyundai",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-kia",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Kia",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-mercedes",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Mercedes - Benz",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-opel",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Opel",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-peugeot",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Peugeot",
+    "status": "active",
+    "sort_order": 90
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-renault",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Renault",
+    "status": "active",
+    "sort_order": 100
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-toyota",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Toyota",
+    "status": "active",
+    "sort_order": 110
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan-volkswagen",
+    "parent_slug": "hasarli-araclar-minivan-panelvan",
+    "title": "Volkswagen",
+    "status": "active",
+    "sort_order": 120
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-cekici",
+    "parent_slug": "hasarli-araclar-ticari-arac",
+    "title": "Çekici",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-cekici-belde-bmc",
+    "parent_slug": "hasarli-araclar-ticari-arac-cekici",
+    "title": "Belde BMC",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-cekici-mercedes",
+    "parent_slug": "hasarli-araclar-ticari-arac-cekici",
+    "title": "Mercedes - Benz",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-cekici-renault",
+    "parent_slug": "hasarli-araclar-ticari-arac-cekici",
+    "title": "Renault",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "parent_slug": "hasarli-araclar-ticari-arac",
+    "title": "Kamyon & Kamyonet",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-citroen",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Citroen",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-ford-trucks",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Ford Trucks",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-hyundai",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Hyundai",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-isuzu",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Isuzu",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-iveco-otoyol",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Iveco - Otoyol",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-kia",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Kia",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-mercedes",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Mercedes - Benz",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-mitsubishi-temsa",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Mitsubishi - Temsa",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-peugeot",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Peugeot",
+    "status": "active",
+    "sort_order": 90
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-renault",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Renault",
+    "status": "active",
+    "sort_order": 100
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet-volkswagen",
+    "parent_slug": "hasarli-araclar-ticari-arac-kamyon-kamyonet",
+    "title": "Volkswagen",
+    "status": "active",
+    "sort_order": 110
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-minibus-midibus",
+    "parent_slug": "hasarli-araclar-ticari-arac",
+    "title": "Minibüs & Midibüs",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-minibus-midibus-belde-bmc",
+    "parent_slug": "hasarli-araclar-ticari-arac-minibus-midibus",
+    "title": "Belde BMC",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-minibus-midibus-citroen",
+    "parent_slug": "hasarli-araclar-ticari-arac-minibus-midibus",
+    "title": "Citroen",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-minibus-midibus-ford-otosan",
+    "parent_slug": "hasarli-araclar-ticari-arac-minibus-midibus",
+    "title": "Ford - Otosan",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-minibus-midibus-isuzu",
+    "parent_slug": "hasarli-araclar-ticari-arac-minibus-midibus",
+    "title": "Isuzu",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-minibus-midibus-mercedes",
+    "parent_slug": "hasarli-araclar-ticari-arac-minibus-midibus",
+    "title": "Mercedes - Benz",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-minibus-midibus-renault",
+    "parent_slug": "hasarli-araclar-ticari-arac-minibus-midibus",
+    "title": "Renault",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-minibus-midibus-tofas-fiat",
+    "parent_slug": "hasarli-araclar-ticari-arac-minibus-midibus",
+    "title": "Tofaş - Fiat",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac-minibus-midibus-volkswagen",
+    "parent_slug": "hasarli-araclar-ticari-arac-minibus-midibus",
+    "title": "Volkswagen",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-arora",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "Arora",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-bisan",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "Bisan",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-cfmoto",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "CFmoto",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-honda",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "Honda",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-kanuni",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "Kanuni",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-kawasaki",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "Kawasaki",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-keeway",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "Keeway",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-ktm",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "KTM",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-kuba",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "Kuba",
+    "status": "active",
+    "sort_order": 90
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-mondial",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "Mondial",
+    "status": "active",
+    "sort_order": 100
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-rks",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "RKS",
+    "status": "active",
+    "sort_order": 110
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-suzuki",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "Suzuki",
+    "status": "active",
+    "sort_order": 120
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-sym",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "SYM",
+    "status": "active",
+    "sort_order": 130
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet-tvs",
+    "parent_slug": "hasarli-araclar-motosiklet",
+    "title": "TVS",
+    "status": "active",
+    "sort_order": 140
+  }
+]

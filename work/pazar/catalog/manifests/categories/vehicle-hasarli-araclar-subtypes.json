@@ -1,0 +1,37 @@
+[
+  {
+    "slug": "hasarli-araclar-otomobil",
+    "parent_slug": "hasarli-araclar",
+    "title": "Otomobil",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "hasarli-araclar-arazi-suv-pick-up",
+    "parent_slug": "hasarli-araclar",
+    "title": "Arazi, SUV, Pick-up",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "hasarli-araclar-minivan-panelvan",
+    "parent_slug": "hasarli-araclar",
+    "title": "Minivan & Panelvan",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "hasarli-araclar-ticari-arac",
+    "parent_slug": "hasarli-araclar",
+    "title": "Ticari Araç",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "hasarli-araclar-motosiklet",
+    "parent_slug": "hasarli-araclar",
+    "title": "Motosiklet",
+    "status": "active",
+    "sort_order": 50
+  }
+]
