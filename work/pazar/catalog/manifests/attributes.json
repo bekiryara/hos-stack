@@ -1,6 +1,6 @@
 [
   {"key":"capacity_max","value_type":"number","unit":"person","description":"Maximum capacity (number of people)"},
-  {"key":"city","value_type":"string","unit":null,"description":"City location"},
+  {"key":"city","value_type":"string","unit":null,"description":"Şehir"},
   {"key":"cuisine","value_type":"enum","unit":null,"description":"Cuisine type"},
   {"key":"spicy_level","value_type":"number","unit":null,"description":"Spicy level (0-10)"},
 

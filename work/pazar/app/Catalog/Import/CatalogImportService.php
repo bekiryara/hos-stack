@@ -27,6 +27,13 @@ final class CatalogImportService
     private const ALLOWED_FILTER_MODES = ['exact', 'range'];
     private const ALLOWED_TX_MODES = ['sale', 'rental', 'reservation'];
 
+    /**
+     * Cache for referenced manifest files (rules_ref).
+     *
+     * @var array<string,mixed>
+     */
+    private array $refCache = [];
+
     public function __construct(
         private readonly string $basePath
     ) {
@@ -295,6 +302,32 @@ final class CatalogImportService
                 $rules = $field['rules'] ?? null;
                 if (!is_null($rules) && !is_array($rules)) {
                     throw new RuntimeException("schemaBlocks[$bIdx].fields[$fIdx].rules must be object|null.");
+                }
+                $rulesRef = $field['rules_ref'] ?? null;
+                if (!is_null($rulesRef) && !is_string($rulesRef) && !is_array($rulesRef)) {
+                    throw new RuntimeException("schemaBlocks[$bIdx].fields[$fIdx].rules_ref must be string|object|null.");
+                }
+                if (!is_null($rulesRef) && !is_null($rules)) {
+                    throw new RuntimeException("schemaBlocks[$bIdx].fields[$fIdx] cannot define both rules and rules_ref.");
+                }
+
+                // Validate referenced rules deterministically (fail-fast).
+                if (!is_null($rulesRef)) {
+                    try {
+                        $resolved = $this->resolveRulesFromField($field, categorySlug: (string)($categorySlugs[0] ?? ''));
+                    } catch (RuntimeException $e) {
+                        throw new RuntimeException("schemaBlocks[$bIdx].fields[$fIdx].rules_ref invalid: " . $e->getMessage());
+                    }
+                    if ($uiComponent === 'select') {
+                        if (!is_array($resolved) || !array_key_exists('options', $resolved) || !is_array($resolved['options'])) {
+                            throw new RuntimeException("schemaBlocks[$bIdx].fields[$fIdx] select requires resolved rules.options array.");
+                        }
+                        foreach ($resolved['options'] as $oIdx => $opt) {
+                            if (!is_string($opt)) {
+                                throw new RuntimeException("schemaBlocks[$bIdx].fields[$fIdx] resolved rules.options[$oIdx] must be a string.");
+                            }
+                        }
+                    }
                 }
                 if ($uiComponent === 'select' && is_array($rules) && array_key_exists('options', $rules)) {
                     if (!is_array($rules['options'])) {
@@ -770,7 +803,7 @@ final class CatalogImportService
             $fields = $block['fields'] ?? [];
             foreach ($categorySlugs as $categorySlug) {
                 foreach ($fields as $f) {
-                    $rules = $f['rules'] ?? null;
+                    $rules = $this->resolveRulesFromField(is_array($f) ? $f : [], (string)$categorySlug);
                     $applies = $f['applies_to_transaction_modes'] ?? null;
 
                     $rows[] = [
@@ -796,6 +829,109 @@ final class CatalogImportService
         });
 
         return $rows;
+    }
+
+    /**
+     * Resolve schema rules from either inline `rules` or external `rules_ref`.
+     *
+     * Supported `rules_ref`:
+     * - string: path to a JSON array of strings (relative to manifests root); treated as select options list.
+     * - object:
+     *   - { "type": "options_file", "path": "<file.json>" }
+     *   - { "type": "vehicle_models_by_brand_slug", "path": "vehicle-otomobil-models.autoevolution.tr.json" }
+     *
+     * @param array<string,mixed> $field
+     * @return array<string,mixed>|null
+     */
+    private function resolveRulesFromField(array $field, string $categorySlug): ?array
+    {
+        $rules = $field['rules'] ?? null;
+        if (!is_null($rules)) {
+            return is_array($rules) ? $rules : null;
+        }
+
+        $rulesRef = $field['rules_ref'] ?? null;
+        if (is_null($rulesRef)) {
+            return null;
+        }
+
+        // String shorthand: options list file
+        if (is_string($rulesRef)) {
+            return ['options' => $this->readOptionsListFromManifestRef($rulesRef)];
+        }
+
+        if (!is_array($rulesRef)) {
+            throw new RuntimeException('rules_ref must be string|object.');
+        }
+
+        $type = $rulesRef['type'] ?? null;
+        $path = $rulesRef['path'] ?? null;
+        if (!is_string($type) || $type === '') {
+            throw new RuntimeException('rules_ref.type must be a non-empty string.');
+        }
+        if (!is_string($path) || $path === '') {
+            throw new RuntimeException('rules_ref.path must be a non-empty string.');
+        }
+
+        if ($type === 'options_file') {
+            return ['options' => $this->readOptionsListFromManifestRef($path)];
+        }
+
+        if ($type === 'vehicle_models_by_brand_slug') {
+            $data = $this->readRefJson($path, expectedType: 'object');
+            if (!is_array($data) || !is_array($data['brand_slug_to_models'] ?? null)) {
+                throw new RuntimeException("{$path} must contain brand_slug_to_models object.");
+            }
+            $map = $data['brand_slug_to_models'];
+            $models = $map[$categorySlug] ?? [];
+            if (!is_array($models)) {
+                $models = [];
+            }
+            $out = [];
+            foreach ($models as $m) {
+                if (is_string($m) && $m !== '') {
+                    $out[] = $m;
+                }
+            }
+            sort($out, SORT_NATURAL | SORT_FLAG_CASE);
+            return ['options' => $out];
+        }
+
+        throw new RuntimeException("Unsupported rules_ref.type: {$type}");
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function readOptionsListFromManifestRef(string $relativePath): array
+    {
+        $data = $this->readRefJson($relativePath, expectedType: 'array');
+        if (!is_array($data)) {
+            throw new RuntimeException("{$relativePath} must be a JSON array.");
+        }
+        $out = [];
+        foreach ($data as $idx => $v) {
+            if (!is_string($v) || $v === '') {
+                throw new RuntimeException("{$relativePath}[$idx] must be a non-empty string.");
+            }
+            $out[] = $v;
+        }
+        return $out;
+    }
+
+    private function readRefJson(string $relativePath, string $expectedType = 'any'): mixed
+    {
+        $rel = str_replace('\\', '/', ltrim($relativePath, "\\/"));
+        $path = $this->basePath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+
+        $cacheKey = "ref:{$expectedType}:{$rel}";
+        if (array_key_exists($cacheKey, $this->refCache)) {
+            return $this->refCache[$cacheKey];
+        }
+
+        $data = $this->readJsonFile($path, expectedType: $expectedType);
+        $this->refCache[$cacheKey] = $data;
+        return $data;
     }
 
     /**
