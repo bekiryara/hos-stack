@@ -1,6 +1,18 @@
 {
   "schema_version": 1,
-  "category_slugs": [],
-  "fields": []
+  "category_slugs": ["otomobil", "karavan"],
+  "fields": [
+    {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+    {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+    {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+    {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":{"options":["Benzin","Dizel","Elektrik","Hibrit"]},"sort_order":40,"applies_to_transaction_modes":null},
+    {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":{"options":["Manuel","Otomatik","Yarı Otomatik"]},"sort_order":50,"applies_to_transaction_modes":null},
+    {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+
+    {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]},
+
+    {"attribute_key":"vehicle_price_per_day","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000},"sort_order":80,"applies_to_transaction_modes":["rental"]},
+    {"attribute_key":"vehicle_min_rent_days","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1,"max":365},"sort_order":90,"applies_to_transaction_modes":["rental"]}
+  ]
 }
 

@@ -1,2 +1,17 @@
-[]
+[
+  {"key":"capacity_max","value_type":"number","unit":"person","description":"Maximum capacity (number of people)"},
+  {"key":"city","value_type":"string","unit":null,"description":"City location"},
+  {"key":"cuisine","value_type":"enum","unit":null,"description":"Cuisine type"},
+  {"key":"spicy_level","value_type":"number","unit":null,"description":"Spicy level (0-10)"},
+
+  {"key":"vehicle_brand","value_type":"string","unit":null,"description":"Marka"},
+  {"key":"vehicle_model","value_type":"string","unit":null,"description":"Model"},
+  {"key":"vehicle_year","value_type":"number","unit":null,"description":"Model yılı"},
+  {"key":"vehicle_fuel_type","value_type":"enum","unit":null,"description":"Yakıt türü"},
+  {"key":"vehicle_transmission","value_type":"enum","unit":null,"description":"Vites"},
+  {"key":"vehicle_km","value_type":"number","unit":"km","description":"Kilometre"},
+  {"key":"vehicle_price","value_type":"number","unit":"TRY","description":"Fiyat"},
+  {"key":"vehicle_price_per_day","value_type":"number","unit":"TRY","description":"Günlük fiyat"},
+  {"key":"vehicle_min_rent_days","value_type":"number","unit":"day","description":"Minimum kiralama günü"}
+]
 

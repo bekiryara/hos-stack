@@ -49,11 +49,12 @@ jobs:
       
       - name: Run migrations
         run: |
-          docker compose exec -T pazar-app php artisan migrate --force
+          docker compose exec -T pazar-app php artisan migrate:fresh --force
       
-      - name: Seed required data
+      - name: Import catalog manifests (canonical)
         run: |
-          docker compose exec -T pazar-app php artisan db:seed --class=CatalogSpineSeeder --force
+          docker compose exec -T pazar-app php artisan catalog:import --dry-run
+          docker compose exec -T pazar-app php artisan catalog:import --apply
         continue-on-error: false
       
       - name: Install PowerShell

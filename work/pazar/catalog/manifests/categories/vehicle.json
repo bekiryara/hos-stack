@@ -1,2 +1,6 @@
-[]
+[
+  {"slug":"vehicle","parent_slug":null,"title":"Vasıta","status":"active","sort_order":10},
+  {"slug":"otomobil","parent_slug":"vehicle","title":"Otomobil","status":"active","sort_order":10},
+  {"slug":"karavan","parent_slug":"vehicle","title":"Karavan","status":"active","sort_order":20}
+]
 

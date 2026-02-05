@@ -1,2 +1,11 @@
-[]
+[
+  {"slug":"service","parent_slug":null,"title":"Services","status":"active","sort_order":30},
+
+  {"slug":"events","parent_slug":"service","title":"Events","status":"active","sort_order":10},
+  {"slug":"wedding-hall","parent_slug":"events","title":"Wedding Hall","status":"active","sort_order":10},
+  {"slug":"bando","parent_slug":"events","title":"Bando","status":"active","sort_order":20},
+
+  {"slug":"food","parent_slug":"service","title":"Food","status":"active","sort_order":20},
+  {"slug":"kebab","parent_slug":"food","title":"Kebap","status":"active","sort_order":10}
+]
 

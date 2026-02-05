@@ -181,7 +181,7 @@ if ($weddingHallId) {
     }
 } else {
     Write-Host "[2] SKIP: Cannot test filter-schema endpoint (wedding-hall category ID not found)" -ForegroundColor Yellow
-    Write-Host "  Run seeder to populate categories: docker compose exec pazar-app php artisan db:seed --class=CatalogSpineSeeder" -ForegroundColor Gray
+    Write-Host "  Populate catalog (canonical): docker compose exec pazar-app php artisan migrate:fresh --force; docker compose exec pazar-app php artisan catalog:import --apply" -ForegroundColor Gray
 }
 
 Write-Host ""
