@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "karavan-motokaravan",
+    "parent_slug": "karavan",
+    "title": "Motokaravan",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "karavan-cekme-karavan",
+    "parent_slug": "karavan",
+    "title": "Çekme Karavan",
+    "status": "active",
+    "sort_order": 20
+  }
+]
