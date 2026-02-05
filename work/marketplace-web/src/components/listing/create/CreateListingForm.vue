@@ -95,8 +95,11 @@
 
     <div v-if="filterSchema && filterSchema.filters" class="form-group">
       <h3>Attributes (from filter-schema)</h3>
+      <small v-if="hiddenFiltersCount > 0" class="hint">
+        Bu ilan türünde geçerli olmayan {{ hiddenFiltersCount }} alan gizlendi. Değerleriniz silinmedi.
+      </small>
       <div
-        v-for="filter in filterSchema.filters"
+        v-for="filter in visibleFilters"
         :key="filter.attribute_key"
         class="attribute-field"
       >
@@ -152,6 +155,23 @@ export default {
       const list = schema && Array.isArray(schema.offer_variants) ? schema.offer_variants : [];
       return list.find((v) => v && v.key === key) || null;
     },
+    currentTransactionMode() {
+      const v = this.selectedOfferVariant;
+      if (v && v.transaction_mode) return String(v.transaction_mode);
+      const modes = Array.isArray(this.local.transaction_modes) ? this.local.transaction_modes : [];
+      if (modes.length > 0 && modes[0]) return String(modes[0]);
+      return 'sale';
+    },
+    visibleFilters() {
+      const schema = this.filterSchema;
+      const list = schema && Array.isArray(schema.filters) ? schema.filters : [];
+      return list.filter((f) => this.isApplicableForMode(f, this.currentTransactionMode));
+    },
+    hiddenFiltersCount() {
+      const schema = this.filterSchema;
+      const list = schema && Array.isArray(schema.filters) ? schema.filters : [];
+      return list.length - this.visibleFilters.length;
+    },
   },
   watch: {
     intentSchema: {
@@ -168,6 +188,17 @@ export default {
     },
   },
   methods: {
+    // Faz-2: schema-driven applicability (hardcode yok).
+    // Semantics: applies_to_transaction_modes is null/empty => applies to all modes.
+    isApplicableForMode(filter, mode) {
+      const m = mode ? String(mode) : '';
+      if (!m) return true;
+      const raw = filter && filter.applies_to_transaction_modes;
+      if (!raw) return true;
+      if (!Array.isArray(raw)) return true;
+      if (raw.length === 0) return true;
+      return raw.map(String).includes(m);
+    },
     emitCategoryChange() {
       // Reset offer selection when category changes (policy is category-scoped)
       this.local.offer_variant = '';
@@ -191,12 +222,26 @@ export default {
       this.local.attributes.interaction_mode = (v.interaction_mode === 'flow') ? 'flow' : 'contact_only';
     },
     onSubmit() {
+      const visibleKeys = new Set((this.visibleFilters || []).map((f) => String(f.attribute_key)));
+      // Policy meta keys must always be sent (backend expects these for normalization).
+      visibleKeys.add('offer_variant');
+      visibleKeys.add('interaction_mode');
+
+      const rawAttrs = this.local.attributes && typeof this.local.attributes === 'object' ? this.local.attributes : {};
+      const filteredAttrs = {};
+      Object.keys(rawAttrs).forEach((k) => {
+        if (visibleKeys.has(String(k))) {
+          filteredAttrs[k] = rawAttrs[k];
+        }
+      });
+
       const snapshot = {
         category_id: this.local.category_id,
         title: this.local.title,
         description: this.local.description,
         transaction_modes: [...(this.local.transaction_modes || [])],
-        attributes: { ...(this.local.attributes || {}) },
+        // Submit only visible attrs (do not delete hidden values from local state).
+        attributes: filteredAttrs,
       };
       this.$emit('submit', snapshot);
     },

@@ -661,15 +661,16 @@ final class CatalogSpineSeeder extends Seeder
         $vehicleTransmissionOptions = ['Manuel', 'Otomatik', 'Yarı Otomatik'];
 
         $vehicleCommonSchema = [
-            ['key' => 'vehicle_brand', 'ui' => 'text', 'mode' => 'exact', 'rules' => null, 'order' => 10],
-            ['key' => 'vehicle_model', 'ui' => 'text', 'mode' => 'exact', 'rules' => null, 'order' => 20],
-            ['key' => 'vehicle_year', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 1950, 'max' => 2035]), 'order' => 30],
-            ['key' => 'vehicle_fuel_type', 'ui' => 'select', 'mode' => 'exact', 'rules' => json_encode(['options' => $vehicleFuelOptions]), 'order' => 40],
-            ['key' => 'vehicle_transmission', 'ui' => 'select', 'mode' => 'exact', 'rules' => json_encode(['options' => $vehicleTransmissionOptions]), 'order' => 50],
-            ['key' => 'vehicle_km', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 0, 'max' => 2000000]), 'order' => 60],
-            ['key' => 'vehicle_price', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 0, 'max' => 1000000000]), 'order' => 70],
-            ['key' => 'vehicle_price_per_day', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 0, 'max' => 1000000]), 'order' => 80],
-            ['key' => 'vehicle_min_rent_days', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 1, 'max' => 365]), 'order' => 90],
+            ['key' => 'vehicle_brand', 'ui' => 'text', 'mode' => 'exact', 'rules' => null, 'order' => 10, 'applies_to_transaction_modes' => null],
+            ['key' => 'vehicle_model', 'ui' => 'text', 'mode' => 'exact', 'rules' => null, 'order' => 20, 'applies_to_transaction_modes' => null],
+            ['key' => 'vehicle_year', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 1950, 'max' => 2035]), 'order' => 30, 'applies_to_transaction_modes' => null],
+            ['key' => 'vehicle_fuel_type', 'ui' => 'select', 'mode' => 'exact', 'rules' => json_encode(['options' => $vehicleFuelOptions]), 'order' => 40, 'applies_to_transaction_modes' => null],
+            ['key' => 'vehicle_transmission', 'ui' => 'select', 'mode' => 'exact', 'rules' => json_encode(['options' => $vehicleTransmissionOptions]), 'order' => 50, 'applies_to_transaction_modes' => null],
+            ['key' => 'vehicle_km', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 0, 'max' => 2000000]), 'order' => 60, 'applies_to_transaction_modes' => null],
+            ['key' => 'vehicle_price', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 0, 'max' => 1000000000]), 'order' => 70, 'applies_to_transaction_modes' => null],
+            // Rental-only fields: applicable only when transaction_mode=rental
+            ['key' => 'vehicle_price_per_day', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 0, 'max' => 1000000]), 'order' => 80, 'applies_to_transaction_modes' => json_encode(['rental'])],
+            ['key' => 'vehicle_min_rent_days', 'ui' => 'number', 'mode' => 'range', 'rules' => json_encode(['min' => 1, 'max' => 365]), 'order' => 90, 'applies_to_transaction_modes' => json_encode(['rental'])],
         ];
 
         $vehicleLeafSlugsForSchema = ['otomobil', 'arazi-suv-pickup', 'elektrikli-araclar', 'motosiklet', 'minivan-panelvan', 'ticari-araclar', 'karavan', 'atv'];
@@ -687,6 +688,8 @@ final class CatalogSpineSeeder extends Seeder
                         'required' => false,
                         'filter_mode' => $def['mode'],
                         'rules_json' => $def['rules'],
+                        // Phase-2: applicability by transaction_mode (NULL = all modes)
+                        'applies_to_transaction_modes' => $def['applies_to_transaction_modes'] ?? null,
                         'status' => 'active',
                         'sort_order' => $def['order'],
                         'created_at' => $now,
@@ -791,7 +794,13 @@ final class CatalogSpineSeeder extends Seeder
                 'description' => 'Demo listing (service/bando)',
                 'status' => 'published',
                 'transaction_modes_json' => json_encode(['reservation']),
-                'attributes_json' => json_encode(['capacity_max' => 4, 'city' => 'Izmir']),
+                'attributes_json' => json_encode([
+                    // Policy/meta keys (required for deterministic CTA resolution)
+                    'offer_variant' => 'reservation',
+                    'interaction_mode' => 'flow',
+                    'capacity_max' => 4,
+                    'city' => 'Izmir',
+                ]),
             ],
             // vehicle / karavan (rental) — reuses old demo UUID to avoid drift
             [
@@ -843,7 +852,14 @@ final class CatalogSpineSeeder extends Seeder
                 'description' => 'Demo listing (food/kebab)',
                 'status' => 'published',
                 'transaction_modes_json' => json_encode(['sale']),
-                'attributes_json' => json_encode(['cuisine' => 'Turkish', 'spicy_level' => 7, 'city' => 'Adana']),
+                'attributes_json' => json_encode([
+                    // Policy/meta keys (required for deterministic CTA resolution)
+                    'offer_variant' => 'sale',
+                    'interaction_mode' => 'contact_only',
+                    'cuisine' => 'Turkish',
+                    'spicy_level' => 7,
+                    'city' => 'Adana',
+                ]),
             ],
         ];
 

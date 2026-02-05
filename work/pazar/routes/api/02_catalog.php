@@ -49,6 +49,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
     // Fetch filter schema for this category
     // Check if new fields exist (after migration)
     $hasNewFields = Schema::hasColumn('category_filter_schema', 'ui_component');
+    $hasAppliesToModes = Schema::hasColumn('category_filter_schema', 'applies_to_transaction_modes');
     
     $selectFields = [
         'category_filter_schema.id',
@@ -68,6 +69,9 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
             'category_filter_schema.rules_json'
         ]);
     }
+    if ($hasAppliesToModes) {
+        $selectFields[] = 'category_filter_schema.applies_to_transaction_modes';
+    }
     
     $schema = DB::table('category_filter_schema')
         ->join('attributes', 'category_filter_schema.attribute_key', '=', 'attributes.key')
@@ -76,7 +80,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         ->orderBy('category_filter_schema.sort_order')
         ->select($selectFields)
         ->get()
-        ->map(function ($item) use ($hasNewFields) {
+        ->map(function ($item) use ($hasNewFields, $hasAppliesToModes) {
             $result = [
                 'attribute_key' => $item->attribute_key,
                 // WP-FINAL: Canonical key alias (catalog defines filter keys; clients should use this)
@@ -146,6 +150,19 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                     }
                 }
             }
+
+            // Phase-2: Schema-driven applicability by transaction_mode
+            // Semantics: null/empty => applies to all modes.
+            if ($hasAppliesToModes) {
+                $applies = null;
+                if (isset($item->applies_to_transaction_modes) && $item->applies_to_transaction_modes) {
+                    $decoded = json_decode($item->applies_to_transaction_modes, true);
+                    if (is_array($decoded)) {
+                        $applies = array_values(array_filter(array_map('strval', $decoded)));
+                    }
+                }
+                $result['applies_to_transaction_modes'] = $applies;
+            }
             
             return $result;
         })
@@ -176,4 +193,3 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
 
     return response()->json($schema);
 });
-

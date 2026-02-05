@@ -47,4 +47,3 @@ export async function getIntentSchemaForCategory(categoryId) {
   }
   return intentSchemaPromises.get(key);
 }
-

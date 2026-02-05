@@ -227,16 +227,10 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         // Required attributes (if schema table + new fields exist).
         $hasNewFields = \Illuminate\Support\Facades\Schema::hasTable('category_filter_schema')
             && \Illuminate\Support\Facades\Schema::hasColumn('category_filter_schema', 'required');
+        $hasAppliesToModes = \Illuminate\Support\Facades\Schema::hasTable('category_filter_schema')
+            && \Illuminate\Support\Facades\Schema::hasColumn('category_filter_schema', 'applies_to_transaction_modes');
 
         $requiredAttributes = [];
-        if ($hasNewFields) {
-            $requiredAttributes = \Illuminate\Support\Facades\DB::table('category_filter_schema')
-                ->where('category_id', $categoryId)
-                ->where('status', 'active')
-                ->where('required', true)
-                ->pluck('attribute_key')
-                ->toArray();
-        }
 
         // Phase-1 enforcement: attributes must be schema-driven (whitelist by category_filter_schema).
         // Always allow policy meta keys (offer_variant, interaction_mode).
@@ -269,27 +263,6 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
                 'category_id' => (int) $categoryId,
                 'unknown_keys' => $unknownAttrKeys,
             ], 422);
-        }
-
-        foreach ($requiredAttributes as $attrKey) {
-            if (!array_key_exists($attrKey, $attributes)) {
-                return response()->json([
-                    'error' => 'missing_required_attribute',
-                    'message' => "Required attribute '{$attrKey}' is missing",
-                    'required_attributes' => $requiredAttributes
-                ], 422);
-            }
-            $v = $attributes[$attrKey];
-            $isEmpty = $v === null
-                || (is_string($v) && trim($v) === '')
-                || (is_array($v) && count($v) === 0);
-            if ($isEmpty) {
-                return response()->json([
-                    'error' => 'missing_required_attribute',
-                    'message' => "Required attribute '{$attrKey}' is missing or empty",
-                    'required_attributes' => $requiredAttributes
-                ], 422);
-            }
         }
 
         // Resolve category intent schema and validate transaction_modes + offer_variant
@@ -376,6 +349,109 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
             $attributes['interaction_mode'] = ($requestedModes[0] === 'reservation') ? 'flow' : 'contact_only';
         }
 
+        // Determine effective transaction mode (after offer_variant normalization).
+        $effectiveMode = '';
+        if (isset($impliedMode) && is_string($impliedMode) && $impliedMode !== '') {
+            $effectiveMode = $impliedMode;
+        } elseif (!empty($requestedModes) && isset($requestedModes[0])) {
+            $effectiveMode = (string) $requestedModes[0];
+        }
+        $effectiveMode = $effectiveMode !== '' ? $effectiveMode : 'sale';
+
+        // Phase-2 hardening: schema-driven applicability by transaction_mode.
+        // - If applies_to_transaction_modes is NULL/empty => applies to all modes.
+        // - Otherwise, only the listed modes can store this key.
+        $droppedKeys = [];
+        if ($hasAppliesToModes && \Illuminate\Support\Facades\Schema::hasTable('category_filter_schema')) {
+            $rows = \Illuminate\Support\Facades\DB::table('category_filter_schema')
+                ->where('category_id', $categoryId)
+                ->where('status', 'active')
+                ->select(['attribute_key', 'required', 'applies_to_transaction_modes'])
+                ->get();
+
+            $appliesMap = [];
+            $requiredForMode = [];
+            foreach ($rows as $r) {
+                $k = isset($r->attribute_key) ? (string) $r->attribute_key : '';
+                if ($k === '') continue;
+                $applies = null;
+                if (isset($r->applies_to_transaction_modes) && $r->applies_to_transaction_modes) {
+                    $decoded = json_decode((string) $r->applies_to_transaction_modes, true);
+                    if (is_array($decoded)) {
+                        $list = array_values(array_filter(array_map('strval', $decoded)));
+                        if (!empty($list)) $applies = $list;
+                    }
+                }
+                $appliesMap[$k] = $applies; // null => all modes
+
+                $isReq = $hasNewFields && isset($r->required) ? (bool) $r->required : false;
+                if ($isReq) {
+                    if ($applies === null || in_array($effectiveMode, $applies, true)) {
+                        $requiredForMode[] = $k;
+                    }
+                }
+            }
+
+            // Drop keys not applicable for this mode (but keep policy keys always).
+            foreach (array_keys($attributes) as $k) {
+                if ($k === 'offer_variant' || $k === 'interaction_mode') continue;
+                if (!array_key_exists($k, $appliesMap)) continue; // unknown keys handled earlier
+                $applies = $appliesMap[$k];
+                if (is_array($applies) && !in_array($effectiveMode, $applies, true)) {
+                    unset($attributes[$k]);
+                    $droppedKeys[] = $k;
+                }
+            }
+
+            $requiredAttributes = $requiredForMode;
+        } else {
+            // Back-compat: if applies column doesn't exist, required = all required keys.
+            if ($hasNewFields) {
+                $requiredAttributes = \Illuminate\Support\Facades\DB::table('category_filter_schema')
+                    ->where('category_id', $categoryId)
+                    ->where('status', 'active')
+                    ->where('required', true)
+                    ->pluck('attribute_key')
+                    ->toArray();
+            }
+        }
+
+        // Enforce required keys (mode-aware when applies_to_transaction_modes exists).
+        foreach ($requiredAttributes as $attrKey) {
+            if (!array_key_exists($attrKey, $attributes)) {
+                return response()->json([
+                    'error' => 'missing_required_attribute',
+                    'message' => "Required attribute '{$attrKey}' is missing",
+                    'required_attributes' => $requiredAttributes
+                ], 422);
+            }
+            $v = $attributes[$attrKey];
+            $isEmpty = $v === null
+                || (is_string($v) && trim($v) === '')
+                || (is_array($v) && count($v) === 0);
+            if ($isEmpty) {
+                return response()->json([
+                    'error' => 'missing_required_attribute',
+                    'message' => "Required attribute '{$attrKey}' is missing or empty",
+                    'required_attributes' => $requiredAttributes
+                ], 422);
+            }
+        }
+
+        if (!empty($droppedKeys)) {
+            try {
+                if (app()->environment('local') || env('APP_DEBUG', 'false') === 'true') {
+                    \Illuminate\Support\Facades\Log::debug('Dropped mode-incompatible listing attributes (schema applicability)', [
+                        'category_id' => (int) $categoryId,
+                        'effective_mode' => $effectiveMode,
+                        'dropped_keys' => array_values($droppedKeys),
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                // ignore logging failures (must not block listing writes)
+            }
+        }
+
         // Type check attributes against attribute definitions
         if (!empty($attributes)) {
             $attributeDefs = \Illuminate\Support\Facades\DB::table('attributes')
@@ -424,4 +500,3 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         ];
     }
 }
-
