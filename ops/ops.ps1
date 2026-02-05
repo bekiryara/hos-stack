@@ -43,6 +43,7 @@ function Show-Help {
   Write-Host "  openapi    Run openapi_contract.ps1" -ForegroundColor White
   Write-Host "  conformance Run conformance.ps1" -ForegroundColor White
   Write-Host "  pazar-spine Run pazar_spine_check.ps1" -ForegroundColor White
+  Write-Host "  v2-gate    Run v2_gate.ps1 (0-targets)" -ForegroundColor White
   Write-Host "  messaging  Run messaging_contract_check.ps1" -ForegroundColor White
   Write-Host ""
   Write-Host "Examples:" -ForegroundColor Yellow
@@ -50,6 +51,7 @@ function Show-Help {
   Write-Host "  .\ops\ops.ps1 prototype" -ForegroundColor White
   Write-Host "  .\ops\ops.ps1 run -Profile Full" -ForegroundColor White
   Write-Host "  .\ops\ops.ps1 run -Profile Prototype -CheckDemoSeed" -ForegroundColor White
+  Write-Host "  .\ops\ops.ps1 v2-gate" -ForegroundColor White
 }
 
 function Invoke-TargetScript {
@@ -109,6 +111,7 @@ switch ($cmd) {
   { $_ -in @("openapi", "openapi_contract") } { Invoke-TargetScript -RelPath "openapi_contract.ps1"; break }
   { $_ -in @("conformance") } { Invoke-TargetScript -RelPath "conformance.ps1"; break }
   { $_ -in @("pazar-spine", "pazar_spine") } { Invoke-TargetScript -RelPath "pazar_spine_check.ps1"; break }
+  { $_ -in @("v2-gate", "v2_gate", "gate-v2") } { Invoke-TargetScript -RelPath "v2_gate.ps1"; break }
   { $_ -in @("messaging", "messaging_contract") } { Invoke-TargetScript -RelPath "messaging_contract_check.ps1"; break }
   default {
     Write-Host ("Unknown command: {0}" -f $Command) -ForegroundColor Red

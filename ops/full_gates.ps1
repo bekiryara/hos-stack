@@ -5,8 +5,9 @@
 #   1) verify
 #   2) openapi_contract
 #   3) conformance
-#   4) pazar_spine_check
-#   5) messaging_contract_check
+#   4) v2_gate (0-targets)
+#   5) pazar_spine_check
+#   6) messaging_contract_check
 #
 # Exit codes: 0 PASS, 1 FAIL
 
@@ -53,8 +54,9 @@ Write-Host ("Timestamp: {0}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')) -Foreg
 Run-Step -Label "1) verify" -ScriptRel "verify.ps1"
 Run-Step -Label "2) openapi_contract" -ScriptRel "openapi_contract.ps1"
 Run-Step -Label "3) conformance" -ScriptRel "conformance.ps1"
-Run-Step -Label "4) pazar_spine_check" -ScriptRel "pazar_spine_check.ps1"
-Run-Step -Label "5) messaging_contract_check" -ScriptRel "messaging_contract_check.ps1"
+Run-Step -Label "4) v2_gate" -ScriptRel "v2_gate.ps1"
+Run-Step -Label "5) pazar_spine_check" -ScriptRel "pazar_spine_check.ps1"
+Run-Step -Label "6) messaging_contract_check" -ScriptRel "messaging_contract_check.ps1"
 
 Write-Host ""
 Write-Host "PASS: FULL GATES" -ForegroundColor Green

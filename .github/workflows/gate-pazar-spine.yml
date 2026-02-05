@@ -9,6 +9,7 @@ on:
       - 'ops/catalog_contract_check.ps1'
       - 'ops/listing_contract_check.ps1'
       - 'ops/reservation_contract_check.ps1'
+      - 'ops/v2_gate.ps1'
       - 'docs/SPEC.md'
       - '.github/workflows/gate-pazar-spine.yml'
   push:
@@ -17,6 +18,7 @@ on:
     paths:
       - 'work/pazar/**'
       - 'ops/pazar_spine_check.ps1'
+      - 'ops/v2_gate.ps1'
       - '.github/workflows/gate-pazar-spine.yml'
 
 jobs:
@@ -59,6 +61,11 @@ jobs:
       
       - name: Install PowerShell
         uses: microsoft/setup-powershell@v1
+      
+      - name: Run V2 Gate (0-targets)
+        run: |
+          pwsh -File ./ops/v2_gate.ps1
+        continue-on-error: false
       
       - name: Run Pazar Spine Check
         run: |

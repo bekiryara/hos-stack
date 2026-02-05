@@ -12,10 +12,14 @@ use RuntimeException;
 final class CatalogImportService
 {
     /**
-     * V1 importer rules (from plan):
+     * Importer rules:
      * - Deterministic reads
      * - Fail-fast validations
-     * - Apply is "clean DB only" + transactional (ya hep ya hiç)
+     * - Clean-install apply is "clean DB only" + transactional (ya hep ya hiç)
+     *
+     * Note:
+     * - `apply()` = clean install path (requires clean DB)
+     * - `syncApply()` = in-place sync path (no clean DB requirement; no deletes)
      */
 
     private const ALLOWED_CATEGORY_STATUS = ['active', 'inactive'];
@@ -45,6 +49,11 @@ final class CatalogImportService
     {
         $meta = $this->readJsonFile($this->path('manifest.meta.json'), expectedType: 'object');
         $attributes = $this->readJsonFile($this->path('attributes.json'), expectedType: 'array');
+        $aliases = [];
+        $aliasesPath = $this->path('aliases.json');
+        if (File::exists($aliasesPath)) {
+            $aliases = $this->readJsonFile($aliasesPath, expectedType: 'object');
+        }
 
         $categories = [];
         foreach ($this->listJsonFiles($this->path('categories')) as $file) {
@@ -65,6 +74,7 @@ final class CatalogImportService
         return [
             'meta' => $meta,
             'attributes' => $attributes,
+            'aliases' => $aliases,
             'categories' => $categories,
             'schemaBlocks' => $schemaBlocks,
         ];
@@ -159,6 +169,38 @@ final class CatalogImportService
                 'status' => $status,
                 'sort_order' => $sortOrder,
             ];
+        }
+
+        // --- aliases (V2) ---
+        $aliases = $m['aliases'] ?? null;
+        if (!is_null($aliases)) {
+            if (!is_array($aliases)) {
+                throw new RuntimeException('aliases.json must be a JSON object (map old_slug -> new_slug).');
+            }
+            $usedNew = [];
+            foreach ($aliases as $old => $new) {
+                if (!is_string($old) || $old === '') {
+                    throw new RuntimeException('aliases.json keys must be non-empty strings (old_slug).');
+                }
+                if (!is_string($new) || $new === '') {
+                    throw new RuntimeException("aliases.json[$old] must be a non-empty string (new_slug).");
+                }
+                if ($old === $new) {
+                    throw new RuntimeException("aliases.json contains self-mapping: {$old} -> {$new}");
+                }
+                // New slug must exist in manifest categories to avoid dangling renames.
+                if (!isset($bySlug[$new])) {
+                    throw new RuntimeException("aliases.json maps to unknown new_slug not in categories manifests: {$new}");
+                }
+                // Avoid ambiguity: manifest must not contain the old slug (rename-only contract).
+                if (isset($bySlug[$old])) {
+                    throw new RuntimeException("aliases.json old_slug must not be present in categories manifests: {$old}");
+                }
+                if (isset($usedNew[$new])) {
+                    throw new RuntimeException("aliases.json maps multiple old slugs to the same new_slug: {$new}");
+                }
+                $usedNew[$new] = true;
+            }
         }
 
         // Parent existence check (fail-fast)
@@ -424,6 +466,167 @@ final class CatalogImportService
                     ];
                 }
                 DB::table('category_filter_schema')->insert($rows);
+            }
+        }, attempts: 1);
+    }
+
+    /**
+     * V2: In-place sync (no clean DB requirement).
+     * - Inserts missing categories/attributes/schema.
+     * - Updates existing rows to match manifest.
+     * - Marks schema rows missing from manifest as inactive (no deletes).
+     */
+    public function syncApply(array $m): void
+    {
+        $this->assertDbReadyForApply();
+
+        $categories = $this->normalizeCategories($m['categories'] ?? []);
+        $attributes = $this->normalizeAttributes($m['attributes'] ?? []);
+        $schemaRows = $this->expandSchemaRows($m['schemaBlocks'] ?? []);
+        $aliases = is_array($m['aliases'] ?? null) ? $m['aliases'] : [];
+
+        DB::transaction(function () use ($categories, $attributes, $schemaRows, $aliases) {
+            $now = CarbonImmutable::now()->toDateTimeString();
+
+            // 0) Apply alias renames (slug updates) best-effort, fail-fast on conflicts.
+            $this->applyCategoryAliasesOrFail($aliases);
+
+            // 1) categories: insert missing + update fields/parent_id
+            $slugToIdExisting = DB::table('categories')->pluck('id', 'slug')->toArray();
+            $slugToIdExisting = array_map(fn ($v) => (int)$v, $slugToIdExisting);
+
+            $missing = [];
+            foreach ($categories as $c) {
+                if (!isset($slugToIdExisting[$c['slug']])) {
+                    $missing[] = $c;
+                }
+            }
+
+            $slugToId = $this->insertCategoriesParentFirst($missing, $now, $slugToIdExisting);
+
+            // Update all manifest categories deterministically (parent_id/name/status/sort_order)
+            foreach ($categories as $c) {
+                $parentId = null;
+                if ($c['parent_slug'] !== null) {
+                    $parentId = $slugToId[$c['parent_slug']] ?? null;
+                    if ($parentId === null) {
+                        throw new RuntimeException("Unable to resolve parent_slug during sync: {$c['slug']} -> {$c['parent_slug']}");
+                    }
+                }
+                DB::table('categories')
+                    ->where('slug', $c['slug'])
+                    ->update([
+                        'parent_id' => $parentId,
+                        'name' => $c['title'],
+                        'status' => $c['status'],
+                        'sort_order' => $c['sort_order'],
+                        'updated_at' => $now,
+                    ]);
+            }
+
+            // 2) attributes: insert missing + update existing (by key)
+            $attrExisting = DB::table('attributes')->pluck('key')->map(fn ($k) => (string)$k)->all();
+            $attrExistingSet = [];
+            foreach ($attrExisting as $k) { $attrExistingSet[$k] = true; }
+
+            $attrInserts = [];
+            foreach ($attributes as $a) {
+                if (!isset($attrExistingSet[$a['key']])) {
+                    $attrInserts[] = [
+                        'key' => $a['key'],
+                        'value_type' => $a['value_type'],
+                        'unit' => $a['unit'],
+                        'description' => $a['description'],
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                } else {
+                    DB::table('attributes')->where('key', $a['key'])->update([
+                        'value_type' => $a['value_type'],
+                        'unit' => $a['unit'],
+                        'description' => $a['description'],
+                        'updated_at' => $now,
+                    ]);
+                }
+            }
+            if (count($attrInserts) > 0) {
+                DB::table('attributes')->insert($attrInserts);
+            }
+
+            // 3) schema: insert missing + update existing (by category_id + attribute_key), no deletes.
+            $schemaExisting = DB::table('category_filter_schema')
+                ->select(['category_id', 'attribute_key'])
+                ->get()
+                ->map(function ($r) {
+                    return ((int)$r->category_id) . '|' . ((string)$r->attribute_key);
+                })
+                ->all();
+            $schemaExistingSet = [];
+            foreach ($schemaExisting as $k) { $schemaExistingSet[$k] = true; }
+
+            $schemaInserts = [];
+            $manifestPairsByCategoryId = []; // category_id => set(pairKey)
+            foreach ($schemaRows as $r) {
+                $categoryId = $slugToId[$r['category_slug']] ?? null;
+                if ($categoryId === null) {
+                    throw new RuntimeException("Schema references unknown category_slug at sync time: {$r['category_slug']}");
+                }
+                $pairKey = $categoryId . '|' . $r['attribute_key'];
+                $manifestPairsByCategoryId[$categoryId][$pairKey] = true;
+
+                if (!isset($schemaExistingSet[$pairKey])) {
+                    $schemaInserts[] = [
+                        'category_id' => $categoryId,
+                        'attribute_key' => $r['attribute_key'],
+                        'ui_component' => $r['ui_component'],
+                        'required' => $r['required'],
+                        'filter_mode' => $r['filter_mode'],
+                        'rules_json' => $r['rules_json'],
+                        'applies_to_transaction_modes' => $r['applies_to_transaction_modes'],
+                        'status' => 'active',
+                        'sort_order' => $r['sort_order'],
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                } else {
+                    DB::table('category_filter_schema')
+                        ->where('category_id', $categoryId)
+                        ->where('attribute_key', $r['attribute_key'])
+                        ->update([
+                            'ui_component' => $r['ui_component'],
+                            'required' => $r['required'],
+                            'filter_mode' => $r['filter_mode'],
+                            'rules_json' => $r['rules_json'],
+                            'applies_to_transaction_modes' => $r['applies_to_transaction_modes'],
+                            'status' => 'active',
+                            'sort_order' => $r['sort_order'],
+                            'updated_at' => $now,
+                        ]);
+                }
+            }
+            if (count($schemaInserts) > 0) {
+                DB::table('category_filter_schema')->insert($schemaInserts);
+            }
+
+            // Mark schema rows that are not in manifest as inactive (for categories in manifest only)
+            $categoryIdsInManifest = array_values(array_unique(array_map(fn ($c) => $slugToId[$c['slug']] ?? null, $categories)));
+            $categoryIdsInManifest = array_values(array_filter($categoryIdsInManifest, fn ($v) => !is_null($v)));
+            foreach ($categoryIdsInManifest as $cid) {
+                $pairsSet = $manifestPairsByCategoryId[$cid] ?? [];
+                $rows = DB::table('category_filter_schema')
+                    ->where('category_id', $cid)
+                    ->where('status', 'active')
+                    ->select(['attribute_key'])
+                    ->get();
+                foreach ($rows as $row) {
+                    $k = $cid . '|' . ((string)$row->attribute_key);
+                    if (!isset($pairsSet[$k])) {
+                        DB::table('category_filter_schema')
+                            ->where('category_id', $cid)
+                            ->where('attribute_key', (string)$row->attribute_key)
+                            ->update(['status' => 'inactive', 'updated_at' => $now]);
+                    }
+                }
             }
         }, attempts: 1);
     }
@@ -696,7 +899,7 @@ final class CatalogImportService
      * @param list<array{slug:string,parent_slug:?string,title:string,status:string,sort_order:int}> $categories
      * @return array<string,int> slug => id
      */
-    private function insertCategoriesParentFirst(array $categories, string $now): array
+    private function insertCategoriesParentFirst(array $categories, string $now, array $slugToIdInitial = []): array
     {
         // Build index
         $pending = [];
@@ -704,11 +907,11 @@ final class CatalogImportService
             $pending[$c['slug']] = $c;
         }
 
-        $slugToId = [];
+        $slugToId = $slugToIdInitial;
 
         // Fast path: nothing to do
         if (count($pending) === 0) {
-            return [];
+            return $slugToId;
         }
 
         while (count($pending) > 0) {
@@ -747,6 +950,39 @@ final class CatalogImportService
         }
 
         return $slugToId;
+    }
+
+    /**
+     * V2: Apply slug renames from aliases.json.
+     *
+     * Contract:
+     * - If old slug exists and new slug does not exist => rename (update slug).
+     * - If both exist => FAIL (ambiguous).
+     * - If old missing => ignore.
+     *
+     * @param array<string,string> $aliases
+     */
+    private function applyCategoryAliasesOrFail(array $aliases): void
+    {
+        if (count($aliases) === 0) {
+            return;
+        }
+        foreach ($aliases as $old => $new) {
+            $old = (string)$old;
+            $new = is_string($new) ? $new : (string)$new;
+            if ($old === '' || $new === '' || $old === $new) {
+                continue;
+            }
+            $oldRow = DB::table('categories')->where('slug', $old)->first();
+            if (!$oldRow) {
+                continue;
+            }
+            $newRow = DB::table('categories')->where('slug', $new)->first();
+            if ($newRow) {
+                throw new RuntimeException("Alias conflict: both old and new slugs exist in DB: {$old} -> {$new}");
+            }
+            DB::table('categories')->where('slug', $old)->update(['slug' => $new]);
+        }
     }
 }
 

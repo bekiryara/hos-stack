@@ -6,7 +6,7 @@ use App\Catalog\Import\CatalogImportService;
 use Illuminate\Database\Seeder;
 
 /**
- * Catalog Spine Seeder (V2 direction):
+ * Catalog Spine Seeder (manifest-backed):
  *
  * IMPORTANT: This seeder is NOT a data store.
  * Catalog data (categories/attributes/schema) MUST live in manifests:
