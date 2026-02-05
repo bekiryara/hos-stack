@@ -1,97 +1,23 @@
 {
   "source": "autoevolution (ilyasozkurt/automobile-models-and-specs) / automobiles.json",
-  "generated_at": "2026-02-05T09:46:04.204Z",
+  "generated_at": "2026-02-05T22:16:40.585Z",
   "notes": [
     "Models are extracted from Autoevolution 'automobiles.json' names, then de-duplicated per brand.",
     "Brands are filtered by the TR whitelist in catalog manifests (arabam.com derived).",
-    "Model labels are best-effort (brand prefix + common suffix + trailing year ranges removed)."
+    "Model labels are best-effort (brand prefix + common suffix + trailing year ranges removed).",
+    "Backfilled missing brand model lists from arabam.com GetFacets SelectedCategory.SubCategories at 2026-02-05T22:16:40.585Z. Only applied when existing list was empty."
   ],
   "stats": {
     "automobiles_seen": 7207,
-    "automobiles_kept": 4066,
-    "brands_matched": 59,
-    "brands_unmatched": 20
+    "automobiles_kept": 4116,
+    "brands_matched": 78,
+    "brands_unmatched": 1,
+    "arabam_backfilled_brands": 19
   },
   "unmatched_tr_brands": [
     {
-      "slug": "otomobil-anadol",
-      "title": "Anadol"
-    },
-    {
       "slug": "otomobil-arora",
       "title": "Arora"
-    },
-    {
-      "slug": "otomobil-byd",
-      "title": "BYD"
-    },
-    {
-      "slug": "otomobil-chery",
-      "title": "Chery"
-    },
-    {
-      "slug": "otomobil-ikco",
-      "title": "Ikco"
-    },
-    {
-      "slug": "otomobil-kuba",
-      "title": "Kuba"
-    },
-    {
-      "slug": "otomobil-leapmotor",
-      "title": "Leapmotor"
-    },
-    {
-      "slug": "otomobil-nieve",
-      "title": "Nieve"
-    },
-    {
-      "slug": "otomobil-reeder",
-      "title": "Reeder"
-    },
-    {
-      "slug": "otomobil-regal-raptor",
-      "title": "Regal Raptor"
-    },
-    {
-      "slug": "otomobil-relive",
-      "title": "Relive"
-    },
-    {
-      "slug": "otomobil-rks",
-      "title": "RKS"
-    },
-    {
-      "slug": "otomobil-rover",
-      "title": "Rover"
-    },
-    {
-      "slug": "otomobil-tata",
-      "title": "Tata"
-    },
-    {
-      "slug": "otomobil-the-london-taxi",
-      "title": "The London Taxi"
-    },
-    {
-      "slug": "otomobil-tofas",
-      "title": "Tofaş"
-    },
-    {
-      "slug": "otomobil-togg",
-      "title": "TOGG"
-    },
-    {
-      "slug": "otomobil-vanderhall",
-      "title": "Vanderhall"
-    },
-    {
-      "slug": "otomobil-volta",
-      "title": "Volta"
-    },
-    {
-      "slug": "otomobil-yuki",
-      "title": "Yuki"
     }
   ],
   "brand_slug_to_autoevolution_brand": {
@@ -408,7 +334,9 @@
       "Tonale",
       "Torpedo 20-30 HP"
     ],
-    "otomobil-anadol": [],
+    "otomobil-anadol": [
+      "A2 SL"
+    ],
     "otomobil-arora": [],
     "otomobil-aston-martin": [
       "Cygnet",
@@ -993,7 +921,12 @@
       "Terraza",
       "Verano"
     ],
-    "otomobil-byd": [],
+    "otomobil-byd": [
+      "Dolphin",
+      "Han",
+      "Seal",
+      "Seal U"
+    ],
     "otomobil-cadillac": [
       "Allante",
       "ATS",
@@ -1044,7 +977,12 @@
       "XT6",
       "XTS"
     ],
-    "otomobil-chery": [],
+    "otomobil-chery": [
+      "Alia",
+      "Chance",
+      "Kimo",
+      "Niche"
+    ],
     "otomobil-chevrolet": [
       "2019 Corvette ZR1",
       "2019 Cvevrolet Silverado 2500",
@@ -2091,7 +2029,9 @@
       "Venue",
       "XG"
     ],
-    "otomobil-ikco": [],
+    "otomobil-ikco": [
+      "Samand"
+    ],
     "otomobil-infiniti": [
       "2013 Q60 Convertible IPL",
       "EX",
@@ -2238,7 +2178,9 @@
       "Venga",
       "XCeed"
     ],
-    "otomobil-kuba": [],
+    "otomobil-kuba": [
+      "City"
+    ],
     "otomobil-lada": [
       "110",
       "111",
@@ -2380,7 +2322,9 @@
       "Ypsilon Unyca",
       "Zeta"
     ],
-    "otomobil-leapmotor": [],
+    "otomobil-leapmotor": [
+      "T03"
+    ],
     "otomobil-lexus": [
       "CT",
       "ES",
@@ -3165,7 +3109,9 @@
       "Space Star",
       "Starion"
     ],
-    "otomobil-nieve": [],
+    "otomobil-nieve": [
+      "Evzoom"
+    ],
     "otomobil-nissan": [
       "100 NX",
       "200 SX",
@@ -3784,9 +3730,16 @@
       "Suprima S",
       "Waja/Impian"
     ],
-    "otomobil-reeder": [],
-    "otomobil-regal-raptor": [],
-    "otomobil-relive": [],
+    "otomobil-reeder": [
+      "Reev Fancy"
+    ],
+    "otomobil-regal-raptor": [
+      "K4",
+      "K5 Long"
+    ],
+    "otomobil-relive": [
+      "EZI"
+    ],
     "otomobil-renault": [
       "11 3 door",
       "11 5-door",
@@ -3902,7 +3855,11 @@
       "Wind",
       "ZOE"
     ],
-    "otomobil-rks": [],
+    "otomobil-rks": [
+      "A1",
+      "M5",
+      "MT3"
+    ],
     "otomobil-rolls-royce": [
       "Camargue",
       "Corniche I/ II/ III/ IV",
@@ -3933,7 +3890,22 @@
       "Spectre",
       "Wraith"
     ],
-    "otomobil-rover": [],
+    "otomobil-rover": [
+      "200",
+      "214",
+      "216",
+      "220",
+      "25",
+      "414",
+      "416",
+      "420",
+      "45",
+      "620",
+      "623 Si",
+      "75",
+      "820",
+      "827"
+    ],
     "otomobil-saab": [
       "9-2X",
       "9-3",
@@ -4166,7 +4138,13 @@
       "X-90",
       "XL7"
     ],
-    "otomobil-tata": [],
+    "otomobil-tata": [
+      "Indica",
+      "Indigo",
+      "Manza",
+      "Marina",
+      "Vista"
+    ],
     "otomobil-tesla": [
       "Cybertruck",
       "Model 3",
@@ -4175,9 +4153,20 @@
       "Model Y",
       "Roadster"
     ],
-    "otomobil-the-london-taxi": [],
-    "otomobil-tofas": [],
-    "otomobil-togg": [],
+    "otomobil-the-london-taxi": [
+      "TX4"
+    ],
+    "otomobil-tofas": [
+      "Doğan",
+      "Kartal",
+      "Murat",
+      "Serçe",
+      "Şahin"
+    ],
+    "otomobil-togg": [
+      "T10F",
+      "T10X"
+    ],
     "otomobil-toyota": [
       "2011Toyota Innova",
       "4Runner",
@@ -4310,7 +4299,9 @@
       "Yaris TS 5 Doors",
       "Yaris Verso"
     ],
-    "otomobil-vanderhall": [],
+    "otomobil-vanderhall": [
+      "Carmel"
+    ],
     "otomobil-volkswagen": [
       "2013 VW e-UP!",
       "2020",
@@ -4473,7 +4464,9 @@
       "Vento/Jetta",
       "XL1"
     ],
-    "otomobil-volta": [],
+    "otomobil-volta": [
+      "EV1"
+    ],
     "otomobil-volvo": [
       "142",
       "144",
@@ -4536,6 +4529,9 @@
       "XC70/ V70XC",
       "XC90"
     ],
-    "otomobil-yuki": []
+    "otomobil-yuki": [
+      "Amy",
+      "Hector"
+    ]
   }
 }

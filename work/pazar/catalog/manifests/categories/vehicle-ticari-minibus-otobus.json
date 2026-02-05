@@ -1,0 +1,233 @@
+[
+  {
+    "slug": "ticari-arac-minibus-midibus",
+    "parent_slug": "ticari-arac",
+    "title": "Minibüs & Midibüs",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-bmc",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "BMC",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-citroen",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Citroen",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-fiat",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Fiat",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-ford-otosan",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Ford - Otosan",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-gaz",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "GAZ",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-hyundai",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Hyundai",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-isuzu",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Isuzu",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-iveco-otoyol",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Iveco - Otoyol",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-karsan",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Karsan",
+    "status": "active",
+    "sort_order": 90
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-kia",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Kia",
+    "status": "active",
+    "sort_order": 100
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-magirus",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Magirus",
+    "status": "active",
+    "sort_order": 110
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-mercedes-benz",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Mercedes - Benz",
+    "status": "active",
+    "sort_order": 120
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-mitsubishi",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Mitsubishi",
+    "status": "active",
+    "sort_order": 130
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-opel",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Opel",
+    "status": "active",
+    "sort_order": 140
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-otokar",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Otokar",
+    "status": "active",
+    "sort_order": 150
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-peugeot",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Peugeot",
+    "status": "active",
+    "sort_order": 160
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-renault",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Renault",
+    "status": "active",
+    "sort_order": 170
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-temsa",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Temsa",
+    "status": "active",
+    "sort_order": 180
+  },
+  {
+    "slug": "ticari-arac-minibus-midibus-volkswagen",
+    "parent_slug": "ticari-arac-minibus-midibus",
+    "title": "Volkswagen",
+    "status": "active",
+    "sort_order": 190
+  },
+  {
+    "slug": "ticari-arac-otobus",
+    "parent_slug": "ticari-arac",
+    "title": "Otobüs",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "ticari-arac-otobus-bmc",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "BMC",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "ticari-arac-otobus-guleryuz",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Güleryüz",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "ticari-arac-otobus-isuzu",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Isuzu",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "ticari-arac-otobus-iveco",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Iveco - Otoyol",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "ticari-arac-otobus-karsan",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Karsan",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "ticari-arac-otobus-man",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "MAN",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "ticari-arac-otobus-mercedes-benz",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Mercedes - Benz",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "ticari-arac-otobus-neoplan",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Neoplan",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "ticari-arac-otobus-otokar",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Otokar",
+    "status": "active",
+    "sort_order": 90
+  },
+  {
+    "slug": "ticari-arac-otobus-setra",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Setra",
+    "status": "active",
+    "sort_order": 100
+  },
+  {
+    "slug": "ticari-arac-otobus-temsa",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Temsa",
+    "status": "active",
+    "sort_order": 110
+  },
+  {
+    "slug": "ticari-arac-otobus-tezeller",
+    "parent_slug": "ticari-arac-otobus",
+    "title": "Tezeller",
+    "status": "active",
+    "sort_order": 120
+  }
+]

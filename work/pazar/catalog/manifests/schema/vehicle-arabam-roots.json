@@ -1,0 +1,284 @@
+[
+  {
+    "schema_version": 1,
+    "category_slugs": ["arazi-suv-pick-up"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/arazi-suv-pick-up/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/arazi-suv-pick-up/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_body_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/arazi-suv-pick-up/vehicle_body_type.tr.json","sort_order":55,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_color","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/arazi-suv-pick-up/vehicle_color.tr.json","sort_order":56,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_drive_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/arazi-suv-pick-up/vehicle_drive_type.tr.json","sort_order":57,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/arazi-suv-pick-up/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/arazi-suv-pick-up/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_damage_status","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/arazi-suv-pick-up/vehicle_damage_status.tr.json","sort_order":63,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_heavy_damage_record","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":64,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/arazi-suv-pick-up/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["ticari-arac"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_brand.tr.json","sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seat_count","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_seat_count.tr.json","sort_order":22,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_upper_body","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_upper_body.tr.json","sort_order":24,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_color","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_color.tr.json","sort_order":56,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_damage_status","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_damage_status.tr.json","sort_order":63,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_heavy_damage_record","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":64,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/ticari-arac/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["motosiklet"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/motosiklet/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/motosiklet/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_color","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/motosiklet/vehicle_color.tr.json","sort_order":56,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/motosiklet/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/motosiklet/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/motosiklet/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["minivan-panelvan"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/minivan-panelvan/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/minivan-panelvan/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_body_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/minivan-panelvan/vehicle_body_type.tr.json","sort_order":55,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_color","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/minivan-panelvan/vehicle_color.tr.json","sort_order":56,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_drive_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/minivan-panelvan/vehicle_drive_type.tr.json","sort_order":57,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/minivan-panelvan/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/minivan-panelvan/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_damage_status","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/minivan-panelvan/vehicle_damage_status.tr.json","sort_order":63,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_heavy_damage_record","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":64,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/minivan-panelvan/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["kiralik-araclar"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/kiralik-araclar/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/kiralik-araclar/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_body_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/kiralik-araclar/vehicle_body_type.tr.json","sort_order":55,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/kiralik-araclar/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/kiralik-araclar/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/kiralik-araclar/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price_per_day","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000},"sort_order":80,"applies_to_transaction_modes":["rental"]},
+      {"attribute_key":"vehicle_min_rent_days","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1,"max":365},"sort_order":90,"applies_to_transaction_modes":["rental"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["hasarli-araclar"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/hasarli-araclar/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/hasarli-araclar/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_color","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/hasarli-araclar/vehicle_color.tr.json","sort_order":56,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/hasarli-araclar/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_damage_status","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/hasarli-araclar/vehicle_damage_status.tr.json","sort_order":63,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_heavy_damage_record","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":64,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/hasarli-araclar/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["yedek-parca-aksesuar-donanim-tuning"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/yedek-parca-aksesuar-donanim-tuning/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["traktor"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_drive_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/traktor/vehicle_drive_type.tr.json","sort_order":57,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/traktor/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/traktor/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/traktor/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["tarim-is-makineleri"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/tarim-is-makineleri/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/tarim-is-makineleri/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/tarim-is-makineleri/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["klasik-araclar"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/klasik-araclar/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/klasik-araclar/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_body_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/klasik-araclar/vehicle_body_type.tr.json","sort_order":55,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_color","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/klasik-araclar/vehicle_color.tr.json","sort_order":56,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/klasik-araclar/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/klasik-araclar/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_damage_status","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/klasik-araclar/vehicle_damage_status.tr.json","sort_order":63,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_heavy_damage_record","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":64,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/klasik-araclar/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["elektrikli-araclar"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_color","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/elektrikli-araclar/vehicle_color.tr.json","sort_order":56,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/elektrikli-araclar/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/elektrikli-araclar/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/elektrikli-araclar/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["atv-utv"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/atv-utv/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/atv-utv/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_drive_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/atv-utv/vehicle_drive_type.tr.json","sort_order":57,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/atv-utv/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/atv-utv/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/atv-utv/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["karavan"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/karavan/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/karavan/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/karavan/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]},
+      {"attribute_key":"vehicle_price_per_day","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000},"sort_order":80,"applies_to_transaction_modes":["rental"]},
+      {"attribute_key":"vehicle_min_rent_days","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1,"max":365},"sort_order":90,"applies_to_transaction_modes":["rental"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["engelli-araci"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/engelli-araci/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/engelli-araci/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_body_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/engelli-araci/vehicle_body_type.tr.json","sort_order":55,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_color","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/engelli-araci/vehicle_color.tr.json","sort_order":56,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/engelli-araci/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/engelli-araci/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/engelli-araci/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["modifiyeli-arabalar"],
+    "fields": [
+      {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/modifiyeli-arabalar/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/modifiyeli-arabalar/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_drive_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/modifiyeli-arabalar/vehicle_drive_type.tr.json","sort_order":57,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_condition","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/modifiyeli-arabalar/vehicle_condition.tr.json","sort_order":58,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_seller_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/modifiyeli-arabalar/vehicle_seller_type.tr.json","sort_order":59,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_km","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":2000000},"sort_order":60,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_swap","ui_component":"boolean","required":false,"filter_mode":"exact","rules":null,"sort_order":65,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_listing_age","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/modifiyeli-arabalar/vehicle_listing_age.tr.json","sort_order":66,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_price","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":0,"max":1000000000},"sort_order":70,"applies_to_transaction_modes":["sale"]}
+    ]
+  }
+]
+

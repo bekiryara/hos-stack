@@ -23,7 +23,9 @@
   {"key":"vehicle_km","value_type":"number","unit":"km","description":"Kilometre"},
   {"key":"vehicle_price","value_type":"number","unit":"TRY","description":"Fiyat"},
   {"key":"vehicle_price_per_day","value_type":"number","unit":"TRY","description":"Günlük fiyat"},
-  {"key":"vehicle_min_rent_days","value_type":"number","unit":"day","description":"Minimum kiralama günü"}
+  {"key":"vehicle_min_rent_days","value_type":"number","unit":"day","description":"Minimum kiralama günü"},
+  {"key":"vehicle_upper_body","value_type":"enum","unit":null,"description":"Üst yapı"},
+  {"key":"vehicle_seat_count","value_type":"enum","unit":null,"description":"Koltuk sayısı"}
   ,
   {"key":"offer_variant","value_type":"enum","unit":null,"description":"Offer/policy variant (e.g., Satılık, Kiralık, Turistik Günlük Kiralık, Devren). Not a category; used as listing policy."}
 ]

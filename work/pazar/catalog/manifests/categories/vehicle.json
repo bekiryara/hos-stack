@@ -1,6 +1,21 @@
 [
   {"slug":"vehicle","parent_slug":null,"title":"Vasıta","status":"active","sort_order":10},
   {"slug":"otomobil","parent_slug":"vehicle","title":"Otomobil","status":"active","sort_order":10},
-  {"slug":"karavan","parent_slug":"vehicle","title":"Karavan","status":"active","sort_order":20}
+  {"slug":"karavan","parent_slug":"vehicle","title":"Karavan","status":"active","sort_order":20},
+
+  {"slug":"arazi-suv-pick-up","parent_slug":"vehicle","title":"Arazi, SUV, Pick-up","status":"active","sort_order":30},
+  {"slug":"motosiklet","parent_slug":"vehicle","title":"Motosiklet","status":"active","sort_order":40},
+  {"slug":"minivan-panelvan","parent_slug":"vehicle","title":"Minivan & Panelvan","status":"active","sort_order":50},
+  {"slug":"ticari-arac","parent_slug":"vehicle","title":"Ticari Araçlar","status":"active","sort_order":60},
+  {"slug":"kiralik-araclar","parent_slug":"vehicle","title":"Kiralık Araçlar","status":"active","sort_order":70},
+  {"slug":"hasarli-araclar","parent_slug":"vehicle","title":"Hasarlı Araçlar","status":"active","sort_order":80},
+  {"slug":"yedek-parca-aksesuar-donanim-tuning","parent_slug":"vehicle","title":"Yedek Parça, Aksesuar, Donanım & Tuning","status":"active","sort_order":90},
+  {"slug":"traktor","parent_slug":"vehicle","title":"Traktör","status":"active","sort_order":100},
+  {"slug":"tarim-is-makineleri","parent_slug":"vehicle","title":"Tarım & İş Makineleri","status":"active","sort_order":110},
+  {"slug":"klasik-araclar","parent_slug":"vehicle","title":"Klasik Araçlar","status":"active","sort_order":120},
+  {"slug":"elektrikli-araclar","parent_slug":"vehicle","title":"Elektrikli Araçlar","status":"active","sort_order":130},
+  {"slug":"atv-utv","parent_slug":"vehicle","title":"ATV & UTV","status":"active","sort_order":140},
+  {"slug":"engelli-araci","parent_slug":"vehicle","title":"Engelli Araçları","status":"active","sort_order":150},
+  {"slug":"modifiyeli-arabalar","parent_slug":"vehicle","title":"Modifiyeli Araçlar","status":"active","sort_order":160}
 ]
 

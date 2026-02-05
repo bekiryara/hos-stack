@@ -1,0 +1,341 @@
+{
+  "source": "arabam.com GetFacets (ticari-arac rest subtypes)",
+  "generated_at": "2026-02-05T22:54:41.269Z",
+  "stats": {
+    "category_slugs_with_models_total": 64,
+    "models_total": 203
+  },
+  "brand_slug_to_models": {
+    "ticari-arac-kamyon-kamyonet-anadol": [
+      "P2"
+    ],
+    "ticari-arac-kamyon-kamyonet-bedford": [
+      "Genoto"
+    ],
+    "ticari-arac-kamyon-kamyonet-bmc": [
+      "Fatih",
+      "Levend",
+      "Megastar",
+      "Pro",
+      "TM Serisi"
+    ],
+    "ticari-arac-kamyon-kamyonet-chrysler": [
+      "26",
+      "32",
+      "Grand"
+    ],
+    "ticari-arac-kamyon-kamyonet-citroen": [
+      "Jumper"
+    ],
+    "ticari-arac-kamyon-kamyonet-dacia": [
+      "Pick-Up"
+    ],
+    "ticari-arac-kamyon-kamyonet-daewoo": [
+      "Truck 1.9D"
+    ],
+    "ticari-arac-kamyon-kamyonet-daf": [
+      "CF",
+      "LF",
+      "XF"
+    ],
+    "ticari-arac-kamyon-kamyonet-daihatsu": [
+      "Delta"
+    ],
+    "ticari-arac-kamyon-kamyonet-desoto": [
+      "AS 250",
+      "As 600"
+    ],
+    "ticari-arac-kamyon-kamyonet-dfm": [
+      "Çift Kabin",
+      "Tek Kabin"
+    ],
+    "ticari-arac-kamyon-kamyonet-dfsk": [
+      "C31",
+      "C32",
+      "EC35",
+      "Porter I",
+      "Twin Maxi"
+    ],
+    "ticari-arac-kamyon-kamyonet-dodge": [
+      "AS",
+      "AS 250",
+      "Fargo"
+    ],
+    "ticari-arac-kamyon-kamyonet-faw": [
+      "1024"
+    ],
+    "ticari-arac-kamyon-kamyonet-fiat": [
+      "Ducato",
+      "NC",
+      "Pratico",
+      "Strada"
+    ],
+    "ticari-arac-kamyon-kamyonet-ford-trucks": [
+      "1210",
+      "3226",
+      "3233 S",
+      "4445 XD",
+      "Cargo",
+      "F Serisi",
+      "P 100",
+      "Ranger",
+      "Transit"
+    ],
+    "ticari-arac-kamyon-kamyonet-gaz": [
+      "Gazelle",
+      "Next"
+    ],
+    "ticari-arac-kamyon-kamyonet-hino": [
+      "FB"
+    ],
+    "ticari-arac-kamyon-kamyonet-hyundai": [
+      "H",
+      "HD",
+      "Starex"
+    ],
+    "ticari-arac-kamyon-kamyonet-isuzu": [
+      "D-Max",
+      "KB",
+      "N-Wide",
+      "NKR",
+      "NLR",
+      "NNR",
+      "NPR",
+      "NQR",
+      "TF",
+      "TFR",
+      "Tora"
+    ],
+    "ticari-arac-kamyon-kamyonet-iveco": [
+      "120",
+      "250",
+      "330",
+      "35",
+      "49",
+      "50",
+      "65",
+      "70",
+      "72",
+      "75",
+      "80",
+      "85",
+      "EuroCargo",
+      "Stralis",
+      "T-Way",
+      "Trakker"
+    ],
+    "ticari-arac-kamyon-kamyonet-jac": [
+      "HFC"
+    ],
+    "ticari-arac-kamyon-kamyonet-kia": [
+      "Bongo",
+      "Cerez",
+      "K"
+    ],
+    "ticari-arac-kamyon-kamyonet-kuba": [
+      "e-Kamyonet"
+    ],
+    "ticari-arac-kamyon-kamyonet-man": [
+      "12 Serisi",
+      "19 Serisi",
+      "26 Serisi",
+      "32 Serisi",
+      "520 HN",
+      "TGA",
+      "TGE",
+      "TGL",
+      "TGS"
+    ],
+    "ticari-arac-kamyon-kamyonet-mazda": [
+      "B 2200",
+      "B 2500",
+      "E 2200"
+    ],
+    "ticari-arac-kamyon-kamyonet-mercedes-benz": [
+      "Actros",
+      "Antos",
+      "Arocs",
+      "Atego",
+      "Axor",
+      "MB",
+      "Sprinter"
+    ],
+    "ticari-arac-kamyon-kamyonet-mitsubishi": [
+      "Canter",
+      "FE",
+      "L",
+      "TF"
+    ],
+    "ticari-arac-kamyon-kamyonet-nissan": [
+      "Country",
+      "Navara",
+      "SkyStar",
+      "Trade"
+    ],
+    "ticari-arac-kamyon-kamyonet-opel": [
+      "Movano"
+    ],
+    "ticari-arac-kamyon-kamyonet-otokar": [
+      "Atlas"
+    ],
+    "ticari-arac-kamyon-kamyonet-peugeot": [
+      "Boxer Kamyonet",
+      "J9 Kamyonet"
+    ],
+    "ticari-arac-kamyon-kamyonet-relive": [
+      "Light Truck"
+    ],
+    "ticari-arac-kamyon-kamyonet-renault": [
+      "C",
+      "D",
+      "K",
+      "Kerax",
+      "Mascott",
+      "Master",
+      "Messenger",
+      "Midlum",
+      "Premium"
+    ],
+    "ticari-arac-kamyon-kamyonet-samsung": [
+      "SV"
+    ],
+    "ticari-arac-kamyon-kamyonet-scania": [
+      "94",
+      "G",
+      "R"
+    ],
+    "ticari-arac-kamyon-kamyonet-skoda": [
+      "Pick Up"
+    ],
+    "ticari-arac-kamyon-kamyonet-suzuki": [
+      "Carry"
+    ],
+    "ticari-arac-kamyon-kamyonet-tata": [
+      "T35",
+      "Xenon"
+    ],
+    "ticari-arac-kamyon-kamyonet-tenax": [
+      "C35",
+      "C35 D"
+    ],
+    "ticari-arac-kamyon-kamyonet-toyota": [
+      "Hilux"
+    ],
+    "ticari-arac-kamyon-kamyonet-volkswagen": [
+      "Crafter",
+      "LT",
+      "Transporter"
+    ],
+    "ticari-arac-kamyon-kamyonet-volvo": [
+      "FL Serisi",
+      "FM Serisi"
+    ],
+    "ticari-arac-cekici-bmc": [
+      "Pro"
+    ],
+    "ticari-arac-cekici-daf": [
+      "3600",
+      "ATI",
+      "CF",
+      "Diğer Seriler",
+      "XF"
+    ],
+    "ticari-arac-cekici-ford": [
+      "Cargo",
+      "F-Max"
+    ],
+    "ticari-arac-cekici-gaz": [
+      "Business"
+    ],
+    "ticari-arac-cekici-iveco": [
+      "Eurostar",
+      "Eurotech",
+      "S-Way",
+      "Stralis",
+      "Trakker",
+      "Turbostar"
+    ],
+    "ticari-arac-cekici-man": [
+      "26",
+      "F2000",
+      "TGA",
+      "TGS",
+      "TGX"
+    ],
+    "ticari-arac-cekici-maz": [
+      "4x2"
+    ],
+    "ticari-arac-cekici-mercedes-benz": [
+      "Actros",
+      "Arocs",
+      "Axor"
+    ],
+    "ticari-arac-cekici-opel": [
+      "Movano"
+    ],
+    "ticari-arac-cekici-renault": [
+      "D",
+      "Magnum",
+      "Premium",
+      "T"
+    ],
+    "ticari-arac-cekici-scania": [
+      "Diğer Seriler",
+      "G",
+      "L",
+      "M",
+      "P",
+      "R",
+      "S"
+    ],
+    "ticari-arac-cekici-volvo": [
+      "F",
+      "FH",
+      "FM",
+      "N"
+    ],
+    "ticari-arac-dorse-damperli": [
+      "Hafriyat Tipi",
+      "Havuz (Hardox) Tipi",
+      "Kapaklı Tip",
+      "Kaya Tipi"
+    ],
+    "ticari-arac-dorse-konteyner-tasiyici-sasi-grubu": [
+      "Kılçık Şasi",
+      "Uzayabilir Şasi"
+    ],
+    "ticari-arac-dorse-kuru-yuk": [
+      "Kapaklı",
+      "Kapaklı (Kaya Tipi)",
+      "Kapaksız (Platform)"
+    ],
+    "ticari-arac-dorse-lowbed": [
+      "Havuzlu",
+      "Önden Kırmalı"
+    ],
+    "ticari-arac-dorse-tenteli": [
+      "Jumbo",
+      "Mega",
+      "Optima",
+      "Pilot"
+    ],
+    "ticari-arac-romork-tarim-romorklari": [
+      "Açık Kasa"
+    ],
+    "ticari-arac-romork-tasima-romorklari": [
+      "Vasıta Römorku",
+      "Yük Römorku"
+    ],
+    "ticari-arac-karoser-ust-yapi-damperli-grup": [
+      "Ahşap Kasa",
+      "Hafriyat Tipi",
+      "Havuz (Hardox) Tipi",
+      "Kaya Tipi"
+    ],
+    "ticari-arac-karoser-ust-yapi-sabit-kabin": [
+      "Açık Kasa",
+      "Kapalı Kasa",
+      "Özel Kasa"
+    ]
+  }
+}
