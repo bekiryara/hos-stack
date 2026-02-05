@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import HomePage from './pages/HomePage.vue';
 import CategoriesPage from './pages/CategoriesPage.vue';
 import ListingsSearchPage from './pages/ListingsSearchPage.vue';
 import ListingDetailPage from './pages/ListingDetailPage.vue';
@@ -18,7 +19,8 @@ import FirmPortalPage from './pages/FirmPortalPage.vue';
 import { isLoggedIn } from './lib/session.js';
 
 const routes = [
-  { path: '/', component: CategoriesPage },
+  { path: '/', component: HomePage },
+  { path: '/categories', component: CategoriesPage },
   { path: '/search/:categoryId?', component: ListingsSearchPage, props: true },
   { path: '/listing/:id', component: ListingDetailPage, props: true },
   { path: '/listing/:id/message', component: MessagingPage, props: true, meta: { requiresAuth: true } },

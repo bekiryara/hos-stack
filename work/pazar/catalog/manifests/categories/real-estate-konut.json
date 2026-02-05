@@ -1,0 +1,17 @@
+[
+  {"slug":"konut","parent_slug":"real-estate","title":"Konut","status":"active","sort_order":10},
+
+  {"slug":"daire","parent_slug":"konut","title":"Daire","status":"active","sort_order":10},
+  {"slug":"rezidans","parent_slug":"konut","title":"Rezidans","status":"active","sort_order":20},
+  {"slug":"mustakil-ev","parent_slug":"konut","title":"Müstakil Ev","status":"active","sort_order":30},
+  {"slug":"villa","parent_slug":"konut","title":"Villa","status":"active","sort_order":40},
+  {"slug":"ciftlik-evi","parent_slug":"konut","title":"Çiftlik Evi","status":"active","sort_order":50},
+  {"slug":"kosk-konak","parent_slug":"konut","title":"Köşk & Konak","status":"active","sort_order":60},
+  {"slug":"yali","parent_slug":"konut","title":"Yalı","status":"active","sort_order":70},
+  {"slug":"yali-dairesi","parent_slug":"konut","title":"Yalı Dairesi","status":"active","sort_order":80},
+  {"slug":"yazlik","parent_slug":"konut","title":"Yazlık","status":"active","sort_order":90},
+  {"slug":"kooperatif","parent_slug":"konut","title":"Kooperatif","status":"active","sort_order":100},
+
+  {"slug":"devre-mulk","parent_slug":"konut","title":"Devre Mülk","status":"active","sort_order":110},
+  {"slug":"apart-pansiyon","parent_slug":"konut","title":"Apart & Pansiyon","status":"active","sort_order":120}
+]

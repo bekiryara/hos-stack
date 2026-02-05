@@ -1,15 +1,15 @@
 <template>
   <div class="filters-panel">
-    <h3>Filters</h3>
+    <h3>Filtreler</h3>
 
     <div v-if="appliedFilters.length > 0" class="applied-filters">
       <div class="applied-header">
-        <div class="applied-title">Applied</div>
-        <button type="button" class="clear-button" @click="handleClear">Reset filters</button>
+        <div class="applied-title">Seçilenler</div>
+        <button type="button" class="clear-button" @click="handleClear">Sıfırla</button>
       </div>
       <ul class="applied-list">
         <li v-for="f in appliedFilters" :key="f.key">
-          <strong>{{ f.key }}:</strong> {{ f.value }}
+          <strong>{{ f.label }}:</strong> {{ f.value }}
         </li>
       </ul>
     </div>
@@ -23,13 +23,13 @@
           v-model:max="localFormData[filter.attribute_key + '_max']"
         />
       </div>
-      <button type="submit" class="search-button">Search</button>
+      <button type="submit" class="search-button">Ara</button>
     </form>
     <div v-else-if="filtersLoaded" data-marker="filters-empty" class="empty-state">
-      <p>No filters for this category</p>
-      <button type="button" class="search-button" @click="handleSubmit">Search</button>
+      <p>Bu kategoride filtre yok</p>
+      <button type="button" class="search-button" @click="handleSubmit">Ara</button>
     </div>
-    <div v-else class="loading">Loading filters...</div>
+    <div v-else class="loading">Filtreler yükleniyor...</div>
   </div>
 </template>
 
@@ -61,12 +61,30 @@ export default {
     };
   },
   computed: {
+    labelMap() {
+      const map = {};
+      (this.filters || []).forEach((f) => {
+        if (!f || !f.attribute_key) return;
+        const key = String(f.attribute_key);
+        map[key] = String(f.label || f.attribute_key);
+      });
+      return map;
+    },
     appliedFilters() {
       const out = [];
       Object.keys(this.localFormData || {}).forEach((key) => {
         const value = this.localFormData[key];
         if (value !== null && value !== undefined && value !== '') {
-          out.push({ key, value });
+          const rawKey = String(key);
+          const m = rawKey.match(/^(.*)_(min|max)$/);
+          const baseKey = m ? m[1] : rawKey;
+          const suffix = m ? m[2] : '';
+          const baseLabel = this.labelMap[baseKey] || baseKey;
+          const label =
+            suffix === 'min' ? `${baseLabel} (en az)` :
+            suffix === 'max' ? `${baseLabel} (en çok)` :
+            baseLabel;
+          out.push({ key: rawKey, label, value });
         }
       });
       return out;

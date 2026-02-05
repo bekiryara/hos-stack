@@ -146,9 +146,8 @@ nav a:hover {
 main {
   flex: 1;
   padding: 2rem;
-  max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .error {

@@ -1,8 +1,2 @@
-{
-  "schema_version": 1,
-  "category_slugs": ["konut"],
-  "fields": [
-    {"attribute_key":"city","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null}
-  ]
-}
+[]
 

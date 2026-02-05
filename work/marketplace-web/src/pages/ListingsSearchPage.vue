@@ -1,35 +1,56 @@
 <template>
   <div class="listings-search-page" data-marker="marketplace-search">
-    <h2>Search Listings</h2>
-    <div class="category-picker">
-      <label class="category-label">Kategori</label>
-      <CategoryPickerStepper
-        :model-value="categoryId ? Number(categoryId) : null"
-        :categories-tree="categoriesTree"
-        mode="search"
-        @category-change="onCategorySelectFromPicker"
-      />
+    <div class="header-row">
+      <h2>İlan Ara</h2>
+      <router-link to="/" class="secondary-link">Keşfet</router-link>
     </div>
-    <div v-if="loadingFilters" class="loading">Loading filters...</div>
-    <div v-else-if="errorFilters" class="error">{{ errorFilters }}</div>
-    <FiltersPanel
-      v-else
-      :filters="filters"
-      :filters-loaded="filtersLoaded"
-      v-model="filterState"
-      @search="handleSearch"
-    />
-    <div v-if="loadingListings" class="loading">Searching listings...</div>
-    <div v-else-if="errorListings" class="error">{{ errorListings }}</div>
-    <div v-else-if="searchExecuted" data-marker="search-executed">
-      <ListingsGrid v-if="listings && listings.length > 0" :listings="listings" />
-      <div v-else class="empty-state">
-        <p>No listings found</p>
-        <div class="empty-actions">
-          <button type="button" class="secondary-button" @click="resetAllFilters">Reset filters</button>
-          <router-link to="/" class="secondary-link">Browse categories</router-link>
+
+    <div class="search-layout">
+      <aside class="sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-title">Kategori</div>
+          <div class="category-picker-scroll">
+            <CategoryPickerStepper
+              :model-value="categoryId ? Number(categoryId) : null"
+              :categories-tree="categoriesTree"
+              mode="search"
+              @category-change="onCategorySelectFromPicker"
+            />
+          </div>
         </div>
-      </div>
+
+        <div class="sidebar-card">
+          <div v-if="loadingFilters" class="loading">Filtreler yükleniyor...</div>
+          <div v-else-if="errorFilters" class="error">{{ errorFilters }}</div>
+          <FiltersPanel
+            v-else
+            :filters="filters"
+            :filters-loaded="filtersLoaded"
+            v-model="filterState"
+            @search="handleSearch"
+          />
+        </div>
+      </aside>
+
+      <section class="main">
+        <div v-if="loadingListings" class="loading">Sonuçlar yükleniyor...</div>
+        <div v-else-if="errorListings" class="error">{{ errorListings }}</div>
+
+        <div v-else-if="searchExecuted" data-marker="search-executed">
+          <ListingsGrid v-if="listings && listings.length > 0" :listings="listings" />
+          <div v-else class="empty-state">
+            <p>Sonuç bulunamadı</p>
+            <div class="empty-actions">
+              <button type="button" class="secondary-button" @click="resetAllFilters">Sıfırla</button>
+              <router-link to="/" class="secondary-link">Kategorilere dön</router-link>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="hint">
+          Soldan kategori seç, filtrele ve ara.
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -249,19 +270,62 @@ export default {
 </script>
 
 <style scoped>
+.header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
 .listings-search-page h2 {
-  margin-bottom: 1.5rem;
+  margin: 0;
   font-size: 2rem;
 }
 
-.category-picker {
-  margin-bottom: 1rem;
+.search-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 1rem;
+  align-items: start;
 }
 
-.category-label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
+.sidebar {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.sidebar-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.sidebar-title {
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+
+.category-picker-scroll {
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.main {
+  min-height: 320px;
+}
+
+.hint {
+  padding: 1rem;
+  border: 1px dashed #ddd;
+  border-radius: 10px;
+  color: #666;
 }
 
 .empty-actions {
@@ -287,6 +351,31 @@ export default {
 
 .secondary-link:hover {
   text-decoration: underline;
+}
+
+.sidebar :deep(.filters-panel) {
+  margin-bottom: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.sidebar :deep(.filters-panel h3) {
+  margin-top: 0;
+}
+
+@media (max-width: 980px) {
+  .search-layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+  .category-picker-scroll {
+    max-height: 260px;
+  }
 }
 </style>
 

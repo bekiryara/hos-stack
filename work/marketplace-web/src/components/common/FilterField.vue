@@ -2,8 +2,7 @@
   <div class="filter-field">
     <label class="field-label">
       {{ label }}
-      <span v-if="filter && filter.required" class="required-badge">required</span>
-      <span v-if="filter && filter.value_type" class="type-badge">{{ filter.value_type }}</span>
+      <span v-if="filter && filter.required" class="required-badge">zorunlu</span>
     </label>
 
     <!-- Search-mode range(number): min/max -->
@@ -11,13 +10,13 @@
       <input
         v-model.number="minModel"
         type="number"
-        :placeholder="`Min ${filter.attribute_key}`"
+        :placeholder="`En az ${label}`"
         class="field-input"
       />
       <input
         v-model.number="maxModel"
         type="number"
-        :placeholder="`Max ${filter.attribute_key}`"
+        :placeholder="`En çok ${label}`"
         class="field-input"
       />
     </div>
@@ -43,7 +42,7 @@
       v-else-if="filter && filter.value_type === 'string'"
       v-model="model"
       type="text"
-      :placeholder="filter.attribute_key"
+      :placeholder="label"
       class="field-input"
     />
 
@@ -60,7 +59,7 @@
       v-else-if="filter && filter.value_type === 'number'"
       v-model.number="model"
       type="number"
-      :placeholder="filter.attribute_key"
+      :placeholder="label"
       class="field-input"
     />
   </div>
@@ -137,8 +136,7 @@ export default {
         .filter((o) => o.value !== '');
     },
     selectPlaceholder() {
-      const key = this.filter && this.filter.attribute_key ? String(this.filter.attribute_key) : 'value';
-      return `Select ${key}`;
+      return `${this.label} seçiniz...`;
     },
   },
 };
@@ -177,16 +175,6 @@ export default {
   display: inline-block;
   background: #ff9800;
   color: white;
-  font-size: 0.75rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 3px;
-  margin-left: 0.5rem;
-}
-
-.type-badge {
-  display: inline-block;
-  background: #e3f2fd;
-  color: #1976d2;
   font-size: 0.75rem;
   padding: 0.2rem 0.5rem;
   border-radius: 3px;

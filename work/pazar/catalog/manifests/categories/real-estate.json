@@ -1,5 +1,4 @@
 [
-  {"slug":"real-estate","parent_slug":null,"title":"Emlak","status":"active","sort_order":20},
-  {"slug":"konut","parent_slug":"real-estate","title":"Konut","status":"active","sort_order":10}
+  {"slug":"real-estate","parent_slug":null,"title":"Emlak","status":"active","sort_order":20}
 ]
 

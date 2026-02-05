@@ -9,9 +9,22 @@
   {"key":"vehicle_year","value_type":"number","unit":null,"description":"Model yılı"},
   {"key":"vehicle_fuel_type","value_type":"enum","unit":null,"description":"Yakıt türü"},
   {"key":"vehicle_transmission","value_type":"enum","unit":null,"description":"Vites"},
+  {"key":"vehicle_body_type","value_type":"enum","unit":null,"description":"Kasa tipi"},
+  {"key":"vehicle_color","value_type":"enum","unit":null,"description":"Renk"},
+  {"key":"vehicle_drive_type","value_type":"enum","unit":null,"description":"Çekiş"},
+  {"key":"vehicle_condition","value_type":"enum","unit":null,"description":"Araç durumu"},
+  {"key":"vehicle_seller_type","value_type":"enum","unit":null,"description":"İlan sahibi"},
+  {"key":"vehicle_damage_status","value_type":"enum","unit":null,"description":"Boya/değişen/parça durumu"},
+  {"key":"vehicle_listing_age","value_type":"enum","unit":null,"description":"İlan tarihi (son X gün)"},
+  {"key":"vehicle_heavy_damage_record","value_type":"boolean","unit":null,"description":"Ağır hasar kayıtlı"},
+  {"key":"vehicle_swap","value_type":"boolean","unit":null,"description":"Takasa uygun"},
+  {"key":"vehicle_engine_power_hp","value_type":"number","unit":"hp","description":"Motor gücü"},
+  {"key":"vehicle_engine_displacement_cc","value_type":"number","unit":"cc","description":"Motor hacmi"},
   {"key":"vehicle_km","value_type":"number","unit":"km","description":"Kilometre"},
   {"key":"vehicle_price","value_type":"number","unit":"TRY","description":"Fiyat"},
   {"key":"vehicle_price_per_day","value_type":"number","unit":"TRY","description":"Günlük fiyat"},
   {"key":"vehicle_min_rent_days","value_type":"number","unit":"day","description":"Minimum kiralama günü"}
+  ,
+  {"key":"offer_variant","value_type":"enum","unit":null,"description":"Offer/policy variant (e.g., Satılık, Kiralık, Turistik Günlük Kiralık, Devren). Not a category; used as listing policy."}
 ]
 

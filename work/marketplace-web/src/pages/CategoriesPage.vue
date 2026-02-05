@@ -1,9 +1,14 @@
 <template>
   <div class="categories-page">
-    <h2>Categories</h2>
+    <div class="header-row">
+      <h2>Kategoriler</h2>
+      <router-link to="/" class="back-link">Keşfet</router-link>
+    </div>
     <div v-if="loading" class="loading">Loading categories...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <CategoryTree v-else :categories="categories" />
+    <div v-else class="tree-card">
+      <CategoryTree :categories="categories" />
+    </div>
   </div>
 </template>
 
@@ -36,9 +41,36 @@ export default {
 </script>
 
 <style scoped>
+.header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .categories-page h2 {
   margin-bottom: 1.5rem;
   font-size: 2rem;
+}
+
+.back-link {
+  color: #0066cc;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.tree-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.75rem 0.5rem;
+  max-height: calc(100vh - 200px);
+  overflow: auto;
 }
 </style>
 
