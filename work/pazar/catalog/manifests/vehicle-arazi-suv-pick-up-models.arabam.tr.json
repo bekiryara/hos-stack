@@ -1,0 +1,423 @@
+{
+  "source": "arabam.com GetFacets (arazi-suv-pick-up)",
+  "generated_at": "2026-02-05T23:25:40.337Z",
+  "stats": {
+    "brand_categories_total": 61,
+    "models_total": 291
+  },
+  "brand_slug_to_models": {
+    "arazi-suv-pick-up-alfa-romeo": [
+      "Junior Elettrica",
+      "Junior Ibrida",
+      "Tonale"
+    ],
+    "arazi-suv-pick-up-audi": [
+      "E-Tron",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q5",
+      "Q6",
+      "Q7",
+      "Q8",
+      "Q8 E-Tron",
+      "Q8 Sportback E-Tron",
+      "RS Q8"
+    ],
+    "arazi-suv-pick-up-bentley": [
+      "Bentayga"
+    ],
+    "arazi-suv-pick-up-bmw": [
+      "iX",
+      "iX1",
+      "iX2",
+      "iX3",
+      "X1",
+      "X2",
+      "X3",
+      "X4",
+      "X5",
+      "X6",
+      "X7"
+    ],
+    "arazi-suv-pick-up-byd": [
+      "Atto 3",
+      "Seal U",
+      "Seal U EV",
+      "Sealion 7",
+      "Tang"
+    ],
+    "arazi-suv-pick-up-cadillac": [
+      "Escalade",
+      "SRX"
+    ],
+    "arazi-suv-pick-up-chery": [
+      "Omoda 5",
+      "Omoda 5 Pro",
+      "Tiggo",
+      "Tiggo 7 Pro",
+      "Tiggo 7 Pro Max",
+      "Tiggo 8 Pro",
+      "Tiggo 8 Pro Max"
+    ],
+    "arazi-suv-pick-up-chevrolet": [
+      "Avalanche",
+      "Blazer",
+      "Captiva",
+      "Silverado",
+      "Suburban",
+      "Tahoe",
+      "Trax"
+    ],
+    "arazi-suv-pick-up-citroen": [
+      "C3 Aircross",
+      "C3 AirCross Elektrik",
+      "C4 Cactus",
+      "C4 SUV",
+      "C5 Aircross"
+    ],
+    "arazi-suv-pick-up-cupra": [
+      "Ateca",
+      "Formentor",
+      "Terramar"
+    ],
+    "arazi-suv-pick-up-dacia": [
+      "Duster",
+      "Sandero Stepway",
+      "Spring"
+    ],
+    "arazi-suv-pick-up-daewoo": [
+      "Musso"
+    ],
+    "arazi-suv-pick-up-daihatsu": [
+      "Feroza",
+      "Rocky",
+      "Terios"
+    ],
+    "arazi-suv-pick-up-dfm": [
+      "Rich"
+    ],
+    "arazi-suv-pick-up-dfsk": [
+      "E5",
+      "Fengon"
+    ],
+    "arazi-suv-pick-up-dodge": [
+      "Caliber",
+      "Durango",
+      "Journey",
+      "Nitro",
+      "Ram"
+    ],
+    "arazi-suv-pick-up-ds-automobiles": [
+      "DS3 Crossback",
+      "DS7 Crossback"
+    ],
+    "arazi-suv-pick-up-fiat": [
+      "500 X",
+      "600",
+      "Egea Cross",
+      "Freemont",
+      "Fullback",
+      "Panda Cross",
+      "Sedici"
+    ],
+    "arazi-suv-pick-up-ford": [
+      "Bronco Sport",
+      "EcoSport",
+      "Edge",
+      "Expedition",
+      "Explorer",
+      "F",
+      "Flex",
+      "Kuga",
+      "Mustang Mach-E",
+      "Puma",
+      "Puma- E",
+      "Ranger"
+    ],
+    "arazi-suv-pick-up-foton": [
+      "Tunland G7"
+    ],
+    "arazi-suv-pick-up-gmc": [
+      "Sierra",
+      "Yukon"
+    ],
+    "arazi-suv-pick-up-honda": [
+      "CR-V",
+      "HR-V"
+    ],
+    "arazi-suv-pick-up-hummer": [
+      "H Serisi"
+    ],
+    "arazi-suv-pick-up-hyundai": [
+      "Bayon",
+      "Ioniq 5",
+      "ix35",
+      "ix55",
+      "Kona",
+      "Santa Fe",
+      "Terracan",
+      "Tucson"
+    ],
+    "arazi-suv-pick-up-infiniti": [
+      "FX",
+      "QX"
+    ],
+    "arazi-suv-pick-up-isuzu": [
+      "D-Max"
+    ],
+    "arazi-suv-pick-up-jaecoo": [
+      "J7"
+    ],
+    "arazi-suv-pick-up-jaguar": [
+      "E-Pace",
+      "F-Pace",
+      "I-Pace"
+    ],
+    "arazi-suv-pick-up-jeep": [
+      "Avenger Electric",
+      "Avenger Hybrid",
+      "Cherokee",
+      "Commander",
+      "Compass",
+      "Grand Cherokee",
+      "Liberty",
+      "Patriot",
+      "Renegade",
+      "Wrangler"
+    ],
+    "arazi-suv-pick-up-kia": [
+      "EV3",
+      "EV6",
+      "EV9",
+      "Niro",
+      "Retona",
+      "Sorento",
+      "Soul",
+      "Sportage",
+      "Stonic",
+      "XCeed"
+    ],
+    "arazi-suv-pick-up-lada": [
+      "Niva"
+    ],
+    "arazi-suv-pick-up-lamborghini": [
+      "Urus"
+    ],
+    "arazi-suv-pick-up-land-rover": [
+      "Defender",
+      "Discovery",
+      "Discovery Sport",
+      "Freelander",
+      "Range Rover",
+      "Range Rover Evoque",
+      "Range Rover Sport",
+      "Range Rover Velar"
+    ],
+    "arazi-suv-pick-up-lexus": [
+      "LBX",
+      "LX",
+      "NX",
+      "RX",
+      "RZ"
+    ],
+    "arazi-suv-pick-up-lincoln": [
+      "Aviator",
+      "Navigator"
+    ],
+    "arazi-suv-pick-up-mahindra": [
+      "Goa",
+      "Pick-Up"
+    ],
+    "arazi-suv-pick-up-maserati": [
+      "Grecale",
+      "Levante"
+    ],
+    "arazi-suv-pick-up-mazda": [
+      "B2500",
+      "BT50",
+      "CX-3",
+      "CX-5",
+      "CX-9"
+    ],
+    "arazi-suv-pick-up-mercedes-benz": [
+      "EQA",
+      "EQB",
+      "EQC",
+      "G",
+      "GL",
+      "GLA",
+      "GLB",
+      "GLC",
+      "GLE",
+      "GLK",
+      "GLS",
+      "ML",
+      "X 250 d",
+      "X 350 d"
+    ],
+    "arazi-suv-pick-up-mg": [
+      "EHS",
+      "HS",
+      "Marvel R",
+      "ZS",
+      "ZS EV"
+    ],
+    "arazi-suv-pick-up-mini": [
+      "Cooper Countryman",
+      "Countryman E",
+      "Paceman"
+    ],
+    "arazi-suv-pick-up-mitsubishi": [
+      "ASX",
+      "Eclipse Cross",
+      "L 200",
+      "Outlander",
+      "Pajero"
+    ],
+    "arazi-suv-pick-up-nissan": [
+      "Country",
+      "Juke",
+      "Navara",
+      "Pathfinder",
+      "Patrol",
+      "Pick Up",
+      "Qashqai",
+      "Qashqai+2",
+      "Rally Raid",
+      "Skystar",
+      "Terrano",
+      "X-Trail"
+    ],
+    "arazi-suv-pick-up-opel": [
+      "Antara",
+      "Crossland",
+      "Crossland X",
+      "Frontera",
+      "Frontera-e",
+      "Grandland",
+      "Grandland X",
+      "Grandland-e",
+      "Mokka",
+      "Mokka X",
+      "Mokka-e"
+    ],
+    "arazi-suv-pick-up-peugeot": [
+      "2008",
+      "3008",
+      "4007",
+      "408",
+      "5008",
+      "e-2008",
+      "e-3008",
+      "e-5008"
+    ],
+    "arazi-suv-pick-up-porsche": [
+      "Cayenne",
+      "Macan"
+    ],
+    "arazi-suv-pick-up-renault": [
+      "Austral",
+      "Captur",
+      "Duster",
+      "Kadjar",
+      "Koleos",
+      "Rafale",
+      "Scenic RX4"
+    ],
+    "arazi-suv-pick-up-rolls-royce": [
+      "Cullinan"
+    ],
+    "arazi-suv-pick-up-seat": [
+      "Arona",
+      "Ateca",
+      "Tarraco"
+    ],
+    "arazi-suv-pick-up-seres": [
+      "3"
+    ],
+    "arazi-suv-pick-up-skoda": [
+      "Elroq",
+      "Enyaq",
+      "Felicia Pickup",
+      "Kamiq",
+      "Karoq",
+      "Kodiaq",
+      "Yeti"
+    ],
+    "arazi-suv-pick-up-skywell": [
+      "ET5"
+    ],
+    "arazi-suv-pick-up-ssangyong": [
+      "Actyon",
+      "Actyon Sports",
+      "Korando",
+      "Korando Sports",
+      "Kyron",
+      "Musso",
+      "Musso Grand",
+      "Rexton",
+      "Rodius",
+      "Tivoli",
+      "Torres",
+      "XLV"
+    ],
+    "arazi-suv-pick-up-subaru": [
+      "Forester",
+      "Outback",
+      "Solterra",
+      "XV"
+    ],
+    "arazi-suv-pick-up-suzuki": [
+      "Grand Vitara",
+      "Jimny",
+      "S-Cross",
+      "SJ",
+      "SX4 S-Cross",
+      "Vitara"
+    ],
+    "arazi-suv-pick-up-swm": [
+      "G01",
+      "G01F",
+      "G03F",
+      "G05 Pro"
+    ],
+    "arazi-suv-pick-up-tata": [
+      "Safari",
+      "Telcoline",
+      "Xenon"
+    ],
+    "arazi-suv-pick-up-togg": [
+      "T10F",
+      "T10X"
+    ],
+    "arazi-suv-pick-up-toyota": [
+      "C-HR",
+      "Corolla Cross",
+      "FJ Cruiser",
+      "Hilux",
+      "Land Cruiser",
+      "RAV4",
+      "Yaris Cross"
+    ],
+    "arazi-suv-pick-up-volkswagen": [
+      "Amarok",
+      "ID.4",
+      "T-Cross",
+      "T-Roc",
+      "Taigo",
+      "Tayron",
+      "Tiguan",
+      "Tiguan All Space",
+      "Touareg"
+    ],
+    "arazi-suv-pick-up-volvo": [
+      "C40",
+      "EX40",
+      "XC40",
+      "XC60",
+      "XC70",
+      "XC90"
+    ]
+  }
+}

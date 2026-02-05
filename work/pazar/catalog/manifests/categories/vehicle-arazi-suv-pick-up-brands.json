@@ -1,0 +1,429 @@
+[
+  {
+    "slug": "arazi-suv-pick-up-alfa-romeo",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Alfa Romeo",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "arazi-suv-pick-up-audi",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Audi",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "arazi-suv-pick-up-bentley",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Bentley",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "arazi-suv-pick-up-bmw",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "BMW",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "arazi-suv-pick-up-byd",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "BYD",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "arazi-suv-pick-up-cadillac",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Cadillac",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "arazi-suv-pick-up-chery",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Chery",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "arazi-suv-pick-up-chevrolet",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Chevrolet",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "arazi-suv-pick-up-citroen",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Citroen",
+    "status": "active",
+    "sort_order": 90
+  },
+  {
+    "slug": "arazi-suv-pick-up-cupra",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Cupra",
+    "status": "active",
+    "sort_order": 100
+  },
+  {
+    "slug": "arazi-suv-pick-up-dacia",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Dacia",
+    "status": "active",
+    "sort_order": 110
+  },
+  {
+    "slug": "arazi-suv-pick-up-daewoo",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Daewoo",
+    "status": "active",
+    "sort_order": 120
+  },
+  {
+    "slug": "arazi-suv-pick-up-daihatsu",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Daihatsu",
+    "status": "active",
+    "sort_order": 130
+  },
+  {
+    "slug": "arazi-suv-pick-up-dfm",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "DFM",
+    "status": "active",
+    "sort_order": 140
+  },
+  {
+    "slug": "arazi-suv-pick-up-dfsk",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "DFSK",
+    "status": "active",
+    "sort_order": 150
+  },
+  {
+    "slug": "arazi-suv-pick-up-dodge",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Dodge",
+    "status": "active",
+    "sort_order": 160
+  },
+  {
+    "slug": "arazi-suv-pick-up-ds-automobiles",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "DS Automobiles",
+    "status": "active",
+    "sort_order": 170
+  },
+  {
+    "slug": "arazi-suv-pick-up-fiat",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Fiat",
+    "status": "active",
+    "sort_order": 180
+  },
+  {
+    "slug": "arazi-suv-pick-up-ford",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Ford",
+    "status": "active",
+    "sort_order": 190
+  },
+  {
+    "slug": "arazi-suv-pick-up-foton",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Foton",
+    "status": "active",
+    "sort_order": 200
+  },
+  {
+    "slug": "arazi-suv-pick-up-gmc",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "GMC",
+    "status": "active",
+    "sort_order": 210
+  },
+  {
+    "slug": "arazi-suv-pick-up-honda",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Honda",
+    "status": "active",
+    "sort_order": 220
+  },
+  {
+    "slug": "arazi-suv-pick-up-hummer",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Hummer",
+    "status": "active",
+    "sort_order": 230
+  },
+  {
+    "slug": "arazi-suv-pick-up-hyundai",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Hyundai",
+    "status": "active",
+    "sort_order": 240
+  },
+  {
+    "slug": "arazi-suv-pick-up-infiniti",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Infiniti",
+    "status": "active",
+    "sort_order": 250
+  },
+  {
+    "slug": "arazi-suv-pick-up-isuzu",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Isuzu",
+    "status": "active",
+    "sort_order": 260
+  },
+  {
+    "slug": "arazi-suv-pick-up-jaecoo",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Jaecoo",
+    "status": "active",
+    "sort_order": 270
+  },
+  {
+    "slug": "arazi-suv-pick-up-jaguar",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Jaguar",
+    "status": "active",
+    "sort_order": 280
+  },
+  {
+    "slug": "arazi-suv-pick-up-jeep",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Jeep",
+    "status": "active",
+    "sort_order": 290
+  },
+  {
+    "slug": "arazi-suv-pick-up-kia",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Kia",
+    "status": "active",
+    "sort_order": 300
+  },
+  {
+    "slug": "arazi-suv-pick-up-lada",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Lada",
+    "status": "active",
+    "sort_order": 310
+  },
+  {
+    "slug": "arazi-suv-pick-up-lamborghini",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Lamborghini",
+    "status": "active",
+    "sort_order": 320
+  },
+  {
+    "slug": "arazi-suv-pick-up-land-rover",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Land Rover",
+    "status": "active",
+    "sort_order": 330
+  },
+  {
+    "slug": "arazi-suv-pick-up-lexus",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Lexus",
+    "status": "active",
+    "sort_order": 340
+  },
+  {
+    "slug": "arazi-suv-pick-up-lincoln",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Lincoln",
+    "status": "active",
+    "sort_order": 350
+  },
+  {
+    "slug": "arazi-suv-pick-up-mahindra",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Mahindra",
+    "status": "active",
+    "sort_order": 360
+  },
+  {
+    "slug": "arazi-suv-pick-up-maserati",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Maserati",
+    "status": "active",
+    "sort_order": 370
+  },
+  {
+    "slug": "arazi-suv-pick-up-mazda",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Mazda",
+    "status": "active",
+    "sort_order": 380
+  },
+  {
+    "slug": "arazi-suv-pick-up-mercedes-benz",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Mercedes - Benz",
+    "status": "active",
+    "sort_order": 390
+  },
+  {
+    "slug": "arazi-suv-pick-up-mg",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "MG",
+    "status": "active",
+    "sort_order": 400
+  },
+  {
+    "slug": "arazi-suv-pick-up-mini",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Mini",
+    "status": "active",
+    "sort_order": 410
+  },
+  {
+    "slug": "arazi-suv-pick-up-mitsubishi",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Mitsubishi",
+    "status": "active",
+    "sort_order": 420
+  },
+  {
+    "slug": "arazi-suv-pick-up-nissan",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Nissan",
+    "status": "active",
+    "sort_order": 430
+  },
+  {
+    "slug": "arazi-suv-pick-up-opel",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Opel",
+    "status": "active",
+    "sort_order": 440
+  },
+  {
+    "slug": "arazi-suv-pick-up-peugeot",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Peugeot",
+    "status": "active",
+    "sort_order": 450
+  },
+  {
+    "slug": "arazi-suv-pick-up-porsche",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Porsche",
+    "status": "active",
+    "sort_order": 460
+  },
+  {
+    "slug": "arazi-suv-pick-up-renault",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Renault",
+    "status": "active",
+    "sort_order": 470
+  },
+  {
+    "slug": "arazi-suv-pick-up-rolls-royce",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Rolls-Royce",
+    "status": "active",
+    "sort_order": 480
+  },
+  {
+    "slug": "arazi-suv-pick-up-seat",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Seat",
+    "status": "active",
+    "sort_order": 490
+  },
+  {
+    "slug": "arazi-suv-pick-up-seres",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Seres",
+    "status": "active",
+    "sort_order": 500
+  },
+  {
+    "slug": "arazi-suv-pick-up-skoda",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Skoda",
+    "status": "active",
+    "sort_order": 510
+  },
+  {
+    "slug": "arazi-suv-pick-up-skywell",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Skywell",
+    "status": "active",
+    "sort_order": 520
+  },
+  {
+    "slug": "arazi-suv-pick-up-ssangyong",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Ssangyong",
+    "status": "active",
+    "sort_order": 530
+  },
+  {
+    "slug": "arazi-suv-pick-up-subaru",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Subaru",
+    "status": "active",
+    "sort_order": 540
+  },
+  {
+    "slug": "arazi-suv-pick-up-suzuki",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Suzuki",
+    "status": "active",
+    "sort_order": 550
+  },
+  {
+    "slug": "arazi-suv-pick-up-swm",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "SWM",
+    "status": "active",
+    "sort_order": 560
+  },
+  {
+    "slug": "arazi-suv-pick-up-tata",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Tata",
+    "status": "active",
+    "sort_order": 570
+  },
+  {
+    "slug": "arazi-suv-pick-up-togg",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "TOGG",
+    "status": "active",
+    "sort_order": 580
+  },
+  {
+    "slug": "arazi-suv-pick-up-toyota",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Toyota",
+    "status": "active",
+    "sort_order": 590
+  },
+  {
+    "slug": "arazi-suv-pick-up-volkswagen",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Volkswagen",
+    "status": "active",
+    "sort_order": 600
+  },
+  {
+    "slug": "arazi-suv-pick-up-volvo",
+    "parent_slug": "arazi-suv-pick-up",
+    "title": "Volvo",
+    "status": "active",
+    "sort_order": 610
+  }
+]
