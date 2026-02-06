@@ -1,7 +1,7 @@
 [
   {"slug":"otomobil-alfa-romeo","parent_slug":"otomobil","title":"Alfa Romeo","status":"active","sort_order":10},
   {"slug":"otomobil-anadol","parent_slug":"otomobil","title":"Anadol","status":"active","sort_order":10},
-  {"slug":"otomobil-arora","parent_slug":"otomobil","title":"Arora","status":"active","sort_order":10},
+  {"slug":"otomobil-arora","parent_slug":"otomobil","title":"Arora","status":"inactive","sort_order":10},
   {"slug":"otomobil-aston-martin","parent_slug":"otomobil","title":"Aston Martin","status":"active","sort_order":10},
   {"slug":"otomobil-audi","parent_slug":"otomobil","title":"Audi","status":"active","sort_order":10},
   {"slug":"otomobil-bentley","parent_slug":"otomobil","title":"Bentley","status":"active","sort_order":10},

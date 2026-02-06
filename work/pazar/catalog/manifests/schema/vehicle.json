@@ -5,7 +5,6 @@
 
     "otomobil-alfa-romeo",
     "otomobil-anadol",
-    "otomobil-arora",
     "otomobil-aston-martin",
     "otomobil-audi",
     "otomobil-bentley",
@@ -86,7 +85,7 @@
   "fields": [
     {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
     {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
-    {"attribute_key":"vehicle_model","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":{"type":"vehicle_models_by_brand_slug","path":"vehicle-otomobil-models.autoevolution.tr.json"},"sort_order":20,"applies_to_transaction_modes":null},
+    {"attribute_key":"vehicle_model","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":{"type":"vehicle_models_by_brand_slug","path":"vehicle-otomobil-models.arabam.tr.json"},"sort_order":20,"applies_to_transaction_modes":null},
     {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
     {"attribute_key":"vehicle_fuel_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/vehicle_fuel_type.tr.json","sort_order":40,"applies_to_transaction_modes":null},
     {"attribute_key":"vehicle_transmission","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/vehicle_transmission.tr.json","sort_order":50,"applies_to_transaction_modes":null},
