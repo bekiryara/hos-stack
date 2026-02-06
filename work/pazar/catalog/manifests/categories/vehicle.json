@@ -12,10 +12,10 @@
   {"slug":"yedek-parca-aksesuar-donanim-tuning","parent_slug":"vehicle","title":"Yedek Parça, Aksesuar, Donanım & Tuning","status":"active","sort_order":90},
   {"slug":"traktor","parent_slug":"vehicle","title":"Traktör","status":"active","sort_order":100},
   {"slug":"tarim-is-makineleri","parent_slug":"vehicle","title":"Tarım & İş Makineleri","status":"active","sort_order":110},
-  {"slug":"klasik-araclar","parent_slug":"vehicle","title":"Klasik Araçlar","status":"active","sort_order":120},
+  {"slug":"klasik-araclar","parent_slug":"vehicle","title":"Klasik Araçlar","status":"inactive","sort_order":120},
   {"slug":"elektrikli-araclar","parent_slug":"vehicle","title":"Elektrikli Araçlar","status":"active","sort_order":130},
   {"slug":"atv-utv","parent_slug":"vehicle","title":"ATV & UTV","status":"active","sort_order":140},
-  {"slug":"engelli-araci","parent_slug":"vehicle","title":"Engelli Araçları","status":"active","sort_order":150},
-  {"slug":"modifiyeli-arabalar","parent_slug":"vehicle","title":"Modifiyeli Araçlar","status":"active","sort_order":160}
+  {"slug":"engelli-araci","parent_slug":"vehicle","title":"Engelli Araçları","status":"inactive","sort_order":150},
+  {"slug":"modifiyeli-arabalar","parent_slug":"vehicle","title":"Modifiyeli Araçlar","status":"inactive","sort_order":160}
 ]
 
