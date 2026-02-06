@@ -17,6 +17,7 @@
   {"key":"vehicle_damage_status","value_type":"enum","unit":null,"description":"Boya/değişen/parça durumu"},
   {"key":"vehicle_listing_age","value_type":"enum","unit":null,"description":"İlan tarihi (son X gün)"},
   {"key":"vehicle_heavy_damage_record","value_type":"boolean","unit":null,"description":"Ağır hasar kayıtlı"},
+  {"key":"vehicle_heavy_damage_record_status","value_type":"enum","unit":null,"description":"Ağır hasar kayıtlı (seçim)"},
   {"key":"vehicle_swap","value_type":"boolean","unit":null,"description":"Takasa uygun"},
   {"key":"vehicle_engine_power_hp","value_type":"number","unit":"hp","description":"Motor gücü"},
   {"key":"vehicle_engine_displacement_cc","value_type":"number","unit":"cc","description":"Motor hacmi"},
