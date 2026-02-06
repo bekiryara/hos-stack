@@ -21,11 +21,15 @@
   {"key":"vehicle_engine_power_hp","value_type":"number","unit":"hp","description":"Motor gücü"},
   {"key":"vehicle_engine_displacement_cc","value_type":"number","unit":"cc","description":"Motor hacmi"},
   {"key":"vehicle_km","value_type":"number","unit":"km","description":"Kilometre"},
+  {"key":"vehicle_working_hours","value_type":"number","unit":"hour","description":"Çalışma saati"},
   {"key":"vehicle_price","value_type":"number","unit":"TRY","description":"Fiyat"},
   {"key":"vehicle_price_per_day","value_type":"number","unit":"TRY","description":"Günlük fiyat"},
   {"key":"vehicle_min_rent_days","value_type":"number","unit":"day","description":"Minimum kiralama günü"},
   {"key":"vehicle_upper_body","value_type":"enum","unit":null,"description":"Üst yapı"},
-  {"key":"vehicle_seat_count","value_type":"enum","unit":null,"description":"Koltuk sayısı"}
+  {"key":"vehicle_seat_count","value_type":"enum","unit":null,"description":"Koltuk sayısı"},
+  {"key":"vehicle_cylinder_count","value_type":"enum","unit":null,"description":"Silindir sayısı"},
+  {"key":"vehicle_tractor_type","value_type":"enum","unit":null,"description":"Traktör tipi"},
+  {"key":"vehicle_tractor_cabin","value_type":"enum","unit":null,"description":"Kabin"}
   ,
   {"key":"offer_variant","value_type":"enum","unit":null,"description":"Offer/policy variant (e.g., Satılık, Kiralık, Turistik Günlük Kiralık, Devren). Not a category; used as listing policy."}
 ]
