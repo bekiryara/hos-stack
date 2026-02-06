@@ -50,6 +50,20 @@ docs/PROOFS/_logs/
 # Temp files
 _temp_*.txt
 
+# Pazar scripts: local scratch + captured outputs (never track)
+work/pazar/scripts/_tmp_*.ndjson
+work/pazar/scripts/hepsiemlak-captured-urls*.json
+work/pazar/scripts/hepsiemlak-realty-list*.ndjson
+work/pazar/scripts/hepsiemlak-extract-ndjson.mjs
+work/pazar/scripts/hepsiemlak-export-*.mjs
+work/pazar/scripts/hepsiemlak-extract-filter-schema.mjs
+work/pazar/scripts/hepsiemlak-cdp-sniffer.mjs
+work/pazar/scripts/hepsiemlak-generate-real-estate-rules.mjs
+work/pazar/scripts/verify-hepsiemlak-filter-schema.mjs
+work/pazar/scripts/start-hepsiemlak-cdp.ps1
+work/pazar/scripts/verify-karavan-schema.js
+work/pazar/scripts/arabam-export-karavan-schema.js
+
 # Node modules (should never be tracked)
 **/node_modules/
 work/marketplace-web/node_modules/
