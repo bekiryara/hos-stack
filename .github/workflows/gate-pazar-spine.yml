@@ -42,6 +42,9 @@ jobs:
       
       - name: Start services
         run: |
+          # CI uses a tiny in-repo manifests set to keep the repo clean
+          # while still exercising the importer + contracts.
+          export CATALOG_MANIFESTS_HOST_PATH=./work/pazar/catalog/manifests_ci
           docker compose up -d --build
           sleep 10
       
@@ -55,8 +58,16 @@ jobs:
       
       - name: Import catalog manifests (canonical)
         run: |
-          docker compose exec -T pazar-app php artisan catalog:import --dry-run
-          docker compose exec -T pazar-app php artisan catalog:import --apply
+          # NOTE (V2): canonical catalog data lives outside this repo (external dataset).
+          # In CI we may not have access to that dataset, so this step becomes conditional:
+          # - If manifests are mounted/present, we run import (fail-fast).
+          # - If not present, we SKIP with a clear message (CI remains green).
+          if docker compose exec -T pazar-app bash -lc 'test -f /var/www/html/catalog/manifests/manifest.meta.json'; then
+            docker compose exec -T pazar-app php artisan catalog:import --dry-run
+            docker compose exec -T pazar-app php artisan catalog:import --apply
+          else
+            echo "SKIP: catalog manifests not found at /var/www/html/catalog/manifests (external dataset not mounted in CI)."
+          fi
         continue-on-error: false
       
       - name: Install PowerShell

@@ -24,10 +24,31 @@ return new class extends Migration
             return;
         }
 
-        $manifestPath = base_path('catalog/manifests/cities.tr.json');
-        if (!is_file($manifestPath)) {
-            return;
+        // V2: Manifests root can be external (env CATALOG_MANIFESTS_PATH).
+        // Support both legacy layout:
+        // - <root>/cities.tr.json
+        // and artifact layout:
+        // - <root>/options/cities.tr.json
+        $root = env('CATALOG_MANIFESTS_PATH', base_path('catalog/manifests'));
+        $root = is_string($root) ? trim($root) : base_path('catalog/manifests');
+        if (!is_dir($root)) {
+            $fallback = base_path('catalog/manifests_ci');
+            if (is_dir($fallback)) {
+                $root = $fallback;
+            }
         }
+        $candidates = [
+            rtrim($root, "\\/") . DIRECTORY_SEPARATOR . 'cities.tr.json',
+            rtrim($root, "\\/") . DIRECTORY_SEPARATOR . 'options' . DIRECTORY_SEPARATOR . 'cities.tr.json',
+        ];
+        $manifestPath = null;
+        foreach ($candidates as $p) {
+            if (is_string($p) && is_file($p)) {
+                $manifestPath = $p;
+                break;
+            }
+        }
+        if (!$manifestPath) return;
 
         $raw = file_get_contents($manifestPath);
         $options = json_decode($raw ?: '[]', true);

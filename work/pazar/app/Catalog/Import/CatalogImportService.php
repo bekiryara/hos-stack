@@ -41,7 +41,50 @@ final class CatalogImportService
 
     public static function fromDefaultPath(): self
     {
-        return new self(base_path('catalog/manifests'));
+        // Back-compat default: repo manifests.
+        // V2: allow external manifests root via env var to avoid repo bloat.
+        // - Container path example: /var/www/html/catalog/manifests
+        // - Windows host path is only relevant for volume mounts (not for PHP inside container)
+        $p = env('CATALOG_MANIFESTS_PATH', '');
+        $p = is_string($p) ? trim($p) : '';
+        if ($p === '') {
+            $p = base_path('catalog/manifests');
+            // If legacy path is missing (repo cleaned), fall back to minimal in-repo CI/dev set.
+            // This keeps local non-docker flows (e.g. XAMPP) working without extra env config.
+            if (!File::exists($p)) {
+                $fallback = base_path('catalog/manifests_ci');
+                if (File::exists($fallback)) {
+                    $p = $fallback;
+                }
+            }
+        } else {
+            // If relative, resolve from base_path()
+            $isWindowsAbs = (bool) preg_match('/^[a-zA-Z]:[\\\\\\/]/', $p) || strncmp($p, '\\\\', 2) === 0;
+            $isUnixAbs = isset($p[0]) && $p[0] === '/';
+            if (!$isWindowsAbs && !$isUnixAbs) {
+                $p = base_path($p);
+            }
+        }
+
+        return new self($p);
+    }
+
+    /**
+     * Create importer from an explicit manifests root path (CLI-friendly).
+     * If relative, it's resolved from Laravel base_path().
+     */
+    public static function fromPath(string $path): self
+    {
+        $p = trim($path);
+        if ($p === '') {
+            return self::fromDefaultPath();
+        }
+        $isWindowsAbs = (bool) preg_match('/^[a-zA-Z]:[\\\\\\/]/', $p) || strncmp($p, '\\\\', 2) === 0;
+        $isUnixAbs = isset($p[0]) && $p[0] === '/';
+        if (!$isWindowsAbs && !$isUnixAbs) {
+            $p = base_path($p);
+        }
+        return new self($p);
     }
 
     /**
@@ -472,7 +515,7 @@ final class CatalogImportService
                         'updated_at' => $now,
                     ];
                 }
-                DB::table('attributes')->insert($rows);
+                $this->insertChunked('attributes', $rows);
             }
 
             // 3) schema
@@ -498,7 +541,7 @@ final class CatalogImportService
                         'updated_at' => $now,
                     ];
                 }
-                DB::table('category_filter_schema')->insert($rows);
+                $this->insertChunked('category_filter_schema', $rows);
             }
         }, attempts: 1);
     }
@@ -583,7 +626,7 @@ final class CatalogImportService
                 }
             }
             if (count($attrInserts) > 0) {
-                DB::table('attributes')->insert($attrInserts);
+                $this->insertChunked('attributes', $attrInserts);
             }
 
             // 3) schema: insert missing + update existing (by category_id + attribute_key), no deletes.
@@ -638,7 +681,7 @@ final class CatalogImportService
                 }
             }
             if (count($schemaInserts) > 0) {
-                DB::table('category_filter_schema')->insert($schemaInserts);
+                $this->insertChunked('category_filter_schema', $schemaInserts);
             }
 
             // Mark schema rows that are not in manifest as inactive (for categories in manifest only)
@@ -1077,7 +1120,7 @@ final class CatalogImportService
                 throw new RuntimeException("Unable to resolve category parents (cycle?) stuck slugs: {$stuck}");
             }
 
-            DB::table('categories')->insert($batch);
+            $this->insertChunked('categories', $batch);
 
             $ids = DB::table('categories')->whereIn('slug', $batchSlugs)->pluck('id', 'slug');
             foreach ($ids as $slug => $id) {
@@ -1087,6 +1130,32 @@ final class CatalogImportService
         }
 
         return $slugToId;
+    }
+
+    /**
+     * Insert rows in chunks to avoid driver parameter limits (e.g. PostgreSQL max bind params = 65535).
+     *
+     * @param list<array<string,mixed>> $rows
+     */
+    private function insertChunked(string $table, array $rows, int $maxParams = 60000): void
+    {
+        if (count($rows) === 0) {
+            return;
+        }
+
+        $cols = count($rows[0]);
+        if ($cols <= 0) {
+            return;
+        }
+
+        $rowsPerChunk = (int) floor($maxParams / $cols);
+        if ($rowsPerChunk < 1) {
+            $rowsPerChunk = 1;
+        }
+
+        foreach (array_chunk($rows, $rowsPerChunk) as $chunk) {
+            DB::table($table)->insert($chunk);
+        }
     }
 
     /**

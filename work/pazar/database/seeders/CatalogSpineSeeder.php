@@ -10,7 +10,8 @@ use Illuminate\Database\Seeder;
  *
  * IMPORTANT: This seeder is NOT a data store.
  * Catalog data (categories/attributes/schema) MUST live in manifests:
- *   work/pazar/catalog/manifests/
+ *   - default: work/pazar/catalog/manifests/
+ *   - or external: env(CATALOG_MANIFESTS_PATH) mounted into container
  *
  * This seeder only delegates to the manifest importer.
  *

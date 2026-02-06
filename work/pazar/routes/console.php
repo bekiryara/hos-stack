@@ -7,9 +7,10 @@ use Illuminate\Support\Facades\Schedule;
 // Artisan closure commands and schedule (pazar: no custom commands yet)
 // Schedule::command('inspire')->hourly();
 
-Artisan::command('catalog:import {--dry-run : Report planned DB changes} {--apply : Apply manifests to DB (clean DB only)}', function () {
+Artisan::command('catalog:import {--path= : Manifests root path (optional; overrides env CATALOG_MANIFESTS_PATH)} {--dry-run : Report planned DB changes} {--apply : Apply manifests to DB (clean DB only)}', function () {
     /** @var \Illuminate\Console\Command $this */
 
+    $path = (string) ($this->option('path') ?? '');
     $dryRun = (bool) $this->option('dry-run');
     $apply = (bool) $this->option('apply');
 
@@ -23,7 +24,7 @@ Artisan::command('catalog:import {--dry-run : Report planned DB changes} {--appl
         $dryRun = true;
     }
 
-    $svc = CatalogImportService::fromDefaultPath();
+    $svc = $path !== '' ? CatalogImportService::fromPath($path) : CatalogImportService::fromDefaultPath();
 
     try {
         $m = $svc->loadManifests();
@@ -32,6 +33,7 @@ Artisan::command('catalog:import {--dry-run : Report planned DB changes} {--appl
         $plan = $svc->plan($m);
 
         $this->line('catalog:import (clean install)');
+        $this->line('manifests_path: ' . (string)($path !== '' ? $path : (env('CATALOG_MANIFESTS_PATH', '') ?: 'base_path(catalog/manifests)')));
         $this->line('generated_at: ' . ($plan['generated_at'] ?? '-'));
         $this->newLine();
 
@@ -77,9 +79,10 @@ Artisan::command('catalog:import {--dry-run : Report planned DB changes} {--appl
     }
 })->purpose('Import catalog manifests into DB (clean install: clean DB only, fail-fast).');
 
-Artisan::command('catalog:sync {--dry-run : Report planned DB changes (in-place sync)} {--apply : Sync manifests to DB (V2: in-place, transactional)}', function () {
+Artisan::command('catalog:sync {--path= : Manifests root path (optional; overrides env CATALOG_MANIFESTS_PATH)} {--dry-run : Report planned DB changes (in-place sync)} {--apply : Sync manifests to DB (V2: in-place, transactional)}', function () {
     /** @var \Illuminate\Console\Command $this */
 
+    $path = (string) ($this->option('path') ?? '');
     $dryRun = (bool) $this->option('dry-run');
     $apply = (bool) $this->option('apply');
 
@@ -93,7 +96,7 @@ Artisan::command('catalog:sync {--dry-run : Report planned DB changes (in-place 
         $dryRun = true;
     }
 
-    $svc = CatalogImportService::fromDefaultPath();
+    $svc = $path !== '' ? CatalogImportService::fromPath($path) : CatalogImportService::fromDefaultPath();
 
     try {
         $m = $svc->loadManifests();
@@ -102,6 +105,7 @@ Artisan::command('catalog:sync {--dry-run : Report planned DB changes (in-place 
         $plan = $svc->plan($m);
 
         $this->line('catalog:sync (in-place)');
+        $this->line('manifests_path: ' . (string)($path !== '' ? $path : (env('CATALOG_MANIFESTS_PATH', '') ?: 'base_path(catalog/manifests)')));
         $this->line('generated_at: ' . ($plan['generated_at'] ?? '-'));
         $this->newLine();
 

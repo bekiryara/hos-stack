@@ -1,0 +1,10 @@
+[
+  { "slug": "vehicle", "parent_slug": null, "title": "Araç", "status": "active", "sort_order": 10 },
+  { "slug": "vehicle-car", "parent_slug": "vehicle", "title": "Otomobil (CI)", "status": "active", "sort_order": 10 },
+
+  { "slug": "real-estate", "parent_slug": null, "title": "Emlak", "status": "active", "sort_order": 20 },
+  { "slug": "real-estate-home", "parent_slug": "real-estate", "title": "Konut (CI)", "status": "active", "sort_order": 10 },
+
+  { "slug": "service", "parent_slug": null, "title": "Hizmet", "status": "active", "sort_order": 30 },
+  { "slug": "service-generic", "parent_slug": "service", "title": "Genel Hizmet (CI)", "status": "active", "sort_order": 10 }
+]

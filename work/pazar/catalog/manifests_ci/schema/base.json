@@ -1,0 +1,62 @@
+[
+  {
+    "schema_version": 1,
+    "category_slugs": ["vehicle-car"],
+    "fields": [
+      {
+        "attribute_key": "city",
+        "ui_component": "select",
+        "required": false,
+        "filter_mode": "exact",
+        "rules_ref": "options/cities.tr.json",
+        "sort_order": 10
+      },
+      {
+        "attribute_key": "vehicle_price",
+        "ui_component": "number",
+        "required": false,
+        "filter_mode": "range",
+        "rules": null,
+        "sort_order": 20,
+        "applies_to_transaction_modes": ["sale"]
+      }
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["real-estate-home"],
+    "fields": [
+      {
+        "attribute_key": "city",
+        "ui_component": "select",
+        "required": false,
+        "filter_mode": "exact",
+        "rules_ref": "options/cities.tr.json",
+        "sort_order": 10
+      },
+      {
+        "attribute_key": "real_estate_price",
+        "ui_component": "number",
+        "required": false,
+        "filter_mode": "range",
+        "rules": null,
+        "sort_order": 20,
+        "applies_to_transaction_modes": ["sale"]
+      }
+    ]
+  },
+  {
+    "schema_version": 1,
+    "category_slugs": ["service-generic"],
+    "fields": [
+      {
+        "attribute_key": "city",
+        "ui_component": "select",
+        "required": false,
+        "filter_mode": "exact",
+        "rules_ref": "options/cities.tr.json",
+        "sort_order": 10
+      }
+    ]
+  }
+]

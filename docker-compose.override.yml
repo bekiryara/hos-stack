@@ -1,10 +1,18 @@
-﻿# WP-4.1: Container/Local Code Visibility Rule
+# WP-4.1: Container/Local Code Visibility Rule
 # Read-only mounts ensure migrations/seeders/config changes are visible without rebuild.
 services:
   pazar-app:
     environment:
       HOS_OIDC_ISSUER: http://localhost:3000
       HOS_OIDC_WORLD: pazar
+      # Optional: allow importing manifests from an external dataset/artifact mount.
+      # Default inside container remains /var/www/html/catalog/manifests (base_path('catalog/manifests')).
+      CATALOG_MANIFESTS_PATH: /var/www/html/catalog/manifests
     volumes:
       - ./work/pazar/database:/var/www/html/database:ro
       - ./work/pazar/config:/var/www/html/config:ro
+      # Manifests change frequently; mount to avoid rebuilds (prevents heavy vendor copy on Windows)
+      # Override host path if you want to mount an external artifact, e.g.:
+      #   set CATALOG_MANIFESTS_HOST_PATH=D:\stack-data\catalog-dataset\out\manifests_current
+      # Default is a tiny in-repo CI/dev manifests set (keeps repo lean).
+      - ${CATALOG_MANIFESTS_HOST_PATH:-./work/pazar/catalog/manifests_ci}:/var/www/html/catalog/manifests:ro
