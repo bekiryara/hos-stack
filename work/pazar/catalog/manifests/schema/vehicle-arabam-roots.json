@@ -140,7 +140,7 @@
     "category_slugs": ["traktor"],
     "fields": [
       {"attribute_key":"city","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"cities.tr.json","sort_order":5,"applies_to_transaction_modes":null},
-      {"attribute_key":"vehicle_brand","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":10,"applies_to_transaction_modes":null},
+      {"attribute_key":"vehicle_brand","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/traktor/vehicle_brand.tr.json","sort_order":10,"applies_to_transaction_modes":null},
       {"attribute_key":"vehicle_model","ui_component":"text","required":false,"filter_mode":"exact","rules":null,"sort_order":20,"applies_to_transaction_modes":null},
       {"attribute_key":"vehicle_year","ui_component":"number","required":false,"filter_mode":"range","rules":{"min":1950,"max":2035},"sort_order":30,"applies_to_transaction_modes":null},
       {"attribute_key":"vehicle_drive_type","ui_component":"select","required":false,"filter_mode":"exact","rules":null,"rules_ref":"rules/vehicle/by_category/traktor/vehicle_drive_type.tr.json","sort_order":57,"applies_to_transaction_modes":null},
