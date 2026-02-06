@@ -29,7 +29,9 @@
   {"key":"vehicle_seat_count","value_type":"enum","unit":null,"description":"Koltuk sayısı"},
   {"key":"vehicle_cylinder_count","value_type":"enum","unit":null,"description":"Silindir sayısı"},
   {"key":"vehicle_tractor_type","value_type":"enum","unit":null,"description":"Traktör tipi"},
-  {"key":"vehicle_tractor_cabin","value_type":"enum","unit":null,"description":"Kabin"}
+  {"key":"vehicle_tractor_cabin","value_type":"enum","unit":null,"description":"Kabin"},
+  {"key":"vehicle_chassis_type","value_type":"enum","unit":null,"description":"Şasi tipi"},
+  {"key":"vehicle_special_listing","value_type":"enum","unit":null,"description":"Özel ilanlar"}
   ,
   {"key":"offer_variant","value_type":"enum","unit":null,"description":"Offer/policy variant (e.g., Satılık, Kiralık, Turistik Günlük Kiralık, Devren). Not a category; used as listing policy."}
 ]

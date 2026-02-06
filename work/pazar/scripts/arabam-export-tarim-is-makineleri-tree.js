@@ -103,9 +103,27 @@ async function mapLimit(items, limit, fn) {
   });
 }
 
-function baseTarimFields() {
-  return [
-    {
+function facetOptionsByFriendly(data) {
+  const facets = (data && data.Data && Array.isArray(data.Data.Facets) ? data.Data.Facets : []) || [];
+  const out = {};
+  for (const f of facets) {
+    const friendly = typeof f?.FriendlyUrlName === "string" ? f.FriendlyUrlName : "";
+    const items = Array.isArray(f?.Items) ? f.Items : [];
+    if (!friendly || items.length === 0) continue;
+    const opts = items.map((i) => (typeof i?.Name === "string" ? i.Name.trim() : "")).filter(Boolean);
+    // Keep options only for small select-like facets. Large lists (like cities) are referenced via rules_ref.
+    out[friendly] = opts;
+  }
+  return out;
+}
+
+function buildFieldsFromFacets(facetMap) {
+  const fields = [];
+  const has = (friendly) => Object.prototype.hasOwnProperty.call(facetMap, friendly) && Array.isArray(facetMap[friendly]) && facetMap[friendly].length > 0;
+
+  // Arabam facet -> our attribute mapping (birebir options per page where applicable)
+  if (has("il")) {
+    fields.push({
       attribute_key: "city",
       ui_component: "select",
       required: false,
@@ -114,26 +132,11 @@ function baseTarimFields() {
       rules_ref: "cities.tr.json",
       sort_order: 5,
       applies_to_transaction_modes: null,
-    },
-    {
-      attribute_key: "vehicle_brand",
-      ui_component: "text",
-      required: false,
-      filter_mode: "exact",
-      rules: null,
-      sort_order: 10,
-      applies_to_transaction_modes: null,
-    },
-    {
-      attribute_key: "vehicle_model",
-      ui_component: "text",
-      required: false,
-      filter_mode: "exact",
-      rules: null,
-      sort_order: 20,
-      applies_to_transaction_modes: null,
-    },
-    {
+    });
+  }
+
+  if (has("yil")) {
+    fields.push({
       attribute_key: "vehicle_year",
       ui_component: "number",
       required: false,
@@ -141,47 +144,71 @@ function baseTarimFields() {
       rules: { min: 1950, max: 2035 },
       sort_order: 30,
       applies_to_transaction_modes: null,
-    },
-    {
+    });
+  }
+
+  if (has("arac-durumu")) {
+    fields.push({
       attribute_key: "vehicle_condition",
       ui_component: "select",
       required: false,
       filter_mode: "exact",
-      rules: null,
-      rules_ref: "rules/vehicle/by_category/tarim-is-makineleri/vehicle_condition.tr.json",
+      rules: { options: facetMap["arac-durumu"] },
       sort_order: 58,
       applies_to_transaction_modes: null,
-    },
-    {
+    });
+  }
+
+  if (has("sasi-tipi")) {
+    fields.push({
+      attribute_key: "vehicle_chassis_type",
+      ui_component: "select",
+      required: false,
+      filter_mode: "exact",
+      rules: { options: facetMap["sasi-tipi"] },
+      sort_order: 59,
+      applies_to_transaction_modes: null,
+    });
+  }
+
+  if (has("ilan-sahibi")) {
+    fields.push({
       attribute_key: "vehicle_seller_type",
       ui_component: "select",
       required: false,
       filter_mode: "exact",
-      rules: null,
-      rules_ref: "rules/vehicle/by_category/tarim-is-makineleri/vehicle_seller_type.tr.json",
-      sort_order: 59,
-      applies_to_transaction_modes: null,
-    },
-    {
-      attribute_key: "vehicle_km",
-      ui_component: "number",
-      required: false,
-      filter_mode: "range",
-      rules: { min: 0, max: 2000000 },
+      rules: { options: facetMap["ilan-sahibi"] },
       sort_order: 60,
       applies_to_transaction_modes: null,
-    },
-    {
+    });
+  }
+
+  if (has("ilan-tarihi")) {
+    fields.push({
       attribute_key: "vehicle_listing_age",
       ui_component: "select",
       required: false,
       filter_mode: "exact",
-      rules: null,
-      rules_ref: "rules/vehicle/by_category/tarim-is-makineleri/vehicle_listing_age.tr.json",
+      rules: { options: facetMap["ilan-tarihi"] },
       sort_order: 66,
       applies_to_transaction_modes: null,
-    },
-    {
+    });
+  }
+
+  if (has("ozel-ilanlar")) {
+    fields.push({
+      attribute_key: "vehicle_special_listing",
+      ui_component: "select",
+      required: false,
+      filter_mode: "exact",
+      rules: { options: facetMap["ozel-ilanlar"] },
+      sort_order: 67,
+      applies_to_transaction_modes: null,
+    });
+  }
+
+  if (has("fiyat")) {
+    fields.push({
       attribute_key: "vehicle_price",
       ui_component: "number",
       required: false,
@@ -189,8 +216,10 @@ function baseTarimFields() {
       rules: { min: 0, max: 1000000000 },
       sort_order: 70,
       applies_to_transaction_modes: ["sale"],
-    },
-  ];
+    });
+  }
+
+  return fields;
 }
 
 async function main() {
@@ -209,6 +238,7 @@ async function main() {
   const parentToChildren = new Map(); // parent_slug -> Set(child_slug)
   const leafSlugs = [];
   const seenSlugs = new Set();
+  const slugToFacetMap = {}; // slug -> facetMap (friendly -> options)
 
   function addChild(parentSlug, childSlug) {
     if (!parentToChildren.has(parentSlug)) parentToChildren.set(parentSlug, new Set());
@@ -231,6 +261,7 @@ async function main() {
 
       const data = await fetchFacets(task.rel);
       fetched++;
+      slugToFacetMap[task.slug] = facetOptionsByFriendly(data);
       const kids = subcategories(data)
         .map((x) => ({
           name: typeof x?.Name === "string" ? x.Name.trim() : "",
@@ -288,14 +319,38 @@ async function main() {
   // leafSlugs order is not user-facing but keep stable
   leafSlugs.sort((a, b) => String(a).localeCompare(String(b), "tr"));
 
-  const schema = {
-    schema_version: 1,
-    category_slugs: leafSlugs,
-    fields: baseTarimFields(),
-  };
+  // Build birebir schema blocks by grouping categories with identical field definitions.
+  // NOTE: We attach schema not only to leaves, but also to intermediate nodes, because Arabam shows facets there too.
+  const schemaTargets = [ROOT_SLUG, ...categories.map((c) => String(c.slug))];
+  const schemaTargetsUniq = Array.from(new Set(schemaTargets));
+  const blocksByKey = new Map(); // key -> { fields, category_slugs }
+  for (const slug of schemaTargetsUniq) {
+    const facetMap = slugToFacetMap[slug] || {};
+    const fields = buildFieldsFromFacets(facetMap);
+    const key = JSON.stringify(fields);
+    if (!blocksByKey.has(key)) {
+      blocksByKey.set(key, { fields, category_slugs: [] });
+    }
+    blocksByKey.get(key).category_slugs.push(slug);
+  }
+
+  const schemaBlocks = Array.from(blocksByKey.values())
+    .map((b) => ({
+      schema_version: 1,
+      category_slugs: b.category_slugs,
+      fields: b.fields,
+    }))
+    .sort((a, b) => {
+      // deterministic: by first slug
+      const as = String(a.category_slugs?.[0] || "");
+      const bs = String(b.category_slugs?.[0] || "");
+      return as.localeCompare(bs, "tr");
+    });
 
   console.log("categories_total=" + categories.length);
   console.log("leaf_categories_total=" + leafSlugs.length);
+  console.log("schema_targets_total=" + schemaTargetsUniq.length);
+  console.log("schema_blocks_total=" + schemaBlocks.length);
 
   if (!args.write) {
     console.log("\nDry-run: use --write to write manifests.");
@@ -305,7 +360,7 @@ async function main() {
 
   console.log("writing_manifests...");
   fs.writeFileSync(categoriesOutPath, JSON.stringify(categories, null, 2) + "\n", "utf8");
-  fs.writeFileSync(schemaOutPath, JSON.stringify(schema, null, 2) + "\n", "utf8");
+  fs.writeFileSync(schemaOutPath, JSON.stringify(schemaBlocks, null, 2) + "\n", "utf8");
   console.log("writing_manifests_done");
   console.log("wrote " + categoriesOutPath);
   console.log("wrote " + schemaOutPath);
