@@ -1,6 +1,6 @@
 {
   "source": "arabam.com GetFacets (motosiklet)",
-  "generated_at": "2026-02-05T23:07:03.790Z",
+  "generated_at": "2026-02-06T02:37:51.610Z",
   "stats": {
     "brand_categories_total": 118,
     "models_total": 1691
@@ -15,19 +15,52 @@
       "Speedy 125i",
       "Yelken XA-2"
     ],
-    "motosiklet-altai": [
-      "Carrier 110 Pro",
-      "Carrier 125",
-      "F1Max 50",
-      "F1Max Pro 50",
-      "F2Max 50 Plus",
-      "Ristretto 125",
-      "Tank 50",
-      "Tank S50",
-      "Tank X125",
-      "Uma 50",
-      "XLine 50",
-      "XLine 50 Pro"
+    "motosiklet-aprilia": [
+      "Caponord 1200 Rally",
+      "Diğer Modeller",
+      "RS 125",
+      "RS 457",
+      "RS 660",
+      "RSV 4 Factory",
+      "RX 125",
+      "Shiver 900",
+      "SR 125",
+      "SR GT 125",
+      "SR GT 200",
+      "SX 125",
+      "Tuareg",
+      "Tuono 125",
+      "Tuono 660 Factory",
+      "Tuono V4 1100 Factory"
+    ],
+    "motosiklet-apachi": [
+      "Alfa 50",
+      "Beauty 125",
+      "Beauty 50",
+      "Diğer Modeller",
+      "Joy 125",
+      "Myra",
+      "Nova 125",
+      "Orca 50",
+      "Pusat",
+      "XRS"
+    ],
+    "motosiklet-ariic": [
+      "Chief 318"
+    ],
+    "motosiklet-asya": [
+      "AS 100-7 Turkcub",
+      "AS 100-8",
+      "AS 125",
+      "AS 125 T",
+      "AS 125 T-15",
+      "AS 150 T",
+      "AS 150 T 7B",
+      "Diğer Modeller",
+      "Hero 125",
+      "Kedi Delux",
+      "Nostalji 125",
+      "Swift 150"
     ],
     "motosiklet-apec": [
       "APX5",
@@ -61,63 +94,11 @@
       "Qute RE 60",
       "V 15"
     ],
-    "motosiklet-ariic": [
-      "Chief 318"
-    ],
-    "motosiklet-apachi": [
-      "Alfa 50",
-      "Beauty 125",
-      "Beauty 50",
-      "Diğer Modeller",
-      "Joy 125",
-      "Myra",
-      "Nova 125",
-      "Orca 50",
-      "Pusat",
-      "XRS"
-    ],
-    "motosiklet-asya": [
-      "AS 100-7 Turkcub",
-      "AS 100-8",
-      "AS 125",
-      "AS 125 T",
-      "AS 125 T-15",
-      "AS 150 T",
-      "AS 150 T 7B",
-      "Diğer Modeller",
-      "Hero 125",
-      "Kedi Delux",
-      "Nostalji 125",
-      "Swift 150"
-    ],
-    "motosiklet-aprilia": [
-      "Caponord 1200 Rally",
-      "Diğer Modeller",
-      "RS 125",
-      "RS 457",
-      "RS 660",
-      "RSV 4 Factory",
-      "RX 125",
-      "Shiver 900",
-      "SR 125",
-      "SR GT 125",
-      "SR GT 200",
-      "SX 125",
-      "Tuareg",
-      "Tuono 125",
-      "Tuono 660 Factory",
-      "Tuono V4 1100 Factory"
-    ],
     "motosiklet-bashan": [
       "125"
     ],
     "motosiklet-belderia": [
       "BD 125"
-    ],
-    "motosiklet-benda-motor": [
-      "Chinchilla 500",
-      "Napoloen 500",
-      "Rock 250"
     ],
     "motosiklet-arora": [
       "Alfa 110",
@@ -205,27 +186,38 @@
       "VESTA 50",
       "ZRX 200"
     ],
+    "motosiklet-better": [
+      "125"
+    ],
     "motosiklet-beta": [
       "EVO 80",
       "RR 250 2T Enduro Racing",
       "X-Trainer"
     ],
-    "motosiklet-boom": [
-      "Family"
-    ],
-    "motosiklet-better": [
-      "125"
+    "motosiklet-benda-motor": [
+      "Chinchilla 500",
+      "Napoloen 500",
+      "Rock 250"
     ],
     "motosiklet-bisan": [
       "Diğer Modeller"
     ],
-    "motosiklet-brixton": [
-      "Cromwell 250",
-      "Crossfire 125 XS",
-      "Felsberg 125 X"
+    "motosiklet-altai": [
+      "Carrier 110 Pro",
+      "Carrier 125",
+      "F1Max 50",
+      "F1Max Pro 50",
+      "F2Max 50 Plus",
+      "Ristretto 125",
+      "Tank 50",
+      "Tank S50",
+      "Tank X125",
+      "Uma 50",
+      "XLine 50",
+      "XLine 50 Pro"
     ],
-    "motosiklet-bsa": [
-      "Gold Star"
+    "motosiklet-boom": [
+      "Family"
     ],
     "motosiklet-benelli": [
       "125 S",
@@ -295,6 +287,14 @@
       "S 1000 RR HP Motosport",
       "S 1000 XR"
     ],
+    "motosiklet-brixton": [
+      "Cromwell 250",
+      "Crossfire 125 XS",
+      "Felsberg 125 X"
+    ],
+    "motosiklet-bsa": [
+      "Gold Star"
+    ],
     "motosiklet-can-am": [
       "Canyon",
       "Ryker",
@@ -303,12 +303,24 @@
     "motosiklet-crn": [
       "Achilles 50 Pro"
     ],
-    "motosiklet-dofern": [
-      "JDF 125ZD",
-      "JDF 250T"
-    ],
     "motosiklet-delta-motorcycle": [
       "Coral 125"
+    ],
+    "motosiklet-daelim": [
+      "Dart 125",
+      "S3 Advance 250"
+    ],
+    "motosiklet-csn-motor": [
+      "Arrebol 125",
+      "Beauty 125",
+      "Beauty 50",
+      "Dakar 150",
+      "Elegance 125",
+      "Felicity 125",
+      "Kano 50",
+      "Pluton",
+      "Snake 125X",
+      "Sniper"
     ],
     "motosiklet-cfmoto": [
       "150NK",
@@ -330,35 +342,19 @@
       "800 MT Sport",
       "800MT Touring"
     ],
-    "motosiklet-daelim": [
-      "Dart 125",
-      "S3 Advance 250"
+    "motosiklet-dofern": [
+      "JDF 125ZD",
+      "JDF 250T"
     ],
     "motosiklet-doohan": [
       "Dancer 50",
       "X 50"
-    ],
-    "motosiklet-csn-motor": [
-      "Arrebol 125",
-      "Beauty 125",
-      "Beauty 50",
-      "Dakar 150",
-      "Elegance 125",
-      "Felicity 125",
-      "Kano 50",
-      "Pluton",
-      "Snake 125X",
-      "Sniper"
     ],
     "motosiklet-dorado": [
       "Akida Scooter 125",
       "Arcon 150",
       "Daphne",
       "Sandor 150"
-    ],
-    "motosiklet-enbest": [
-      "A01",
-      "A02"
     ],
     "motosiklet-ducati": [
       "DesertX",
@@ -379,14 +375,25 @@
       "Scrambler Icon",
       "Scrambler Icon Dark"
     ],
+    "motosiklet-enbest": [
+      "A01",
+      "A02"
+    ],
     "motosiklet-fcm": [
       "RZ 54"
+    ],
+    "motosiklet-fosti": [
+      "250"
+    ],
+    "motosiklet-gilera": [
+      "Runner 180"
     ],
     "motosiklet-fym": [
       "FY 100-10A"
     ],
-    "motosiklet-fosti": [
-      "250"
+    "motosiklet-haojue": [
+      "DA135 S",
+      "HJ 125-T-10"
     ],
     "motosiklet-falcon": [
       "Attack 100",
@@ -439,13 +446,6 @@
       "Turtle 50",
       "Wonder 150"
     ],
-    "motosiklet-gilera": [
-      "Runner 180"
-    ],
-    "motosiklet-haojue": [
-      "DA135 S",
-      "HJ 125-T-10"
-    ],
     "motosiklet-harley-davidson": [
       "Dyna Street Bob FXDBA",
       "Dyna Super Glide Sport FXDXI",
@@ -492,9 +492,6 @@
       "Svartpilen 401",
       "TE 250i"
     ],
-    "motosiklet-indian": [
-      "Chieftain"
-    ],
     "motosiklet-hyosung": [
       "Diğer Modeller",
       "GD 250 R",
@@ -503,8 +500,28 @@
       "GV 650",
       "QH 250"
     ],
+    "motosiklet-indian": [
+      "Chieftain"
+    ],
     "motosiklet-italjet": [
       "Dragster"
+    ],
+    "motosiklet-jawa": [
+      "250 Ceylan",
+      "250 Classic",
+      "300 CL",
+      "350 Twin Sport",
+      "42 Bobber",
+      "Perak"
+    ],
+    "motosiklet-jaxin": [
+      "GT5 150 A"
+    ],
+    "motosiklet-jinlun": [
+      "JL 150-5"
+    ],
+    "motosiklet-kamax": [
+      "Cubpro 125"
     ],
     "motosiklet-honda": [
       "Activa 100",
@@ -616,25 +633,16 @@
       "XL 700 Transalp",
       "XL 750 Transalp"
     ],
-    "motosiklet-jawa": [
-      "250 Ceylan",
-      "250 Classic",
-      "300 CL",
-      "350 Twin Sport",
-      "42 Bobber",
-      "Perak"
-    ],
-    "motosiklet-jaxin": [
-      "GT5 150 A"
-    ],
-    "motosiklet-jinlun": [
-      "JL 150-5"
-    ],
-    "motosiklet-kamax": [
-      "Cubpro 125"
-    ],
     "motosiklet-kayo-moto": [
       "TT160"
+    ],
+    "motosiklet-keeway": [
+      "ARN 150",
+      "Focus 125",
+      "Outlook 150",
+      "Speed 150",
+      "Super Light 150",
+      "Super Shadow 250"
     ],
     "motosiklet-kanuni": [
       "Breton 125",
@@ -671,14 +679,6 @@
       "Visal 125",
       "Windy 125",
       "WindyS 150 LX"
-    ],
-    "motosiklet-keeway": [
-      "ARN 150",
-      "Focus 125",
-      "Outlook 150",
-      "Speed 150",
-      "Super Light 150",
-      "Super Shadow 250"
     ],
     "motosiklet-kawasaki": [
       "Eliminator 500",
@@ -780,10 +780,6 @@
       "990 Adventure",
       "990 Duke"
     ],
-    "motosiklet-leksas": [
-      "Class",
-      "Nova"
-    ],
     "motosiklet-lambretta": [
       "G350",
       "V125 Special",
@@ -792,19 +788,12 @@
       "X250",
       "X300"
     ],
+    "motosiklet-leksas": [
+      "Class",
+      "Nova"
+    ],
     "motosiklet-malaguti": [
       "Spider Max GT 500"
-    ],
-    "motosiklet-lifan": [
-      "Discovery 150",
-      "Dragon 125",
-      "Eagle 125",
-      "EM150L",
-      "Glint 100",
-      "LF125-5",
-      "LF150-10B",
-      "LF250-B",
-      "Tay 100"
     ],
     "motosiklet-kymco": [
       "Agility 125",
@@ -843,6 +832,17 @@
       "Xtown 250 CT",
       "Xtown 250i"
     ],
+    "motosiklet-lifan": [
+      "Discovery 150",
+      "Dragon 125",
+      "Eagle 125",
+      "EM150L",
+      "Glint 100",
+      "LF125-5",
+      "LF150-10B",
+      "LF250-B",
+      "Tay 100"
+    ],
     "motosiklet-meka-motor": [
       "Alp 125",
       "Freeless"
@@ -877,11 +877,6 @@
       "CG 50 Pro Plus",
       "CG 50 Pro Ultra",
       "Chia 125",
-      "City",
-      "City Go",
-      "CR 1",
-      "CR 1-S",
-      "Cristal 50",
       "Çita 100",
       "Çita 100 R",
       "Çita 100R Gold",
@@ -894,6 +889,11 @@
       "Çita 180R",
       "Çita 180R Gold",
       "Çita 50R Gold",
+      "City",
+      "City Go",
+      "CR 1",
+      "CR 1-S",
+      "Cristal 50",
       "Diğer Modeller",
       "Dragon 50",
       "Easy Pro 50",
@@ -966,8 +966,8 @@
     "motosiklet-modenas": [
       "Modenas"
     ],
-    "motosiklet-moto-morini": [
-      "X-Cape"
+    "motosiklet-monero": [
+      "ANGEL 150"
     ],
     "motosiklet-moto-guzzi": [
       "Stelvio",
@@ -975,8 +975,17 @@
       "V7 Special",
       "V7 Stone"
     ],
-    "motosiklet-monero": [
-      "ANGEL 150"
+    "motosiklet-moto-morini": [
+      "X-Cape"
+    ],
+    "motosiklet-motoran": [
+      "Allegro",
+      "CBS 150 Balancer",
+      "Fabio 150",
+      "HJ 125",
+      "Maxima 150",
+      "Orca 100",
+      "Torro LX 100"
     ],
     "motosiklet-motolux": [
       "Africa Wolf",
@@ -1115,15 +1124,6 @@
       "X-Treme Max 200",
       "X-Treme Max 200i"
     ],
-    "motosiklet-motoran": [
-      "Allegro",
-      "CBS 150 Balancer",
-      "Fabio 150",
-      "HJ 125",
-      "Maxima 150",
-      "Orca 100",
-      "Torro LX 100"
-    ],
     "motosiklet-musatti": [
       "Bella 50",
       "CG 50 Max",
@@ -1139,6 +1139,17 @@
       "Siena 110",
       "Siena 50",
       "X Pow"
+    ],
+    "motosiklet-mv-agusta": [
+      "Brutale 800 R",
+      "Brutale 800 Rosso",
+      "Brutale 800 RR",
+      "Dragster 800 RR SCS",
+      "F3 800",
+      "F4RR",
+      "Turismo Veloce 800 Rosso",
+      "Turismo Veloce R",
+      "Turismo Veloce RC SCS"
     ],
     "motosiklet-mutt": [
       "Mushman 250",
@@ -1177,20 +1188,6 @@
       "XP 400",
       "XP 400 Allure"
     ],
-    "motosiklet-pioneer": [
-      "XF125L-4B"
-    ],
-    "motosiklet-mv-agusta": [
-      "Brutale 800 R",
-      "Brutale 800 Rosso",
-      "Brutale 800 RR",
-      "Dragster 800 RR SCS",
-      "F3 800",
-      "F4RR",
-      "Turismo Veloce 800 Rosso",
-      "Turismo Veloce R",
-      "Turismo Veloce RC SCS"
-    ],
     "motosiklet-piaggio": [
       "Ape Calessino",
       "Beverly 250",
@@ -1215,6 +1212,12 @@
       "X8 250 Premium",
       "X9 500"
     ],
+    "motosiklet-planet": [
+      "IZH"
+    ],
+    "motosiklet-pioneer": [
+      "XF125L-4B"
+    ],
     "motosiklet-qj": [
       "ATR125",
       "Fort 350",
@@ -1236,9 +1239,6 @@
       "QM 200 GY",
       "Star 125 L",
       "XF 125 10-V"
-    ],
-    "motosiklet-planet": [
-      "IZH"
     ],
     "motosiklet-regal-raptor": [
       "Cafe Racer 125",
@@ -1313,15 +1313,6 @@
       "Verona 125",
       "Verona 50"
     ],
-    "motosiklet-rutec": [
-      "Badi 125",
-      "Capri 125",
-      "Cargo 125",
-      "Grace 50",
-      "Lucca 125",
-      "Lucca 50 Easy",
-      "R9 125"
-    ],
     "motosiklet-royal-enfield": [
       "Bullet 350",
       "Classic 350",
@@ -1336,6 +1327,15 @@
       "Meteor 350",
       "Super Meteor 650"
     ],
+    "motosiklet-rutec": [
+      "Badi 125",
+      "Capri 125",
+      "Cargo 125",
+      "Grace 50",
+      "Lucca 125",
+      "Lucca 50 Easy",
+      "R9 125"
+    ],
     "motosiklet-salcano": [
       "Astro 130",
       "Hunter",
@@ -1347,6 +1347,10 @@
       "Wings 125",
       "Wolf S"
     ],
+    "motosiklet-shinari": [
+      "Taipar 100 CC",
+      "Taipar 50 CC"
+    ],
     "motosiklet-sfm": [
       "Bundera 5",
       "Konung 110",
@@ -1356,25 +1360,12 @@
       "Razzi 50",
       "Ventin 50"
     ],
-    "motosiklet-shinari": [
-      "Taipar 100 CC",
-      "Taipar 50 CC"
-    ],
     "motosiklet-skyjet": [
       "Bayberry 125",
       "Bellina 125",
       "Diğer Modeller",
       "Rivero 125",
       "SJ-150 23/F5"
-    ],
-    "motosiklet-skyteam": [
-      "Skymax 125",
-      "T-Rex 125",
-      "Tracker 125"
-    ],
-    "motosiklet-spada": [
-      "Anton 150 / 200",
-      "Xfire 200 EFI"
     ],
     "motosiklet-rks": [
       "125-S",
@@ -1487,8 +1478,8 @@
       "TNT202",
       "TRV 242",
       "Veloce 150",
-      "Vıeste 249",
       "Viesta 249",
+      "Vıeste 249",
       "VPS 125",
       "VPS 125 PRO",
       "VRS 125",
@@ -1497,6 +1488,15 @@
       "X Power 50",
       "XVR250"
     ],
+    "motosiklet-spada": [
+      "Anton 150 / 200",
+      "Xfire 200 EFI"
+    ],
+    "motosiklet-skyteam": [
+      "Skymax 125",
+      "T-Rex 125",
+      "Tracker 125"
+    ],
     "motosiklet-stmax": [
       "Bravo 50",
       "Diğer Modeller",
@@ -1504,9 +1504,6 @@
       "Lindy 50",
       "Mega 50",
       "Tempo 50"
-    ],
-    "motosiklet-tgb": [
-      "X-Motion 250 EFI"
     ],
     "motosiklet-taktas-motor": [
       "Apollo 150",
@@ -1565,6 +1562,9 @@
     "motosiklet-telstar": [
       "50"
     ],
+    "motosiklet-tgb": [
+      "X-Motion 250 EFI"
+    ],
     "motosiklet-sym": [
       "ADX 125",
       "ADX 300",
@@ -1611,6 +1611,25 @@
       "Xpro Cargo 125",
       "Xpro II 125"
     ],
+    "motosiklet-truva": [
+      "TR 250-4"
+    ],
+    "motosiklet-togo": [
+      "800G",
+      "800S",
+      "TG250",
+      "VS550"
+    ],
+    "motosiklet-tt": [
+      "Custom"
+    ],
+    "motosiklet-um": [
+      "Renegade Commando 125",
+      "Renegade Freedom ABS 250",
+      "Renegade Sport S 125",
+      "Renegade Vegas 125",
+      "Renegade Vegas CBS 250"
+    ],
     "motosiklet-triumph": [
       "Bonneville T100",
       "Daytona 765",
@@ -1635,68 +1654,6 @@
       "Tiger Sport 660",
       "Trident 660",
       "Trophy 1200"
-    ],
-    "motosiklet-togo": [
-      "800G",
-      "800S",
-      "TG250",
-      "VS550"
-    ],
-    "motosiklet-truva": [
-      "TR 250-4"
-    ],
-    "motosiklet-tt": [
-      "Custom"
-    ],
-    "motosiklet-tvs": [
-      "Apache RTR 150",
-      "Apache RTR 200",
-      "Diğer Modeller",
-      "Jupiter",
-      "Jupiter 125",
-      "Neo X3i",
-      "Nqtorq 125",
-      "Ntorq 125",
-      "Raider 125",
-      "Scooty Pep Plus",
-      "Scooty Zest 110",
-      "Wego"
-    ],
-    "motosiklet-um": [
-      "Renegade Commando 125",
-      "Renegade Freedom ABS 250",
-      "Renegade Sport S 125",
-      "Renegade Vegas 125",
-      "Renegade Vegas CBS 250"
-    ],
-    "motosiklet-volta": [
-      "Apec 125",
-      "Apec 49.4"
-    ],
-    "motosiklet-yiben": [
-      "Palermo",
-      "Scout 50",
-      "Storm 50",
-      "YB50QT-21"
-    ],
-    "motosiklet-voge": [
-      "125 R",
-      "250 GY",
-      "250 Rally",
-      "250 RR",
-      "300 DS",
-      "300 R",
-      "300 Rally",
-      "500AC",
-      "500DSX",
-      "525 DSX",
-      "525 R",
-      "525 RR",
-      "900 DSX",
-      "SR1",
-      "SR1 ADV",
-      "SR3",
-      "SR4 Maksi 350"
     ],
     "motosiklet-vespa": [
       "946 125 i.e.",
@@ -1729,6 +1686,118 @@
       "Sprint 150",
       "Sprint 50"
     ],
+    "motosiklet-voge": [
+      "125 R",
+      "250 GY",
+      "250 Rally",
+      "250 RR",
+      "300 DS",
+      "300 R",
+      "300 Rally",
+      "500AC",
+      "500DSX",
+      "525 DSX",
+      "525 R",
+      "525 RR",
+      "900 DSX",
+      "SR1",
+      "SR1 ADV",
+      "SR3",
+      "SR4 Maksi 350"
+    ],
+    "motosiklet-tvs": [
+      "Apache RTR 150",
+      "Apache RTR 200",
+      "Diğer Modeller",
+      "Jupiter",
+      "Jupiter 125",
+      "Neo X3i",
+      "Nqtorq 125",
+      "Ntorq 125",
+      "Raider 125",
+      "Scooty Pep Plus",
+      "Scooty Zest 110",
+      "Wego"
+    ],
+    "motosiklet-volta": [
+      "Apec 125",
+      "Apec 49.4"
+    ],
+    "motosiklet-yiben": [
+      "Palermo",
+      "Scout 50",
+      "Storm 50",
+      "YB50QT-21"
+    ],
+    "motosiklet-zealsun": [
+      "ZLS 50 Rex",
+      "ZS 150-19",
+      "ZS 200 GS"
+    ],
+    "motosiklet-yuki": [
+      "Active 125",
+      "Active 50",
+      "Adventure 150",
+      "Afşin 250",
+      "Attact 100",
+      "Bellini 125",
+      "Bellini 50",
+      "C5 ZR250",
+      "Casper S 50",
+      "CL 125T",
+      "Crypto 125",
+      "Crypto 50",
+      "Defender Maxi ADV",
+      "Diğer Modeller",
+      "Dirty Paws Offroad",
+      "Drag 200",
+      "Duty 125",
+      "Enzo 50",
+      "Fifty 50",
+      "Funrider 125",
+      "Gelato 125",
+      "Gelato 150",
+      "Gentle 50",
+      "Gusto 50",
+      "Hammer 125",
+      "Hammer 50",
+      "Huracan TR250T",
+      "JJ125T-15 Active",
+      "JJ50QT Picasso 50",
+      "LB150T-9",
+      "Margherita 50",
+      "Mojito 50",
+      "Risotto 125",
+      "Risotto 50",
+      "Route 110",
+      "Scram 170",
+      "Solid 125",
+      "T11 Explorer",
+      "T9 Strom 125",
+      "T9 Strom Maxi 125",
+      "Taro GP1",
+      "Taro GP2",
+      "Tekken 125",
+      "TY125-Z Driver",
+      "Vampire 125",
+      "Victor",
+      "XGJ100-7C Gusto",
+      "Xway 125",
+      "Yıldız 100",
+      "YK 100 A",
+      "YK 150 T-3",
+      "YK-150-9 Goldfox-S",
+      "YK-24 Aydos",
+      "YK-24 AYDOS",
+      "YK-25 Midilli",
+      "YK-250ZH Ayder",
+      "YK100-7A Gusto",
+      "YK125",
+      "YK21-A Naked",
+      "YK250-4",
+      "YX 200",
+      "ZY125-15A Scrambler"
+    ],
     "motosiklet-zelsun": [
       "ZLS 125 Monaco",
       "ZLS 50 Best",
@@ -1738,10 +1807,16 @@
       "ZLS 50 Pro City",
       "ZLS 50 Rex"
     ],
-    "motosiklet-zealsun": [
-      "ZLS 50 Rex",
-      "ZS 150-19",
-      "ZS 200 GS"
+    "motosiklet-zontes": [
+      "125 M",
+      "155 U1",
+      "200 C",
+      "250 T-E",
+      "310 X",
+      "350 GK",
+      "350 R",
+      "350 T2",
+      "350 V"
     ],
     "motosiklet-yamaha": [
       "Aerox 100",
@@ -1855,83 +1930,8 @@
       "YZF R6s",
       "Zoom"
     ],
-    "motosiklet-zontes": [
-      "125 M",
-      "155 U1",
-      "200 C",
-      "250 T-E",
-      "310 X",
-      "350 GK",
-      "350 R",
-      "350 T2",
-      "350 V"
-    ],
     "motosiklet-zorro": [
       "ZR 125-48 Yebere"
-    ],
-    "motosiklet-yuki": [
-      "Active 125",
-      "Active 50",
-      "Adventure 150",
-      "Afşin 250",
-      "Attact 100",
-      "Bellini 125",
-      "Bellini 50",
-      "C5 ZR250",
-      "Casper S 50",
-      "CL 125T",
-      "Crypto 125",
-      "Crypto 50",
-      "Defender Maxi ADV",
-      "Diğer Modeller",
-      "Dirty Paws Offroad",
-      "Drag 200",
-      "Duty 125",
-      "Enzo 50",
-      "Fifty 50",
-      "Funrider 125",
-      "Gelato 125",
-      "Gelato 150",
-      "Gentle 50",
-      "Gusto 50",
-      "Hammer 125",
-      "Hammer 50",
-      "Huracan TR250T",
-      "JJ125T-15 Active",
-      "JJ50QT Picasso 50",
-      "LB150T-9",
-      "Margherita 50",
-      "Mojito 50",
-      "Risotto 125",
-      "Risotto 50",
-      "Route 110",
-      "Scram 170",
-      "Solid 125",
-      "T11 Explorer",
-      "T9 Strom 125",
-      "T9 Strom Maxi 125",
-      "Taro GP1",
-      "Taro GP2",
-      "Tekken 125",
-      "TY125-Z Driver",
-      "Vampire 125",
-      "Victor",
-      "XGJ100-7C Gusto",
-      "Xway 125",
-      "Yıldız 100",
-      "YK 100 A",
-      "YK 150 T-3",
-      "YK-150-9 Goldfox-S",
-      "YK-24 Aydos",
-      "YK-24 AYDOS",
-      "YK-25 Midilli",
-      "YK-250ZH Ayder",
-      "YK100-7A Gusto",
-      "YK125",
-      "YK21-A Naked",
-      "YK250-4",
-      "YX 200",
-      "ZY125-15A Scrambler"
     ]
   }
 }

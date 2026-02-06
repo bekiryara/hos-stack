@@ -20,7 +20,10 @@
   {"key":"vehicle_swap","value_type":"boolean","unit":null,"description":"Takasa uygun"},
   {"key":"vehicle_engine_power_hp","value_type":"number","unit":"hp","description":"Motor gücü"},
   {"key":"vehicle_engine_displacement_cc","value_type":"number","unit":"cc","description":"Motor hacmi"},
+  {"key":"vehicle_engine_power_bucket","value_type":"enum","unit":null,"description":"Motor gücü (aralık)"},
+  {"key":"vehicle_engine_displacement_bucket","value_type":"enum","unit":null,"description":"Motor hacmi (aralık)"},
   {"key":"vehicle_km","value_type":"number","unit":"km","description":"Kilometre"},
+  {"key":"vehicle_km_bucket","value_type":"enum","unit":null,"description":"Kilometre (aralık)"},
   {"key":"vehicle_working_hours","value_type":"number","unit":"hour","description":"Çalışma saati"},
   {"key":"vehicle_price","value_type":"number","unit":"TRY","description":"Fiyat"},
   {"key":"vehicle_price_per_day","value_type":"number","unit":"TRY","description":"Günlük fiyat"},
@@ -31,6 +34,10 @@
   {"key":"vehicle_tractor_type","value_type":"enum","unit":null,"description":"Traktör tipi"},
   {"key":"vehicle_tractor_cabin","value_type":"enum","unit":null,"description":"Kabin"},
   {"key":"vehicle_chassis_type","value_type":"enum","unit":null,"description":"Şasi tipi"},
+  {"key":"vehicle_motorcycle_type","value_type":"enum","unit":null,"description":"Motosiklet tipi"},
+  {"key":"vehicle_equipment","value_type":"enum","unit":null,"description":"Donanım"},
+  {"key":"vehicle_timing_type","value_type":"enum","unit":null,"description":"Zamanlama tipi"},
+  {"key":"vehicle_swap_status","value_type":"enum","unit":null,"description":"Takasa uygun (Evet/Hayır)"},
   {"key":"vehicle_special_listing","value_type":"enum","unit":null,"description":"Özel ilanlar"}
   ,
   {"key":"offer_variant","value_type":"enum","unit":null,"description":"Offer/policy variant (e.g., Satılık, Kiralık, Turistik Günlük Kiralık, Devren). Not a category; used as listing policy."}

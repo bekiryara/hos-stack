@@ -62,8 +62,16 @@ function uniq(list) {
   return out;
 }
 
-function sortTr(list) {
-  return [...list].sort((a, b) => String(a).localeCompare(String(b), "tr"));
+function facetOptionsByFriendly(data) {
+  const facets = (data && data.Data && Array.isArray(data.Data.Facets) ? data.Data.Facets : []) || [];
+  const out = {};
+  for (const f of facets) {
+    const friendly = typeof f?.FriendlyUrlName === "string" ? f.FriendlyUrlName : "";
+    const items = Array.isArray(f?.Items) ? f.Items : [];
+    if (!friendly || items.length === 0) continue;
+    out[friendly] = items.map((i) => (typeof i?.Name === "string" ? i.Name.trim() : "")).filter(Boolean);
+  }
+  return out;
 }
 
 function brandSlugFromRelativeUrl(rel) {
@@ -103,7 +111,8 @@ async function main() {
     }))
     .filter((b) => b.isBrand && b.name && b.rel);
 
-  const orderedBrands = [...brands].sort((a, b) => String(a.name).localeCompare(String(b.name), "tr"));
+  // IMPORTANT: preserve Arabam-provided ordering ("birebir")
+  const orderedBrands = [...brands];
 
   // Build categories
   const categories = [];
@@ -122,19 +131,16 @@ async function main() {
 
   // Build model dict (category_slug -> models[])
   const dict = {};
+  const catSlugToFacetMap = {};
   const concurrency = 8;
   await mapLimit(orderedBrands, concurrency, async (b) => {
     const brandSlug = brandSlugFromRelativeUrl(b.rel);
     const catSlug = `motosiklet-${brandSlug}`;
     const bo = await fetchFacets(b.rel);
-    const models = sortTr(
-      uniq(
-        subcategories(bo)
-          .map((m) => (typeof m?.Name === "string" ? m.Name.trim() : ""))
-          .filter(Boolean)
-      )
-    );
+    // IMPORTANT: preserve Arabam model ordering (no sorting)
+    const models = uniq(subcategories(bo).map((m) => (typeof m?.Name === "string" ? m.Name.trim() : "")).filter(Boolean));
     dict[catSlug] = models;
+    catSlugToFacetMap[catSlug] = facetOptionsByFriendly(bo);
     console.log(`models ${catSlug} = ${models.length}`);
   });
 
@@ -148,13 +154,21 @@ async function main() {
     brand_slug_to_models: dict,
   };
 
-  const schema = {
-    schema_version: 1,
-    category_slugs: Object.keys(dict).sort((a, b) => String(a).localeCompare(String(b), "tr")),
-    fields: [
-      { attribute_key: "city", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "cities.tr.json", sort_order: 5, applies_to_transaction_modes: null },
+  function buildFieldsFromFacets(facetMap, { hasModels } = {}) {
+    const fields = [];
+    const has = (friendly) => Object.prototype.hasOwnProperty.call(facetMap, friendly) && Array.isArray(facetMap[friendly]) && facetMap[friendly].length > 0;
 
-      {
+    // Keep cities as rules_ref (large list). Others are inline options from Arabam (birebir).
+    if (has("il")) {
+      fields.push({ attribute_key: "city", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "cities.tr.json", sort_order: 5, applies_to_transaction_modes: null });
+    }
+
+    if (has("marka")) {
+      fields.push({ attribute_key: "vehicle_brand", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["marka"] }, sort_order: 10, applies_to_transaction_modes: null });
+    }
+
+    if (hasModels) {
+      fields.push({
         attribute_key: "vehicle_model",
         ui_component: "select",
         required: false,
@@ -163,22 +177,95 @@ async function main() {
         rules_ref: { type: "vehicle_models_by_brand_slug", path: "vehicle-motosiklet-models.arabam.tr.json" },
         sort_order: 20,
         applies_to_transaction_modes: null,
-      },
+      });
+    }
 
-      { attribute_key: "vehicle_year", ui_component: "number", required: false, filter_mode: "range", rules: { min: 1950, max: 2035 }, sort_order: 30, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_fuel_type", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/motosiklet/vehicle_fuel_type.tr.json", sort_order: 40, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_transmission", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/motosiklet/vehicle_transmission.tr.json", sort_order: 50, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_color", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/motosiklet/vehicle_color.tr.json", sort_order: 56, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_condition", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/motosiklet/vehicle_condition.tr.json", sort_order: 58, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_seller_type", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/motosiklet/vehicle_seller_type.tr.json", sort_order: 59, applies_to_transaction_modes: null },
+    if (has("yil")) {
+      fields.push({ attribute_key: "vehicle_year", ui_component: "number", required: false, filter_mode: "range", rules: { min: 1950, max: 2035 }, sort_order: 30, applies_to_transaction_modes: null });
+    }
 
-      { attribute_key: "vehicle_km", ui_component: "number", required: false, filter_mode: "range", rules: { min: 0, max: 2000000 }, sort_order: 60, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_swap", ui_component: "boolean", required: false, filter_mode: "exact", rules: null, sort_order: 65, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_listing_age", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/motosiklet/vehicle_listing_age.tr.json", sort_order: 66, applies_to_transaction_modes: null },
+    if (has("kilometre")) {
+      fields.push({ attribute_key: "vehicle_km_bucket", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["kilometre"] }, sort_order: 32, applies_to_transaction_modes: null });
+    }
 
-      { attribute_key: "vehicle_price", ui_component: "number", required: false, filter_mode: "range", rules: { min: 0, max: 1000000000 }, sort_order: 70, applies_to_transaction_modes: ["sale"] },
-    ],
-  };
+    if (has("yakit-tipi")) {
+      fields.push({ attribute_key: "vehicle_fuel_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["yakit-tipi"] }, sort_order: 40, applies_to_transaction_modes: null });
+    }
+    if (has("vites-tipi")) {
+      fields.push({ attribute_key: "vehicle_transmission", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["vites-tipi"] }, sort_order: 50, applies_to_transaction_modes: null });
+    }
+
+    if (has("motor-gucu")) {
+      fields.push({ attribute_key: "vehicle_engine_power_bucket", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["motor-gucu"] }, sort_order: 52, applies_to_transaction_modes: null });
+    }
+    if (has("motor-hacmi")) {
+      fields.push({ attribute_key: "vehicle_engine_displacement_bucket", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["motor-hacmi"] }, sort_order: 53, applies_to_transaction_modes: null });
+    }
+
+    if (has("motosiklet-tipi")) {
+      fields.push({ attribute_key: "vehicle_motorcycle_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["motosiklet-tipi"] }, sort_order: 54, applies_to_transaction_modes: null });
+    }
+    if (has("silindir-sayisi")) {
+      fields.push({ attribute_key: "vehicle_cylinder_count", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["silindir-sayisi"] }, sort_order: 55, applies_to_transaction_modes: null });
+    }
+
+    if (has("renk")) {
+      fields.push({ attribute_key: "vehicle_color", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["renk"] }, sort_order: 56, applies_to_transaction_modes: null });
+    }
+
+    if (has("donanim")) {
+      fields.push({ attribute_key: "vehicle_equipment", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["donanim"] }, sort_order: 61, applies_to_transaction_modes: null });
+    }
+    if (has("zamanlama-tipi")) {
+      fields.push({ attribute_key: "vehicle_timing_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["zamanlama-tipi"] }, sort_order: 62, applies_to_transaction_modes: null });
+    }
+
+    if (has("arac-durumu")) {
+      fields.push({ attribute_key: "vehicle_condition", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["arac-durumu"] }, sort_order: 58, applies_to_transaction_modes: null });
+    }
+
+    if (has("ilan-sahibi")) {
+      fields.push({ attribute_key: "vehicle_seller_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["ilan-sahibi"] }, sort_order: 59, applies_to_transaction_modes: null });
+    }
+
+    if (has("agir-hasar-kayitli")) {
+      fields.push({ attribute_key: "vehicle_heavy_damage_record", ui_component: "boolean", required: false, filter_mode: "exact", rules: null, sort_order: 64, applies_to_transaction_modes: null });
+    }
+    if (has("takasa-uygun")) {
+      fields.push({ attribute_key: "vehicle_swap_status", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["takasa-uygun"] }, sort_order: 65, applies_to_transaction_modes: null });
+    }
+
+    if (has("ilan-tarihi")) {
+      fields.push({ attribute_key: "vehicle_listing_age", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["ilan-tarihi"] }, sort_order: 66, applies_to_transaction_modes: null });
+    }
+    if (has("ozel-ilanlar")) {
+      fields.push({ attribute_key: "vehicle_special_listing", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["ozel-ilanlar"] }, sort_order: 67, applies_to_transaction_modes: null });
+    }
+
+    if (has("fiyat")) {
+      fields.push({ attribute_key: "vehicle_price", ui_component: "number", required: false, filter_mode: "range", rules: { min: 0, max: 1000000000 }, sort_order: 70, applies_to_transaction_modes: ["sale"] });
+    }
+
+    return fields;
+  }
+
+  // Build schema blocks by grouping categories with identical field definitions.
+  // NOTE: include root "motosiklet" too, since Arabam shows facets there.
+  const rootFacetMap = facetOptionsByFriendly(root);
+  const schemaTargets = ["motosiklet", ...Object.keys(dict)];
+  const blocksByKey = new Map(); // key -> { fields, category_slugs }
+  for (const slug of schemaTargets) {
+    const facetMap = slug === "motosiklet" ? rootFacetMap : catSlugToFacetMap[slug] || {};
+    const hasModels = slug !== "motosiklet" && Array.isArray(dict[slug]) && dict[slug].length > 0;
+    const fields = buildFieldsFromFacets(facetMap, { hasModels });
+    const key = JSON.stringify(fields);
+    if (!blocksByKey.has(key)) blocksByKey.set(key, { fields, category_slugs: [] });
+    blocksByKey.get(key).category_slugs.push(slug);
+  }
+
+  const schemaBlocks = Array.from(blocksByKey.values())
+    .map((b) => ({ schema_version: 1, category_slugs: b.category_slugs, fields: b.fields }))
+    .sort((a, b) => String(a.category_slugs?.[0] || "").localeCompare(String(b.category_slugs?.[0] || ""), "tr"));
 
   console.log("\nsummary brand_categories_total=" + outModels.stats.brand_categories_total);
   console.log("summary models_total=" + outModels.stats.models_total);
@@ -197,7 +284,7 @@ async function main() {
   console.log("wrote " + modelPath);
 
   const schemaPath = path.join(manifestsRoot, "schema", "vehicle-motosiklet-models.json");
-  fs.writeFileSync(schemaPath, JSON.stringify(schema, null, 2) + "\n", "utf8");
+  fs.writeFileSync(schemaPath, JSON.stringify(schemaBlocks, null, 2) + "\n", "utf8");
   console.log("wrote " + schemaPath);
 }
 
