@@ -893,7 +893,8 @@ final class CatalogImportService
                     $out[] = $m;
                 }
             }
-            sort($out, SORT_NATURAL | SORT_FLAG_CASE);
+            // IMPORTANT: preserve manifest-provided order.
+            // Some sources (e.g., arabam.com) have a meaningful model ordering; sorting here breaks "birebir" exports.
             return ['options' => $out];
         }
 

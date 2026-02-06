@@ -142,12 +142,11 @@ async function main() {
     const catSlug = `otomobil-${brandSlug}`;
 
     const bo = await fetchFacets(b.rel);
-    const models = sortTr(
-      uniq(
-        subcategories(bo)
-          .map((m) => (typeof m?.Name === "string" ? m.Name.trim() : ""))
-          .filter(Boolean)
-      )
+    // Preserve arabam.com model ordering (do NOT sort).
+    const models = uniq(
+      subcategories(bo)
+        .map((m) => (typeof m?.Name === "string" ? m.Name.trim() : ""))
+        .filter(Boolean)
     );
 
     const inWhitelist = catSlugs.has(catSlug);
