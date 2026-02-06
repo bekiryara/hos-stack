@@ -1,6 +1,6 @@
 {
   "source": "arabam.com GetFacets (minivan-panelvan)",
-  "generated_at": "2026-02-05T23:02:17.349Z",
+  "generated_at": "2026-02-06T03:39:29.673Z",
   "stats": {
     "brand_categories_total": 37,
     "models_total": 106
@@ -9,16 +9,24 @@
     "minivan-panelvan-askam": [
       "Fargo Fora"
     ],
+    "minivan-panelvan-dfm": [
+      "Panelvan",
+      "Succe"
+    ],
     "minivan-panelvan-bmc": [
       "Megastar"
     ],
     "minivan-panelvan-chery": [
       "Taxim"
     ],
-    "minivan-panelvan-chrysler": [
-      "Grand Voyager",
-      "Town & Country",
-      "Voyager"
+    "minivan-panelvan-daewoo": [
+      "Lublin"
+    ],
+    "minivan-panelvan-daihatsu": [
+      "Hijet"
+    ],
+    "minivan-panelvan-dodge": [
+      "Grand Caravan"
     ],
     "minivan-panelvan-citroen": [
       "Berlingo",
@@ -28,25 +36,24 @@
       "Jumpy",
       "Nemo"
     ],
+    "minivan-panelvan-faw": [
+      "CA5024"
+    ],
+    "minivan-panelvan-chrysler": [
+      "Grand Voyager",
+      "Town & Country",
+      "Voyager"
+    ],
     "minivan-panelvan-dacia": [
       "Dokker",
       "Logan"
     ],
-    "minivan-panelvan-daewoo": [
-      "Lublin"
+    "minivan-panelvan-gmc": [
+      "Safari"
     ],
-    "minivan-panelvan-daihatsu": [
-      "Hijet"
-    ],
-    "minivan-panelvan-dfm": [
-      "Panelvan",
-      "Succe"
-    ],
-    "minivan-panelvan-dodge": [
-      "Grand Caravan"
-    ],
-    "minivan-panelvan-faw": [
-      "CA5024"
+    "minivan-panelvan-gaz": [
+      "Gazelle",
+      "Next"
     ],
     "minivan-panelvan-fiat": [
       "Doblo",
@@ -56,6 +63,24 @@
       "Panda Van",
       "Scudo",
       "Ulysse"
+    ],
+    "minivan-panelvan-isuzu": [
+      "WFR"
+    ],
+    "minivan-panelvan-kia": [
+      "Besta",
+      "Pregio"
+    ],
+    "minivan-panelvan-iveco-otoyol": [
+      "35",
+      "70"
+    ],
+    "minivan-panelvan-hyundai": [
+      "H 1",
+      "H 100",
+      "H 350",
+      "Starex",
+      "Staria"
     ],
     "minivan-panelvan-ford": [
       "E Serisi",
@@ -71,58 +96,20 @@
       "Transit Kombi",
       "Windstar"
     ],
-    "minivan-panelvan-gaz": [
-      "Gazelle",
-      "Next"
-    ],
-    "minivan-panelvan-gmc": [
-      "Safari"
-    ],
-    "minivan-panelvan-hyundai": [
-      "H 1",
-      "H 100",
-      "H 350",
-      "Starex",
-      "Staria"
-    ],
-    "minivan-panelvan-isuzu": [
-      "WFR"
-    ],
-    "minivan-panelvan-iveco-otoyol": [
-      "35",
-      "70"
-    ],
-    "minivan-panelvan-kia": [
-      "Besta",
-      "Pregio"
-    ],
     "minivan-panelvan-lancia": [
       "Voyager"
     ],
     "minivan-panelvan-man": [
       "TGE"
     ],
-    "minivan-panelvan-maxus": [
-      "e-Deliver"
-    ],
     "minivan-panelvan-mazda": [
       "E 2200"
     ],
-    "minivan-panelvan-mercedes-benz": [
-      "Citan",
-      "Sprinter",
-      "V Serisi",
-      "Vaneo",
-      "Viano",
-      "Vito"
+    "minivan-panelvan-maxus": [
+      "e-Deliver"
     ],
     "minivan-panelvan-mitsubishi": [
       "L 300"
-    ],
-    "minivan-panelvan-nissan": [
-      "Townstar",
-      "Urvan",
-      "Vanette"
     ],
     "minivan-panelvan-opel": [
       "Astra Van",
@@ -132,15 +119,6 @@
       "Movano",
       "Vivaro",
       "Zafira Life"
-    ],
-    "minivan-panelvan-peugeot": [
-      "206 Van",
-      "Bipper",
-      "Boxer",
-      "Expert",
-      "Expert Traveller",
-      "Partner",
-      "Rifter"
     ],
     "minivan-panelvan-piaggio": [
       "Porter"
@@ -157,25 +135,26 @@
       "Trafic",
       "Trafic Multix"
     ],
-    "minivan-panelvan-seat": [
-      "Inca"
-    ],
-    "minivan-panelvan-skoda": [
-      "Fabia Praktik"
-    ],
-    "minivan-panelvan-suzuki": [
-      "Carry"
-    ],
     "minivan-panelvan-temsa": [
       "Maxus"
     ],
-    "minivan-panelvan-tenax": [
-      "V35"
+    "minivan-panelvan-mercedes-benz": [
+      "Citan",
+      "Sprinter",
+      "V Serisi",
+      "Vaneo",
+      "Viano",
+      "Vito"
     ],
     "minivan-panelvan-toyota": [
       "Hi-Ace",
       "Proace City",
       "Proace City Cargo"
+    ],
+    "minivan-panelvan-nissan": [
+      "Townstar",
+      "Urvan",
+      "Vanette"
     ],
     "minivan-panelvan-volkswagen": [
       "Caddy",
@@ -185,6 +164,27 @@
       "LT",
       "MultiVan",
       "Transporter"
+    ],
+    "minivan-panelvan-skoda": [
+      "Fabia Praktik"
+    ],
+    "minivan-panelvan-suzuki": [
+      "Carry"
+    ],
+    "minivan-panelvan-tenax": [
+      "V35"
+    ],
+    "minivan-panelvan-peugeot": [
+      "206 Van",
+      "Bipper",
+      "Boxer",
+      "Expert",
+      "Expert Traveller",
+      "Partner",
+      "Rifter"
+    ],
+    "minivan-panelvan-seat": [
+      "Inca"
     ]
   }
 }

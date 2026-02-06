@@ -21,18 +21,29 @@ function parseArgs(argv) {
   return { write: argv.includes("--write") };
 }
 
-async function fetchFacets(rel, timeoutMs = 25000) {
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function fetchFacets(rel, { timeoutMs = 25000, retries = 3 } = {}) {
   const pageUrl = BASE + String(rel || "").replace(/^\/+/, "");
   const req = FACETS_ENDPOINT + encodeURIComponent(pageUrl);
-  const ac = new AbortController();
-  const t = setTimeout(() => ac.abort(), timeoutMs);
-  try {
-    const res = await fetch(req, { headers: { accept: "application/json,text/plain,*/*" }, signal: ac.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } finally {
-    clearTimeout(t);
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), timeoutMs);
+    try {
+      const res = await fetch(req, { headers: { accept: "application/json,text/plain,*/*" }, signal: ac.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      if (attempt === retries) throw e;
+      await sleep(250 * attempt);
+    } finally {
+      clearTimeout(t);
+    }
   }
+  throw new Error("unreachable");
 }
 
 function subcategories(o) {
@@ -51,8 +62,25 @@ function uniq(list) {
   return out;
 }
 
-function sortTr(list) {
-  return [...list].sort((a, b) => String(a).localeCompare(String(b), "tr"));
+function facetOptionsByFriendly(data) {
+  const facets = (data && data.Data && Array.isArray(data.Data.Facets) ? data.Data.Facets : []) || [];
+  const out = {};
+  for (const f of facets) {
+    const friendly = typeof f?.FriendlyUrlName === "string" ? f.FriendlyUrlName : "";
+    const items = Array.isArray(f?.Items) ? f.Items : [];
+    if (!friendly || items.length === 0) continue;
+    const opts = items.map((i) => (typeof i?.Name === "string" ? i.Name.trim() : "")).filter(Boolean);
+    // Some pages have duplicate FriendlyUrlName keys (e.g., minivan-panelvan root has two "kasa-tipi").
+    // Preserve both option lists to allow birebir mapping.
+    if (!Object.prototype.hasOwnProperty.call(out, friendly)) {
+      out[friendly] = opts;
+    } else if (Array.isArray(out[friendly]) && Array.isArray(out[friendly][0])) {
+      out[friendly].push(opts);
+    } else {
+      out[friendly] = [out[friendly], opts];
+    }
+  }
+  return out;
 }
 
 function brandSlugFromRelativeUrl(rel) {
@@ -60,6 +88,21 @@ function brandSlugFromRelativeUrl(rel) {
   const idx = parts.indexOf("minivan-panelvan");
   if (idx >= 0 && idx + 1 < parts.length) return parts[idx + 1];
   return parts[parts.length - 1] || "";
+}
+
+async function mapLimit(items, limit, mapper) {
+  const results = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await mapper(items[i], i);
+    }
+  }
+  const workers = Array.from({ length: Math.min(limit, items.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
 }
 
 async function main() {
@@ -79,8 +122,10 @@ async function main() {
   // categories (brand children)
   const categories = [];
   const dict = {}; // category_slug -> models[]
+  const catSlugToFacetMap = {};
 
-  const orderedBrands = [...brands].sort((a, b) => String(a.name).localeCompare(String(b.name), "tr"));
+  // IMPORTANT: preserve Arabam-provided ordering ("birebir")
+  const orderedBrands = [...brands];
   let sortOrder = 10;
 
   for (const b of orderedBrands) {
@@ -95,19 +140,20 @@ async function main() {
       sort_order: sortOrder,
     });
     sortOrder += 10;
-
-    const bo = await fetchFacets(b.rel);
-    const models = sortTr(
-      uniq(
-        subcategories(bo)
-          .map((m) => (typeof m?.Name === "string" ? m.Name.trim() : ""))
-          .filter(Boolean)
-      )
-    );
-
-    dict[catSlug] = models;
-    console.log(`models ${catSlug} = ${models.length}`);
   }
+
+  // Build model dict + facet map for each brand category (concurrent)
+  const concurrency = 8;
+  await mapLimit(orderedBrands, concurrency, async (b) => {
+    const brandSlug = brandSlugFromRelativeUrl(b.rel);
+    const catSlug = `minivan-panelvan-${brandSlug}`;
+    const bo = await fetchFacets(b.rel);
+    // IMPORTANT: preserve Arabam model ordering (no sorting)
+    const models = uniq(subcategories(bo).map((m) => (typeof m?.Name === "string" ? m.Name.trim() : "")).filter(Boolean));
+    dict[catSlug] = models;
+    catSlugToFacetMap[catSlug] = facetOptionsByFriendly(bo);
+    console.log(`models ${catSlug} = ${models.length}`);
+  });
 
   const outModels = {
     source: "arabam.com GetFacets (minivan-panelvan)",
@@ -119,13 +165,23 @@ async function main() {
     brand_slug_to_models: dict,
   };
 
-  const schema = {
-    schema_version: 1,
-    category_slugs: Object.keys(dict).sort((a, b) => String(a).localeCompare(String(b), "tr")),
-    fields: [
-      { attribute_key: "city", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "cities.tr.json", sort_order: 5, applies_to_transaction_modes: null },
+  function buildFieldsFromFacets(facetMap, { hasModels } = {}) {
+    const fields = [];
+    const has = (friendly) => {
+      if (!Object.prototype.hasOwnProperty.call(facetMap, friendly)) return false;
+      const v = facetMap[friendly];
+      if (!Array.isArray(v) || v.length === 0) return false;
+      // v is either string[] or string[][]
+      if (Array.isArray(v[0])) return v.some((x) => Array.isArray(x) && x.length > 0);
+      return true;
+    };
 
-      {
+    if (has("il")) {
+      fields.push({ attribute_key: "city", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap.il }, sort_order: 5, applies_to_transaction_modes: null });
+    }
+
+    if (hasModels) {
+      fields.push({
         attribute_key: "vehicle_model",
         ui_component: "select",
         required: false,
@@ -134,26 +190,112 @@ async function main() {
         rules_ref: { type: "vehicle_models_by_brand_slug", path: "vehicle-minivan-panelvan-models.arabam.tr.json" },
         sort_order: 20,
         applies_to_transaction_modes: null,
-      },
+      });
+    }
 
-      { attribute_key: "vehicle_year", ui_component: "number", required: false, filter_mode: "range", rules: { min: 1950, max: 2035 }, sort_order: 30, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_fuel_type", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/minivan-panelvan/vehicle_fuel_type.tr.json", sort_order: 40, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_transmission", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/minivan-panelvan/vehicle_transmission.tr.json", sort_order: 50, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_body_type", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/minivan-panelvan/vehicle_body_type.tr.json", sort_order: 55, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_color", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/minivan-panelvan/vehicle_color.tr.json", sort_order: 56, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_drive_type", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/minivan-panelvan/vehicle_drive_type.tr.json", sort_order: 57, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_condition", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/minivan-panelvan/vehicle_condition.tr.json", sort_order: 58, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_seller_type", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/minivan-panelvan/vehicle_seller_type.tr.json", sort_order: 59, applies_to_transaction_modes: null },
+    if (has("yil")) {
+      fields.push({ attribute_key: "vehicle_year", ui_component: "number", required: false, filter_mode: "range", rules: { min: 1950, max: 2035 }, sort_order: 30, applies_to_transaction_modes: null });
+    }
 
-      { attribute_key: "vehicle_km", ui_component: "number", required: false, filter_mode: "range", rules: { min: 0, max: 2000000 }, sort_order: 60, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_damage_status", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/minivan-panelvan/vehicle_damage_status.tr.json", sort_order: 63, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_heavy_damage_record", ui_component: "boolean", required: false, filter_mode: "exact", rules: null, sort_order: 64, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_swap", ui_component: "boolean", required: false, filter_mode: "exact", rules: null, sort_order: 65, applies_to_transaction_modes: null },
-      { attribute_key: "vehicle_listing_age", ui_component: "select", required: false, filter_mode: "exact", rules: null, rules_ref: "rules/vehicle/by_category/minivan-panelvan/vehicle_listing_age.tr.json", sort_order: 66, applies_to_transaction_modes: null },
+    if (has("kilometre")) {
+      fields.push({ attribute_key: "vehicle_km_bucket", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap.kilometre }, sort_order: 32, applies_to_transaction_modes: null });
+    }
 
-      { attribute_key: "vehicle_price", ui_component: "number", required: false, filter_mode: "range", rules: { min: 0, max: 1000000000 }, sort_order: 70, applies_to_transaction_modes: ["sale"] },
-    ],
-  };
+    if (has("yakit-tipi")) {
+      fields.push({ attribute_key: "vehicle_fuel_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["yakit-tipi"] }, sort_order: 40, applies_to_transaction_modes: null });
+    }
+    if (has("vites-tipi")) {
+      fields.push({ attribute_key: "vehicle_transmission", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["vites-tipi"] }, sort_order: 50, applies_to_transaction_modes: null });
+    }
+    if (has("kasa-tipi")) {
+      const kt = facetMap["kasa-tipi"];
+      if (Array.isArray(kt) && Array.isArray(kt[0])) {
+        // Two different "kasa-tipi" lists exist on some pages.
+        // First is generic body types; second is minivan/panelvan-specific types.
+        if (kt[0]?.length) {
+          fields.push({ attribute_key: "vehicle_body_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: kt[0] }, sort_order: 55, applies_to_transaction_modes: null });
+        }
+        if (kt[1]?.length) {
+          fields.push({ attribute_key: "vehicle_panelvan_body_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: kt[1] }, sort_order: 56, applies_to_transaction_modes: null });
+        }
+      } else {
+        fields.push({ attribute_key: "vehicle_body_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: kt }, sort_order: 55, applies_to_transaction_modes: null });
+      }
+    }
+    if (has("renk")) {
+      fields.push({ attribute_key: "vehicle_color", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap.renk }, sort_order: 56, applies_to_transaction_modes: null });
+    }
+    if (has("cekis")) {
+      fields.push({ attribute_key: "vehicle_drive_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap.cekis }, sort_order: 57, applies_to_transaction_modes: null });
+    }
+
+    if (has("motor-gucu")) {
+      fields.push({ attribute_key: "vehicle_engine_power_bucket", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["motor-gucu"] }, sort_order: 52, applies_to_transaction_modes: null });
+    }
+    if (has("donanim")) {
+      fields.push({ attribute_key: "vehicle_equipment", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap.donanim }, sort_order: 61, applies_to_transaction_modes: null });
+    }
+    if (has("arac-cinsi-ruhsat")) {
+      fields.push({ attribute_key: "vehicle_registration_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["arac-cinsi-ruhsat"] }, sort_order: 62, applies_to_transaction_modes: null });
+    }
+    if (has("koltuk-sayisi")) {
+      fields.push({ attribute_key: "vehicle_seat_count", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["koltuk-sayisi"] }, sort_order: 63, applies_to_transaction_modes: null });
+    }
+
+    if (has("arac-durumu")) {
+      fields.push({ attribute_key: "vehicle_condition", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["arac-durumu"] }, sort_order: 58, applies_to_transaction_modes: null });
+    }
+    if (has("ilan-sahibi")) {
+      fields.push({ attribute_key: "vehicle_seller_type", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["ilan-sahibi"] }, sort_order: 59, applies_to_transaction_modes: null });
+    }
+    if (has("boya-degisen-parca")) {
+      fields.push({ attribute_key: "vehicle_damage_status", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["boya-degisen-parca"] }, sort_order: 64, applies_to_transaction_modes: null });
+    }
+    if (has("agir-hasar-kayitli")) {
+      fields.push({
+        attribute_key: "vehicle_heavy_damage_record_status",
+        ui_component: "select",
+        required: false,
+        filter_mode: "exact",
+        rules: { options: facetMap["agir-hasar-kayitli"] },
+        sort_order: 65,
+        applies_to_transaction_modes: null,
+      });
+    }
+    if (has("takasa-uygun")) {
+      fields.push({ attribute_key: "vehicle_swap_status", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["takasa-uygun"] }, sort_order: 66, applies_to_transaction_modes: null });
+    }
+    if (has("ilan-tarihi")) {
+      fields.push({ attribute_key: "vehicle_listing_age", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["ilan-tarihi"] }, sort_order: 67, applies_to_transaction_modes: null });
+    }
+    if (has("ozel-ilanlar")) {
+      fields.push({ attribute_key: "vehicle_special_listing", ui_component: "select", required: false, filter_mode: "exact", rules: { options: facetMap["ozel-ilanlar"] }, sort_order: 68, applies_to_transaction_modes: null });
+    }
+
+    if (has("fiyat")) {
+      fields.push({ attribute_key: "vehicle_price", ui_component: "number", required: false, filter_mode: "range", rules: { min: 0, max: 1000000000 }, sort_order: 70, applies_to_transaction_modes: ["sale"] });
+    }
+
+    return fields;
+  }
+
+  // Build schema blocks by grouping categories with identical field definitions.
+  // NOTE: include root "minivan-panelvan" too, since Arabam shows facets there.
+  const rootFacetMap = facetOptionsByFriendly(root);
+  const schemaTargets = ["minivan-panelvan", ...Object.keys(dict)];
+  const blocksByKey = new Map(); // key -> { fields, category_slugs }
+  for (const slug of schemaTargets) {
+    const facetMap = slug === "minivan-panelvan" ? rootFacetMap : catSlugToFacetMap[slug] || {};
+    const hasModels = slug !== "minivan-panelvan" && Array.isArray(dict[slug]) && dict[slug].length > 0;
+    const fields = buildFieldsFromFacets(facetMap, { hasModels });
+    const key = JSON.stringify(fields);
+    if (!blocksByKey.has(key)) blocksByKey.set(key, { fields, category_slugs: [] });
+    blocksByKey.get(key).category_slugs.push(slug);
+  }
+
+  const schemaBlocks = Array.from(blocksByKey.values())
+    .map((b) => ({ schema_version: 1, category_slugs: b.category_slugs, fields: b.fields }))
+    .sort((a, b) => String(a.category_slugs?.[0] || "").localeCompare(String(b.category_slugs?.[0] || ""), "tr"));
 
   console.log("\nsummary brand_categories_total=" + outModels.stats.brand_categories_total);
   console.log("summary models_total=" + outModels.stats.models_total);
@@ -172,7 +314,7 @@ async function main() {
   console.log("wrote " + modelPath);
 
   const schemaPath = path.join(manifestsRoot, "schema", "vehicle-minivan-panelvan-models.json");
-  fs.writeFileSync(schemaPath, JSON.stringify(schema, null, 2) + "\n", "utf8");
+  fs.writeFileSync(schemaPath, JSON.stringify(schemaBlocks, null, 2) + "\n", "utf8");
   console.log("wrote " + schemaPath);
 }
 
