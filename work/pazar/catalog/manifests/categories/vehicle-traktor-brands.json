@@ -1,0 +1,464 @@
+[
+  {
+    "slug": "traktor-agt",
+    "parent_slug": "traktor",
+    "title": "AGT",
+    "status": "active",
+    "sort_order": 10
+  },
+  {
+    "slug": "traktor-alparslan-traktor",
+    "parent_slug": "traktor",
+    "title": "Alparslan Traktör",
+    "status": "active",
+    "sort_order": 20
+  },
+  {
+    "slug": "traktor-antonio-carraro",
+    "parent_slug": "traktor",
+    "title": "Antonio Carraro",
+    "status": "active",
+    "sort_order": 30
+  },
+  {
+    "slug": "traktor-artrak-superline",
+    "parent_slug": "traktor",
+    "title": "Artrak Superline",
+    "status": "active",
+    "sort_order": 40
+  },
+  {
+    "slug": "traktor-basak",
+    "parent_slug": "traktor",
+    "title": "Başak",
+    "status": "active",
+    "sort_order": 50
+  },
+  {
+    "slug": "traktor-baskent",
+    "parent_slug": "traktor",
+    "title": "Başkent",
+    "status": "active",
+    "sort_order": 60
+  },
+  {
+    "slug": "traktor-bmc",
+    "parent_slug": "traktor",
+    "title": "BMC",
+    "status": "active",
+    "sort_order": 70
+  },
+  {
+    "slug": "traktor-bolinder-munktell",
+    "parent_slug": "traktor",
+    "title": "Bolinder-Munktell",
+    "status": "active",
+    "sort_order": 80
+  },
+  {
+    "slug": "traktor-bozok",
+    "parent_slug": "traktor",
+    "title": "Bozok",
+    "status": "active",
+    "sort_order": 90
+  },
+  {
+    "slug": "traktor-case-ih",
+    "parent_slug": "traktor",
+    "title": "Case IH",
+    "status": "active",
+    "sort_order": 100
+  },
+  {
+    "slug": "traktor-chery",
+    "parent_slug": "traktor",
+    "title": "Chery",
+    "status": "active",
+    "sort_order": 110
+  },
+  {
+    "slug": "traktor-claas",
+    "parent_slug": "traktor",
+    "title": "Claas",
+    "status": "active",
+    "sort_order": 120
+  },
+  {
+    "slug": "traktor-deutz",
+    "parent_slug": "traktor",
+    "title": "Deutz",
+    "status": "active",
+    "sort_order": 130
+  },
+  {
+    "slug": "traktor-deutz-fahr",
+    "parent_slug": "traktor",
+    "title": "Deutz Fahr",
+    "status": "active",
+    "sort_order": 140
+  },
+  {
+    "slug": "traktor-dexta",
+    "parent_slug": "traktor",
+    "title": "Dexta",
+    "status": "active",
+    "sort_order": 150
+  },
+  {
+    "slug": "traktor-diger",
+    "parent_slug": "traktor",
+    "title": "Diğer",
+    "status": "active",
+    "sort_order": 160
+  },
+  {
+    "slug": "traktor-erkunt",
+    "parent_slug": "traktor",
+    "title": "Erkunt",
+    "status": "active",
+    "sort_order": 170
+  },
+  {
+    "slug": "traktor-farmtrac",
+    "parent_slug": "traktor",
+    "title": "Farmtrac",
+    "status": "active",
+    "sort_order": 180
+  },
+  {
+    "slug": "traktor-fendt",
+    "parent_slug": "traktor",
+    "title": "Fendt",
+    "status": "active",
+    "sort_order": 190
+  },
+  {
+    "slug": "traktor-fiat",
+    "parent_slug": "traktor",
+    "title": "Fiat",
+    "status": "active",
+    "sort_order": 200
+  },
+  {
+    "slug": "traktor-ford",
+    "parent_slug": "traktor",
+    "title": "Ford",
+    "status": "active",
+    "sort_order": 210
+  },
+  {
+    "slug": "traktor-foton",
+    "parent_slug": "traktor",
+    "title": "Foton",
+    "status": "active",
+    "sort_order": 220
+  },
+  {
+    "slug": "traktor-goldoni",
+    "parent_slug": "traktor",
+    "title": "Goldoni",
+    "status": "active",
+    "sort_order": 230
+  },
+  {
+    "slug": "traktor-grace",
+    "parent_slug": "traktor",
+    "title": "Grace",
+    "status": "active",
+    "sort_order": 240
+  },
+  {
+    "slug": "traktor-gutbrod",
+    "parent_slug": "traktor",
+    "title": "Gutbrod",
+    "status": "active",
+    "sort_order": 250
+  },
+  {
+    "slug": "traktor-harman",
+    "parent_slug": "traktor",
+    "title": "Harman",
+    "status": "active",
+    "sort_order": 260
+  },
+  {
+    "slug": "traktor-hars",
+    "parent_slug": "traktor",
+    "title": "Hars",
+    "status": "active",
+    "sort_order": 270
+  },
+  {
+    "slug": "traktor-hattat",
+    "parent_slug": "traktor",
+    "title": "Hattat",
+    "status": "active",
+    "sort_order": 280
+  },
+  {
+    "slug": "traktor-hema",
+    "parent_slug": "traktor",
+    "title": "Hema",
+    "status": "active",
+    "sort_order": 290
+  },
+  {
+    "slug": "traktor-imt",
+    "parent_slug": "traktor",
+    "title": "IMT",
+    "status": "active",
+    "sort_order": 300
+  },
+  {
+    "slug": "traktor-international",
+    "parent_slug": "traktor",
+    "title": "International",
+    "status": "active",
+    "sort_order": 310
+  },
+  {
+    "slug": "traktor-isbora",
+    "parent_slug": "traktor",
+    "title": "İşbora",
+    "status": "active",
+    "sort_order": 320
+  },
+  {
+    "slug": "traktor-jinma",
+    "parent_slug": "traktor",
+    "title": "Jinma",
+    "status": "active",
+    "sort_order": 330
+  },
+  {
+    "slug": "traktor-john-deere",
+    "parent_slug": "traktor",
+    "title": "John Deere",
+    "status": "active",
+    "sort_order": 340
+  },
+  {
+    "slug": "traktor-kaan",
+    "parent_slug": "traktor",
+    "title": "Kaan",
+    "status": "active",
+    "sort_order": 350
+  },
+  {
+    "slug": "traktor-karatas",
+    "parent_slug": "traktor",
+    "title": "Karataş",
+    "status": "active",
+    "sort_order": 360
+  },
+  {
+    "slug": "traktor-katsu",
+    "parent_slug": "traktor",
+    "title": "Katsu",
+    "status": "active",
+    "sort_order": 370
+  },
+  {
+    "slug": "traktor-kioti",
+    "parent_slug": "traktor",
+    "title": "Kioti",
+    "status": "active",
+    "sort_order": 380
+  },
+  {
+    "slug": "traktor-kubota",
+    "parent_slug": "traktor",
+    "title": "Kubota",
+    "status": "active",
+    "sort_order": 390
+  },
+  {
+    "slug": "traktor-lamborghini",
+    "parent_slug": "traktor",
+    "title": "Lamborghini",
+    "status": "active",
+    "sort_order": 400
+  },
+  {
+    "slug": "traktor-landini",
+    "parent_slug": "traktor",
+    "title": "Landini",
+    "status": "active",
+    "sort_order": 410
+  },
+  {
+    "slug": "traktor-leyland",
+    "parent_slug": "traktor",
+    "title": "Leyland",
+    "status": "active",
+    "sort_order": 420
+  },
+  {
+    "slug": "traktor-lg",
+    "parent_slug": "traktor",
+    "title": "LG",
+    "status": "active",
+    "sort_order": 430
+  },
+  {
+    "slug": "traktor-ls-tractor",
+    "parent_slug": "traktor",
+    "title": "LS Tractor",
+    "status": "active",
+    "sort_order": 440
+  },
+  {
+    "slug": "traktor-mahindra",
+    "parent_slug": "traktor",
+    "title": "Mahindra",
+    "status": "active",
+    "sort_order": 450
+  },
+  {
+    "slug": "traktor-massey-ferguson",
+    "parent_slug": "traktor",
+    "title": "Massey Ferguson",
+    "status": "active",
+    "sort_order": 460
+  },
+  {
+    "slug": "traktor-mccormick",
+    "parent_slug": "traktor",
+    "title": "McCormick",
+    "status": "active",
+    "sort_order": 470
+  },
+  {
+    "slug": "traktor-mercedes",
+    "parent_slug": "traktor",
+    "title": "Mercedes - Benz",
+    "status": "active",
+    "sort_order": 480
+  },
+  {
+    "slug": "traktor-new-holland",
+    "parent_slug": "traktor",
+    "title": "New Holland",
+    "status": "active",
+    "sort_order": 490
+  },
+  {
+    "slug": "traktor-pancar",
+    "parent_slug": "traktor",
+    "title": "Pancar",
+    "status": "active",
+    "sort_order": 500
+  },
+  {
+    "slug": "traktor-perkis",
+    "parent_slug": "traktor",
+    "title": "Perkis",
+    "status": "active",
+    "sort_order": 510
+  },
+  {
+    "slug": "traktor-same",
+    "parent_slug": "traktor",
+    "title": "Same",
+    "status": "active",
+    "sort_order": 520
+  },
+  {
+    "slug": "traktor-solis",
+    "parent_slug": "traktor",
+    "title": "Solis",
+    "status": "active",
+    "sort_order": 530
+  },
+  {
+    "slug": "traktor-steyr",
+    "parent_slug": "traktor",
+    "title": "Steyr",
+    "status": "active",
+    "sort_order": 540
+  },
+  {
+    "slug": "traktor-sunway",
+    "parent_slug": "traktor",
+    "title": "Sunway",
+    "status": "active",
+    "sort_order": 550
+  },
+  {
+    "slug": "traktor-super-star",
+    "parent_slug": "traktor",
+    "title": "Super Star",
+    "status": "active",
+    "sort_order": 560
+  },
+  {
+    "slug": "traktor-tafe",
+    "parent_slug": "traktor",
+    "title": "Tafe",
+    "status": "active",
+    "sort_order": 570
+  },
+  {
+    "slug": "traktor-taral",
+    "parent_slug": "traktor",
+    "title": "Taral",
+    "status": "active",
+    "sort_order": 580
+  },
+  {
+    "slug": "traktor-tumosan",
+    "parent_slug": "traktor",
+    "title": "Tümosan",
+    "status": "active",
+    "sort_order": 590
+  },
+  {
+    "slug": "traktor-turk-traktor",
+    "parent_slug": "traktor",
+    "title": "Türk Traktör",
+    "status": "active",
+    "sort_order": 600
+  },
+  {
+    "slug": "traktor-universal",
+    "parent_slug": "traktor",
+    "title": "Universal",
+    "status": "active",
+    "sort_order": 610
+  },
+  {
+    "slug": "traktor-uzel-traktor",
+    "parent_slug": "traktor",
+    "title": "Uzel Traktör",
+    "status": "active",
+    "sort_order": 620
+  },
+  {
+    "slug": "traktor-valtra-hattat",
+    "parent_slug": "traktor",
+    "title": "Valtra-Hattat",
+    "status": "active",
+    "sort_order": 630
+  },
+  {
+    "slug": "traktor-valtra-hattat1",
+    "parent_slug": "traktor",
+    "title": "Valtra-Hattat1",
+    "status": "active",
+    "sort_order": 640
+  },
+  {
+    "slug": "traktor-yagmur",
+    "parent_slug": "traktor",
+    "title": "Yağmur",
+    "status": "active",
+    "sort_order": 650
+  },
+  {
+    "slug": "traktor-zetor",
+    "parent_slug": "traktor",
+    "title": "Zetor",
+    "status": "active",
+    "sort_order": 660
+  }
+]

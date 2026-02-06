@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "category_slugs": [
+    "traktor-agt",
+    "traktor-alparslan-traktor",
+    "traktor-antonio-carraro",
+    "traktor-artrak-superline",
+    "traktor-baskent",
+    "traktor-bmc",
+    "traktor-bolinder-munktell",
+    "traktor-bozok",
+    "traktor-chery",
+    "traktor-claas",
+    "traktor-deutz",
+    "traktor-dexta",
+    "traktor-diger",
+    "traktor-farmtrac",
+    "traktor-fendt",
+    "traktor-foton",
+    "traktor-goldoni",
+    "traktor-grace",
+    "traktor-gutbrod",
+    "traktor-harman",
+    "traktor-hars",
+    "traktor-hema",
+    "traktor-imt",
+    "traktor-international",
+    "traktor-isbora",
+    "traktor-jinma",
+    "traktor-kaan",
+    "traktor-karatas",
+    "traktor-katsu",
+    "traktor-kioti",
+    "traktor-lamborghini",
+    "traktor-leyland",
+    "traktor-lg",
+    "traktor-ls-tractor",
+    "traktor-mahindra",
+    "traktor-mccormick",
+    "traktor-mercedes",
+    "traktor-pancar",
+    "traktor-perkis",
+    "traktor-sunway",
+    "traktor-super-star",
+    "traktor-tafe",
+    "traktor-taral",
+    "traktor-turk-traktor",
+    "traktor-uzel-traktor",
+    "traktor-valtra-hattat1",
+    "traktor-yagmur",
+    "traktor-zetor"
+  ],
+  "fields": [
+    {
+      "attribute_key": "city",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "cities.tr.json",
+      "sort_order": 5,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_model",
+      "ui_component": "text",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "sort_order": 20,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_year",
+      "ui_component": "number",
+      "required": false,
+      "filter_mode": "range",
+      "rules": {
+        "min": 1950,
+        "max": 2035
+      },
+      "sort_order": 30,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_cylinder_count",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_cylinder_count.tr.json",
+      "sort_order": 32,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_tractor_type",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_tractor_type.tr.json",
+      "sort_order": 33,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_tractor_cabin",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_tractor_cabin.tr.json",
+      "sort_order": 34,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_working_hours",
+      "ui_component": "number",
+      "required": false,
+      "filter_mode": "range",
+      "rules": {
+        "min": 0,
+        "max": 50000
+      },
+      "sort_order": 35,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_drive_type",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_drive_type.tr.json",
+      "sort_order": 57,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_condition",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_condition.tr.json",
+      "sort_order": 58,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_seller_type",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_seller_type.tr.json",
+      "sort_order": 59,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_listing_age",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_listing_age.tr.json",
+      "sort_order": 66,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_price",
+      "ui_component": "number",
+      "required": false,
+      "filter_mode": "range",
+      "rules": {
+        "min": 0,
+        "max": 1000000000
+      },
+      "sort_order": 70,
+      "applies_to_transaction_modes": [
+        "sale"
+      ]
+    }
+  ]
+}

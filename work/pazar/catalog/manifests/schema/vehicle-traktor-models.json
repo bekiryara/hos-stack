@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "category_slugs": [
+    "traktor-basak",
+    "traktor-case-ih",
+    "traktor-deutz-fahr",
+    "traktor-erkunt",
+    "traktor-fiat",
+    "traktor-ford",
+    "traktor-hattat",
+    "traktor-john-deere",
+    "traktor-kubota",
+    "traktor-landini",
+    "traktor-massey-ferguson",
+    "traktor-new-holland",
+    "traktor-same",
+    "traktor-solis",
+    "traktor-steyr",
+    "traktor-tumosan",
+    "traktor-universal",
+    "traktor-valtra-hattat"
+  ],
+  "fields": [
+    {
+      "attribute_key": "city",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "cities.tr.json",
+      "sort_order": 5,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_model",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": {
+        "type": "vehicle_models_by_brand_slug",
+        "path": "vehicle-traktor-models.arabam.tr.json"
+      },
+      "sort_order": 20,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_year",
+      "ui_component": "number",
+      "required": false,
+      "filter_mode": "range",
+      "rules": {
+        "min": 1950,
+        "max": 2035
+      },
+      "sort_order": 30,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_cylinder_count",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_cylinder_count.tr.json",
+      "sort_order": 32,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_tractor_type",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_tractor_type.tr.json",
+      "sort_order": 33,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_tractor_cabin",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_tractor_cabin.tr.json",
+      "sort_order": 34,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_working_hours",
+      "ui_component": "number",
+      "required": false,
+      "filter_mode": "range",
+      "rules": {
+        "min": 0,
+        "max": 50000
+      },
+      "sort_order": 35,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_drive_type",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_drive_type.tr.json",
+      "sort_order": 57,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_condition",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_condition.tr.json",
+      "sort_order": 58,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_seller_type",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_seller_type.tr.json",
+      "sort_order": 59,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_listing_age",
+      "ui_component": "select",
+      "required": false,
+      "filter_mode": "exact",
+      "rules": null,
+      "rules_ref": "rules/vehicle/by_category/traktor/vehicle_listing_age.tr.json",
+      "sort_order": 66,
+      "applies_to_transaction_modes": null
+    },
+    {
+      "attribute_key": "vehicle_price",
+      "ui_component": "number",
+      "required": false,
+      "filter_mode": "range",
+      "rules": {
+        "min": 0,
+        "max": 1000000000
+      },
+      "sort_order": 70,
+      "applies_to_transaction_modes": [
+        "sale"
+      ]
+    }
+  ]
+}
