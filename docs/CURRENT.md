@@ -126,7 +126,6 @@ Use this when “I changed frontend code but browser still shows old UI”:
 1. **Hard refresh first:** `Ctrl+Shift+R` (Windows/Linux) / `Cmd+Shift+R` (Mac). (`Ctrl+F5` is also ok.)
 2. If still stale (Docker-served UI): run `.\ops\frontend_refresh.ps1` (restart web containers).
 3. If still stale or build/deps changed: run `.\ops\frontend_refresh.ps1 -Build` (rebuild web containers).
-4. Dev helper (heavier): run `.\ops\dev_refresh.ps1 -FrontendOnly` (rebuild web services). Optional: `.\ops\dev_refresh.ps1 -All` (interactive full rebuild).
 5. If you changed only docs/backend: do **not** rebuild frontend; rerun `.\ops\verify.ps1` instead.
 6. If you still can’t see changes: confirm you’re on the right URL (`/marketplace/`) and no browser extension is caching.
 

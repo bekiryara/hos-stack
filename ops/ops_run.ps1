@@ -110,13 +110,19 @@ if ($Profile -eq 'Prototype') {
 
 # Full profile: Prototype + ops_status
 if ($Profile -eq 'Full') {
-    Write-Host "Running Full profile (Prototype + ops_status)..." -ForegroundColor Yellow
+    Write-Host "Running Full profile (Prototype + v2_gate + ops_status)..." -ForegroundColor Yellow
     Write-Host ""
     
     # First run Prototype set
     Write-Host "=== Running Prototype checks ===" -ForegroundColor Cyan
     & .\ops\ops_run.ps1 -Profile Prototype
     $prototypeExitCode = $LASTEXITCODE
+    Write-Host ""
+
+    # Then run v2_gate (0-targets discipline lock)
+    Write-Host "=== Running v2_gate (0-targets) ===" -ForegroundColor Cyan
+    & .\ops\v2_gate.ps1
+    $v2GateExitCode = $LASTEXITCODE
     Write-Host ""
     
     # Then run ops_status
@@ -125,7 +131,7 @@ if ($Profile -eq 'Full') {
     $opsStatusExitCode = $LASTEXITCODE
     Write-Host ""
     
-    if ($prototypeExitCode -ne 0 -or $opsStatusExitCode -ne 0) {
+    if ($prototypeExitCode -ne 0 -or $v2GateExitCode -ne 0 -or $opsStatusExitCode -ne 0) {
         $hasFailures = $true
     }
 }

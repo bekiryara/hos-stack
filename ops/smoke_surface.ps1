@@ -1,5 +1,9 @@
 # smoke_surface.ps1 - Smoke Surface Gate
-# Validates critical surfaces don't return 500/regression errors
+# Validates critical surfaces don't return 500/regression errors.
+# NOTE: To avoid duplicate measurements, this script intentionally does NOT check:
+# - metrics (owned by observability_status.ps1)
+# - error envelope contract (owned by ops_status/rc0_gate)
+# - admin UI surface (owned by pazar_ui_smoke.ps1)
 # PowerShell 5.1 compatible, ASCII-only output, safe-exit behavior
 
 param(
@@ -100,201 +104,52 @@ try {
 
 Write-Host ""
 
-# Check 2: Pazar /metrics → 200 AND Content-Type starts with "text/plain" AND body contains "pazar_build_info" AND no BOM artifact
-Write-Host "Check 2: Pazar /metrics endpoint" -ForegroundColor Cyan
+# Check 2: Pazar core API surface (world status)
+Write-Host "Check 2: Pazar /api/world/status" -ForegroundColor Cyan
 
 try {
-    $response = Invoke-WebRequest -Uri "$BaseUrl/api/metrics" -Method GET -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
-    
-    $statusOk = $false
-    $contentTypeOk = $false
-    $bodyContainsMetric = $false
-    $noBom = $false
-    $notes = @()
-    
-    # Status code check
+    $response = Invoke-WebRequest -Uri "$BaseUrl/api/world/status" -Method GET -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
     if ($response.StatusCode -eq 200) {
-        $statusOk = $true
+        Add-CheckResult -CheckName "Pazar /api/world/status" -Status "PASS" -Notes "HTTP 200"
     } else {
-        $notes += "Expected HTTP 200, got $($response.StatusCode)"
-    }
-    
-    # Content-Type check
-    $contentType = $response.Headers["Content-Type"]
-    if ($null -eq $contentType) {
-        $contentType = $response.Content.Headers.ContentType.ToString()
-    }
-    if ($contentType -and $contentType.StartsWith("text/plain")) {
-        $contentTypeOk = $true
-    } else {
-        $notes += "Expected Content-Type starting with 'text/plain', got '$contentType'"
-    }
-    
-    # Body content check (check for any pazar_ metric - pazar_product_create_total, pazar_product_disable_total, pazar_products_total, or pazar_build_info)
-    $body = $response.Content
-    if ($body -match "pazar_\w+") {
-        $bodyContainsMetric = $true
-    } else {
-        $notes += "Body does not contain pazar_ metric (expected pazar_product_create_total, pazar_product_disable_total, pazar_products_total, or pazar_build_info)"
-    }
-    
-    # BOM check (check raw bytes)
-    try {
-        $rawBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-        if (-not (Test-Utf8Bom -Bytes $rawBytes)) {
-            $noBom = $true
-        } else {
-            $notes += "Response contains UTF-8 BOM artifact"
-        }
-    } catch {
-        # If we can't check BOM, assume it's OK (non-blocking)
-        $noBom = $true
-    }
-    
-    if ($statusOk -and $contentTypeOk -and $bodyContainsMetric -and $noBom) {
-        Add-CheckResult -CheckName "Pazar /metrics" -Status "PASS" -Notes "HTTP 200, Content-Type text/plain, body contains pazar_ metric, no BOM"
-    } else {
-        $failNotes = if ($notes.Count -gt 0) { $notes -join "; " } else { "One or more checks failed" }
-        Add-CheckResult -CheckName "Pazar /metrics" -Status "FAIL" -Notes $failNotes
+        Add-CheckResult -CheckName "Pazar /api/world/status" -Status "FAIL" -Notes "Expected HTTP 200, got $($response.StatusCode)"
     }
 } catch {
     $webException = $_.Exception
     if ($webException.Response) {
         $statusCode = [int]$webException.Response.StatusCode.value__
-        Add-CheckResult -CheckName "Pazar /metrics" -Status "FAIL" -Notes "HTTP $statusCode - $($_.Exception.Message)"
+        Add-CheckResult -CheckName "Pazar /api/world/status" -Status "FAIL" -Notes "HTTP $statusCode - $($_.Exception.Message)"
     } else {
-        Add-CheckResult -CheckName "Pazar /metrics" -Status "FAIL" -Notes "Connection error: $($_.Exception.Message)"
+        Add-CheckResult -CheckName "Pazar /api/world/status" -Status "FAIL" -Notes "Connection error: $($_.Exception.Message)"
     }
 }
 
 Write-Host ""
 
-# Check 3: API error contract smoke - GET /api/non-existent-endpoint → 404 JSON envelope includes request_id
-Write-Host "Check 3: API error contract smoke" -ForegroundColor Cyan
+# Check 3: Pazar categories surface (guest browse)
+Write-Host "Check 3: Pazar /api/v1/categories" -ForegroundColor Cyan
 
 try {
-    $response = Invoke-WebRequest -Uri "$BaseUrl/api/non-existent-endpoint-$(Get-Random)" -Method GET -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
-    
-    # Should not reach here (should be 404)
-    Add-CheckResult -CheckName "API error contract" -Status "FAIL" -Notes "Expected HTTP 404, got $($response.StatusCode)"
-} catch {
-    $webException = $_.Exception
-    if ($webException.Response) {
-        $statusCode = [int]$webException.Response.StatusCode.value__
-        
-        if ($statusCode -eq 404) {
-            # Read response body
-            try {
-                $stream = $webException.Response.GetResponseStream()
-                $reader = New-Object System.IO.StreamReader($stream)
-                $responseBody = $reader.ReadToEnd()
-                $reader.Close()
-                $stream.Close()
-                
-                # Parse JSON
-                try {
-                    $json = $responseBody | ConvertFrom-Json
-                    
-                    # Check for error envelope structure
-                    $hasOk = $json.PSObject.Properties.Name -contains "ok"
-                    $hasErrorCode = $json.PSObject.Properties.Name -contains "error_code"
-                    $hasMessage = $json.PSObject.Properties.Name -contains "message"
-                    $hasRequestId = $json.PSObject.Properties.Name -contains "request_id"
-                    $requestIdNotNull = $null -ne $json.request_id -and $json.request_id -ne ""
-                    
-                    if ($hasOk -and $hasErrorCode -and $hasMessage -and $hasRequestId -and $requestIdNotNull) {
-                        Add-CheckResult -CheckName "API error contract" -Status "PASS" -Notes "HTTP 404 with JSON envelope (ok, error_code, message, request_id non-null)"
-                    } else {
-                        $missing = @()
-                        if (-not $hasOk) { $missing += "ok" }
-                        if (-not $hasErrorCode) { $missing += "error_code" }
-                        if (-not $hasMessage) { $missing += "message" }
-                        if (-not $hasRequestId) { $missing += "request_id" }
-                        if (-not $requestIdNotNull) { $missing += "request_id (null/empty)" }
-                        Add-CheckResult -CheckName "API error contract" -Status "FAIL" -Notes "HTTP 404 but missing fields: $($missing -join ', ')"
-                    }
-                } catch {
-                    Add-CheckResult -CheckName "API error contract" -Status "FAIL" -Notes "HTTP 404 but response is not valid JSON: $($_.Exception.Message)"
-                }
-            } catch {
-                Add-CheckResult -CheckName "API error contract" -Status "FAIL" -Notes "HTTP 404 but could not read response body: $($_.Exception.Message)"
-            }
-        } else {
-            Add-CheckResult -CheckName "API error contract" -Status "FAIL" -Notes "Expected HTTP 404, got $statusCode"
-        }
+    $response = Invoke-WebRequest -Uri "$BaseUrl/api/v1/categories" -Method GET -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+    if ($response.StatusCode -eq 200) {
+        Add-CheckResult -CheckName "Pazar /api/v1/categories" -Status "PASS" -Notes "HTTP 200"
     } else {
-        Add-CheckResult -CheckName "API error contract" -Status "FAIL" -Notes "Connection error: $($_.Exception.Message)"
-    }
-}
-
-Write-Host ""
-
-# Check 4: Admin UI surface must not 500 - GET /ui/admin/control-center (no auth) should be either 200 or 302/401/403, BUT MUST NOT be 500
-Write-Host "Check 4: Admin UI surface (no 500)" -ForegroundColor Cyan
-
-try {
-    $response = Invoke-WebRequest -Uri "$BaseUrl/ui/admin/control-center" -Method GET -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop -MaximumRedirection 0
-    
-    $statusCode = $response.StatusCode
-    
-    if ($statusCode -eq 200) {
-        Add-CheckResult -CheckName "Admin UI surface" -Status "PASS" -Notes "HTTP 200 OK"
-    } elseif ($statusCode -eq 302 -or $statusCode -eq 401 -or $statusCode -eq 403) {
-        Add-CheckResult -CheckName "Admin UI surface" -Status "PASS" -Notes "HTTP $statusCode (redirect/unauthorized, acceptable)"
-    } else {
-        Add-CheckResult -CheckName "Admin UI surface" -Status "FAIL" -Notes "Unexpected status code: $statusCode (expected 200/302/401/403)"
+        Add-CheckResult -CheckName "Pazar /api/v1/categories" -Status "FAIL" -Notes "Expected HTTP 200, got $($response.StatusCode)"
     }
 } catch {
     $webException = $_.Exception
     if ($webException.Response) {
         $statusCode = [int]$webException.Response.StatusCode.value__
-        
-        if ($statusCode -eq 500) {
-            # Read response body to check for Monolog permission errors
-            $body = ""
-            try {
-                $stream = $webException.Response.GetResponseStream()
-                $reader = New-Object System.IO.StreamReader($stream)
-                $body = $reader.ReadToEnd()
-                $reader.Close()
-                $stream.Close()
-            } catch {
-                # Could not read body
-            }
-            
-            $hasMonologError = $body -match "Permission denied" -or $body -match "Monolog" -or $body -match "storage/logs"
-            
-            $remediationHints = @()
-            $remediationHints += "storage/logs and bootstrap/cache writable by php-fpm user (www-data)"
-            $remediationHints += "ensure runtime permission fix executes on every container start (not only one-time init)"
-            $remediationHints += "confirm storage volume is named volume not bind mount (avoid Windows perms)"
-            
-            $notes = "HTTP 500 Internal Server Error"
-            if ($hasMonologError) {
-                $notes += " (Monolog permission error detected)"
-            }
-            $notes += ". Remediation: $($remediationHints -join '; ')"
-            
-            Add-CheckResult -CheckName "Admin UI surface" -Status "FAIL" -Notes $notes
-        } elseif ($statusCode -eq 302 -or $statusCode -eq 401 -or $statusCode -eq 403) {
-            Add-CheckResult -CheckName "Admin UI surface" -Status "PASS" -Notes "HTTP $statusCode (redirect/unauthorized, acceptable)"
-        } else {
-            Add-CheckResult -CheckName "Admin UI surface" -Status "FAIL" -Notes "HTTP $statusCode (expected 200/302/401/403, NOT 500)"
-        }
+        Add-CheckResult -CheckName "Pazar /api/v1/categories" -Status "FAIL" -Notes "HTTP $statusCode - $($_.Exception.Message)"
     } else {
-        # Check if it's a redirect exception (302)
-        if ($_.Exception.Message -match "302" -or $_.Exception.Message -match "redirect") {
-            Add-CheckResult -CheckName "Admin UI surface" -Status "PASS" -Notes "Redirect (302, acceptable)"
-        } else {
-            Add-CheckResult -CheckName "Admin UI surface" -Status "WARN" -Notes "Connection error (may be acceptable if stack not running): $($_.Exception.Message)" -Blocking $false
-        }
+        Add-CheckResult -CheckName "Pazar /api/v1/categories" -Status "FAIL" -Notes "Connection error: $($_.Exception.Message)"
     }
 }
 
 Write-Host ""
 
-# Check 5: Optional (WARN-only) - If Prometheus reachable (9090), verify /api/v1/targets has pazar job up; else WARN
-Write-Host "Check 5: Prometheus targets (optional)" -ForegroundColor Cyan
+# Check 4: Optional (WARN-only) - If Prometheus reachable (9090), verify /api/v1/targets has pazar job up; else WARN
+Write-Host "Check 4: Prometheus targets (optional)" -ForegroundColor Cyan
 
 try {
     $response = Invoke-WebRequest -Uri "$PrometheusUrl/api/v1/targets" -Method GET -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop

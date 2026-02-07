@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict kInpuOIr6Yj6GLlKh62Kce4ZLJdLeaCl1Z0ATLtDsZZ2zkj0CDIE7nfQJmEZS6C
+\restrict Y73mFmsgZ2SWPred6TxnapHQ5aQy8PIisXW5b6AmSbsX5mb4cehEaXTzicdQPZY
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -23,50 +23,16 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: api_tokens; Type: TABLE; Schema: public; Owner: -
+-- Name: attributes; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.api_tokens (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    name character varying(255),
-    token_hash character varying(255) NOT NULL,
-    last_used_at timestamp(0) without time zone,
-    expires_at timestamp(0) without time zone,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-
-
---
--- Name: api_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.api_tokens_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: api_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.api_tokens_id_seq OWNED BY public.api_tokens.id;
-
-
---
--- Name: audit_events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.audit_events (
-    id uuid NOT NULL,
-    tenant_id bigint,
-    actor_user_id bigint,
-    action character varying(255) NOT NULL,
-    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE public.attributes (
+    key character varying(100) NOT NULL,
+    value_type character varying(20) NOT NULL,
+    unit character varying(20),
+    description text,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
 );
 
 
@@ -99,9 +65,10 @@ CREATE TABLE public.cache_locks (
 CREATE TABLE public.categories (
     id bigint NOT NULL,
     parent_id bigint,
-    name character varying(255) NOT NULL,
-    slug character varying(255) NOT NULL,
-    is_active boolean DEFAULT true NOT NULL,
+    slug character varying(100) NOT NULL,
+    name character varying(200) NOT NULL,
+    vertical character varying(50),
+    status character varying(20) DEFAULT 'active'::character varying NOT NULL,
     sort_order integer DEFAULT 0 NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone
@@ -128,23 +95,30 @@ ALTER SEQUENCE public.categories_id_seq OWNED BY public.categories.id;
 
 
 --
--- Name: category_product; Type: TABLE; Schema: public; Owner: -
+-- Name: category_filter_schema; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.category_product (
+CREATE TABLE public.category_filter_schema (
     id bigint NOT NULL,
     category_id bigint NOT NULL,
-    product_id bigint NOT NULL,
+    attribute_key character varying(100) NOT NULL,
+    status character varying(20) DEFAULT 'active'::character varying NOT NULL,
+    sort_order integer DEFAULT 0 NOT NULL,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    ui_component character varying(50),
+    required boolean DEFAULT false NOT NULL,
+    filter_mode character varying(50),
+    rules_json json,
+    applies_to_transaction_modes json
 );
 
 
 --
--- Name: category_product_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: category_filter_schema_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.category_product_id_seq
+CREATE SEQUENCE public.category_filter_schema_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -153,32 +127,33 @@ CREATE SEQUENCE public.category_product_id_seq
 
 
 --
--- Name: category_product_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: category_filter_schema_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.category_product_id_seq OWNED BY public.category_product.id;
+ALTER SEQUENCE public.category_filter_schema_id_seq OWNED BY public.category_filter_schema.id;
 
 
 --
--- Name: failed_jobs; Type: TABLE; Schema: public; Owner: -
+-- Name: idempotency_keys; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.failed_jobs (
+CREATE TABLE public.idempotency_keys (
     id bigint NOT NULL,
-    uuid character varying(255) NOT NULL,
-    connection text NOT NULL,
-    queue text NOT NULL,
-    payload text NOT NULL,
-    exception text NOT NULL,
-    failed_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    scope_type character varying(20) NOT NULL,
+    scope_id character varying(100) NOT NULL,
+    key character varying(255) NOT NULL,
+    request_hash character varying(64) NOT NULL,
+    response_json json NOT NULL,
+    created_at timestamp(0) without time zone NOT NULL,
+    expires_at timestamp(0) without time zone NOT NULL
 );
 
 
 --
--- Name: failed_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: idempotency_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.failed_jobs_id_seq
+CREATE SEQUENCE public.idempotency_keys_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -187,139 +162,52 @@ CREATE SEQUENCE public.failed_jobs_id_seq
 
 
 --
--- Name: failed_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: idempotency_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.failed_jobs_id_seq OWNED BY public.failed_jobs.id;
-
-
---
--- Name: guard_ledgers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.guard_ledgers (
-    id bigint NOT NULL,
-    tenant_id bigint NOT NULL,
-    user_id bigint,
-    world character varying(32),
-    subject_type character varying(255) NOT NULL,
-    subject_id bigint NOT NULL,
-    command_key character varying(160) NOT NULL,
-    from_status character varying(255),
-    to_status character varying(255) NOT NULL,
-    from_version integer,
-    to_version integer,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
+ALTER SEQUENCE public.idempotency_keys_id_seq OWNED BY public.idempotency_keys.id;
 
 
 --
--- Name: guard_ledgers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: listing_offers; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.guard_ledgers_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: guard_ledgers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.guard_ledgers_id_seq OWNED BY public.guard_ledgers.id;
-
-
---
--- Name: hos_outbox_events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.hos_outbox_events (
-    id bigint NOT NULL,
-    tenant_id bigint,
-    event_type character varying(255) NOT NULL,
-    payload text NOT NULL,
-    status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
-    attempts integer DEFAULT 0 NOT NULL,
-    last_error text,
-    available_at timestamp(0) without time zone,
-    sent_at timestamp(0) without time zone,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: hos_outbox_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.hos_outbox_events_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: hos_outbox_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.hos_outbox_events_id_seq OWNED BY public.hos_outbox_events.id;
-
-
---
--- Name: job_batches; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.job_batches (
-    id character varying(255) NOT NULL,
+CREATE TABLE public.listing_offers (
+    id uuid NOT NULL,
+    listing_id uuid NOT NULL,
+    provider_tenant_id uuid NOT NULL,
+    code character varying(100) NOT NULL,
     name character varying(255) NOT NULL,
-    total_jobs integer NOT NULL,
-    pending_jobs integer NOT NULL,
-    failed_jobs integer NOT NULL,
-    failed_job_ids text NOT NULL,
-    options text,
-    cancelled_at integer,
-    created_at integer NOT NULL,
-    finished_at integer
+    price_amount bigint NOT NULL,
+    price_currency character varying(3) DEFAULT 'TRY'::character varying NOT NULL,
+    billing_model character varying(20) DEFAULT 'one_time'::character varying NOT NULL,
+    attributes_json json,
+    status character varying(20) DEFAULT 'active'::character varying NOT NULL,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
 );
 
 
 --
--- Name: jobs; Type: TABLE; Schema: public; Owner: -
+-- Name: listings; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.jobs (
-    id bigint NOT NULL,
-    queue character varying(255) NOT NULL,
-    payload text NOT NULL,
-    attempts smallint NOT NULL,
-    reserved_at integer,
-    available_at integer NOT NULL,
-    created_at integer NOT NULL
+CREATE TABLE public.listings (
+    id uuid NOT NULL,
+    tenant_id uuid NOT NULL,
+    world character varying(20) NOT NULL,
+    title character varying(120) NOT NULL,
+    description text,
+    price_amount bigint,
+    currency character varying(3) DEFAULT 'TRY'::character varying NOT NULL,
+    status character varying(20) DEFAULT 'draft'::character varying NOT NULL,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    category_id bigint,
+    transaction_modes_json json,
+    attributes_json json,
+    location_json json
 );
-
-
---
--- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.jobs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
 
 
 --
@@ -354,242 +242,37 @@ ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
 
 
 --
--- Name: order_items; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.order_items (
-    id bigint NOT NULL,
-    order_id bigint NOT NULL,
-    product_id bigint NOT NULL,
-    quantity integer NOT NULL,
-    unit_price numeric(10,2) NOT NULL,
-    line_total numeric(10,2) NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: order_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.order_items_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: order_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.order_items_id_seq OWNED BY public.order_items.id;
-
-
---
 -- Name: orders; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.orders (
-    id bigint NOT NULL,
-    tenant_id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    total numeric(10,2) NOT NULL,
-    status character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    entity_version integer DEFAULT 0 NOT NULL,
-    CONSTRAINT orders_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'paid'::character varying, 'cancelled'::character varying])::text[])))
-);
-
-
---
--- Name: orders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.orders_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: orders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.orders_id_seq OWNED BY public.orders.id;
-
-
---
--- Name: password_reset_tokens; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.password_reset_tokens (
-    email character varying(255) NOT NULL,
-    token character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone
-);
-
-
---
--- Name: payment_webhook_events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.payment_webhook_events (
-    id bigint NOT NULL,
-    provider character varying(255) NOT NULL,
-    event_id character varying(255) NOT NULL,
-    payload json NOT NULL,
-    processed_at timestamp(0) without time zone,
+    id uuid NOT NULL,
+    listing_id uuid NOT NULL,
+    seller_tenant_id uuid NOT NULL,
+    buyer_user_id uuid,
+    quantity integer DEFAULT 1 NOT NULL,
+    status character varying(20) DEFAULT 'placed'::character varying NOT NULL,
+    totals_json json,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone
 );
 
 
 --
--- Name: payment_webhook_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rentals; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.payment_webhook_events_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: payment_webhook_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.payment_webhook_events_id_seq OWNED BY public.payment_webhook_events.id;
-
-
---
--- Name: payments; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.payments (
-    id bigint NOT NULL,
-    tenant_id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    payable_type character varying(255) NOT NULL,
-    payable_id bigint NOT NULL,
-    amount numeric(10,2) NOT NULL,
-    status character varying(255) NOT NULL,
-    provider character varying(255),
-    provider_reference character varying(255),
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    provider_payload json,
-    entity_version integer DEFAULT 0 NOT NULL,
-    CONSTRAINT payments_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'paid'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))
-);
-
-
---
--- Name: payments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.payments_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: payments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.payments_id_seq OWNED BY public.payments.id;
-
-
---
--- Name: product_images; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.product_images (
-    id bigint NOT NULL,
-    product_id bigint NOT NULL,
-    url character varying(255) NOT NULL,
-    alt character varying(255),
-    sort_order integer DEFAULT 0 NOT NULL,
-    is_cover boolean DEFAULT false NOT NULL,
+CREATE TABLE public.rentals (
+    id uuid NOT NULL,
+    listing_id uuid NOT NULL,
+    renter_user_id uuid NOT NULL,
+    provider_tenant_id uuid NOT NULL,
+    start_at timestamp(0) without time zone NOT NULL,
+    end_at timestamp(0) without time zone NOT NULL,
+    status character varying(20) DEFAULT 'requested'::character varying NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone
 );
-
-
---
--- Name: product_images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.product_images_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: product_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.product_images_id_seq OWNED BY public.product_images.id;
-
-
---
--- Name: products; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.products (
-    id bigint NOT NULL,
-    tenant_id bigint NOT NULL,
-    title character varying(255) NOT NULL,
-    slug character varying(255) NOT NULL,
-    price numeric(10,2) NOT NULL,
-    status character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    track_stock boolean DEFAULT false NOT NULL,
-    stock_quantity integer,
-    product_type character varying(255),
-    rental_unit character varying(255),
-    rental_min_units integer,
-    rental_max_units integer,
-    rental_step_units integer,
-    instant_book boolean DEFAULT true NOT NULL,
-    cancellation_policy character varying(255) DEFAULT 'flexible'::character varying NOT NULL,
-    CONSTRAINT products_product_type_check CHECK (((product_type)::text = ANY ((ARRAY['sale'::character varying, 'rental'::character varying])::text[]))),
-    CONSTRAINT products_rental_unit_check CHECK (((rental_unit)::text = ANY ((ARRAY['day'::character varying, 'hour'::character varying])::text[]))),
-    CONSTRAINT products_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'active'::character varying, 'passive'::character varying])::text[])))
-);
-
-
---
--- Name: products_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.products_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.products_id_seq OWNED BY public.products.id;
 
 
 --
@@ -597,41 +280,18 @@ ALTER SEQUENCE public.products_id_seq OWNED BY public.products.id;
 --
 
 CREATE TABLE public.reservations (
-    id bigint NOT NULL,
-    tenant_id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    product_id bigint NOT NULL,
-    start_date date NOT NULL,
-    end_date date NOT NULL,
-    total numeric(10,2) NOT NULL,
-    status character varying(32) NOT NULL,
+    id uuid NOT NULL,
+    listing_id uuid NOT NULL,
+    provider_tenant_id uuid NOT NULL,
+    requester_user_id uuid,
+    slot_start timestamp(0) without time zone NOT NULL,
+    slot_end timestamp(0) without time zone NOT NULL,
+    party_size integer NOT NULL,
+    status character varying(20) DEFAULT 'requested'::character varying NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    start_at timestamp(0) without time zone,
-    end_at timestamp(0) without time zone,
-    hold_expires_at timestamp(0) without time zone,
-    entity_version integer DEFAULT 0 NOT NULL,
-    CONSTRAINT reservations_status_check CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('confirmed'::character varying)::text, ('cancelled'::character varying)::text])))
+    offer_id uuid
 );
-
-
---
--- Name: reservations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.reservations_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: reservations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.reservations_id_seq OWNED BY public.reservations.id;
 
 
 --
@@ -649,154 +309,6 @@ CREATE TABLE public.sessions (
 
 
 --
--- Name: status_change_logs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.status_change_logs (
-    id bigint NOT NULL,
-    tenant_id bigint NOT NULL,
-    user_id bigint,
-    source character varying(255) NOT NULL,
-    subject_type character varying(255) NOT NULL,
-    subject_id bigint NOT NULL,
-    from_status character varying(255),
-    to_status character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    note text
-);
-
-
---
--- Name: status_change_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.status_change_logs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: status_change_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.status_change_logs_id_seq OWNED BY public.status_change_logs.id;
-
-
---
--- Name: tenant_users; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.tenant_users (
-    id bigint NOT NULL,
-    tenant_id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    role character varying(255) NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    CONSTRAINT tenant_users_role_check CHECK (((role)::text = ANY ((ARRAY['owner'::character varying, 'staff'::character varying])::text[])))
-);
-
-
---
--- Name: tenant_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.tenant_users_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: tenant_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.tenant_users_id_seq OWNED BY public.tenant_users.id;
-
-
---
--- Name: tenants; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.tenants (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    slug character varying(255) NOT NULL,
-    owner_user_id bigint NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: tenants_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.tenants_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: tenants_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.tenants_id_seq OWNED BY public.tenants.id;
-
-
---
--- Name: users; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.users (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    email character varying(255) NOT NULL,
-    email_verified_at timestamp(0) without time zone,
-    password character varying(255),
-    remember_token character varying(100),
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    is_super_admin boolean DEFAULT false NOT NULL,
-    hos_user_id character varying(255)
-);
-
-
---
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.users_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
-
-
---
--- Name: api_tokens id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.api_tokens ALTER COLUMN id SET DEFAULT nextval('public.api_tokens_id_seq'::regclass);
-
-
---
 -- Name: categories id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -804,38 +316,17 @@ ALTER TABLE ONLY public.categories ALTER COLUMN id SET DEFAULT nextval('public.c
 
 
 --
--- Name: category_product id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: category_filter_schema id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.category_product ALTER COLUMN id SET DEFAULT nextval('public.category_product_id_seq'::regclass);
-
-
---
--- Name: failed_jobs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.failed_jobs ALTER COLUMN id SET DEFAULT nextval('public.failed_jobs_id_seq'::regclass);
+ALTER TABLE ONLY public.category_filter_schema ALTER COLUMN id SET DEFAULT nextval('public.category_filter_schema_id_seq'::regclass);
 
 
 --
--- Name: guard_ledgers id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: idempotency_keys id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.guard_ledgers ALTER COLUMN id SET DEFAULT nextval('public.guard_ledgers_id_seq'::regclass);
-
-
---
--- Name: hos_outbox_events id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.hos_outbox_events ALTER COLUMN id SET DEFAULT nextval('public.hos_outbox_events_id_seq'::regclass);
-
-
---
--- Name: jobs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+ALTER TABLE ONLY public.idempotency_keys ALTER COLUMN id SET DEFAULT nextval('public.idempotency_keys_id_seq'::regclass);
 
 
 --
@@ -846,104 +337,11 @@ ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.m
 
 
 --
--- Name: order_items id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: attributes attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.order_items ALTER COLUMN id SET DEFAULT nextval('public.order_items_id_seq'::regclass);
-
-
---
--- Name: orders id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.orders ALTER COLUMN id SET DEFAULT nextval('public.orders_id_seq'::regclass);
-
-
---
--- Name: payment_webhook_events id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.payment_webhook_events ALTER COLUMN id SET DEFAULT nextval('public.payment_webhook_events_id_seq'::regclass);
-
-
---
--- Name: payments id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.payments ALTER COLUMN id SET DEFAULT nextval('public.payments_id_seq'::regclass);
-
-
---
--- Name: product_images id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.product_images ALTER COLUMN id SET DEFAULT nextval('public.product_images_id_seq'::regclass);
-
-
---
--- Name: products id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.products ALTER COLUMN id SET DEFAULT nextval('public.products_id_seq'::regclass);
-
-
---
--- Name: reservations id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.reservations ALTER COLUMN id SET DEFAULT nextval('public.reservations_id_seq'::regclass);
-
-
---
--- Name: status_change_logs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.status_change_logs ALTER COLUMN id SET DEFAULT nextval('public.status_change_logs_id_seq'::regclass);
-
-
---
--- Name: tenant_users id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tenant_users ALTER COLUMN id SET DEFAULT nextval('public.tenant_users_id_seq'::regclass);
-
-
---
--- Name: tenants id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tenants ALTER COLUMN id SET DEFAULT nextval('public.tenants_id_seq'::regclass);
-
-
---
--- Name: users id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
-
-
---
--- Name: api_tokens api_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.api_tokens
-    ADD CONSTRAINT api_tokens_pkey PRIMARY KEY (id);
-
-
---
--- Name: api_tokens api_tokens_token_hash_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.api_tokens
-    ADD CONSTRAINT api_tokens_token_hash_unique UNIQUE (token_hash);
-
-
---
--- Name: audit_events audit_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.audit_events
-    ADD CONSTRAINT audit_events_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.attributes
+    ADD CONSTRAINT attributes_pkey PRIMARY KEY (key);
 
 
 --
@@ -979,75 +377,59 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- Name: category_product category_product_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: category_filter_schema category_filter_schema_category_id_attribute_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.category_product
-    ADD CONSTRAINT category_product_pkey PRIMARY KEY (id);
-
-
---
--- Name: category_product category_product_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.category_product
-    ADD CONSTRAINT category_product_unique UNIQUE (category_id, product_id);
+ALTER TABLE ONLY public.category_filter_schema
+    ADD CONSTRAINT category_filter_schema_category_id_attribute_key_unique UNIQUE (category_id, attribute_key);
 
 
 --
--- Name: failed_jobs failed_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: category_filter_schema category_filter_schema_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.failed_jobs
-    ADD CONSTRAINT failed_jobs_pkey PRIMARY KEY (id);
-
-
---
--- Name: failed_jobs failed_jobs_uuid_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.failed_jobs
-    ADD CONSTRAINT failed_jobs_uuid_unique UNIQUE (uuid);
+ALTER TABLE ONLY public.category_filter_schema
+    ADD CONSTRAINT category_filter_schema_pkey PRIMARY KEY (id);
 
 
 --
--- Name: guard_ledgers guard_ledgers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: idempotency_keys idempotency_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.guard_ledgers
-    ADD CONSTRAINT guard_ledgers_pkey PRIMARY KEY (id);
-
-
---
--- Name: guard_ledgers guard_ledgers_subject_command_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.guard_ledgers
-    ADD CONSTRAINT guard_ledgers_subject_command_unique UNIQUE (tenant_id, subject_type, subject_id, command_key);
+ALTER TABLE ONLY public.idempotency_keys
+    ADD CONSTRAINT idempotency_keys_pkey PRIMARY KEY (id);
 
 
 --
--- Name: hos_outbox_events hos_outbox_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: idempotency_keys idempotency_scope_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.hos_outbox_events
-    ADD CONSTRAINT hos_outbox_events_pkey PRIMARY KEY (id);
-
-
---
--- Name: job_batches job_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.job_batches
-    ADD CONSTRAINT job_batches_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.idempotency_keys
+    ADD CONSTRAINT idempotency_scope_key_unique UNIQUE (scope_type, scope_id, key);
 
 
 --
--- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: listing_offers listing_offers_listing_id_code_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.jobs
-    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.listing_offers
+    ADD CONSTRAINT listing_offers_listing_id_code_unique UNIQUE (listing_id, code);
+
+
+--
+-- Name: listing_offers listing_offers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.listing_offers
+    ADD CONSTRAINT listing_offers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: listings listings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.listings
+    ADD CONSTRAINT listings_pkey PRIMARY KEY (id);
 
 
 --
@@ -1059,14 +441,6 @@ ALTER TABLE ONLY public.migrations
 
 
 --
--- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.order_items
-    ADD CONSTRAINT order_items_pkey PRIMARY KEY (id);
-
-
---
 -- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1075,67 +449,11 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: password_reset_tokens password_reset_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rentals rentals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.password_reset_tokens
-    ADD CONSTRAINT password_reset_tokens_pkey PRIMARY KEY (email);
-
-
---
--- Name: payment_webhook_events payment_webhook_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.payment_webhook_events
-    ADD CONSTRAINT payment_webhook_events_pkey PRIMARY KEY (id);
-
-
---
--- Name: payment_webhook_events payment_webhook_events_provider_event_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.payment_webhook_events
-    ADD CONSTRAINT payment_webhook_events_provider_event_id_unique UNIQUE (provider, event_id);
-
-
---
--- Name: payments payments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.payments
-    ADD CONSTRAINT payments_pkey PRIMARY KEY (id);
-
-
---
--- Name: payments payments_provider_provider_reference_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.payments
-    ADD CONSTRAINT payments_provider_provider_reference_unique UNIQUE (provider, provider_reference);
-
-
---
--- Name: product_images product_images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.product_images
-    ADD CONSTRAINT product_images_pkey PRIMARY KEY (id);
-
-
---
--- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.products
-    ADD CONSTRAINT products_pkey PRIMARY KEY (id);
-
-
---
--- Name: products products_tenant_id_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.products
-    ADD CONSTRAINT products_tenant_id_slug_unique UNIQUE (tenant_id, slug);
+ALTER TABLE ONLY public.rentals
+    ADD CONSTRAINT rentals_pkey PRIMARY KEY (id);
 
 
 --
@@ -1155,291 +473,220 @@ ALTER TABLE ONLY public.sessions
 
 
 --
--- Name: status_change_logs status_change_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: attributes_value_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.status_change_logs
-    ADD CONSTRAINT status_change_logs_pkey PRIMARY KEY (id);
+CREATE INDEX attributes_value_type_index ON public.attributes USING btree (value_type);
 
 
 --
--- Name: tenant_users tenant_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: categories_parent_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.tenant_users
-    ADD CONSTRAINT tenant_users_pkey PRIMARY KEY (id);
+CREATE INDEX categories_parent_id_index ON public.categories USING btree (parent_id);
 
 
 --
--- Name: tenant_users tenant_users_tenant_id_user_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: categories_sort_order_index; Type: INDEX; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.tenant_users
-    ADD CONSTRAINT tenant_users_tenant_id_user_id_unique UNIQUE (tenant_id, user_id);
+CREATE INDEX categories_sort_order_index ON public.categories USING btree (sort_order);
 
 
 --
--- Name: tenants tenants_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: categories_vertical_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.tenants
-    ADD CONSTRAINT tenants_pkey PRIMARY KEY (id);
+CREATE INDEX categories_vertical_status_index ON public.categories USING btree (vertical, status);
 
 
 --
--- Name: tenants tenants_slug_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: category_filter_schema_category_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.tenants
-    ADD CONSTRAINT tenants_slug_unique UNIQUE (slug);
+CREATE INDEX category_filter_schema_category_id_status_index ON public.category_filter_schema USING btree (category_id, status);
 
 
 --
--- Name: users users_email_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: category_filter_schema_sort_order_index; Type: INDEX; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_email_unique UNIQUE (email);
+CREATE INDEX category_filter_schema_sort_order_index ON public.category_filter_schema USING btree (sort_order);
 
 
 --
--- Name: users users_hos_user_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: idempotency_keys_expires_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_hos_user_id_unique UNIQUE (hos_user_id);
+CREATE INDEX idempotency_keys_expires_at_index ON public.idempotency_keys USING btree (expires_at);
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: idempotency_keys_scope_type_scope_id_key_index; Type: INDEX; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+CREATE INDEX idempotency_keys_scope_type_scope_id_key_index ON public.idempotency_keys USING btree (scope_type, scope_id, key);
 
 
 --
--- Name: audit_events_action_created_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: listing_offers_listing_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX audit_events_action_created_at_index ON public.audit_events USING btree (action, created_at);
+CREATE INDEX listing_offers_listing_id_status_index ON public.listing_offers USING btree (listing_id, status);
 
 
 --
--- Name: audit_events_action_index; Type: INDEX; Schema: public; Owner: -
+-- Name: listing_offers_provider_tenant_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX audit_events_action_index ON public.audit_events USING btree (action);
+CREATE INDEX listing_offers_provider_tenant_id_status_index ON public.listing_offers USING btree (provider_tenant_id, status);
 
 
 --
--- Name: audit_events_actor_user_id_created_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: listings_category_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX audit_events_actor_user_id_created_at_index ON public.audit_events USING btree (actor_user_id, created_at);
+CREATE INDEX listings_category_id_status_index ON public.listings USING btree (category_id, status);
 
 
 --
--- Name: audit_events_created_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: listings_tenant_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX audit_events_created_at_index ON public.audit_events USING btree (created_at);
+CREATE INDEX listings_tenant_id_status_index ON public.listings USING btree (tenant_id, status);
 
 
 --
--- Name: audit_events_tenant_id_created_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: listings_tenant_id_world_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX audit_events_tenant_id_created_at_index ON public.audit_events USING btree (tenant_id, created_at);
+CREATE INDEX listings_tenant_id_world_status_index ON public.listings USING btree (tenant_id, world, status);
 
 
 --
--- Name: categories_tree_index; Type: INDEX; Schema: public; Owner: -
+-- Name: listings_title_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX categories_tree_index ON public.categories USING btree (parent_id, is_active, sort_order);
+CREATE INDEX listings_title_index ON public.listings USING btree (title);
 
 
 --
--- Name: category_product_product_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: listings_world_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX category_product_product_id_index ON public.category_product USING btree (product_id);
+CREATE INDEX listings_world_status_index ON public.listings USING btree (world, status);
 
 
 --
--- Name: guard_ledgers_subject_index; Type: INDEX; Schema: public; Owner: -
+-- Name: orders_buyer_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX guard_ledgers_subject_index ON public.guard_ledgers USING btree (subject_type, subject_id);
+CREATE INDEX orders_buyer_user_id_index ON public.orders USING btree (buyer_user_id);
 
 
 --
--- Name: hos_outbox_events_available_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: orders_buyer_user_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX hos_outbox_events_available_at_index ON public.hos_outbox_events USING btree (available_at);
+CREATE INDEX orders_buyer_user_id_status_index ON public.orders USING btree (buyer_user_id, status);
 
 
 --
--- Name: hos_outbox_events_sent_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: orders_listing_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX hos_outbox_events_sent_at_index ON public.hos_outbox_events USING btree (sent_at);
+CREATE INDEX orders_listing_id_index ON public.orders USING btree (listing_id);
 
 
 --
--- Name: hos_outbox_events_status_index; Type: INDEX; Schema: public; Owner: -
+-- Name: orders_seller_tenant_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX hos_outbox_events_status_index ON public.hos_outbox_events USING btree (status);
+CREATE INDEX orders_seller_tenant_id_index ON public.orders USING btree (seller_tenant_id);
 
 
 --
--- Name: hos_outbox_events_tenant_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: orders_seller_tenant_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX hos_outbox_events_tenant_id_index ON public.hos_outbox_events USING btree (tenant_id);
+CREATE INDEX orders_seller_tenant_id_status_index ON public.orders USING btree (seller_tenant_id, status);
 
 
 --
--- Name: jobs_queue_index; Type: INDEX; Schema: public; Owner: -
+-- Name: rentals_listing_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX jobs_queue_index ON public.jobs USING btree (queue);
+CREATE INDEX rentals_listing_id_index ON public.rentals USING btree (listing_id);
 
 
 --
--- Name: order_items_order_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: rentals_listing_id_start_at_end_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX order_items_order_id_index ON public.order_items USING btree (order_id);
+CREATE INDEX rentals_listing_id_start_at_end_at_index ON public.rentals USING btree (listing_id, start_at, end_at);
 
 
 --
--- Name: order_items_product_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: rentals_listing_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX order_items_product_id_index ON public.order_items USING btree (product_id);
+CREATE INDEX rentals_listing_id_status_index ON public.rentals USING btree (listing_id, status);
 
 
 --
--- Name: orders_tenant_status_index; Type: INDEX; Schema: public; Owner: -
+-- Name: rentals_provider_tenant_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX orders_tenant_status_index ON public.orders USING btree (tenant_id, status);
+CREATE INDEX rentals_provider_tenant_id_index ON public.rentals USING btree (provider_tenant_id);
 
 
 --
--- Name: orders_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: rentals_provider_tenant_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX orders_user_id_index ON public.orders USING btree (user_id);
+CREATE INDEX rentals_provider_tenant_id_status_index ON public.rentals USING btree (provider_tenant_id, status);
 
 
 --
--- Name: payments_payable_type_payable_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: rentals_renter_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX payments_payable_type_payable_id_index ON public.payments USING btree (payable_type, payable_id);
+CREATE INDEX rentals_renter_user_id_index ON public.rentals USING btree (renter_user_id);
 
 
 --
--- Name: payments_tenant_status_index; Type: INDEX; Schema: public; Owner: -
+-- Name: reservations_listing_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX payments_tenant_status_index ON public.payments USING btree (tenant_id, status);
+CREATE INDEX reservations_listing_id_index ON public.reservations USING btree (listing_id);
 
 
 --
--- Name: payments_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: reservations_listing_id_slot_start_slot_end_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX payments_user_id_index ON public.payments USING btree (user_id);
+CREATE INDEX reservations_listing_id_slot_start_slot_end_index ON public.reservations USING btree (listing_id, slot_start, slot_end);
 
 
 --
--- Name: product_images_order_index; Type: INDEX; Schema: public; Owner: -
+-- Name: reservations_listing_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX product_images_order_index ON public.product_images USING btree (product_id, is_cover, sort_order);
+CREATE INDEX reservations_listing_id_status_index ON public.reservations USING btree (listing_id, status);
 
 
 --
--- Name: products_tenant_rental_unit_index; Type: INDEX; Schema: public; Owner: -
+-- Name: reservations_offer_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX products_tenant_rental_unit_index ON public.products USING btree (tenant_id, rental_unit);
+CREATE INDEX reservations_offer_id_index ON public.reservations USING btree (offer_id);
 
 
 --
--- Name: products_tenant_status_index; Type: INDEX; Schema: public; Owner: -
+-- Name: reservations_provider_tenant_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX products_tenant_status_index ON public.products USING btree (tenant_id, status);
-
-
---
--- Name: products_tenant_type_cancel_policy_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX products_tenant_type_cancel_policy_index ON public.products USING btree (tenant_id, product_type, cancellation_policy);
-
-
---
--- Name: products_tenant_type_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX products_tenant_type_index ON public.products USING btree (tenant_id, product_type);
-
-
---
--- Name: products_tenant_type_instant_book_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX products_tenant_type_instant_book_index ON public.products USING btree (tenant_id, product_type, instant_book);
-
-
---
--- Name: reservations_hold_expire_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX reservations_hold_expire_index ON public.reservations USING btree (tenant_id, status, hold_expires_at);
-
-
---
--- Name: reservations_overlap_date_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX reservations_overlap_date_index ON public.reservations USING btree (tenant_id, product_id, status, start_date, end_date);
-
-
---
--- Name: reservations_overlap_datetime_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX reservations_overlap_datetime_index ON public.reservations USING btree (tenant_id, product_id, status, start_at, end_at);
-
-
---
--- Name: reservations_overlap_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX reservations_overlap_index ON public.reservations USING btree (product_id, status, start_date, end_date);
-
-
---
--- Name: reservations_tenant_status_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX reservations_tenant_status_index ON public.reservations USING btree (tenant_id, status);
-
-
---
--- Name: reservations_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX reservations_user_id_index ON public.reservations USING btree (user_id);
+CREATE INDEX reservations_provider_tenant_id_index ON public.reservations USING btree (provider_tenant_id);
 
 
 --
@@ -1457,214 +704,80 @@ CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
 
 
 --
--- Name: status_change_logs_subject_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX status_change_logs_subject_index ON public.status_change_logs USING btree (subject_type, subject_id);
-
-
---
--- Name: status_change_logs_tenant_created_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX status_change_logs_tenant_created_at_index ON public.status_change_logs USING btree (tenant_id, created_at);
-
-
---
--- Name: api_tokens api_tokens_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.api_tokens
-    ADD CONSTRAINT api_tokens_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: audit_events audit_events_actor_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.audit_events
-    ADD CONSTRAINT audit_events_actor_user_id_foreign FOREIGN KEY (actor_user_id) REFERENCES public.users(id) ON DELETE SET NULL;
-
-
---
--- Name: audit_events audit_events_tenant_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.audit_events
-    ADD CONSTRAINT audit_events_tenant_id_foreign FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE SET NULL;
-
-
---
 -- Name: categories categories_parent_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.categories
-    ADD CONSTRAINT categories_parent_id_foreign FOREIGN KEY (parent_id) REFERENCES public.categories(id);
+    ADD CONSTRAINT categories_parent_id_foreign FOREIGN KEY (parent_id) REFERENCES public.categories(id) ON DELETE CASCADE;
 
 
 --
--- Name: category_product category_product_category_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: category_filter_schema category_filter_schema_attribute_key_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.category_product
-    ADD CONSTRAINT category_product_category_id_foreign FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE CASCADE;
-
-
---
--- Name: category_product category_product_product_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.category_product
-    ADD CONSTRAINT category_product_product_id_foreign FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.category_filter_schema
+    ADD CONSTRAINT category_filter_schema_attribute_key_foreign FOREIGN KEY (attribute_key) REFERENCES public.attributes(key) ON DELETE CASCADE;
 
 
 --
--- Name: guard_ledgers guard_ledgers_tenant_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: category_filter_schema category_filter_schema_category_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.guard_ledgers
-    ADD CONSTRAINT guard_ledgers_tenant_id_foreign FOREIGN KEY (tenant_id) REFERENCES public.tenants(id);
-
-
---
--- Name: guard_ledgers guard_ledgers_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.guard_ledgers
-    ADD CONSTRAINT guard_ledgers_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
+ALTER TABLE ONLY public.category_filter_schema
+    ADD CONSTRAINT category_filter_schema_category_id_foreign FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE CASCADE;
 
 
 --
--- Name: order_items order_items_order_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: listing_offers listing_offers_listing_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.order_items
-    ADD CONSTRAINT order_items_order_id_foreign FOREIGN KEY (order_id) REFERENCES public.orders(id);
-
-
---
--- Name: order_items order_items_product_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.order_items
-    ADD CONSTRAINT order_items_product_id_foreign FOREIGN KEY (product_id) REFERENCES public.products(id);
+ALTER TABLE ONLY public.listing_offers
+    ADD CONSTRAINT listing_offers_listing_id_foreign FOREIGN KEY (listing_id) REFERENCES public.listings(id) ON DELETE CASCADE;
 
 
 --
--- Name: orders orders_tenant_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: listings listings_category_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.listings
+    ADD CONSTRAINT listings_category_id_foreign FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: orders orders_listing_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.orders
-    ADD CONSTRAINT orders_tenant_id_foreign FOREIGN KEY (tenant_id) REFERENCES public.tenants(id);
+    ADD CONSTRAINT orders_listing_id_foreign FOREIGN KEY (listing_id) REFERENCES public.listings(id) ON DELETE CASCADE;
 
 
 --
--- Name: orders orders_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rentals rentals_listing_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.orders
-    ADD CONSTRAINT orders_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: payments payments_tenant_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.payments
-    ADD CONSTRAINT payments_tenant_id_foreign FOREIGN KEY (tenant_id) REFERENCES public.tenants(id);
+ALTER TABLE ONLY public.rentals
+    ADD CONSTRAINT rentals_listing_id_foreign FOREIGN KEY (listing_id) REFERENCES public.listings(id) ON DELETE CASCADE;
 
 
 --
--- Name: payments payments_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.payments
-    ADD CONSTRAINT payments_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: product_images product_images_product_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.product_images
-    ADD CONSTRAINT product_images_product_id_foreign FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
-
-
---
--- Name: products products_tenant_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.products
-    ADD CONSTRAINT products_tenant_id_foreign FOREIGN KEY (tenant_id) REFERENCES public.tenants(id);
-
-
---
--- Name: reservations reservations_product_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: reservations reservations_listing_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.reservations
-    ADD CONSTRAINT reservations_product_id_foreign FOREIGN KEY (product_id) REFERENCES public.products(id);
+    ADD CONSTRAINT reservations_listing_id_foreign FOREIGN KEY (listing_id) REFERENCES public.listings(id) ON DELETE CASCADE;
 
 
 --
--- Name: reservations reservations_tenant_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.reservations
-    ADD CONSTRAINT reservations_tenant_id_foreign FOREIGN KEY (tenant_id) REFERENCES public.tenants(id);
-
-
---
--- Name: reservations reservations_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: reservations reservations_offer_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.reservations
-    ADD CONSTRAINT reservations_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: status_change_logs status_change_logs_tenant_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.status_change_logs
-    ADD CONSTRAINT status_change_logs_tenant_id_foreign FOREIGN KEY (tenant_id) REFERENCES public.tenants(id);
-
-
---
--- Name: status_change_logs status_change_logs_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.status_change_logs
-    ADD CONSTRAINT status_change_logs_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: tenant_users tenant_users_tenant_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tenant_users
-    ADD CONSTRAINT tenant_users_tenant_id_foreign FOREIGN KEY (tenant_id) REFERENCES public.tenants(id);
-
-
---
--- Name: tenant_users tenant_users_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tenant_users
-    ADD CONSTRAINT tenant_users_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
--- Name: tenants tenants_owner_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tenants
-    ADD CONSTRAINT tenants_owner_user_id_foreign FOREIGN KEY (owner_user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT reservations_offer_id_foreign FOREIGN KEY (offer_id) REFERENCES public.listing_offers(id) ON DELETE SET NULL;
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict kInpuOIr6Yj6GLlKh62Kce4ZLJdLeaCl1Z0ATLtDsZZ2zkj0CDIE7nfQJmEZS6C
+\unrestrict Y73mFmsgZ2SWPred6TxnapHQ5aQy8PIisXW5b6AmSbsX5mb4cehEaXTzicdQPZY
 

@@ -8,15 +8,12 @@ use Illuminate\Support\Facades\Schema;
 // POST /v1/listings - Create DRAFT listing
 // WP-8: STORE persona requires X-Active-Tenant-Id header (persona.scope:store)
 // WP-26: Tenant scope enforced via tenant.scope middleware
-// WP-29: Auth required via auth.any middleware (when GENESIS_ALLOW_UNAUTH_STORE=0)
-// WP-50: AuthAny middleware now validates JWT tokens (allows user-like auth flow)
-// WP-61B: In GENESIS mode (GENESIS_ALLOW_UNAUTH_STORE=1), Authorization is optional per SPEC §5.2
+// WP-29: Auth required via auth.any middleware
+// WP-50: AuthAny middleware validates JWT tokens
 // WP-48: Use full class name to avoid Laravel terminate phase alias resolution issue
-// WP-61B: Build middleware array conditionally based on GENESIS_ALLOW_UNAUTH_STORE
 $createListingMiddleware = [\App\Http\Middleware\PersonaScope::class . ':store'];
-if (env('GENESIS_ALLOW_UNAUTH_STORE', '1') !== '1') {
-    $createListingMiddleware[] = 'auth.any';
-}
+$createListingMiddleware[] = 'auth.any';
+$createListingMiddleware[] = 'auth.ctx';
 $createListingMiddleware[] = 'tenant.scope';
 Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
@@ -87,15 +84,12 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
 // POST /v1/listings/{id}/publish - Publish listing
 // WP-8: STORE persona requires X-Active-Tenant-Id header (persona.scope:store)
 // WP-26: Tenant scope enforced via tenant.scope middleware
-// WP-29: Auth required via auth.any middleware (when GENESIS_ALLOW_UNAUTH_STORE=0)
-// WP-50: AuthAny middleware now validates JWT tokens (allows user-like auth flow)
-// WP-61B: In GENESIS mode (GENESIS_ALLOW_UNAUTH_STORE=1), Authorization is optional per SPEC §5.2
+// WP-29: Auth required via auth.any middleware
+// WP-50: AuthAny middleware validates JWT tokens
 // WP-48: Use full class name to avoid Laravel terminate phase alias resolution issue
-// WP-61B: Build middleware array conditionally based on GENESIS_ALLOW_UNAUTH_STORE
 $publishListingMiddleware = [\App\Http\Middleware\PersonaScope::class . ':store'];
-if (env('GENESIS_ALLOW_UNAUTH_STORE', '1') !== '1') {
-    $publishListingMiddleware[] = 'auth.any';
-}
+$publishListingMiddleware[] = 'auth.any';
+$publishListingMiddleware[] = 'auth.ctx';
 $publishListingMiddleware[] = 'tenant.scope';
 Route::middleware($publishListingMiddleware)->post('/v1/listings/{id}/publish', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware

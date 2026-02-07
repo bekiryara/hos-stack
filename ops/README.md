@@ -8,7 +8,7 @@ If you run **three** commands (most critical, fastest signal):
 
 Single local pack (recommended):
 
-- `.\ops\full_gates.ps1` (verify + openapi + conformance + pazar spine + messaging)
+- `.\ops\ops.ps1 full` (verify + openapi + conformance + v2_gate + pazar spine + messaging)
 
 Human-friendly entrypoint (recommended):
 

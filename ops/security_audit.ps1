@@ -22,6 +22,19 @@ $ALLOWLIST = @(
     '/v1/health'
 )
 
+# Helper: Normalize URI (ensure leading slash)
+function Normalize-Uri {
+    param([string]$Uri)
+    if ([string]::IsNullOrWhiteSpace($Uri)) {
+        return ""
+    }
+    $u = $Uri.Trim()
+    if (-not $u.StartsWith("/")) {
+        $u = "/" + $u
+    }
+    return $u
+}
+
 # Helper: Normalize middleware to array of strings
 function Normalize-Middleware {
     param([object]$Middleware)
@@ -47,6 +60,31 @@ function Normalize-Middleware {
     }
     
     return @()
+}
+
+# Helper: Expand canonical middleware aliases from class names
+function Expand-MiddlewareAliases {
+    param([string[]]$MiddlewareList)
+    
+    $list = @()
+    foreach ($m in ($MiddlewareList | Where-Object { $_ -ne $null })) {
+        $s = [string]$m
+        if ([string]::IsNullOrWhiteSpace($s)) { continue }
+        $list += $s
+        
+        # Laravel route:list may emit fully-qualified class names.
+        # Add canonical aliases expected by this audit.
+        if ($s -match 'AuthAny') { $list += 'auth.any' }
+        if ($s -match 'AuthContext') { $list += 'auth.ctx' }
+        if ($s -match 'PersonaScope') { $list += 'persona.scope' }
+        if ($s -match 'TenantScope') { $list += 'tenant.scope' }
+        if ($s -match 'TenantMembershipStrict') { $list += 'tenant.membership_strict' }
+        if ($s -match 'SuperAdmin') { $list += 'super.admin' }
+        if ($s -match 'ResolveTenant' -or $s -match 'TenantResolve') { $list += 'tenant.resolve' }
+        if ($s -match 'TenantUser') { $list += 'tenant.user' }
+    }
+    
+    return ($list | Select-Object -Unique)
 }
 
 # Helper: Check if route path matches pattern
@@ -107,8 +145,9 @@ Write-Host "`n[2] Auditing routes..." -ForegroundColor Yellow
 
 foreach ($route in $routes) {
     $method = $route.method
-    $uri = $route.uri
+    $uri = Normalize-Uri -Uri $route.uri
     $middleware = Normalize-Middleware -Middleware $route.middleware
+    $middleware = Expand-MiddlewareAliases -MiddlewareList $middleware
     
     $violationsForRoute = @()
     

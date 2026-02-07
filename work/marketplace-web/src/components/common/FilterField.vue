@@ -150,7 +150,8 @@ export default {
 .field-label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--text-label, #4b5563);
 }
 
 .range-row {
@@ -162,9 +163,17 @@ export default {
 .field-input {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border, #e5e7eb);
   border-radius: 4px;
   font-size: 1rem;
+  color: var(--text, #374151);
+  background: var(--surface, #fff);
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.25);
 }
 
 .field-checkbox {

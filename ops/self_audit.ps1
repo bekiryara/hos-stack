@@ -215,11 +215,8 @@ Write-Host "=== Running Canonical Checks ===" -ForegroundColor Cyan
 # 1) doctor.ps1
 Invoke-AuditCheck -CheckName "Repository Doctor" -ScriptPath "${scriptDir}\doctor.ps1" -OutputFile "${auditFolder}\doctor.txt" -Required $true
 
-# 2) run_ops_status.ps1 (preferred, safe runner)
-$opsStatusScript = "${scriptDir}\run_ops_status.ps1"
-if (-not (Test-Path $opsStatusScript)) {
-    $opsStatusScript = "${scriptDir}\ops_status.ps1"
-}
+# 2) ops_status.ps1
+$opsStatusScript = "${scriptDir}\ops_status.ps1"
 Invoke-AuditCheck -CheckName "Ops Status" -ScriptPath $opsStatusScript -Arguments @("-Ci") -OutputFile "${auditFolder}\ops_status.txt" -Required $true
 
 # 3) conformance.ps1

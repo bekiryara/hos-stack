@@ -81,6 +81,22 @@ export default {
 </script>
 
 <style>
+:root {
+  /* Neutral, consistent palette */
+  --text-strong: #1f2937; /* headings */
+  --text: #374151; /* body */
+  --text-muted: #6b7280;
+  --text-label: #4b5563;
+  --border: #e5e7eb;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --link: #2563eb;
+  --btn-neutral: #111827;
+  --btn-neutral-hover: #0b1220;
+  --pill-bg: #f1f5f9;
+  --pill-text: #334155;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -90,7 +106,8 @@ export default {
 body {
   font-family: system-ui, -apple-system, sans-serif;
   line-height: 1.6;
-  color: #333;
+  color: var(--text);
+  background: var(--surface);
 }
 
 #app {
@@ -113,7 +130,7 @@ header h1 {
 }
 
 nav a {
-  color: #0066cc;
+  color: var(--link);
   text-decoration: none;
   margin-left: 1rem;
 }
@@ -124,7 +141,7 @@ nav a:hover {
 
 .user-identity {
   margin-left: 1rem;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 

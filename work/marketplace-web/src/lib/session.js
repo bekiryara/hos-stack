@@ -3,13 +3,10 @@
 //
 // Session Keys Contract (V1):
 // - Canonical keys (the only keys we WRITE): auth_token, auth_user, tenant_slug, active_tenant_id
-// - Legacy keys (READ for migration only, never write): demo_auth_token, demo_user
-// - Migration window policy: keep legacy read+migrate for one release window, then remove.
+// - Legacy demo keys removed: demo_auth_token, demo_user (cleanup: single auth spine)
  
 const TOKEN_KEY = 'auth_token';
-const OLD_TOKEN_KEY = 'demo_auth_token'; // Backward compatibility (migrate once)
 const USER_KEY = 'auth_user';
-const OLD_USER_KEY = 'demo_user'; // Backward compatibility (migrate once)
 const TENANT_SLUG_KEY = 'tenant_slug';
 const ACTIVE_TENANT_ID_KEY = 'active_tenant_id';
  
@@ -24,17 +21,7 @@ function notifySessionChanged() {
 }
 
 export function getToken() {
-  // Check new key first, fallback to old key for backward compatibility
-  let token = localStorage.getItem(TOKEN_KEY);
-  if (!token) {
-    token = localStorage.getItem(OLD_TOKEN_KEY);
-    if (token) {
-      // Migrate to new key
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.removeItem(OLD_TOKEN_KEY);
-    }
-  }
-  return token;
+  return localStorage.getItem(TOKEN_KEY);
 }
  
 /**
@@ -60,18 +47,14 @@ export function saveSession(token, user) {
   const rawToken = normalizeToken(token);
   if (rawToken) {
     localStorage.setItem(TOKEN_KEY, rawToken);
-    localStorage.removeItem(OLD_TOKEN_KEY);
   } else {
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(OLD_TOKEN_KEY);
   }
  
   if (user) {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
-    localStorage.removeItem(OLD_USER_KEY);
   } else {
     localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(OLD_USER_KEY);
   }
 
   notifySessionChanged();
@@ -81,10 +64,8 @@ export function setToken(token) {
   const rawToken = normalizeToken(token);
   if (rawToken) {
     localStorage.setItem(TOKEN_KEY, rawToken);
-    localStorage.removeItem(OLD_TOKEN_KEY);
   } else {
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(OLD_TOKEN_KEY);
   }
 
   notifySessionChanged();
@@ -92,7 +73,6 @@ export function setToken(token) {
  
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(OLD_TOKEN_KEY);
 }
  
 export function isTokenPresent() {
@@ -146,14 +126,7 @@ export function getUserId() {
  * @returns {object|null} { email, id? } or null
  */
 export function getUser() {
-  let userStr = localStorage.getItem(USER_KEY);
-  if (!userStr) {
-    userStr = localStorage.getItem(OLD_USER_KEY);
-    if (userStr) {
-      localStorage.setItem(USER_KEY, userStr);
-      localStorage.removeItem(OLD_USER_KEY);
-    }
-  }
+  const userStr = localStorage.getItem(USER_KEY);
   if (userStr) {
     try {
       return JSON.parse(userStr);
@@ -232,7 +205,6 @@ export function getRole() {
 export function clearSession() {
   clearToken();
   localStorage.removeItem(USER_KEY);
-  localStorage.removeItem(OLD_USER_KEY);
   localStorage.removeItem(TENANT_SLUG_KEY);
   localStorage.removeItem(ACTIVE_TENANT_ID_KEY);
   notifySessionChanged();

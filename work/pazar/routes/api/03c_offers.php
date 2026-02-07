@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\DB;
 // POST /v1/listings/{id}/offers - Create offer
 // WP-26: Tenant scope enforced via tenant.scope middleware
 // WP-29: Auth required via auth.any middleware
-$offersWriteMiddleware = ['tenant.scope'];
-if (env('GENESIS_ALLOW_UNAUTH_STORE', '1') !== '1') {
-    $offersWriteMiddleware[] = 'auth.any';
-}
+$offersWriteMiddleware = [
+    \App\Http\Middleware\PersonaScope::class . ':store',
+    'auth.any',
+    'auth.ctx',
+    'tenant.scope'
+];
 Route::middleware($offersWriteMiddleware)->post('/v1/listings/{id}/offers', function ($id, \Illuminate\Http\Request $request) {
     // WP-26: tenant_id is set by TenantScope middleware
     $tenantId = $request->attributes->get('tenant_id');

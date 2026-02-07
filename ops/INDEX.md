@@ -8,14 +8,12 @@ This folder is intentionally large because it contains both:
 If you only want “the one thing to run”, use:
 
 - `.\ops\ops.ps1 full` (recommended)
-- `.\ops\full_gates.ps1` (direct)
 
 ---
 
 ## Golden commands (human entrypoints)
 
 - `.\ops\ops.ps1` - dispatcher (`full|status|run|...`)
-- `.\ops\full_gates.ps1` - single local FULL_GATES pack (fastest high-signal)
 - `.\ops\ops_status.ps1` - status/audit dashboard (wide, informative)
 - `.\ops\ops_run.ps1` - daily pack runner (`-Profile Prototype|Full`)
 - `.\ops\ship_main.ps1` - publish to main (runs gates + push flow)
@@ -53,7 +51,6 @@ These scripts are referenced from `.github/workflows/*.yml`. Deleting/renaming t
 - `ops/repo_integrity.ps1`
 - `ops/reservation_contract_check.ps1`
 - `ops/routes_snapshot.ps1`
-- `ops/run_ops_status.ps1`
 - `ops/schema_snapshot.ps1`
 - `ops/security_audit.ps1`
 - `ops/session_posture_check.ps1`

@@ -139,15 +139,18 @@ export default {
 
 <style scoped>
 .filters-panel {
-  background: #f9f9f9;
+  background: transparent;
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border, #e5e7eb);
   margin-bottom: 2rem;
 }
 
 .filters-panel h3 {
   margin-bottom: 1rem;
   font-size: 1.2rem;
+  color: var(--text-strong, #1f2937);
+  font-weight: 600;
 }
 
 .filter-item {
@@ -157,7 +160,8 @@ export default {
 .filter-item label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--text-label, #4b5563);
 }
 
 .required-badge {
@@ -184,7 +188,7 @@ export default {
 }
 
 .search-button {
-  background: #0066cc;
+  background: var(--btn-neutral, #111827);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -195,13 +199,13 @@ export default {
 }
 
 .search-button:hover {
-  background: #0052a3;
+  background: var(--btn-neutral-hover, #0b1220);
 }
 
 .empty-state {
   text-align: center;
   padding: 1rem;
-  color: #666;
+  color: var(--text-muted, #6b7280);
 }
 
 .empty-state p {
@@ -211,8 +215,8 @@ export default {
 .applied-filters {
   margin: 0.75rem 0 1rem;
   padding: 0.75rem;
-  background: #fff;
-  border: 1px solid #eee;
+  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--border, #e5e7eb);
   border-radius: 6px;
 }
 
@@ -225,18 +229,19 @@ export default {
 
 .applied-title {
   font-weight: 600;
+  color: var(--text-strong, #1f2937);
 }
 
 .applied-list {
   margin: 0;
   padding-left: 1.25rem;
-  color: #333;
+  color: var(--text, #374151);
 }
 
 .clear-button {
   background: transparent;
-  border: 1px solid #bbb;
-  color: #333;
+  border: 1px solid var(--border, #e5e7eb);
+  color: var(--text, #374151);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   cursor: pointer;
@@ -244,7 +249,7 @@ export default {
 }
 
 .clear-button:hover {
-  background: #f5f5f5;
+  background: #f8fafc;
 }
 </style>
 

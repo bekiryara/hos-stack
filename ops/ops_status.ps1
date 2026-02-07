@@ -27,7 +27,7 @@ $ErrorActionPreference = "Continue"
 # WP-68C: Golden Commands Banner (keep stable)
 Write-Host "=== GOLDEN COMMANDS ===" -ForegroundColor Yellow
 Write-Host "(0) Dispatcher:    .\\ops\\ops.ps1 full|status|run|..." -ForegroundColor White
-Write-Host "(1) FULL GATES:     .\\ops\\full_gates.ps1" -ForegroundColor White
+Write-Host "(1) FULL GATES:     .\\ops\\ops.ps1 full" -ForegroundColor White
 Write-Host "(2) Status/Audit:   .\\ops\\ops_status.ps1" -ForegroundColor White
 Write-Host "(3) Publish:        .\\ops\\ship_main.ps1" -ForegroundColor White
 Write-Host "(4) Frontend Apply: .\\ops\\frontend_refresh.ps1 [-Build]" -ForegroundColor White
@@ -90,6 +90,38 @@ $checkRegistry = @(
     @{ Id = "openapi_contract"; Name = "OpenAPI Contract"; ScriptPath = ".\ops\openapi_contract.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "smoke_surface"; Name = "Smoke Surface Gate"; ScriptPath = ".\ops\smoke_surface.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "observability_status"; Name = "Observability Status"; ScriptPath = ".\ops\observability_status.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true },
+    
+    # Registry-only: leaf scripts tracked by ops_drift_guard for discoverability.
+    # These are intentionally NOT executed by ops_status (avoid heavy side effects / duplication).
+    @{ Id = "leaf_account_portal_read"; Name = "Leaf: Account Portal Read Check"; ScriptPath = ".\ops\account_portal_read_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_baseline_status"; Name = "Leaf: Baseline Status"; ScriptPath = ".\ops\baseline_status.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $false; RegistryOnly = $true },
+    @{ Id = "leaf_boundary_contract"; Name = "Leaf: Boundary Contract Check"; ScriptPath = ".\ops\boundary_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_catalog_contract"; Name = "Leaf: Catalog Contract Check"; ScriptPath = ".\ops\catalog_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_catalog_integrity"; Name = "Leaf: Catalog Integrity Check"; ScriptPath = ".\ops\catalog_integrity_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_category_flow_policy"; Name = "Leaf: Category Flow Policy Check"; ScriptPath = ".\ops\category_flow_policy_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_closeouts_size_gate"; Name = "Leaf: Closeouts Size Gate"; ScriptPath = ".\ops\closeouts_size_gate.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $false; RegistryOnly = $true },
+    @{ Id = "leaf_core_persona_contract"; Name = "Leaf: Core Persona Contract Check"; ScriptPath = ".\ops\core_persona_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_daily_snapshot"; Name = "Leaf: Daily Snapshot"; ScriptPath = ".\ops\daily_snapshot.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $false; RegistryOnly = $true },
+    @{ Id = "leaf_graveyard_check"; Name = "Leaf: Graveyard Check"; ScriptPath = ".\ops\graveyard_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $false; RegistryOnly = $true },
+    @{ Id = "leaf_idempotency_coverage"; Name = "Leaf: Idempotency Coverage Check"; ScriptPath = ".\ops\idempotency_coverage_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $false; RegistryOnly = $true },
+    @{ Id = "leaf_listing_contract"; Name = "Leaf: Listing Contract Check"; ScriptPath = ".\ops\listing_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_messaging_contract"; Name = "Leaf: Messaging Contract Check"; ScriptPath = ".\ops\messaging_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_messaging_journey"; Name = "Leaf: Messaging Journey Check"; ScriptPath = ".\ops\messaging_journey_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_messaging_write_contract"; Name = "Leaf: Messaging Write Contract Check"; ScriptPath = ".\ops\messaging_write_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_offer_contract"; Name = "Leaf: Offer Contract Check"; ScriptPath = ".\ops\offer_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_order_contract"; Name = "Leaf: Order Contract Check"; ScriptPath = ".\ops\order_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_pazar_spine"; Name = "Leaf: Pazar Spine Check"; ScriptPath = ".\ops\pazar_spine_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_persona_scope"; Name = "Leaf: Persona Scope Check"; ScriptPath = ".\ops\persona_scope_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_public_ready"; Name = "Leaf: Public Ready Check"; ScriptPath = ".\ops\public_ready_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $false; RegistryOnly = $true },
+    @{ Id = "leaf_read_snapshot"; Name = "Leaf: Read Snapshot Check"; ScriptPath = ".\ops\read_snapshot_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_rental_contract"; Name = "Leaf: Rental Contract Check"; ScriptPath = ".\ops\rental_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_repo_payload_audit"; Name = "Leaf: Repo Payload Audit"; ScriptPath = ".\ops\repo_payload_audit.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $false; RegistryOnly = $true },
+    @{ Id = "leaf_reservation_contract"; Name = "Leaf: Reservation Contract Check"; ScriptPath = ".\ops\reservation_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_tenant_scope_contract"; Name = "Leaf: Tenant Scope Contract Check"; ScriptPath = ".\ops\tenant_scope_contract_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_v2_gate"; Name = "Leaf: V2 Gate (0-targets)"; ScriptPath = ".\ops\v2_gate.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_world_status"; Name = "Leaf: World Status Check"; ScriptPath = ".\ops\world_status_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+    @{ Id = "leaf_write_snapshot"; Name = "Leaf: Write Snapshot Check"; ScriptPath = ".\ops\write_snapshot_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
+
     @{ Id = "rc0_gate"; Name = "RC0 Gate"; ScriptPath = ".\ops\rc0_gate.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $false },
     @{ Id = "rc0_check"; Name = "RC0 Check"; ScriptPath = ".\ops\rc0_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $false }
 )
@@ -109,6 +141,7 @@ function Invoke-OpsCheckFromRegistry {
     $isOptional = if ($CheckDef.Optional) { $CheckDef.Optional } else { $false }
     $isInline = if ($CheckDef.InlineCheck) { $CheckDef.InlineCheck } else { $false }
     $isCoreDependent = if ($CheckDef.CoreDependent) { $CheckDef.CoreDependent } else { $false }
+    $isRegistryOnly = if ($CheckDef.RegistryOnly) { $CheckDef.RegistryOnly } else { $false }
     
     Write-Host "Running $checkName..." -ForegroundColor Yellow
     
@@ -116,6 +149,17 @@ function Invoke-OpsCheckFromRegistry {
     $status = "PASS"
     $notes = ""
     $blocking = $CheckDef.Blocking
+
+    # Registry-only entries: listed for drift guard discoverability, not executed in ops_status.
+    if ($isRegistryOnly) {
+        # Keep these in the registry for ops_drift_guard, but do not show them in the dashboard
+        # (avoids clutter / confusion for humans).
+        return @{
+            Status = "SKIP"
+            ExitCode = 0
+            Blocking = $false
+        }
+    }
 
     # Optional checks are CI-only by default (to keep ops_status usable in local/dev)
     if ($isOptional -and -not $Ci) {
@@ -253,109 +297,20 @@ function Test-ErrorContract {
     $status = "PASS"
     $exitCode = 0
     $notes = ""
-    $failures = @()
     
     try {
-        # Test 422 Validation Error
-        $response422 = curl.exe -sS -i -X POST http://localhost:8080/auth/login `
-            -H "Content-Type: application/json" `
-            -H "Accept: application/json" `
-            -d "{}" 2>&1
-        
-        $status422 = ($response422 | Select-String -Pattern "HTTP/\d\.\d\s+(\d+)" | ForEach-Object { $_.Matches.Groups[1].Value })
-        $body422 = ($response422 | Select-String -Pattern '\{.*\}' -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -Last 1)
-        
-        # Check for connection failure (no HTTP status code means connection failed)
-        if (-not $status422) {
-            # Check if curl output indicates connection error
-            $response422Str = $response422 -join " "
-            if ($response422Str -match "Failed to connect|Connection refused|Could not resolve|Connection timed out|Unable to connect") {
-                $status = "SKIP"
-                $exitCode = 0
-                $notes = "CORE_UNAVAILABLE: Cannot connect to http://localhost:8080"
-                
-                $script:results += [PSCustomObject]@{
-                    Check = "Error Contract"
-                    Status = $status
-                    ExitCode = $exitCode
-                    Notes = $notes
-                    Blocking = $true
-                    CheckId = "error_contract"
-                }
-                
-                return @{
-                    Status = $status
-                    ExitCode = $exitCode
-                }
-            }
-            $failures += "422 status check failed (got $status422)"
-        }
-        
-        if ($status422 -ne "422") {
-            $failures += "422 status check failed (got $status422)"
-        }
-        
-        if ($body422 -and $body422 -match '"ok"\s*:\s*false' -and 
-            $body422 -match '"error_code"\s*:\s*"VALIDATION_ERROR"' -and
-            $body422 -match '"request_id"' -and
-            $body422 -match '"details"') {
-            # PASS
-        } else {
-            $failures += "422 envelope missing required fields"
-        }
-        
-        # Test 404 Not Found
-        $response404 = curl.exe -sS -i -H "Accept: application/json" http://localhost:8080/api/non-existent-endpoint 2>&1
-        
-        $status404 = ($response404 | Select-String -Pattern "HTTP/\d\.\d\s+(\d+)" | ForEach-Object { $_.Matches.Groups[1].Value })
-        $body404 = ($response404 | Select-String -Pattern '\{.*\}' -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -Last 1)
-        
-        # Check for connection failure (no HTTP status code means connection failed)
-        if (-not $status404) {
-            # Check if curl output indicates connection error
-            $response404Str = $response404 -join " "
-            if ($response404Str -match "Failed to connect|Connection refused|Could not resolve|Connection timed out|Unable to connect") {
-                $status = "SKIP"
-                $exitCode = 0
-                $notes = "CORE_UNAVAILABLE: Cannot connect to http://localhost:8080"
-                
-                $script:results += [PSCustomObject]@{
-                    Check = "Error Contract"
-                    Status = $status
-                    ExitCode = $exitCode
-                    Notes = $notes
-                    Blocking = $true
-                    CheckId = "error_contract"
-                }
-                
-                return @{
-                    Status = $status
-                    ExitCode = $exitCode
-                }
-            }
-            $failures += "404 status check failed (got $status404)"
-        }
-        
-        if ($status404 -ne "404") {
-            $failures += "404 status check failed (got $status404)"
-        }
-        
-        if ($body404 -and $body404 -match '"ok"\s*:\s*false' -and 
-            $body404 -match '"error_code"\s*:\s*"NOT_FOUND"' -and
-            $body404 -match '"request_id"') {
-            # PASS
-        } else {
-            $failures += "404 envelope missing required fields"
-        }
-        
-        if ($failures.Count -gt 0) {
+        $helper = Join-Path $scriptDir "_lib\error_contract.ps1"
+        if (-not (Test-Path $helper)) {
             $status = "FAIL"
             $exitCode = 1
-            $notes = $failures -join "; "
+            $notes = "Missing helper: $helper"
         } else {
-            $notes = "422 and 404 envelopes correct"
+            . $helper
+            $res = Invoke-ErrorContractCheck -BaseUrl "http://localhost:8080"
+            $status = $res.Status
+            $exitCode = [int]$res.ExitCode
+            $notes = [string]$res.Notes
         }
-        
     } catch {
         # Check if exception indicates connection failure
         $errorMsg = $_.Exception.Message

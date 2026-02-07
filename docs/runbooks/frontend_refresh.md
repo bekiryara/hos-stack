@@ -63,12 +63,6 @@ This document describes when to use hard refresh vs container rebuild for fronte
 | Build config / dependencies | Rebuild container | `.\ops\frontend_refresh.ps1 -Build` |
 | API contracts | Restart services | `docker compose restart <service>` |
 
-## Dev Helper (Optional)
-
-`ops/dev_refresh.ps1` is a **development helper** (heavier):
-- `.\ops\dev_refresh.ps1 -FrontendOnly` rebuilds web services (similar to `frontend_refresh -Build`).
-- `.\ops\dev_refresh.ps1 -All` is an interactive full rebuild (use sparingly).
-
 ## Troubleshooting
 
 **Changes not appearing after hard refresh:**

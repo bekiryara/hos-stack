@@ -29,7 +29,7 @@ If you’re developing locally and want *real signal*, use:
   - `.\ops\ops.ps1 full` (FULL_GATES)
   - `.\ops\ops.ps1 run -Profile Prototype|Full` (daily packs)
   - `.\ops\ops.ps1 status` (dashboard)
-- **Direct**: `.\ops\full_gates.ps1` (same pack, no indirection)
+- **Direct**: `.\ops\ops.ps1 full` (same pack)
 
 These are “stable UX”: we keep them simple, predictable, and documented.
 
@@ -63,7 +63,7 @@ Examples:
 - **DB ops**: `hos_db_reset_safe.ps1`, `hos_db_recovery.ps1`, `hos_db_verify.ps1`
 - **triage**: `triage.ps1`, `doctor.ps1`
 - **frontend**: `frontend_smoke.ps1` (does real `npm ci` + `npm run build`)
-- **release helpers**: `release_note.ps1`, `rc0_release_bundle.ps1`
+- **release helpers**: `release_note.ps1`, `release_bundle.ps1`
 
 Rule of thumb:
 

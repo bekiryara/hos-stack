@@ -299,18 +299,10 @@ $gitStatus
     $collected++
 }
 
-# 2) ops_status.txt: run_ops_status.ps1
+# 2) ops_status.txt: ops_status.ps1
 Write-Host ""
 Write-Host "=== Collecting Ops Evidence ===" -ForegroundColor Cyan
-$opsStatusScript = "${scriptDir}\run_ops_status.ps1"
-if (-not (Test-Path $opsStatusScript)) {
-    $opsStatusScript = "${scriptDir}\ops_status.ps1"
-}
-# Use run_ops_status.ps1 wrapper if available (prevents terminal closure)
-$opsStatusScript = "${scriptDir}\run_ops_status.ps1"
-if (-not (Test-Path $opsStatusScript)) {
-    $opsStatusScript = "${scriptDir}\ops_status.ps1"
-}
+$opsStatusScript = "${scriptDir}\ops_status.ps1"
 $opsStatusOutput = & $opsStatusScript -Ci *>&1 | Out-String
 $opsStatusExitCode = $LASTEXITCODE
 # Use UTF-8 no-BOM encoding
@@ -558,7 +550,7 @@ This bundle was generated on $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss').
 1. **Read START_HERE**: See `docs/START_HERE.md` (or `work/hos/docs/pazar/START_HERE_ajan_onboarding.md` for onboarding)
 2. **Start Stack**: Run `.\ops\stack_up.ps1 -Profile all` (or `docker compose up -d` for core services)
 3. **Verify Health**: Check `.\ops\verify.ps1` output
-4. **Run Ops Status**: Execute `.\ops\run_ops_status.ps1` (or `.\ops\ops_status.ps1`)
+4. **Run Ops Status**: Execute `.\ops\ops.ps1 status-safe` (or `.\ops\ops_status.ps1`)
 
 ## Bundle Contents
 
@@ -587,7 +579,7 @@ See `docs/runbooks/rc0_release.md` for complete 10-step cutover checklist.
 To restore from this bundle:
 1. Review all evidence files
 2. Run `.\ops\stack_up.ps1` to bring up services
-3. Verify with `.\ops\verify.ps1` and `.\ops\run_ops_status.ps1`
+3. Verify with `.\ops\verify.ps1` and `.\ops\ops.ps1 status-safe`
 4. Check snapshots match current state
 
 "@

@@ -146,7 +146,7 @@ function Guess-Category {
   )
   $p = $RelPath.ToLowerInvariant()
   if ($p.StartsWith("ops/_extras/")) { return "extras" }
-  if ($p -in @("ops/ops.ps1","ops/full_gates.ps1","ops/ops_status.ps1","ops/ops_run.ps1","ops/ship_main.ps1","ops/frontend_refresh.ps1")) { return "entrypoint" }
+  if ($p -in @("ops/ops.ps1","ops/ops_status.ps1","ops/ops_run.ps1","ops/ship_main.ps1","ops/frontend_refresh.ps1")) { return "entrypoint" }
   if ($IsCiRef) { return "ci_gate" }
   if ($p -match 'release|bundle|ship') { return "release" }
   if ($p -match 'snapshot|inventory|report|audit') { return "reporting" }

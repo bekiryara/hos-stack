@@ -129,54 +129,18 @@ function Test-ErrorContractInline {
     $failures = @()
     
     try {
-        # Test 422 Validation Error
-        $response422 = curl.exe -sS -i -X POST http://localhost:8080/auth/login `
-            -H "Content-Type: application/json" `
-            -H "Accept: application/json" `
-            -d "{}" 2>&1
-        
-        $status422 = ($response422 | Select-String -Pattern "HTTP/\d\.\d\s+(\d+)" | ForEach-Object { $_.Matches.Groups[1].Value })
-        $body422 = ($response422 | Select-String -Pattern '\{.*\}' -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -Last 1)
-        
-        if ($status422 -ne "422") {
-            $failures += "422 status check failed (got $status422)"
-        }
-        
-        if ($body422 -and $body422 -match '"ok"\s*:\s*false' -and 
-            $body422 -match '"error_code"\s*:\s*"VALIDATION_ERROR"' -and
-            $body422 -match '"request_id"' -and
-            $body422 -match '"details"') {
-            # PASS
-        } else {
-            $failures += "422 envelope missing required fields"
-        }
-        
-        # Test 404 Not Found
-        $response404 = curl.exe -sS -i -H "Accept: application/json" http://localhost:8080/api/non-existent-endpoint 2>&1
-        
-        $status404 = ($response404 | Select-String -Pattern "HTTP/\d\.\d\s+(\d+)" | ForEach-Object { $_.Matches.Groups[1].Value })
-        $body404 = ($response404 | Select-String -Pattern '\{.*\}' -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -Last 1)
-        
-        if ($status404 -ne "404") {
-            $failures += "404 status check failed (got $status404)"
-        }
-        
-        if ($body404 -and $body404 -match '"ok"\s*:\s*false' -and 
-            $body404 -match '"error_code"\s*:\s*"NOT_FOUND"' -and
-            $body404 -match '"request_id"') {
-            # PASS
-        } else {
-            $failures += "404 envelope missing required fields"
-        }
-        
-        if ($failures.Count -gt 0) {
+        $helper = Join-Path $scriptDir "_lib\error_contract.ps1"
+        if (-not (Test-Path $helper)) {
             $status = "FAIL"
             $exitCode = 1
-            $notes = $failures -join "; "
+            $notes = "Missing helper: $helper"
         } else {
-            $notes = "422 and 404 envelopes correct"
+            . $helper
+            $res = Invoke-ErrorContractCheck -BaseUrl "http://localhost:8080"
+            $status = $res.Status
+            $exitCode = [int]$res.ExitCode
+            $notes = [string]$res.Notes
         }
-        
     } catch {
         $status = "FAIL"
         $exitCode = 1

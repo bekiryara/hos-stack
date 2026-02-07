@@ -146,9 +146,6 @@ These scripts are called by the Golden 4 Commands or used for specific diagnosti
 - `rc0_check.ps1` - RC0 release readiness gate
 - `rc0_gate.ps1` - RC0 release gate
 - `release_check.ps1` - RC0 release checklist enforcement
-- `route_duplicate_guard.ps1` - Route duplicate guard
-- `pazar_routes_guard.ps1` - Pazar routes guardrails
-- `state_transition_guard.ps1` - State transition guard
 
 ### Utilities
 *These are utility scripts for specific operations.*
@@ -209,7 +206,6 @@ These scripts are called by the Golden 4 Commands or used for specific diagnosti
 - `repo_payload_guard.ps1` - Repo payload guard
 - `request_trace.ps1` - Request ID log correlation
 - `routes_snapshot.ps1` - Contract gate (route snapshot)
-- `run_ops_status.ps1` - Safe ops status runner
 - `schema_snapshot.ps1` - DB contract gate (schema snapshot)
 - `secret_scan.ps1` - Secret scan script
 - `security_audit.ps1` - Route/middleware security audit

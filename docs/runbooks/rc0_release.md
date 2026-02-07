@@ -90,7 +90,7 @@ After running RC0 check, create a release bundle for documentation:
 
 ```powershell
 # Generate RC0 release bundle
-.\ops\rc0_release_bundle.ps1
+.\ops\release_bundle.ps1
 ```
 
 The bundle will be created at: `_archive/releases/rc0-YYYYMMDD-HHMMSS/`
@@ -155,7 +155,7 @@ See `.github/workflows/rc0-check.yml` for details.
 ## Release Process
 
 1. Run `.\ops\rc0_check.ps1` locally
-2. If PASS/WARN, proceed to create release bundle: `.\ops\rc0_release_bundle.ps1`
+2. If PASS/WARN, proceed to create release bundle: `.\ops\release_bundle.ps1`
 3. Review bundle contents, especially `rc0_check.txt` and `release_note.md`
 4. Update `release_note.md` with actual results
 5. If all checks pass, proceed with release

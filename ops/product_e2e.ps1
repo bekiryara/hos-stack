@@ -1,5 +1,5 @@
 # product_e2e.ps1 - Marketplace Listings E2E Gate (Canonical)
-# Validates: H-OS health + Pazar metrics + marketplace listings smoke/probes.
+# Validates: H-OS health + marketplace listings smoke/probes.
 #
 # Reality lock:
 # - Pazar world is marketplace
@@ -72,31 +72,15 @@ try {
     if ($exit -eq 0) { $exit = 2 }
 }
 
-# B) Pazar metrics
+# B) Live probes (status + categories + listings)
 Write-Info ""
-Write-Info "B) Pazar metrics"
-try {
-    $m = Invoke-WebRequest -Uri "$BaseUrl/metrics" -Method GET -UseBasicParsing -TimeoutSec 8 -ErrorAction Stop
-    if ($m.StatusCode -eq 200) {
-        Write-Pass "Pazar /metrics OK"
-    } else {
-        Write-Warn "Pazar /metrics unexpected status: $($m.StatusCode)"
-        if ($exit -eq 0) { $exit = 2 }
-    }
-} catch {
-    Write-Warn "Pazar /metrics not reachable: $($_.Exception.Message)"
-    if ($exit -eq 0) { $exit = 2 }
-}
-
-# C) Live probes (status + categories + listings)
-Write-Info ""
-Write-Info "C) Live probes (contract check)"
+Write-Info "B) Live probes (contract check)"
 $code = Invoke-Child -ScriptPath (Join-Path $ScriptDir "product_contract_check.ps1") -Args @("-BaseUrl", $BaseUrl)
 if ($code -eq 1) { $exit = 1 } elseif ($code -eq 2 -and $exit -eq 0) { $exit = 2 }
 
-# D) Smoke (create -> publish -> show)
+# C) Smoke (create -> publish -> show)
 Write-Info ""
-Write-Info "D) Listings smoke (create -> publish -> show)"
+Write-Info "C) Listings smoke (create -> publish -> show)"
 $envMap = @{}
 if ($TenantId) { $envMap["PRODUCT_TEST_TENANT_ID"] = $TenantId }
 if ($AuthToken) { $envMap["PRODUCT_TEST_AUTH"] = $AuthToken }

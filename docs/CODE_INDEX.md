@@ -23,7 +23,7 @@
 **Ops Scripts:**
 - Daily Ops: `ops/ops_run.ps1`
 - Ship Main: `ops/ship_main.ps1`
-- Dev Refresh: `ops/dev_refresh.ps1`
+- Frontend Refresh: `ops/frontend_refresh.ps1`
 - Verify: `ops/verify.ps1`
 
 **Documentation:**
@@ -235,7 +235,6 @@
 - **Baseline Status:** `ops/baseline_status.ps1` - Baseline status check
 - **Conformance:** `ops/conformance.ps1` - Conformance checks
 - **Daily Snapshot:** `ops/daily_snapshot.ps1` - Daily evidence capture
-- **Dev Refresh:** `ops/dev_refresh.ps1` - Frontend refresh helper (FrontendOnly/All modes)
 - **Frontend Refresh:** `ops/frontend_refresh.ps1` - Frontend refresh (restart/rebuild)
 - **Prototype V1:** `ops/prototype_v1.ps1` - Prototype/demo verification
 - **Demo Seed V1:** `ops/demo_seed_v1.ps1` - Idempotent demo seed for E2E tests
@@ -302,7 +301,6 @@
 - **routes_json.ps1**: `ops/_lib/routes_json.ps1` - Routes JSON helper
 - **test_auth.ps1**: `ops/_lib/test_auth.ps1` - Test auth helper
 - **frontend_apply.ps1**: [ops/build/frontend_apply.ps1](https://github.com/bekiryara/hos-stack/blob/main/ops/build/frontend_apply.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/build/frontend_apply.ps1)
-- **refresh.ps1**: [ops/dev/refresh.ps1](https://github.com/bekiryara/hos-stack/blob/main/ops/dev/refresh.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/dev/refresh.ps1)
 - **run.ps1**: [ops/verify/run.ps1](https://github.com/bekiryara/hos-stack/blob/main/ops/verify/run.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/verify/run.ps1)
 - **worlds_config.ps1**: `ops/_lib/worlds_config.ps1` - Worlds config helper
 ### Release & Bundle
@@ -310,7 +308,6 @@
 - **Release Check:** `ops/release_check.ps1` - Release check
 - **RC0 Gate:** `ops/rc0_gate.ps1` - RC0 gate
 - **RC0 Check:** `ops/rc0_check.ps1` - RC0 check
-- **RC0 Release Bundle:** `ops/rc0_release_bundle.ps1` - RC0 release bundle
 - **Release Bundle:** `ops/release_bundle.ps1` - Release bundle generation
 - **Release Note:** `ops/release_note.ps1` - Release note generation
 - **Incident Bundle:** `ops/incident_bundle.ps1` - Incident bundle generation
@@ -347,9 +344,6 @@
 
 ### Governance & Guards
 
-- **Pazar Routes Guard:** `ops/pazar_routes_guard.ps1` - Pazar routes guardrails
-- **Route Duplicate Guard:** `ops/route_duplicate_guard.ps1` - Route duplicate guard
-- **State Transition Guard:** `ops/state_transition_guard.ps1` - State transition guard
 - **Ops Drift Guard:** `ops/ops_drift_guard.ps1` - Ops drift guard
 - **Repo Governance Freeze V1:** `ops/repo_governance_freeze_v1.ps1` - Repo governance freeze
 

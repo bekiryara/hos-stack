@@ -7,6 +7,12 @@
         class="listing-card"
         @click="goToDetail(listing.id)"
       >
+        <div class="thumb" aria-hidden="true">
+          <div class="thumb-placeholder">
+            <div class="thumb-badge">Fotoğraf</div>
+            <div class="thumb-subtle">Demo</div>
+          </div>
+        </div>
         <h4>{{ listing.title || 'Untitled' }}</h4>
         <p class="listing-id">
           ID: {{ listing.id }}
@@ -114,8 +120,8 @@ export default {
 }
 
 .listing-card {
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e5e7eb);
   border-radius: 8px;
   padding: 1.5rem;
   cursor: pointer;
@@ -128,12 +134,13 @@ export default {
 
 .listing-card h4 {
   margin-bottom: 0.5rem;
-  color: #0066cc;
+  color: var(--text-strong, #1f2937);
+  font-weight: 600;
 }
 
 .listing-id {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-muted, #6b7280);
   margin-bottom: 0.25rem;
   display: flex;
   align-items: center;
@@ -143,27 +150,27 @@ export default {
 .copy-id-btn {
   font-size: 0.75rem;
   padding: 0.2rem 0.5rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border, #e5e7eb);
   border-radius: 3px;
-  background: #f5f5f5;
-  color: #333;
+  background: var(--surface-2, #f8fafc);
+  color: var(--text, #374151);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .copy-id-btn:hover {
-  background: #e5e5e5;
+  background: #eef2f7;
 }
 
 .listing-category {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-muted, #6b7280);
   margin-bottom: 0.25rem;
 }
 
 .listing-status {
   font-size: 0.9rem;
-  color: #888;
+  color: var(--text-muted, #6b7280);
   margin-bottom: 0.5rem;
 }
 
@@ -175,8 +182,8 @@ export default {
 }
 
 .attribute-tag {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--pill-bg, #f1f5f9);
+  color: var(--pill-text, #334155);
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
   font-size: 0.85rem;
@@ -199,18 +206,18 @@ export default {
 }
 
 .transaction-badge-reservation {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--pill-bg, #f1f5f9);
+  color: var(--pill-text, #334155);
 }
 
 .transaction-badge-rental {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: var(--pill-bg, #f1f5f9);
+  color: var(--pill-text, #334155);
 }
 
 .transaction-badge-sale {
-  background: #e8f5e9;
-  color: #388e3c;
+  background: var(--pill-bg, #f1f5f9);
+  color: var(--pill-text, #334155);
 }
 
 .listing-actions {
@@ -222,62 +229,95 @@ export default {
 
 .action-btn {
   padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border, #e5e7eb);
   border-radius: 4px;
-  background: white;
-  color: #333;
+  background: var(--surface, #fff);
+  color: var(--text, #374151);
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s;
 }
 
 .action-btn:hover {
-  background: #f5f5f5;
-  border-color: #999;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .view-btn {
-  background: #0066cc;
+  background: var(--btn-neutral, #111827);
   color: white;
-  border-color: #0066cc;
+  border-color: var(--btn-neutral, #111827);
 }
 
 .view-btn:hover {
-  background: #0052a3;
-  border-color: #0052a3;
+  background: var(--btn-neutral-hover, #0b1220);
+  border-color: var(--btn-neutral-hover, #0b1220);
 }
 
 .reserve-btn {
-  background: #1976d2;
-  color: white;
-  border-color: #1976d2;
+  background: var(--surface, #fff);
+  color: var(--text, #374151);
+  border-color: var(--border, #e5e7eb);
 }
 
 .reserve-btn:hover {
-  background: #1565c0;
-  border-color: #1565c0;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .rent-btn {
-  background: #7b1fa2;
-  color: white;
-  border-color: #7b1fa2;
+  background: var(--surface, #fff);
+  color: var(--text, #374151);
+  border-color: var(--border, #e5e7eb);
 }
 
 .rent-btn:hover {
-  background: #6a1b9a;
-  border-color: #6a1b9a;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .buy-btn {
-  background: #388e3c;
-  color: white;
-  border-color: #388e3c;
+  background: var(--surface, #fff);
+  color: var(--text, #374151);
+  border-color: var(--border, #e5e7eb);
 }
 
 .buy-btn:hover {
-  background: #2e7d32;
-  border-color: #2e7d32;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.thumb {
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  aspect-ratio: 16 / 9;
+  margin: -0.25rem 0 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--border, #e5e7eb);
+}
+
+.thumb-placeholder {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 0.25rem;
+}
+
+.thumb-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  color: var(--text-label, #4b5563);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.thumb-subtle {
+  color: var(--text-muted, #6b7280);
+  font-size: 0.8rem;
 }
 
 .no-results {
