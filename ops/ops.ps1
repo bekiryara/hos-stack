@@ -19,6 +19,20 @@ param(
   [ValidateSet('Prototype', 'Full')]
   [string]$Profile = 'Prototype',
   [switch]$CheckDemoSeed
+  ,
+
+  # Pass-through for stack_up/stack_down.ps1
+  [ValidateSet('core', 'obs', 'all')]
+  [string]$StackProfile = 'core',
+
+  # Pass-through for CI-aware runners
+  [switch]$Ci,
+
+  # Pass-through for frontend_refresh.ps1
+  [switch]$Build,
+
+  # Pass-through for run_ops_status.ps1 (useful for double-click runs)
+  [switch]$Pause
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,24 +48,43 @@ function Show-Help {
   Write-Host "Usage:" -ForegroundColor Yellow
   Write-Host "  .\ops\ops.ps1 <command> [options]" -ForegroundColor White
   Write-Host ""
-  Write-Host "Commands:" -ForegroundColor Yellow
-  Write-Host "  full       Run FULL_GATES pack (recommended)" -ForegroundColor White
-  Write-Host "  prototype  Run prototype/demo verification" -ForegroundColor White
-  Write-Host "  status     Run ops_status dashboard" -ForegroundColor White
-  Write-Host "  run        Run daily pack (ops_run) with -Profile Prototype|Full" -ForegroundColor White
-  Write-Host "  verify     Run verify.ps1 (stack health)" -ForegroundColor White
-  Write-Host "  openapi    Run openapi_contract.ps1" -ForegroundColor White
-  Write-Host "  conformance Run conformance.ps1" -ForegroundColor White
-  Write-Host "  pazar-spine Run pazar_spine_check.ps1" -ForegroundColor White
-  Write-Host "  v2-gate    Run v2_gate.ps1 (0-targets)" -ForegroundColor White
-  Write-Host "  messaging  Run messaging_contract_check.ps1" -ForegroundColor White
+  Write-Host "Golden commands (keep these in your muscle memory):" -ForegroundColor Yellow
+  Write-Host "  up         Stack up (core|obs|all) via stack_up.ps1" -ForegroundColor White
+  Write-Host "             Options: -StackProfile core|obs|all" -ForegroundColor Gray
+  Write-Host "  down       Stack down (core|obs|all) via stack_down.ps1" -ForegroundColor White
+  Write-Host "             Options: -StackProfile core|obs|all" -ForegroundColor Gray
+  Write-Host "  run        Daily pack (ops_run) -Profile Prototype|Full" -ForegroundColor White
+  Write-Host "             Options: -Profile Prototype|Full [-CheckDemoSeed]" -ForegroundColor Gray
+  Write-Host "  status     Ops dashboard (ops_status.ps1)" -ForegroundColor White
+  Write-Host "             Options: -Ci (include optional checks)" -ForegroundColor Gray
+  Write-Host "  ship       Publish main (gates + push) via ship_main.ps1" -ForegroundColor White
+  Write-Host "  doctor     Repository doctor diagnostics" -ForegroundColor White
+  Write-Host "  refresh    Frontend apply (restart) via frontend_refresh.ps1" -ForegroundColor White
+  Write-Host "             Options: -Build (rebuild)" -ForegroundColor Gray
+  Write-Host "  full       FULL_GATES pack (verify+contracts+governance)" -ForegroundColor White
+  Write-Host "  rc0        RC0 readiness gate (rc0_check.ps1)" -ForegroundColor White
+  Write-Host "             Options: -Ci" -ForegroundColor Gray
+  Write-Host "  release    RC0 release bundle generator (release_bundle.ps1)" -ForegroundColor White
+  Write-Host "             Options: -Ci" -ForegroundColor Gray
+  Write-Host ""
+  Write-Host "Other commands (still supported):" -ForegroundColor Yellow
+  Write-Host "  prototype  Prototype/demo verification (prototype_v1)" -ForegroundColor White
+  Write-Host "  verify     Stack health (verify.ps1)" -ForegroundColor White
+  Write-Host "  openapi    OpenAPI contract (openapi_contract.ps1)" -ForegroundColor White
+  Write-Host "  conformance Architecture conformance (conformance.ps1)" -ForegroundColor White
+  Write-Host "  pazar-spine Pazar spine check (pazar_spine_check.ps1)" -ForegroundColor White
+  Write-Host "  v2-gate    V2 gate (0-targets) (v2_gate.ps1)" -ForegroundColor White
+  Write-Host "  messaging  Messaging contract (messaging_contract_check.ps1)" -ForegroundColor White
+  Write-Host "  rc0-gate   RC0 gate (rc0_gate.ps1)" -ForegroundColor White
+  Write-Host "  status-safe Run ops status in child process (run_ops_status.ps1)" -ForegroundColor White
   Write-Host ""
   Write-Host "Examples:" -ForegroundColor Yellow
-  Write-Host "  .\ops\ops.ps1 full" -ForegroundColor White
-  Write-Host "  .\ops\ops.ps1 prototype" -ForegroundColor White
-  Write-Host "  .\ops\ops.ps1 run -Profile Full" -ForegroundColor White
-  Write-Host "  .\ops\ops.ps1 run -Profile Prototype -CheckDemoSeed" -ForegroundColor White
-  Write-Host "  .\ops\ops.ps1 v2-gate" -ForegroundColor White
+  Write-Host "  .\ops\ops.ps1 up -StackProfile core" -ForegroundColor White
+  Write-Host "  .\ops\ops.ps1 down" -ForegroundColor White
+  Write-Host "  .\ops\ops.ps1 run -Profile Prototype" -ForegroundColor White
+  Write-Host "  .\ops\ops.ps1 status" -ForegroundColor White
+  Write-Host "  .\ops\ops.ps1 refresh -Build" -ForegroundColor White
+  Write-Host "  .\ops\ops.ps1 ship" -ForegroundColor White
 }
 
 function Invoke-TargetScript {
@@ -75,6 +108,28 @@ if (-not [string]::IsNullOrWhiteSpace($Command)) {
 }
 switch ($cmd) {
   { $_ -in @("help", "-h", "--help", "/?") } { Show-Help; Invoke-OpsExit 0; break }
+  { $_ -in @("up", "stack-up", "stack_up") } {
+    $path = Join-Path $scriptDir "stack_up.ps1"
+    if (-not (Test-Path $path)) {
+      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
+      Invoke-OpsExit 1
+      break
+    }
+    & $path -Profile $StackProfile
+    Invoke-OpsExit ([int]$global:LASTEXITCODE)
+    break
+  }
+  { $_ -in @("down", "stack-down", "stack_down") } {
+    $path = Join-Path $scriptDir "stack_down.ps1"
+    if (-not (Test-Path $path)) {
+      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
+      Invoke-OpsExit 1
+      break
+    }
+    & $path -Profile $StackProfile
+    Invoke-OpsExit ([int]$global:LASTEXITCODE)
+    break
+  }
   { $_ -in @("full", "full_gates") } { Invoke-TargetScript -RelPath "full_gates.ps1"; break }
   { $_ -in @("prototype", "demo", "prototype_v1") } {
     $path = Join-Path $scriptDir "_extras\prototype\prototype_v1.ps1"
@@ -91,7 +146,31 @@ switch ($cmd) {
     Invoke-OpsExit ([int]$global:LASTEXITCODE)
     break
   }
-  { $_ -in @("status", "ops_status") } { Invoke-TargetScript -RelPath "ops_status.ps1"; break }
+  { $_ -in @("status", "ops_status") } {
+    $path = Join-Path $scriptDir "ops_status.ps1"
+    if (-not (Test-Path $path)) {
+      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
+      Invoke-OpsExit 1
+      break
+    }
+    if ($Ci) { & $path -Ci } else { & $path }
+    Invoke-OpsExit ([int]$global:LASTEXITCODE)
+    break
+  }
+  { $_ -in @("status-safe", "status_safe", "run_status") } {
+    $path = Join-Path $scriptDir "run_ops_status.ps1"
+    if (-not (Test-Path $path)) {
+      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
+      Invoke-OpsExit 1
+      break
+    }
+    if ($Ci -and $Pause) { & $path -Ci -Pause }
+    elseif ($Ci) { & $path -Ci }
+    elseif ($Pause) { & $path -Pause }
+    else { & $path }
+    Invoke-OpsExit ([int]$global:LASTEXITCODE)
+    break
+  }
   { $_ -in @("run", "ops_run") } {
     $path = Join-Path $scriptDir "ops_run.ps1"
     if (-not (Test-Path $path)) {
@@ -104,6 +183,52 @@ switch ($cmd) {
     } else {
       & $path -Profile $Profile
     }
+    Invoke-OpsExit ([int]$global:LASTEXITCODE)
+    break
+  }
+  { $_ -in @("ship", "publish", "ship-main", "ship_main") } { Invoke-TargetScript -RelPath "ship_main.ps1"; break }
+  { $_ -in @("doctor") } { Invoke-TargetScript -RelPath "doctor.ps1"; break }
+  { $_ -in @("refresh", "frontend-refresh", "frontend_refresh") } {
+    $path = Join-Path $scriptDir "frontend_refresh.ps1"
+    if (-not (Test-Path $path)) {
+      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
+      Invoke-OpsExit 1
+      break
+    }
+    if ($Build) { & $path -Build } else { & $path }
+    Invoke-OpsExit ([int]$global:LASTEXITCODE)
+    break
+  }
+  { $_ -in @("rc0", "rc0-check", "rc0_check") } {
+    $path = Join-Path $scriptDir "rc0_check.ps1"
+    if (-not (Test-Path $path)) {
+      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
+      Invoke-OpsExit 1
+      break
+    }
+    if ($Ci) { & $path -Ci } else { & $path }
+    Invoke-OpsExit ([int]$global:LASTEXITCODE)
+    break
+  }
+  { $_ -in @("rc0-gate", "rc0_gate") } {
+    $path = Join-Path $scriptDir "rc0_gate.ps1"
+    if (-not (Test-Path $path)) {
+      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
+      Invoke-OpsExit 1
+      break
+    }
+    if ($Ci) { & $path -Ci } else { & $path }
+    Invoke-OpsExit ([int]$global:LASTEXITCODE)
+    break
+  }
+  { $_ -in @("release", "release-bundle", "release_bundle") } {
+    $path = Join-Path $scriptDir "release_bundle.ps1"
+    if (-not (Test-Path $path)) {
+      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
+      Invoke-OpsExit 1
+      break
+    }
+    if ($Ci) { & $path -Ci } else { & $path }
     Invoke-OpsExit ([int]$global:LASTEXITCODE)
     break
   }
