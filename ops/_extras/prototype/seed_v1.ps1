@@ -141,18 +141,33 @@ try {
     $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
     
     if (-not $tenantId) {
-        Write-Host "  No valid tenant_id found, attempting bootstrap..." -ForegroundColor Yellow
-        $bootstrapScript = Join-Path $PSScriptRoot "ensure_membership.ps1"
-        if (Test-Path $bootstrapScript) {
-            & $bootstrapScript -HosBaseUrl $hosBaseUrl -TenantSlug "tenant-a" -Email "testuser@example.com" 2>&1 | Out-Null
-            if ($LASTEXITCODE -eq 0) {
-                $membershipsResponse = Invoke-RestMethod -Uri "$hosBaseUrl/v1/me/memberships" `
-                    -Headers @{ "Authorization" = "Bearer $jwtToken" } `
-                    -TimeoutSec 5 `
-                    -ErrorAction Stop
-                $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
-            }
+        Write-Host "  No valid tenant_id found, bootstrapping via admin API..." -ForegroundColor Yellow
+        $apiKey = $env:HOS_API_KEY
+        if (-not $apiKey) { $apiKey = "dev-api-key" }
+        $upsertBody = @{
+            tenantSlug = "tenant-a"
+            userEmail  = "testuser@example.com"
+            role       = "owner"
+        } | ConvertTo-Json
+
+        $upsertReq = Invoke-WebRequest -Uri "$hosBaseUrl/v1/admin/memberships/upsert" `
+            -Method Post `
+            -Body $upsertBody `
+            -ContentType "application/json" `
+            -Headers @{ "x-hos-api-key" = $apiKey } `
+            -TimeoutSec 10 `
+            -ErrorAction Stop
+
+        $upsertResp = $upsertReq.Content | ConvertFrom-Json
+        if (-not $upsertResp.tenant_id) {
+            throw "Membership bootstrap failed (admin upsert missing tenant_id)"
         }
+
+        $membershipsResponse = Invoke-RestMethod -Uri "$hosBaseUrl/v1/me/memberships" `
+            -Headers @{ "Authorization" = "Bearer $jwtToken" } `
+            -TimeoutSec 5 `
+            -ErrorAction Stop
+        $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
     }
     
     if (-not $tenantId) {

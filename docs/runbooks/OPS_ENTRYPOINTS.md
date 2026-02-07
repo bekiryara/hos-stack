@@ -171,7 +171,6 @@ These scripts are called by the Golden 4 Commands or used for specific diagnosti
 - `github_sync_safe.ps1` - GitHub sync safe (PR-based flow)
 - `graveyard_check.ps1` - Enforce _graveyard/ policy
 - `hos_db_recovery.ps1` - HOS-DB corruption recovery
-- `hos_db_recovery_commands.ps1` - HOS-DB recovery commands
 - `hos_db_reset_safe.ps1` - HOS-DB dev reset + core restore
 - `hos_db_verify.ps1` - Post-reset verification
 - `idempotency_coverage_check.ps1` - Idempotency coverage check
@@ -226,7 +225,6 @@ These scripts are called by the Golden 4 Commands or used for specific diagnosti
 - `storage_posture_check.ps1` - Storage posture check
 - `storage_write_check.ps1` - Storage write check
 - `tenant_boundary_check.ps1` - Tenant boundary isolation check
-- `test_wp68_hardening.ps1` - WP-68 hardening test
 - `triage.ps1` - Incident triage script
 - `update_code_index.ps1` - Update code index
 - `verify.ps1` - Stack health verification
