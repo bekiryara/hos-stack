@@ -167,5 +167,5 @@ PASS: 4 showcase listings defined
 
 **Proof Generated:** 2026-01-23  
 **Script:** `ops/demo_seed_showcase.ps1`  
-**State Report:** `docs/REPORTS/state_report_20260123.md`
+**State Report:** `docs/PROOFS/state_report_20260123.md`
 

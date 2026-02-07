@@ -4,7 +4,8 @@
 param(
     [int]$Keep = 8,
     [string]$ActivePath = "docs/WP_CLOSEOUTS.md",
-    [string]$ArchivePath = "docs/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md"
+    # Archive output is not runtime-critical; keep it out of tracked docs/ to reduce repo noise.
+    [string]$ArchivePath = "_archive/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md"
 )
 
 $ErrorActionPreference = "Stop"

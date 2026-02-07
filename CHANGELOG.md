@@ -275,7 +275,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **WP-49:** Fixed 422 error for "Bando Presto (4 kişi)" in `demo_seed_root_listings.ps1` by using `Invoke-WebRequest` with explicit UTF-8 encoding instead of `Invoke-RestMethod`. All 4 showcase listings now seed successfully.
 
 ### Changed
-- **WP-62:** Prototype polish + repo hygiene. Enhanced Active Tenant UX: added `getActiveTenantId()`/`setActiveTenantId()` helpers in `client.js` (single source of truth), added "Load Memberships" button and tenant selector in `DemoDashboardPage`, updated `CreateListingPage` to use helpers. Removed duplicate reports from `docs/REPORTS/` (kept canonical copies in `docs/PROOFS/`). All gates PASS, repo hygiene restored.
+- **WP-62:** Prototype polish + repo hygiene. Enhanced Active Tenant UX: added `getActiveTenantId()`/`setActiveTenantId()` helpers in `client.js` (single source of truth), added "Load Memberships" button and tenant selector in `DemoDashboardPage`, updated `CreateListingPage` to use helpers. Removed legacy/duplicate reports (kept canonical copies in `docs/PROOFS/`). All gates PASS, repo hygiene restored.
 
 - **WP-51:** Enhanced Create Listing page tenant ID auto-fill UX. Added `tenantIdLoadError` state and UI warning message when memberships cannot be loaded, providing clear actionable instructions for manual entry. Improved styling for auto-filled tenant ID field. No regression: all existing functionality preserved, minimal diff.
 

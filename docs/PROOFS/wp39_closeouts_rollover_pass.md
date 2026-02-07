@@ -22,14 +22,14 @@ Reduce `docs/WP_CLOSEOUTS.md` file size by keeping only the last 12 WP entries i
 
 ### 2. Archive File Creation
 
-**File:** `docs/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md`  
+**File:** `_archive/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md`  
 **Size:** 309 lines  
 **Content:** Older WP entries from original file (WP-0 to WP-26)
 
 ### 3. CODE_INDEX.md Update
 
 Added archive link entry:
-- `docs/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md` - Archived WP closeouts (older entries)
+- `_archive/closeouts/WP_CLOSEOUTS_ARCHIVE_2026.md` - Archived WP closeouts (older entries, not tracked)
 
 ## Validation Results
 
@@ -39,7 +39,7 @@ Added archive link entry:
 PS D:\stack> (Get-Content docs\WP_CLOSEOUTS.md | Measure-Object -Line).Lines
 1618
 
-PS D:\stack> (Get-Content docs\closeouts\WP_CLOSEOUTS_ARCHIVE_2026.md | Measure-Object -Line).Lines
+PS D:\stack> (Get-Content _archive\closeouts\WP_CLOSEOUTS_ARCHIVE_2026.md | Measure-Object -Line).Lines
 309
 ```
 
@@ -49,10 +49,10 @@ PS D:\stack> (Get-Content docs\closeouts\WP_CLOSEOUTS_ARCHIVE_2026.md | Measure-
 ### 2. Archive File Verification
 
 ```powershell
-PS D:\stack> Test-Path docs\closeouts\WP_CLOSEOUTS_ARCHIVE_2026.md
+PS D:\stack> Test-Path _archive\closeouts\WP_CLOSEOUTS_ARCHIVE_2026.md
 True
 
-PS D:\stack> (Get-Content docs\closeouts\WP_CLOSEOUTS_ARCHIVE_2026.md | Measure-Object -Line).Lines
+PS D:\stack> (Get-Content _archive\closeouts\WP_CLOSEOUTS_ARCHIVE_2026.md | Measure-Object -Line).Lines
 309
 ```
 
