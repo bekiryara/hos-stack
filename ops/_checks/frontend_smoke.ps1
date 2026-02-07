@@ -12,7 +12,8 @@ $hasFailures = $false
 # Step A: Run world_status_check.ps1
 Write-Host "[A] Running world status check..." -ForegroundColor Yellow
 try {
-    $worldCheckResult = & .\ops\world_status_check.ps1
+    $worldStatusScript = ".\ops\_checks\world_status_check.ps1"
+    $worldCheckResult = & $worldStatusScript
     $worldCheckExitCode = $LASTEXITCODE
     if ($worldCheckExitCode -ne 0) {
         Write-Host "FAIL: world_status_check.ps1 returned exit code $worldCheckExitCode" -ForegroundColor Red
