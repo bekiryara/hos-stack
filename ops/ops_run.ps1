@@ -1,12 +1,11 @@
 param(
     [ValidateSet('Prototype', 'Full')]
-    [string]$Profile = 'Prototype',
-    [switch]$CheckDemoSeed
+    [string]$Profile = 'Prototype'
 )
 
 # WP-68: OPS Run Entrypoint
-# Purpose: Single entrypoint for daily ops checks
-# Orchestrates existing scripts, does NOT reimplement checks
+# Purpose: Single entrypoint for daily ops checks (measurement only)
+# Orchestrates canonical ops commands; does NOT reimplement checks.
 # PowerShell 5.1 compatible, ASCII-only
 
 $ErrorActionPreference = "Stop"
@@ -19,6 +18,15 @@ Write-Host ""
 $hasFailures = $false
 $results = @()
 
+$opsDir = Split-Path -Parent $MyInvocation.MyCommand.Path   # ops/
+$repoRoot = Split-Path -Parent $opsDir                      # repo root
+Push-Location $repoRoot
+try {
+    $opsEntry = ".\\ops\\ops.ps1"
+    if (-not (Test-Path $opsEntry)) {
+        throw "ops entrypoint not found: $opsEntry"
+    }
+
 # Prototype profile: minimal daily checks
 if ($Profile -eq 'Prototype') {
     Write-Host "Running Prototype profile (minimal daily checks)..." -ForegroundColor Yellow
@@ -27,7 +35,7 @@ if ($Profile -eq 'Prototype') {
     # 1. Secret Scan
     Write-Host "[1/4] Running secret scan..." -ForegroundColor Yellow
     try {
-        & .\ops\secret_scan.ps1
+        & $opsEntry secret-scan
         if ($LASTEXITCODE -eq 0) {
             $results += [PSCustomObject]@{ Check = 'Secret Scan'; Status = 'PASS' }
             Write-Host "PASS: Secret scan" -ForegroundColor Green
@@ -46,7 +54,7 @@ if ($Profile -eq 'Prototype') {
     # 2. Public Ready Check
     Write-Host "[2/4] Running public ready check..." -ForegroundColor Yellow
     try {
-        & .\ops\public_ready_check.ps1
+        & $opsEntry public-ready
         if ($LASTEXITCODE -eq 0) {
             $results += [PSCustomObject]@{ Check = 'Public Ready'; Status = 'PASS' }
             Write-Host "PASS: Public ready check" -ForegroundColor Green
@@ -65,7 +73,7 @@ if ($Profile -eq 'Prototype') {
     # 3. Conformance
     Write-Host "[3/4] Running conformance check..." -ForegroundColor Yellow
     try {
-        & .\ops\conformance.ps1
+        & $opsEntry conformance
         if ($LASTEXITCODE -eq 0) {
             $results += [PSCustomObject]@{ Check = 'Conformance'; Status = 'PASS' }
             Write-Host "PASS: Conformance check" -ForegroundColor Green
@@ -81,36 +89,29 @@ if ($Profile -eq 'Prototype') {
     }
     Write-Host ""
     
-    # 4. Prototype Verification
-    Write-Host "[4/4] Running prototype verification..." -ForegroundColor Yellow
-    if ($CheckDemoSeed) {
-        Write-Host "INFO: Demo seed check ENABLED" -ForegroundColor Gray
-    }
+    # 4. Frontend Smoke
+    Write-Host "[4/4] Running frontend smoke..." -ForegroundColor Yellow
     try {
-        if ($CheckDemoSeed) {
-            & .\ops\_extras\prototype\prototype_v1.ps1 -CheckDemoSeed
-        } else {
-            & .\ops\_extras\prototype\prototype_v1.ps1
-        }
+        & $opsEntry frontend-smoke
         if ($LASTEXITCODE -eq 0) {
-            $results += [PSCustomObject]@{ Check = 'Prototype Verification'; Status = 'PASS' }
-            Write-Host "PASS: Prototype verification" -ForegroundColor Green
+            $results += [PSCustomObject]@{ Check = 'Frontend Smoke'; Status = 'PASS' }
+            Write-Host "PASS: Frontend smoke" -ForegroundColor Green
         } else {
-            $results += [PSCustomObject]@{ Check = 'Prototype Verification'; Status = 'FAIL' }
-            Write-Host "FAIL: Prototype verification" -ForegroundColor Red
+            $results += [PSCustomObject]@{ Check = 'Frontend Smoke'; Status = 'FAIL' }
+            Write-Host "FAIL: Frontend smoke" -ForegroundColor Red
             $hasFailures = $true
         }
     } catch {
-        $results += [PSCustomObject]@{ Check = 'Prototype Verification'; Status = 'ERROR' }
-        Write-Host "ERROR: Prototype verification failed: $($_.Exception.Message)" -ForegroundColor Red
+        $results += [PSCustomObject]@{ Check = 'Frontend Smoke'; Status = 'ERROR' }
+        Write-Host "ERROR: Frontend smoke failed: $($_.Exception.Message)" -ForegroundColor Red
         $hasFailures = $true
     }
     Write-Host ""
 }
 
-# Full profile: Prototype + ops_status
+# Full profile: Prototype + spine + deep status
 if ($Profile -eq 'Full') {
-    Write-Host "Running Full profile (Prototype + v2_gate + ops_status)..." -ForegroundColor Yellow
+    Write-Host "Running Full profile (Prototype + pazar_spine + status -Ci)..." -ForegroundColor Yellow
     Write-Host ""
     
     # First run Prototype set
@@ -119,19 +120,19 @@ if ($Profile -eq 'Full') {
     $prototypeExitCode = $LASTEXITCODE
     Write-Host ""
 
-    # Then run v2_gate (0-targets discipline lock)
-    Write-Host "=== Running v2_gate (0-targets) ===" -ForegroundColor Cyan
-    & .\ops\v2_gate.ps1
-    $v2GateExitCode = $LASTEXITCODE
+    # Then run pazar spine (full API reality)
+    Write-Host "=== Running pazar spine check ===" -ForegroundColor Cyan
+    & $opsEntry pazar-spine
+    $pazarSpineExitCode = $LASTEXITCODE
     Write-Host ""
-    
-    # Then run ops_status
-    Write-Host "=== Running ops_status ===" -ForegroundColor Cyan
-    & .\ops\ops_status.ps1
+
+    # Then run ops status deep (CI flavor)
+    Write-Host "=== Running ops status deep (-Ci) ===" -ForegroundColor Cyan
+    & $opsEntry status -Ci
     $opsStatusExitCode = $LASTEXITCODE
     Write-Host ""
-    
-    if ($prototypeExitCode -ne 0 -or $v2GateExitCode -ne 0 -or $opsStatusExitCode -ne 0) {
+
+    if ($prototypeExitCode -ne 0 -or $pazarSpineExitCode -ne 0 -or $opsStatusExitCode -ne 0) {
         $hasFailures = $true
     }
 }
@@ -151,5 +152,9 @@ if ($hasFailures) {
     Write-Host "OVERALL STATUS: PASS" -ForegroundColor Green
     Write-Host "All checks passed." -ForegroundColor White
     exit 0
+}
+
+} finally {
+    Pop-Location
 }
 

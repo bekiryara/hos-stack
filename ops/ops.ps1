@@ -18,8 +18,6 @@ param(
   # Pass-through for ops_run.ps1
   [ValidateSet('Prototype', 'Full')]
   [string]$Profile = 'Prototype',
-  [switch]$CheckDemoSeed
-  ,
 
   # Pass-through for stack_up/stack_down.ps1
   [ValidateSet('core', 'obs', 'all')]
@@ -60,7 +58,7 @@ function Show-Help {
   Write-Host "  down       Stack down (core|obs|all) via stack_down.ps1" -ForegroundColor White
   Write-Host "             Options: -StackProfile core|obs|all" -ForegroundColor Gray
   Write-Host "  run        Daily pack (ops_run) -Profile Prototype|Full" -ForegroundColor White
-  Write-Host "             Options: -Profile Prototype|Full [-CheckDemoSeed]" -ForegroundColor Gray
+  Write-Host "             Options: -Profile Prototype|Full" -ForegroundColor Gray
   Write-Host "  status     Ops dashboard (ops_status.ps1)" -ForegroundColor White
   Write-Host "             Options: -Ci (include optional checks)" -ForegroundColor Gray
   Write-Host "  smoke      Smoke pack (world_status_check + smoke_surface)" -ForegroundColor White
@@ -77,7 +75,6 @@ function Show-Help {
   Write-Host "             Options: -Ci" -ForegroundColor Gray
   Write-Host ""
   Write-Host "Other commands (still supported):" -ForegroundColor Yellow
-  Write-Host "  prototype  Prototype/demo verification (prototype_v1)" -ForegroundColor White
   Write-Host "  verify     Stack health (verify.ps1)" -ForegroundColor White
   Write-Host "  openapi    OpenAPI contract (openapi_contract.ps1)" -ForegroundColor White
   Write-Host "  conformance Architecture conformance (conformance.ps1)" -ForegroundColor White
@@ -819,21 +816,7 @@ switch ($cmd) {
     break
   }
   { $_ -in @("full", "full_gates") } { Invoke-FullGatesPack; break }
-  { $_ -in @("prototype", "demo", "prototype_v1") } {
-    $path = Join-Path $scriptDir "_extras\prototype\prototype_v1.ps1"
-    if (-not (Test-Path $path)) {
-      Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
-      Invoke-OpsExit 1
-      break
-    }
-    if ($CheckDemoSeed) {
-      & $path -CheckDemoSeed
-    } else {
-      & $path
-    }
-    Invoke-OpsExit ([int]$global:LASTEXITCODE)
-    break
-  }
+  # Prototype/Demo entrypoint removed: ops/_extras/ retired (keep repo clean)
   { $_ -in @("status", "ops_status") } {
     $path = Join-Path $scriptDir "ops_status.ps1"
     if (-not (Test-Path $path)) {
@@ -861,11 +844,7 @@ switch ($cmd) {
       Invoke-OpsExit 1
       break
     }
-    if ($CheckDemoSeed) {
-      & $path -Profile $Profile -CheckDemoSeed
-    } else {
-      & $path -Profile $Profile
-    }
+    & $path -Profile $Profile
     Invoke-OpsExit ([int]$global:LASTEXITCODE)
     break
   }

@@ -236,8 +236,6 @@
 - **Conformance:** `.\ops\ops.ps1 conformance` (script: `ops/_checks/conformance.ps1`) - Conformance checks
 - **Daily Snapshot:** `.\ops\ops.ps1 daily-snapshot` (script: `ops/_tools/daily_snapshot.ps1`) - Daily evidence capture
 - **Frontend Refresh:** `.\ops\ops.ps1 refresh` (script: `ops/frontend_refresh.ps1`) - Frontend refresh (restart/rebuild)
-- **Prototype V1:** `.\ops\ops.ps1 prototype` (script: `ops/_checks/prototype_v1.ps1`) - Prototype/demo verification
-- **Demo Seed V1:** `ops/demo_seed_v1.ps1` - Idempotent demo seed for E2E tests
 
 ### Security & Governance
 
@@ -260,17 +258,17 @@
 - **Pazar Spine Check:** `.\ops\ops.ps1 pazar-spine` (script: `ops/_checks/pazar_spine_check.ps1`) - Pazar spine verification
 - **Product Spine Check:** `.\ops\ops.ps1 product-spine` (script: `ops/_checks/product_spine_check.ps1`) - Product spine check
 - **World Spine Check:** `.\ops\ops.ps1 world-spine` (script: `ops/_checks/world_spine_check.ps1`) - World spine check
-- **Listing Contract Check:** `ops/listing_contract_check.ps1` - Listing contract verification
-- **Reservation Contract Check:** `ops/reservation_contract_check.ps1` - Reservation contract check
-- **Catalog Contract Check:** `ops/catalog_contract_check.ps1` - Catalog contract check
-- **Product Contract Check:** `ops/product_contract_check.ps1` - Product contract check
-- **Messaging Contract Check:** `ops/messaging_contract_check.ps1` - Messaging contract check
-- **Order Contract Check:** `ops/order_contract_check.ps1` - Order contract check
-- **Rental Contract Check:** `ops/rental_contract_check.ps1` - Rental contract check
-- **Offer Contract Check:** `ops/offer_contract_check.ps1` - Offer contract check
-- **Account Portal Contract Check:** `ops/account_portal_contract_check.ps1` - Account portal contract check
-- **Catalog Integrity Check:** `ops/catalog_integrity_check.ps1` - Catalog integrity check
-- **World Status Check:** `ops/world_status_check.ps1` - World status check
+- **Listing Contract Check:** `ops/_checks/listing_contract_check.ps1` - Listing contract verification
+- **Reservation Contract Check:** `ops/_checks/reservation_contract_check.ps1` - Reservation contract check
+- **Catalog Contract Check:** `ops/_checks/catalog_contract_check.ps1` - Catalog contract check
+- **Product Contract Check:** `ops/_checks/product_contract_check.ps1` - Product contract check
+- **Messaging Contract Check:** `ops/_checks/messaging_contract_check.ps1` - Messaging contract check
+- **Order Contract Check:** `ops/_checks/order_contract_check.ps1` - Order contract check
+- **Rental Contract Check:** `ops/_checks/rental_contract_check.ps1` - Rental contract check
+- **Offer Contract Check:** `ops/_checks/offer_contract_check.ps1` - Offer contract check
+- **Account Portal Contract Check:** `ops/_checks/account_portal_read_check.ps1` - Account portal contract check
+- **Catalog Integrity Check:** `ops/_checks/catalog_integrity_check.ps1` - Catalog integrity check
+- **World Status Check:** `ops/_checks/world_status_check.ps1` - World status check
 
 ### Observability & Monitoring
 
@@ -283,10 +281,8 @@
 ### Smoke Tests
 
 - **Frontend Smoke:** `.\ops\ops.ps1 frontend-smoke` (script: `ops/_checks/frontend_smoke.ps1`) - Frontend smoke test (gate)
-- **Prototype Smoke:** `ops/prototype_smoke.ps1` - Prototype smoke test (gate)
-- **Prototype Flow Smoke:** `ops/prototype_flow_smoke.ps1` - Prototype flow smoke test (gate)
 - **Pazar UI Smoke:** `.\ops\ops.ps1 pazar-ui-smoke` (script: `ops/_checks/pazar_ui_smoke.ps1`) - Pazar UI smoke test
-- **Messaging Proxy Smoke:** `ops/messaging_proxy_smoke.ps1` - Messaging proxy smoke test
+- **Messaging Proxy Smoke:** `ops/_checks/messaging_proxy_smoke.ps1` - Messaging proxy smoke test
 - **Product API Smoke:** `.\ops\ops.ps1 product-api-smoke` (script: `ops/_checks/product_api_smoke.ps1`) - Product API smoke test
 - **Product Spine Smoke:** `.\ops\ops.ps1 product-spine-smoke` (script: `ops/_checks/product_spine_smoke.ps1`) - Product spine smoke test
 - **Smoke Surface:** `.\ops\ops.ps1 smoke-surface` (script: `ops/_checks/smoke_surface.ps1`) - Smoke surface test

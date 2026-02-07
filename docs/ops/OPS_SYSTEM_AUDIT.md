@@ -5,19 +5,11 @@ Goal: clearly separate **real gates**, **human entrypoints**, **diagnostics**, a
 
 ## How this audit is computed (deterministic)
 
-Run:
+This audit is kept simple:
 
-```powershell
-.\ops\_extras\tools\ops_inventory.ps1
-```
-
-It extracts:
-
-- **CI references**: any `ops/*.ps1` referenced by `.github/workflows/*.yml`
-- **Script-to-script calls**: patterns like `.\ops\foo.ps1` inside scripts (dependency graph)
-- **Header tags**: `WP-*`, `DEPRECATED/HISTORICAL/WRAPPER`, `PROTOTYPE/PROOF/EXPERIMENT`
-
-This is the canonical source for “is it used / who calls it / is it CI”.
+- **Canonical entrypoint**: `.\ops\ops.ps1 help` (what humans should run)
+- **CI truth**: `.github/workflows/*.yml` (what automation will execute)
+- **Leaf scripts**: `ops/_checks/` and `ops/_tools/` (implementation details)
 
 ---
 
@@ -39,7 +31,7 @@ These are “stable UX”: we keep them simple, predictable, and documented.
 
 Anything referenced by workflows is a **CI gate**. Deleting/renaming breaks CI.
 
-Audit rule: `ci_ref=true` in `ops_inventory`.
+Audit rule: if a script path appears in `.github/workflows/*.yml`, it is a gate.
 
 Examples of what they measure:
 
@@ -76,22 +68,20 @@ Rule of thumb:
 
 These are **not CI-referenced** and usually tagged `DEV`/`LEGACY`, or live under archive folders.
 
-Examples currently in tree:
+Examples:
 
-- `ops/_archive/demo_seed*.ps1` (demo seed scripts; should not be “day to day”)
-- `.\ops\ops.ps1 run -Profile Prototype|Full` (canonical verification runner; replaces legacy wrappers)
 - `ops/stack_up.ps1`, `ops/stack_down.ps1` (legacy wrappers; prefer `.\ops\ops.ps1 up/down`. Don’t move without updating any external scripts/proofs.)
 
 Policy recommendation:
 
-- Move to `ops/_extras/legacy/` or `ops/_extras/archive/`
+- If it is not CI-referenced and not used by humans, delete it.
 - Keep **no wrappers** unless there is a real consumer (script-to-script call or docs command).
 
 ---
 
 ## 5) Concrete next cleanup (safe, low-risk)
 
-Using `ops_inventory` output, target scripts that satisfy ALL:
+Target scripts that satisfy ALL:
 
 - `ci_ref=false` (not used by workflows)
 - `called_by=0` (no other script calls it)
@@ -99,7 +89,7 @@ Using `ops_inventory` output, target scripts that satisfy ALL:
 
 Action:
 
-- Move them under `ops/_extras/<category>/`
+- Delete them (or move under `ops/_legacy/` only if truly needed and explicitly documented)
 - Add/adjust a dispatcher command in `ops/ops.ps1` if they are still useful
 - Update docs (INDEX + README)
 

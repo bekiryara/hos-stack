@@ -8,15 +8,15 @@
 
 ## A) Golden 4 Commands
 
-### (1) Prototype / Demo Verification
+### (1) Spine / Smoke Verification (Demo-safe)
 ```powershell
-.\ops\ops.ps1 prototype
+.\ops\ops.ps1 frontend-smoke
 ```
 
 **When to use:**
 - After setting up the development environment
-- Before demonstrating the prototype to stakeholders
-- To verify that demo environment is ready
+- Before demonstrating to stakeholders
+- To verify the environment is ready (frontend + world status + build)
 
 **Expected output:**
 - `PASS`: Frontend smoke test and world status checks pass
@@ -105,7 +105,7 @@
 | UI change not showing | `.\ops\ops.ps1 refresh` + Ctrl+F5 | Default restart is usually sufficient |
 | New dependencies or build assets | `.\ops\ops.ps1 refresh -Build` | Full rebuild required |
 | Gate fails | `.\ops\ops.ps1 status` + read FAIL section | Review output for specific failures |
-| Before demo/presentation | `.\ops\ops.ps1 prototype` | Verify environment is ready |
+| Before demo/presentation | `.\ops\ops.ps1 frontend-smoke` | Verify environment is ready |
 | Ready to publish | `.\ops\ops.ps1 ship` | Runs all gates before publishing |
 | General health check | `.\ops\ops.ps1 status` | Comprehensive status overview |
 
@@ -120,15 +120,8 @@ Leaf scripts now live under these folders:
 - **`ops/_checks/`**: gates + checks (contract, security, snapshots, smoke)
 - **`ops/_tools/`**: tools + reporting (audit, snapshots, correlation, hygiene)
 - **`ops/_legacy/`**: legacy pack (manual, occasional)
-- **`ops/_extras/`**: prototypes + proofs + packs
 
-**Discoverability (canonical):**
-
-```powershell
-.\ops\_extras\tools\ops_inventory.ps1
-```
-
-**Rule:** Run leaf scripts via `.\ops\ops.ps1 <command>` whenever possible (see `.\ops\ops.ps1 help`). If a specific script is not exposed as a command, use the inventory output to find its exact path under `ops/_checks` or `ops/_tools`.
+**Rule:** Run leaf scripts via `.\ops\ops.ps1 <command>` whenever possible (see `.\ops\ops.ps1 help`). If a specific script is not exposed as a command, use `ops/INDEX.md` to locate its exact path under `ops/_checks` or `ops/_tools`.
 
 ---
 
@@ -155,6 +148,5 @@ Leaf scripts now live under these folders:
 
 - All commands are PowerShell 5.1 compatible
 - All outputs are ASCII-only
-- No scripts are deleted or moved - only documentation and entrypoint discipline added
 - Leaf scripts remain available for advanced troubleshooting
 
