@@ -13,7 +13,7 @@ These are the only scripts you should run directly in normal workflows:
 1. `.\ops\ops.ps1` - **Dispatcher** (recommended human entrypoint; `full|status|run|...`)
 2. `.\ops\ops.ps1 full` - Single local FULL GATES pack (verify + openapi + conformance + v2_gate + pazar spine + messaging)
 3. `.\ops\ops_status.ps1` - Status / audit dashboard (default: baseline checks; use `-Ci` to enable optional deep checks)
-4. `.\ops\ship_main.ps1` - Publish to main (gates + push)
+4. `.\ops\ops.ps1 ship` - Publish to main (gates + push)
 5. `.\ops\frontend_refresh.ps1` (restart) / `.\ops\frontend_refresh.ps1 -Build` (rebuild)
 
 ---

@@ -55,7 +55,7 @@
 
 ### (3) Publish
 ```powershell
-.\ops\ship_main.ps1
+.\ops\ops.ps1 ship
 ```
 
 **When to use:**
@@ -106,7 +106,7 @@
 | New dependencies or build assets | `.\ops\frontend_refresh.ps1 -Build` | Full rebuild required |
 | Gate fails | `.\ops\ops_status.ps1` + read FAIL section | Review output for specific failures |
 | Before demo/presentation | `.\ops\ops.ps1 prototype` | Verify environment is ready |
-| Ready to publish | `.\ops\ship_main.ps1` | Runs all gates before publishing |
+| Ready to publish | `.\ops\ops.ps1 ship` | Runs all gates before publishing |
 | General health check | `.\ops\ops_status.ps1` | Comprehensive status overview |
 
 ---
@@ -144,8 +144,8 @@ These scripts are called by the Golden 4 Commands or used for specific diagnosti
 - `conformance.ps1` - Architecture conformance gate
 - `public_ready_check.ps1` - Public release readiness check
 - `rc0_check.ps1` - RC0 release readiness gate
-- `rc0_gate.ps1` - RC0 release gate
-- `release_check.ps1` - RC0 release checklist enforcement
+- RC0 Gate: `.\ops\ops.ps1 rc0-gate` - RC0 release gate pack (deterministic PASS/WARN/FAIL)
+- Release Check: `.\ops\ops.ps1 release-check` - RC0 release checklist enforcement
 
 ### Utilities
 *These are utility scripts for specific operations.*

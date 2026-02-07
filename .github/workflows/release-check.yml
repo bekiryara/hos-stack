@@ -26,7 +26,7 @@ jobs:
       - name: Run Release Check
         shell: pwsh
         run: |
-          pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/release_check.ps1
+          pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/ops.ps1 release-check -Ci
 
       - name: Generate Release Bundle on FAIL/WARN
         if: failure() || (success() && job.status == 'success')

@@ -232,8 +232,8 @@ docker compose up -d
 - `ops/doctor.ps1`: Repository health diagnostics
 - `ops/verify.ps1`: Stack verification
 - `ops/ops_status.ps1`: Unified ops status dashboard
-- `ops/release_check.ps1`: RC0 release checklist validation
-- `ops/rc0_gate.ps1`: RC0 readiness gate
+- `ops/ops.ps1 release-check`: RC0 release checklist validation
+- `ops/ops.ps1 rc0-gate`: RC0 readiness gate
 
 ---
 

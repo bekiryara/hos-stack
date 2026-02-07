@@ -107,7 +107,7 @@ RC0 PASS requires ALL of the following checks to PASS (no blocking failures):
 
 Before declaring RC0 PASS, verify:
 
-- [ ] `ops/release_check.ps1` PASS or WARN (git status clean, RC0 gate PASS, required docs present, snapshots present, VERSION valid)
+- [ ] `ops/ops.ps1 release-check` PASS or WARN (git status clean, RC0 gate PASS/WARN, required docs present, snapshots present, VERSION valid)
 - [ ] `ops/ops_status.ps1` unified dashboard shows all critical checks PASS
 - [ ] `ops/verify.ps1 -Release` PASS (includes Pazar FS posture check)
 - [ ] `ops/conformance.ps1` PASS (world registry drift fixed)

@@ -58,7 +58,7 @@ How to rollback this change if needed.
 ```powershell
 # Example:
 .\ops\doctor.ps1
-.\ops\smoke.ps1
+.\ops\ops.ps1 smoke
 .\ops\verify.ps1
 .\ops\baseline_status.ps1
 # Add specific commands for this PR
@@ -68,7 +68,7 @@ How to rollback this change if needed.
 
 **REQUIRED:** Attach outputs from proof commands above:
 - `ops/doctor.ps1` output: [attach or paste]
-- `ops/smoke.ps1` output: [attach or paste]
+- `ops.ps1 smoke` output: [attach or paste]
 
 ## Proof Doc Path
 

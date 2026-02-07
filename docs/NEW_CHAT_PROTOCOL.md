@@ -24,7 +24,7 @@ NEW CHAT CHECKLIST:
 - Mevcut durumu docs/WP_CLOSEOUTS.md son entry'den tespit et (en son kapanan WP'yi bul).
 - Yeni sistem onerme.
 - WP kapanisinda: proof dokumani olustur (docs/PROOFS/wpXX_*.md), docs/WP_CLOSEOUTS.md'ye entry ekle (mevcut format: Purpose, Deliverables, Commands, Proof, Key Findings), CHANGELOG.md'ye entry ekle (### WP-XX: Title (tarih) formatinda, **bold** section'lar ile).
-- Yayin istenirse: ops/ship_main.ps1 kullan (gates PASS sonrasi otomatik pull --rebase ve push).
+- Yayin istenirse: `.\ops\ops.ps1 ship` kullan (gates PASS sonrasi otomatik pull --rebase ve push).
 
 ---
 
@@ -35,7 +35,7 @@ Amaç: Hizli gelisim ama kaos yok. Her ajan sadece kendi alaninda calisir.
 ALTIN KURAL:
 - Her ajan ayni anda sadece 1 WP alir (tek is).
 - Ayni dosya/klasore ayni anda 2 ajan girmez.
-- Ajanlar publish etmez; yayin istenirse sadece ops/ship_main.ps1 yolu kullanilir.
+- Ajanlar publish etmez; yayin istenirse sadece `.\ops\ops.ps1 ship` yolu kullanilir.
 
 ## AJAN-1: FRONTEND (MARKETPLACE UX)
 - Dokunur: `work/marketplace-web/**`
@@ -59,7 +59,7 @@ ALTIN KURAL:
 ## Adim 0 — Hedef
 - Hiz + kaossuz ilerleme
 - Minimal diff
-- Tek yayin yolu: `ops/ship_main.ps1`
+- Tek yayin yolu: `ops/ops.ps1 ship`
 - WP kapanisi: proof + closeout + changelog disiplini
 
 ## Adim 1 — Scope kilidi (en kritik)
@@ -85,7 +85,7 @@ Kural: Ayni klasore ayni anda 2 ajan girmez.
 ## Adim 4 — Koordinasyon ritmi (tek kapi: insan)
 - Ajanlar isi hazirlar
 - Insan kontrol eder
-- Yayin istenirse: insan `ops/ship_main.ps1` calistirir
+- Yayin istenirse: insan `.\ops\ops.ps1 ship` calistirir
 
 ## Adim 5 — Baslangic (sistemi test etmek icin)
 1 hafta sadece kucuk WP’ler:
@@ -106,7 +106,7 @@ Kullanim:
 
 CONTEXT
 - Repo disiplini: WP tabanli, minimal diff, fail-fast gates, proof + closeout.
-- Publish yolu: sadece `ops/ship_main.ps1` (ajan publish ETMEZ).
+- Publish yolu: sadece `.\ops\ops.ps1 ship` (ajan publish ETMEZ).
 
 SCOPE
 - Sadece: `work/marketplace-web/**`
@@ -121,7 +121,7 @@ OUTPUT (ZORUNLU)
 
 CONTEXT
 - Repo disiplini: WP tabanli, minimal diff, fail-fast gates, proof + closeout.
-- Publish yolu: sadece `ops/ship_main.ps1` (ajan publish ETMEZ).
+- Publish yolu: sadece `.\ops\ops.ps1 ship` (ajan publish ETMEZ).
 
 SCOPE
 - Sadece: `work/pazar/**`
@@ -136,7 +136,7 @@ OUTPUT (ZORUNLU)
 
 CONTEXT
 - Repo disiplini: WP tabanli, minimal diff, fail-fast gates, proof + closeout.
-- Publish yolu: sadece `ops/ship_main.ps1` (ajan publish ETMEZ).
+- Publish yolu: sadece `.\ops\ops.ps1 ship` (ajan publish ETMEZ).
 
 SCOPE
 - Sadece: `ops/**` ve gerekirse `docs/runbooks/**` + `docs/PROOFS/**`

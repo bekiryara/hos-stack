@@ -270,7 +270,7 @@ Workspace is considered "done" when:
 - All core services are running
 - Health endpoints return 200 OK
 - World status endpoints are accessible
-- Smoke tests pass (`ops/smoke.ps1`)
+- Smoke tests pass (`.\ops\ops.ps1 smoke`)
 
 ---
 
@@ -335,7 +335,7 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 **Acceptance Criteria:**
 - Marketplace endpoint returns ONLINE when Pazar is running
 - Core endpoint returns array with core, marketplace, messaging, social
-- Smoke test (`ops/smoke.ps1`) passes
+- Smoke test (`.\ops\ops.ps1 smoke`) passes
 
 **Proof:** `docs/PROOFS/wp1_1_world_status_smoke_pass.md`, `docs/PROOFS/wp1_3_marketplace_ping_pass.md`
 

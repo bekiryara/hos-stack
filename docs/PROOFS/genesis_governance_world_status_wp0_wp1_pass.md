@@ -139,10 +139,11 @@ Test-Path .github/workflows/gate-spec.yml
 
 **Usage:**
 ```powershell
-.\ops\smoke.ps1
+.\ops\ops.ps1 smoke
 ```
 
 **Expected Output:**
+NOTE: The output below is from the legacy `.\ops\smoke.ps1` command. The canonical smoke entrypoint is now `.\ops\ops.ps1 smoke`.
 ```
 === GENESIS WORLD STATUS SMOKE TEST ===
 Timestamp: 2026-01-15 12:00:00

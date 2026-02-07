@@ -17,16 +17,16 @@ This runbook is referenced by `ops/public_ready_check.ps1` and is the **single s
 2) **Publish (gates + push)**
 
 ```powershell
-.\ops\ship_main.ps1
+.\ops\ops.ps1 ship
 ```
 
 **Rule:** No PASS → no next step. If either fails, fix the cause and re-run.
 
 ---
 
-## What `ship_main.ps1` Enforces
+## What `ops.ps1 ship` Enforces
 
-`ops/ship_main.ps1` is the publish entrypoint. It fails fast on:
+`.\ops\ops.ps1 ship` is the publish entrypoint. It fails fast on:
 
 - **Required publish gates (FAIL if missing or non-zero)**
   - `ops/update_code_index.ps1 -DryRun -Gate`

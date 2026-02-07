@@ -2,7 +2,7 @@
 
 ## Overview
 
-The RC0 Gate (`ops/rc0_gate.ps1`) is the single source of truth for RC0 release readiness. It validates all blocking and non-blocking requirements, providing a deterministic PASS/WARN/FAIL status with exit codes suitable for CI/CD pipelines.
+The RC0 Gate (`.\ops\ops.ps1 rc0-gate`) is the single command for RC0 release readiness. It validates blocking and non-blocking requirements, providing a deterministic PASS/WARN/FAIL status with exit codes suitable for CI/CD pipelines.
 
 ## Purpose
 
@@ -17,7 +17,7 @@ The RC0 Gate (`ops/rc0_gate.ps1`) is the single source of truth for RC0 release 
 ### Local Execution
 
 ```powershell
-.\ops\rc0_gate.ps1
+.\ops\ops.ps1 rc0-gate
 ```
 
 **Safe Exit Behavior:**
@@ -214,5 +214,5 @@ All output is ASCII-only (no Unicode characters) for:
 - `docs/RULES.md` - Rule 37: RC0 gate must PASS/WARN before RC0 tag
 - `docs/runbooks/release.md` - Complete release workflow
 - `docs/runbooks/ops_status.md` - Unified ops dashboard
-- `ops/rc0_gate.ps1` - RC0 Gate script implementation
+- `ops/ops.ps1 rc0-gate` - RC0 Gate implementation
 - `docs/PROOFS/rc0_gate_pass.md` - Proof documentation with sample outputs

@@ -79,7 +79,7 @@ These are **not CI-referenced** and usually tagged `DEV`/`LEGACY`, or live under
 Examples currently in tree:
 
 - `ops/_archive/demo_seed*.ps1` (demo seed scripts; should not be “day to day”)
-- `ops/verify/run.ps1` (old verification entrypoint; still **docs-referenced**. Keep until docs are migrated to `ops.ps1`.)
+- `.\ops\ops.ps1 run -Profile Prototype|Full` (canonical verification runner; replaces legacy wrappers)
 - `ops/stack_up.ps1`, `ops/stack_down.ps1` (legacy wrappers; still **docs-referenced**. Don’t move without updating runbooks/proofs.)
 
 Policy recommendation:

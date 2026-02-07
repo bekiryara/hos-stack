@@ -29,7 +29,7 @@ Write-Host "=== GOLDEN COMMANDS ===" -ForegroundColor Yellow
 Write-Host "(0) Dispatcher:    .\\ops\\ops.ps1 full|status|run|..." -ForegroundColor White
 Write-Host "(1) FULL GATES:     .\\ops\\ops.ps1 full" -ForegroundColor White
 Write-Host "(2) Status/Audit:   .\\ops\\ops_status.ps1" -ForegroundColor White
-Write-Host "(3) Publish:        .\\ops\\ship_main.ps1" -ForegroundColor White
+Write-Host "(3) Publish:        .\\ops\\ops.ps1 ship" -ForegroundColor White
 Write-Host "(4) Frontend Apply: .\\ops\\frontend_refresh.ps1 [-Build]" -ForegroundColor White
 Write-Host "Docs: docs\\ops\\OPS_ENTRYPOINTS.md and ops\\README.md" -ForegroundColor Gray
 Write-Host ""
@@ -122,7 +122,7 @@ $checkRegistry = @(
     @{ Id = "leaf_world_status"; Name = "Leaf: World Status Check"; ScriptPath = ".\ops\world_status_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
     @{ Id = "leaf_write_snapshot"; Name = "Leaf: Write Snapshot Check"; ScriptPath = ".\ops\write_snapshot_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true; RegistryOnly = $true },
 
-    @{ Id = "rc0_gate"; Name = "RC0 Gate"; ScriptPath = ".\ops\rc0_gate.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $false },
+    @{ Id = "rc0_gate"; Name = "RC0 Gate"; ScriptPath = ".\ops\ops.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @("rc0-gate"); Optional = $true; CoreDependent = $false },
     @{ Id = "rc0_check"; Name = "RC0 Check"; ScriptPath = ".\ops\rc0_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $false }
 )
 

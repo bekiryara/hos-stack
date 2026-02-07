@@ -110,6 +110,6 @@ Read `docs/CURRENT.md` for the complete stack overview.
 
 ## Publishing Changes
 
-**Single publish path:** All changes to main branch must go through `.\ops\ship_main.ps1` (runs gates, then push). See `docs/DEV_DISCIPLINE.md` for details.
+**Single publish path:** All changes to main branch must go through `.\ops\ops.ps1 ship` (runs gates, then push). See `docs/DEV_DISCIPLINE.md` for details.
 
 

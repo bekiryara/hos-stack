@@ -205,10 +205,11 @@ docker compose exec pazar-app php artisan db:seed --class=CatalogSpineSeeder
 
 **Usage:**
 ```powershell
-.\ops\smoke.ps1
+.\ops\ops.ps1 smoke
 ```
 
 **Expected Output:**
+NOTE: The output below is from the legacy `.\ops\smoke.ps1` command. The canonical smoke entrypoint is now `.\ops\ops.ps1 smoke`.
 ```
 === GENESIS WORLD STATUS SMOKE TEST ===
 ...

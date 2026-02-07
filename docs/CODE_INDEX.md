@@ -22,7 +22,7 @@
 
 **Ops Scripts:**
 - Daily Ops: `ops/ops_run.ps1`
-- Ship Main: `ops/ship_main.ps1`
+- Ship: `ops/ops.ps1 ship`
 - Frontend Refresh: `ops/frontend_refresh.ps1`
 - Verify: `ops/verify.ps1`
 
@@ -229,7 +229,7 @@
 ### Core Scripts (Most Important)
 
 - **Ops Run:** `ops/ops_run.ps1` - Daily ops entrypoint (Prototype/Full profiles)
-- **Ship Main:** `ops/ship_main.ps1` - **Single publish path** to main (gates + push). Only way to publish changes.
+- **Ship:** `ops/ops.ps1 ship` - **Single publish path** to main (gates + push). Only way to publish changes.
 - **Ops Status:** `ops/ops_status.ps1` - Unified ops dashboard
 - **Verify:** `ops/verify.ps1` - Full health check
 - **Baseline Status:** `ops/baseline_status.ps1` - Baseline status check
@@ -290,7 +290,7 @@
 - **Product API Smoke:** `ops/product_api_smoke.ps1` - Product API smoke test
 - **Product Spine Smoke:** `ops/product_spine_smoke.ps1` - Product spine smoke test
 - **Smoke Surface:** `ops/smoke_surface.ps1` - Smoke surface test
-- **Smoke:** `ops/smoke.ps1` - General smoke test
+- **Smoke (canonical):** `ops/ops.ps1 smoke` - Smoke pack (world status + smoke surface)
 
 ### Ops Library (`ops/_lib/`)
 
@@ -300,13 +300,13 @@
 - **ops_output.ps1**: `ops/_lib/ops_output.ps1` - Ops output helper
 - **routes_json.ps1**: `ops/_lib/routes_json.ps1` - Routes JSON helper
 - **test_auth.ps1**: `ops/_lib/test_auth.ps1` - Test auth helper
-- **frontend_apply.ps1**: [ops/build/frontend_apply.ps1](https://github.com/bekiryara/hos-stack/blob/main/ops/build/frontend_apply.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/build/frontend_apply.ps1)
-- **run.ps1**: [ops/verify/run.ps1](https://github.com/bekiryara/hos-stack/blob/main/ops/verify/run.ps1) | [Raw](https://raw.githubusercontent.com/bekiryara/hos-stack/main/ops/verify/run.ps1)
+- **Frontend apply/refresh (canonical)**: `.\ops\ops.ps1 refresh` (or `.\ops\frontend_refresh.ps1`)
+- **Verification runner (canonical)**: `.\ops\ops.ps1 run -Profile Prototype|Full` (or `.\ops\ops_run.ps1`)
 - **worlds_config.ps1**: `ops/_lib/worlds_config.ps1` - Worlds config helper
 ### Release & Bundle
 
-- **Release Check:** `ops/release_check.ps1` - Release check
-- **RC0 Gate:** `ops/rc0_gate.ps1` - RC0 gate
+- **Release Check:** `ops/ops.ps1 release-check` - Release check
+- **RC0 Gate:** `ops/ops.ps1 rc0-gate` - RC0 gate (gate pack)
 - **RC0 Check:** `ops/rc0_check.ps1` - RC0 check
 - **Release Bundle:** `ops/release_bundle.ps1` - Release bundle generation
 - **Release Note:** `ops/release_note.ps1` - Release note generation

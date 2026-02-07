@@ -24,7 +24,7 @@
 - `ops/ops_run.ps1` - Single daily ops entrypoint (Prototype/Full profiles).
 - `ops/verify.ps1` - Baseline health verification (no PASS, no next step).
 - `ops/conformance.ps1` - Architecture conformance gate (policy + drift rules).
-- `ops/ship_main.ps1` - Single publish path to main (gates + push).
+- `ops/ops.ps1 ship` - Single publish path to main (gates + push).
 
 ## Proof & Closeout Entrypoints
 

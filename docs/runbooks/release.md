@@ -12,7 +12,7 @@ This runbook describes the RC0 release process, from pre-release validation to f
 
 **Command:**
 ```powershell
-.\ops\rc0_gate.ps1
+.\ops\ops.ps1 rc0-gate
 ```
 
 **Expected Results:**
@@ -43,7 +43,7 @@ This runbook describes the RC0 release process, from pre-release validation to f
 
 **Command:**
 ```powershell
-.\ops\release_check.ps1
+.\ops\ops.ps1 release-check
 ```
 
 **Expected Results:**
@@ -53,7 +53,7 @@ This runbook describes the RC0 release process, from pre-release validation to f
 
 **What it checks:**
 - **A) Git Status Clean**: No uncommitted changes (must commit or stash before release)
-- **B) RC0 Gate Result**: Calls `rc0_gate.ps1` and propagates result
+- **B) RC0 Gate Result**: Runs `.\ops\ops.ps1 rc0-gate` and propagates result
 - **C) Required Documentation**: `docs/ARCHITECTURE.md`, `docs/REPO_LAYOUT.md`, `docs/runbooks/incident.md`
 - **D) Contract Snapshots**: `ops/snapshots/routes.pazar.json`, `ops/snapshots/schema.pazar.sql`
 - **E) VERSION File**: Present, non-empty, valid format (X.Y.Z or X.Y.Z-rcN)
@@ -192,7 +192,7 @@ The `.github/workflows/release-check.yml` workflow automatically runs release ch
 **Workflow Steps:**
 1. Checkout code
 2. Start core services (for RC0 gate checks)
-3. Run `release_check.ps1`
+3. Run `.\ops\ops.ps1 release-check`
 4. Generate release bundle (on any result)
 5. Upload release bundle as artifact (always)
 6. Cleanup services
@@ -281,7 +281,7 @@ Test-Path ops\snapshots\schema.pazar.sql
 - `docs/ops/VERSIONING.md` - Versioning policy and tag discipline
 - `docs/RELEASE_CHECKLIST.md` - Manual release checklist
 - `docs/runbooks/rc0_gate.md` - RC0 gate runbook
-- `ops/release_check.ps1` - Release check script implementation
+- `ops/ops.ps1 release-check` - Release check implementation
 - `ops/release_bundle.ps1` - Release bundle generator implementation
 - `docs/RULES.md` - Rule 38: RC0 requires release_check PASS/WARN + bundle attached
 

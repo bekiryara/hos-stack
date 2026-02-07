@@ -48,7 +48,6 @@ $allOpsScripts = Get-ChildItem -Path $scriptDir -Filter "*.ps1" -File | Where-Ob
         "stack_down.ps1",
         "incident_bundle.ps1",
         "release_bundle.ps1",
-        "release_check.ps1",
         "request_trace.ps1",
         "triage.ps1",
         "STACK_E2E_CRITICAL_TESTS_v*.ps1",

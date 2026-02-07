@@ -16,7 +16,7 @@ If you only want “the one thing to run”, use:
 - `.\ops\ops.ps1` - dispatcher (`full|status|run|...`)
 - `.\ops\ops_status.ps1` - status/audit dashboard (wide, informative)
 - `.\ops\ops_run.ps1` - daily pack runner (`-Profile Prototype|Full`)
-- `.\ops\ship_main.ps1` - publish to main (runs gates + push flow)
+- `.\ops\ops.ps1 ship` - publish to main (runs gates + push flow)
 - `.\ops\frontend_refresh.ps1` - restart/rebuild frontend
 
 ---
@@ -45,9 +45,7 @@ These scripts are referenced from `.github/workflows/*.yml`. Deleting/renaming t
 - `ops/product_e2e.ps1`
 - `ops/product_spine_e2e_check.ps1`
 - `ops/rc0_check.ps1`
-- `ops/rc0_gate.ps1`
 - `ops/release_bundle.ps1`
-- `ops/release_check.ps1`
 - `ops/repo_integrity.ps1`
 - `ops/reservation_contract_check.ps1`
 - `ops/routes_snapshot.ps1`

@@ -68,8 +68,8 @@ The root `VERSION` file is the single source of truth for the current release ve
    - Clear `[Unreleased]` section
 
 3. **Run release checks**
-   - `.\ops\release_check.ps1` must PASS
-   - `.\ops\rc0_gate.ps1` must PASS/WARN (no blocking failures)
+   - `.\ops\ops.ps1 release-check` must PASS
+   - `.\ops\ops.ps1 rc0-gate` must PASS/WARN (no blocking failures)
 
 4. **Generate release bundle**
    - `.\ops\release_bundle.ps1` creates evidence folder
@@ -111,7 +111,7 @@ git push origin "v${VERSION}"
 
 ## Version Validation
 
-The `ops/release_check.ps1` script validates:
+The `.\ops\ops.ps1 release-check` script validates:
 - VERSION file exists and is non-empty
 - VERSION format matches semantic versioning pattern
 - VERSION file contains only version string (no extra lines)
@@ -143,7 +143,7 @@ Message: "Release v0.1.0: Production release"
 
 - `docs/RELEASE_CHECKLIST.md` - Manual release checklist
 - `docs/runbooks/release.md` - Release workflow runbook
-- `ops/release_check.ps1` - Automated release validation
+- `ops/ops.ps1 release-check` - Automated release validation
 - `ops/release_bundle.ps1` - Release bundle generator
 
 
