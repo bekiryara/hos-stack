@@ -6,7 +6,7 @@ This runbook defines rules for maintaining repository cleanliness and preventing
 
 ## Rules for Adding New Files
 
-### ✅ Allowed Locations
+### Allowed Locations
 
 - **Application code**: `work/hos/`, `work/pazar/`
 - **Operations scripts**: `ops/`
@@ -14,7 +14,7 @@ This runbook defines rules for maintaining repository cleanliness and preventing
 - **Configuration**: Root level (docker-compose.yml, .gitignore, etc.)
 - **CI/CD**: `.github/`
 
-### ❌ NOT Allowed in Root
+### NOT Allowed in Root
 
 - **Log files**: `*.log`, `*.txt` (unless documentation)
 - **Dump files**: `*.dump`, `*.sql` (unless in `_archive/`)
@@ -23,7 +23,7 @@ This runbook defines rules for maintaining repository cleanliness and preventing
 - **Archive files**: `*.zip`, `*.rar`, `*.tar.gz` (unless in `_archive/`)
 - **Vendor/node_modules**: Should be in project directories or `.gitignore`d
 
-### ✅ When to Use _graveyard/
+### When to Use _graveyard/
 
 Use `_graveyard/` for:
 - **Deprecated code**: Code that's no longer used but might be needed for reference
@@ -47,7 +47,7 @@ _graveyard/ops/old_script.NOTE.md
 _graveyard/POLICY.md (updated)
 ```
 
-### ✅ When to Use _archive/
+### When to Use _archive/
 
 Use `_archive/` for:
 - **Daily snapshots**: `_archive/daily/YYYYMMDD-HHmmss/` (auto-generated)
@@ -63,13 +63,13 @@ Use `_archive/` for:
 
 ## File Naming Rules
 
-### ✅ Good Names
+### Good Names
 - `verify.ps1`
 - `baseline_status.ps1`
 - `docs/CURRENT.md`
 - `work/pazar/routes/web.php`
 
-### ❌ Bad Names (Non-ASCII)
+### Bad Names (Non-ASCII)
 - `doğrulama.ps1` (Turkish characters)
 - `验证.ps1` (Chinese characters)
 - `проверка.ps1` (Cyrillic)
@@ -78,27 +78,27 @@ Use `_archive/` for:
 
 ## Secrets Policy
 
-### ❌ Never Commit
+### Never Commit
 - `work/hos/secrets/*.txt` (real secrets)
 - `.env` files (real values)
 - `*.key`, `*.pem` (private keys)
 - Files with `secret`, `password`, `token` in name (unless examples)
 
-### ✅ OK to Commit
+### OK to Commit
 - `work/pazar/docs/env.example` (template)
 - `work/hos/secrets/README.md` (documentation)
 - Example files with `.example` or `.template` suffix
 
 ## Large Files
 
-### ⚠️ Before Adding Large Files (>10MB)
+### Before Adding Large Files (>10MB)
 
 1. **Check if necessary**: Can it be generated instead?
 2. **Consider alternatives**: Use external storage, CDN, or LFS
 3. **Document why**: Add note explaining why large file is needed
 4. **Review impact**: Large files slow down git operations
 
-### ✅ Recommended
+### Recommended
 
 - Use Git LFS for large binary files
 - Store large files in external storage

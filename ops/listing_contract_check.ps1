@@ -230,7 +230,7 @@ function Find-ExistingListingByTitle {
 }
 
 # Test 2: POST /api/v1/listings without Authorization header
-# WP-61B: In GENESIS mode (GENESIS_ALLOW_UNAUTH_STORE=1), Authorization is optional per SPEC §5.2
+# WP-61B: In GENESIS mode (GENESIS_ALLOW_UNAUTH_STORE=1), Authorization is optional per SPEC 5.2
 if (-not $weddingHallId) {
     Write-Host "[2] SKIP: Cannot test (wedding-hall category ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
@@ -245,7 +245,7 @@ if (-not $weddingHallId) {
         Write-Host "PASS: Existing draft listing already satisfies test (reusing; no new row created)" -ForegroundColor Green
         Write-Host "  Listing ID: $($existingDraft.id)" -ForegroundColor Gray
         Write-Host "  Status: $($existingDraft.status)" -ForegroundColor Gray
-        Write-Host "  Note: Authorization is optional in GENESIS mode per SPEC §5.2" -ForegroundColor Gray
+        Write-Host "  Note: Authorization is optional in GENESIS mode per SPEC 5.2" -ForegroundColor Gray
     } else {
     $listingBody = @{
         category_id = $weddingHallId
@@ -271,7 +271,7 @@ if (-not $weddingHallId) {
             Write-Host "PASS: Request without Authorization succeeded in GENESIS mode (status: 201, listing created)" -ForegroundColor Green
             Write-Host "  Listing ID: $($response.id)" -ForegroundColor Gray
             Write-Host "  Status: $($response.status)" -ForegroundColor Gray
-            Write-Host "  Note: Authorization is optional in GENESIS mode per SPEC §5.2" -ForegroundColor Gray
+            Write-Host "  Note: Authorization is optional in GENESIS mode per SPEC 5.2" -ForegroundColor Gray
         } else {
             Write-Host "FAIL: Request without Authorization succeeded but response invalid" -ForegroundColor Red
             $hasFailures = $true

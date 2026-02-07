@@ -33,20 +33,20 @@ This runbook explains how to bring up and manage the observability stack (Promet
 ## Important Rule: Obs Profile Does NOT Include Core Services
 
 The observability profile (`--profile obs`) is **isolated** and does NOT include core services:
-- ❌ `api` (port 3000) - NOT started by obs profile
-- ❌ `web` (port 3002) - NOT started by obs profile  
-- ❌ `db` - NOT started by obs profile
+- `api` (port 3000) - NOT started by obs profile
+- `web` (port 3002) - NOT started by obs profile
+- `db` - NOT started by obs profile
 
 The obs profile only starts these services:
-- ✅ `prometheus` (port 9090)
-- ✅ `alertmanager` (port 9093)
-- ✅ `grafana` (port 3001)
-- ✅ `loki` (port 3100)
-- ✅ `promtail`
-- ✅ `tempo` (port 3200)
-- ✅ `otel-collector`
-- ✅ `postgres-exporter` (port 9187)
-- ✅ `alert-webhook` (internal)
+- `prometheus` (port 9090)
+- `alertmanager` (port 9093)
+- `grafana` (port 3001)
+- `loki` (port 3100)
+- `promtail`
+- `tempo` (port 3200)
+- `otel-collector`
+- `postgres-exporter` (port 9187)
+- `alert-webhook` (internal)
 
 ## Port Mappings
 

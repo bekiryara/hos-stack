@@ -176,12 +176,12 @@ try {
         throw "Draft listing should NOT appear in published search, but it does!"
     }
     
-    Write-Host "  ✅ Draft listing correctly excluded from search" -ForegroundColor Green
+    Write-Host "  [PASS] Draft listing correctly excluded from search" -ForegroundColor Green
 } catch {
     if ($_.Exception.Message -like "*should NOT appear*") {
         throw $_
     }
-    Write-Host "  ⚠️  Search check failed (non-fatal): $_" -ForegroundColor Yellow
+    Write-Host "  [WARN] Search check failed (non-fatal): $_" -ForegroundColor Yellow
 }
 Write-Host ""
 
@@ -218,7 +218,7 @@ try {
         $foundInListings = $foundListing -ne $null
         
         if ($foundInListings) {
-            Write-Host "  ✅ Listing found in GET /v1/listings" -ForegroundColor Green
+            Write-Host "  [PASS] Listing found in GET /v1/listings" -ForegroundColor Green
             Write-Host "    Title: $($foundListing.title)" -ForegroundColor Gray
             Write-Host "    Status: $($foundListing.status)" -ForegroundColor Gray
         }
@@ -243,7 +243,7 @@ try {
         $foundInListings = $foundListing -ne $null
         
         if ($foundInListings) {
-            Write-Host "  ✅ Listing found with explicit status=published" -ForegroundColor Green
+            Write-Host "  [PASS] Listing found with explicit status=published" -ForegroundColor Green
         }
     }
     
@@ -269,12 +269,12 @@ try {
         throw "Published listing should NOT appear in status=draft filter, but it does!"
     }
     
-    Write-Host "  ✅ Published listing correctly excluded from draft filter" -ForegroundColor Green
+    Write-Host "  [PASS] Published listing correctly excluded from draft filter" -ForegroundColor Green
 } catch {
     if ($_.Exception.Message -like "*should NOT appear*") {
         throw $_
     }
-    Write-Host "  ⚠️  Draft filter check failed (non-fatal): $_" -ForegroundColor Yellow
+    Write-Host "  [WARN] Draft filter check failed (non-fatal): $_" -ForegroundColor Yellow
 }
 Write-Host ""
 
@@ -292,14 +292,14 @@ try {
     }
     
     $publishedCount = ($listingsResponse | Where-Object { $_.status -eq "published" }).Count
-    Write-Host "  ✅ Empty filters return array with $publishedCount published listings" -ForegroundColor Green
+    Write-Host "  [PASS] Empty filters return array with $publishedCount published listings" -ForegroundColor Green
     
     # Verify our listing is in the results (may be paginated, so check first page)
     $foundInEmpty = ($listingsResponse | Where-Object { $_.id -eq $listingId }) -ne $null
     if ($foundInEmpty) {
-        Write-Host "  ✅ Our listing found in empty filter results" -ForegroundColor Green
+        Write-Host "  [PASS] Our listing found in empty filter results" -ForegroundColor Green
     } else {
-        Write-Host "  ⚠️  Our listing not in first page (may be paginated)" -ForegroundColor Yellow
+        Write-Host "  [WARN] Our listing not in first page (may be paginated)" -ForegroundColor Yellow
     }
 } catch {
     throw "Failed to verify empty filters: $_"
@@ -311,9 +311,9 @@ Write-Host "Listing ID: $listingId" -ForegroundColor Cyan
 Write-Host "Category ID: $categoryId" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "All discovery checks passed:" -ForegroundColor Green
-Write-Host "  ✅ Draft listing excluded from published search" -ForegroundColor Green
-Write-Host "  ✅ Published listing appears in GET /v1/listings (default)" -ForegroundColor Green
-Write-Host "  ✅ Published listing appears with explicit status=published" -ForegroundColor Green
-Write-Host "  ✅ Published listing excluded from status=draft filter" -ForegroundColor Green
-Write-Host "  ✅ Empty filters return published listings array" -ForegroundColor Green
+Write-Host "  [PASS] Draft listing excluded from published search" -ForegroundColor Green
+Write-Host "  [PASS] Published listing appears in GET /v1/listings (default)" -ForegroundColor Green
+Write-Host "  [PASS] Published listing appears with explicit status=published" -ForegroundColor Green
+Write-Host "  [PASS] Published listing excluded from status=draft filter" -ForegroundColor Green
+Write-Host "  [PASS] Empty filters return published listings array" -ForegroundColor Green
 

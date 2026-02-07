@@ -29,7 +29,7 @@ This wrapper prevents the terminal from closing and preserves exit codes. It's t
 
 **ASCII-Only Output:**
 - All ops scripts use ASCII-only output markers: `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]`
-- No Unicode glyphs (✅ ❌ ⚠️ ✓ ✗ → ➕ ➖) in output
+- No Unicode glyphs in output (use the markers above only)
 - Ensures consistent rendering across all terminals and CI environments
 
 ### CI Usage

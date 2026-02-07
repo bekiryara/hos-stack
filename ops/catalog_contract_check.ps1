@@ -23,7 +23,9 @@ Write-Host "[1] Testing GET /api/v1/categories..." -ForegroundColor Yellow
 $categoriesUrl = "http://localhost:8080/api/v1/categories"
 try {
     $response = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
-    Write-Host "Response: $($response | ConvertTo-Json -Depth 3 -Compress)" -ForegroundColor Gray
+    # Intentionally do NOT print raw response JSON:
+    # - Output must stay readable and ASCII-friendly on Windows consoles.
+    # - Raw JSON is very large/noisy and can include non-ASCII characters.
 
     # Validate response format
     if (-not ($response -is [Array])) {
@@ -114,7 +116,7 @@ if ($weddingHallId) {
     $filterSchemaUrl = "http://localhost:8080/api/v1/categories/$weddingHallId/filter-schema"
     try {
         $response = Invoke-RestMethod -Uri $filterSchemaUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
-        Write-Host "Response: $($response | ConvertTo-Json -Depth 3 -Compress)" -ForegroundColor Gray
+        # Intentionally do NOT print raw response JSON (see note in Test 1).
 
         # Validate response format
         if (-not $response.category_id) {

@@ -22,9 +22,9 @@ Write-Host "[1] Testing Marketplace GET /api/world/status..." -ForegroundColor Y
 $pazarWorldStatusUrl = "http://localhost:8080/api/world/status"
 try {
     $response = Invoke-RestMethod -Uri $pazarWorldStatusUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
-    Write-Host "Response: $($response | ConvertTo-Json -Compress)" -ForegroundColor Gray
+    # Do not print raw JSON response (keep output short/ASCII-friendly).
     
-    # Validate response format (SPEC §24.4)
+    # Validate response format (SPEC 24.4)
     if (-not $response.world_key) {
         Write-Host "FAIL: Missing 'world_key' in response" -ForegroundColor Red
         $hasFailures = $true

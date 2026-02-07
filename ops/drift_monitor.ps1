@@ -293,24 +293,24 @@ foreach ($file in $governanceFiles) {
             $reportLines += "- **Baseline:** hash=`$($baseline.hash.Substring(0, 16))...`, size=$($baseline.size) bytes"
             
             if ($current.hash -ne $baseline.hash) {
-                $reportLines += "- **Status:** ⚠️ **DRIFT DETECTED** (hash changed)"
+                $reportLines += "- **Status:** WARN: **DRIFT DETECTED** (hash changed)"
                 $hasDrift = $true
             } elseif ($current.size -ne $baseline.size) {
-                $reportLines += "- **Status:** ⚠️ **DRIFT DETECTED** (size changed)"
+                $reportLines += "- **Status:** WARN: **DRIFT DETECTED** (size changed)"
                 $hasDrift = $true
             } else {
-                $reportLines += "- **Status:** ✅ No change"
+                $reportLines += "- **Status:** PASS: No change"
             }
         } else {
             $reportLines += "- **Baseline:** (not found in baseline)"
-            $reportLines += "- **Status:** ⚠️ **NEW FILE** (drift: file added)"
+            $reportLines += "- **Status:** WARN: **NEW FILE** (drift: file added)"
             $hasDrift = $true
         }
     } else {
         $reportLines += "- **Current:** (file not found)"
         if ($baselineHashes.ContainsKey($file)) {
             $reportLines += "- **Baseline:** hash=`$($baselineHashes[$file].hash.Substring(0, 16))...`, size=$($baselineHashes[$file].size) bytes"
-            $reportLines += "- **Status:** ⚠️ **DRIFT DETECTED** (file removed)"
+            $reportLines += "- **Status:** WARN: **DRIFT DETECTED** (file removed)"
             $hasDrift = $true
         } else {
             $reportLines += "- **Baseline:** (not found)"
@@ -341,15 +341,15 @@ $reportLines += "## Summary"
 $reportLines += ""
 
 if (-not $hasBaseline) {
-    $reportLines += "⚠️ **No baseline available** - this is the first run. Use this audit as baseline for future comparisons."
+    $reportLines += "WARN: **No baseline available** - this is the first run. Use this audit as baseline for future comparisons."
     $reportLines += ""
 } elseif ($hasDrift) {
-    $reportLines += "⚠️ **DRIFT DETECTED** - Governance surfaces have changed since baseline."
+    $reportLines += "WARN: **DRIFT DETECTED** - Governance surfaces have changed since baseline."
     $reportLines += ""
     $reportLines += "Review the changes above and ensure they are intentional and documented."
     $reportLines += ""
 } else {
-    $reportLines += "✅ **No drift detected** - Governance surfaces match baseline."
+    $reportLines += "PASS: **No drift detected** - Governance surfaces match baseline."
     $reportLines += ""
 }
 
