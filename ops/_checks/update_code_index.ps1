@@ -6,52 +6,50 @@ param(
     [switch]$AutoCommit = $false,
     [switch]$AutoPush = $false,
     [switch]$DryRun = $false,
-    [switch]$Gate = $false
+    [switch]$Gate = $false,
+    [switch]$Deep = $false
 )
 
 $ErrorActionPreference = "Stop"
-$repoRoot = $PSScriptRoot | Split-Path -Parent
+$scriptDir = $PSScriptRoot                    # ops/_checks
+$opsRoot = Split-Path -Parent $scriptDir      # ops
+$repoRoot = Split-Path -Parent $opsRoot       # repo root
 $codeIndexPath = Join-Path $repoRoot "docs\CODE_INDEX.md"
 
 Write-Host "=== CODE_INDEX.md Otomatik Güncelleme ===" -ForegroundColor Cyan
 Write-Host ""
 
+if (-not (Test-Path $codeIndexPath)) {
+    Write-Host ("FAIL: CODE_INDEX.md bulunamadi: {0}" -f $codeIndexPath) -ForegroundColor Red
+    Write-Host ("Beklenen: {0}" -f (Join-Path $repoRoot "docs\\CODE_INDEX.md")) -ForegroundColor Gray
+    exit 1
+}
+
 # Önemli dosya pattern'leri
+# Normal mod: ship gibi akışlarda "az ama öz" kontrol (günlük publish'i bloklamasın)
 $importantPatterns = @(
-    # Routes
-    "**/routes/**/*.php",
-    "**/routes/**/*.js",
-    # Migrations
-    "**/migrations/**/*.php",
-    "**/migrations/**/*.sql",
-    # Config
-    "**/config/**/*.php",
-    "**/config/**/*.js",
-    "**/config/**/*.yaml",
-    "**/config/**/*.yml",
-    # Middleware
-    "**/Middleware/**/*.php",
-    "**/middleware/**/*.js",
-    # Controllers
-    "**/Controllers/**/*.php",
-    "**/controllers/**/*.js",
-    # Models
-    "**/Models/**/*.php",
-    # Components
-    "**/components/**/*.vue",
-    "**/components/**/*.js",
-    # Pages
-    "**/pages/**/*.vue",
-    # Ops scripts
-    "ops/**/*.ps1",
-    # Bootstrap
-    "**/bootstrap/**/*.php",
-    "**/bootstrap/**/*.js"
+    "ops/ops.ps1",
+    "ops/ops_status.ps1",
+    "ops/ops_run.ps1",
+    "ops/frontend_refresh.ps1",
+    "ops/_legacy/legacy.ps1"
 )
+
+# Deep mod: repo genelinde daha geniş kapsama (manuel bakım için)
+if ($Deep) {
+    $importantPatterns += @(
+        # Pazar routes/migrations (yüksek sinyal)
+        "work/pazar/routes/**/*.php",
+        "work/pazar/database/migrations/**/*.php",
+        "work/pazar/config/**/*.php",
+        # Ops scripts (derin)
+        "ops/**/*.ps1"
+    )
+}
 
 # Git'te tracked olan dosyaları al
 Write-Host "Git tracked dosyaları tespit ediliyor..." -ForegroundColor Yellow
-$trackedFiles = git ls-files | Where-Object { $_ -notmatch '^docs/CODE_INDEX.md$' }
+$trackedFiles = git ls-files
 
 # Önemli dosyaları filtrele
 $importantFiles = @()
@@ -80,7 +78,15 @@ $existingFiles += [regex]::Matches($codeIndexContent, '`([^`]+)`') |
         $_ -match '^(work/|ops/|docs/|docker-compose\.yml$|README\.md$)' -and $_ -match '\.'
     }
 
-$existingFiles = $existingFiles | ForEach-Object { ($_ -replace '\\','/').Trim() } | Sort-Object -Unique
+$existingFiles = $existingFiles | ForEach-Object {
+    $v = ($_ -replace '\\','/').Trim()
+    # Normalize Windows-style ".\ops\..." to "ops/..."
+    $v = $v -replace '^[.]/', ''
+    # If backticks contain a command ("ops/ops.ps1 ship"), keep only the path token.
+    $v = ($v -split '\s+')[0]
+    $v = $v.TrimEnd(',', ')', ']', '>')
+    $v
+} | Sort-Object -Unique
 
 # Yeni dosyaları bul
 $newFiles = $importantFiles | Where-Object { 

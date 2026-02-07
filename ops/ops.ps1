@@ -109,6 +109,7 @@ function Show-Help {
   Write-Host "  secret-scan      Secret scan (secret_scan.ps1)" -ForegroundColor White
   Write-Host "  repo-payload-guard Repo payload guard (repo_payload_guard.ps1)" -ForegroundColor White
   Write-Host "  update-code-index Update CODE_INDEX (update_code_index.ps1)" -ForegroundColor White
+  Write-Host "  update-code-index-deep Deep CODE_INDEX scan (update_code_index.ps1 -Deep)" -ForegroundColor White
   Write-Host "  self-audit       Self-audit orchestrator (self_audit.ps1)" -ForegroundColor White
   Write-Host "  observability-status Observability status (observability_status.ps1)" -ForegroundColor White
   Write-Host "  storage-permissions Storage permissions (storage_permissions_check.ps1)" -ForegroundColor White
@@ -938,6 +939,7 @@ switch ($cmd) {
   { $_ -in @("secret-scan", "secret_scan") } { Invoke-TargetScript -RelPath "_tools\\secret_scan.ps1"; break }
   { $_ -in @("repo-payload-guard", "repo_payload_guard") } { Invoke-TargetScript -RelPath "_checks\\repo_payload_guard.ps1"; break }
   { $_ -in @("update-code-index", "update_code_index") } { Invoke-TargetScript -RelPath "_checks\\update_code_index.ps1"; break }
+  { $_ -in @("update-code-index-deep", "update_code_index_deep") } { & (Join-Path $checksDir "update_code_index.ps1") -Deep; break }
   { $_ -in @("self-audit", "self_audit") } { Invoke-TargetScript -RelPath "_tools\\self_audit.ps1"; break }
   { $_ -in @("observability-status", "observability_status") } { Invoke-TargetScript -RelPath "_checks\\observability_status.ps1"; break }
   { $_ -in @("storage-permissions", "storage_permissions") } { Invoke-TargetScript -RelPath "_checks\\storage_permissions_check.ps1"; break }
