@@ -72,7 +72,7 @@ function Invoke-PostgresQuery {
         if ($useDocker) {
             $env:PGPASSWORD = $dbPassword
             Push-Location $repoRoot
-            $result = docker compose exec -T pazar-db psql -U $dbUser -d $dbName -t -A -F "|" -c $escapedQuery 2>&1
+            $result = docker compose exec -T pazar-db psql -U $dbUser -d $dbName -t -A -F "|" -c "$escapedQuery" 2>&1
             Pop-Location
             $env:PGPASSWORD = $null
         } else {

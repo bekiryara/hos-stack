@@ -495,8 +495,12 @@ final class CatalogImportService
         $categories = $this->normalizeCategories($m['categories'] ?? []);
         $attributes = $this->normalizeAttributes($m['attributes'] ?? []);
         $schemaRows = $this->expandSchemaRows($m['schemaBlocks'] ?? []);
+        $slugToStatus = [];
+        foreach ($categories as $c) {
+            $slugToStatus[$c['slug']] = $c['status'];
+        }
 
-        DB::transaction(function () use ($categories, $attributes, $schemaRows) {
+        DB::transaction(function () use ($categories, $attributes, $schemaRows, $slugToStatus) {
             $now = CarbonImmutable::now()->toDateTimeString();
 
             // 1) categories (deterministic, parent-first insert)
@@ -527,6 +531,7 @@ final class CatalogImportService
                         // Should be impossible due to validations, but keep it fail-fast.
                         throw new RuntimeException("Schema references unknown category_slug at apply time: {$r['category_slug']}");
                     }
+                    $catStatus = $slugToStatus[$r['category_slug']] ?? 'active';
                     $rows[] = [
                         'category_id' => $categoryId,
                         'attribute_key' => $r['attribute_key'],
@@ -535,7 +540,7 @@ final class CatalogImportService
                         'filter_mode' => $r['filter_mode'],
                         'rules_json' => $r['rules_json'],
                         'applies_to_transaction_modes' => $r['applies_to_transaction_modes'],
-                        'status' => 'active',
+                        'status' => $catStatus === 'active' ? 'active' : 'inactive',
                         'sort_order' => $r['sort_order'],
                         'created_at' => $now,
                         'updated_at' => $now,
@@ -560,8 +565,12 @@ final class CatalogImportService
         $attributes = $this->normalizeAttributes($m['attributes'] ?? []);
         $schemaRows = $this->expandSchemaRows($m['schemaBlocks'] ?? []);
         $aliases = is_array($m['aliases'] ?? null) ? $m['aliases'] : [];
+        $slugToStatus = [];
+        foreach ($categories as $c) {
+            $slugToStatus[$c['slug']] = $c['status'];
+        }
 
-        DB::transaction(function () use ($categories, $attributes, $schemaRows, $aliases) {
+        DB::transaction(function () use ($categories, $attributes, $schemaRows, $aliases, $slugToStatus) {
             $now = CarbonImmutable::now()->toDateTimeString();
 
             // 0) Apply alias renames (slug updates) best-effort, fail-fast on conflicts.
@@ -649,6 +658,8 @@ final class CatalogImportService
                 }
                 $pairKey = $categoryId . '|' . $r['attribute_key'];
                 $manifestPairsByCategoryId[$categoryId][$pairKey] = true;
+                $catStatus = $slugToStatus[$r['category_slug']] ?? 'active';
+                $schemaStatus = $catStatus === 'active' ? 'active' : 'inactive';
 
                 if (!isset($schemaExistingSet[$pairKey])) {
                     $schemaInserts[] = [
@@ -659,7 +670,7 @@ final class CatalogImportService
                         'filter_mode' => $r['filter_mode'],
                         'rules_json' => $r['rules_json'],
                         'applies_to_transaction_modes' => $r['applies_to_transaction_modes'],
-                        'status' => 'active',
+                        'status' => $schemaStatus,
                         'sort_order' => $r['sort_order'],
                         'created_at' => $now,
                         'updated_at' => $now,
@@ -674,7 +685,7 @@ final class CatalogImportService
                             'filter_mode' => $r['filter_mode'],
                             'rules_json' => $r['rules_json'],
                             'applies_to_transaction_modes' => $r['applies_to_transaction_modes'],
-                            'status' => 'active',
+                            'status' => $schemaStatus,
                             'sort_order' => $r['sort_order'],
                             'updated_at' => $now,
                         ]);

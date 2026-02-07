@@ -1,0 +1,5 @@
+# Placeholder alert rules (file must exist for Prometheus).
+# This repo snapshot does not ship default alert rules.
+groups:
+  - name: placeholder
+    rules: []
