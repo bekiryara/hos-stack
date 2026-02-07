@@ -48,7 +48,7 @@ Before creating a baseline tag, ensure:
 
 5. **Release note generated:**
    ```powershell
-   .\ops\release_note.ps1 -Tag BASELINE-2026-01-15
+   .\ops\_legacy\legacy.ps1 release-note -Tag BASELINE-2026-01-15
    ```
 
 ## Tagging Process
@@ -61,7 +61,7 @@ Before creating a baseline tag, ensure:
 
 2. **Generate release note:**
    ```powershell
-   .\ops\release_note.ps1 -Tag BASELINE-2026-01-15
+   .\ops\_legacy\legacy.ps1 release-note -Tag BASELINE-2026-01-15
    ```
 
 3. **Create tag:**

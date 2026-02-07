@@ -73,7 +73,7 @@ Auth endpoints (e.g., `/auth/login`) must return:
 ### Basic Usage
 
 ```powershell
-.\ops\session_posture_check.ps1
+.\ops\ops.ps1 session-posture
 ```
 
 ### Setting Environment Variables

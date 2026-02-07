@@ -32,7 +32,7 @@ All required ops gate scripts verified present:
 - ✅ `ops/env_contract.ps1`
 - ✅ `ops/incident_bundle.ps1`
 - ✅ `ops/ops_status.ps1`
-- ✅ `ops/perf_baseline.ps1`
+- ✅ `ops/_legacy/legacy.ps1 perf-baseline`
 - ✅ `ops/request_trace.ps1`
 - ✅ `ops/routes_snapshot.ps1`
 - ✅ `ops/schema_snapshot.ps1`

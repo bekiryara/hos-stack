@@ -32,7 +32,7 @@
 
 2. **Check system health** (1 min)
    ```powershell
-   .\ops\triage.ps1
+   .\ops\ops.ps1 triage
    ```
    - Are all services up?
    - Are health endpoints responding?
@@ -44,7 +44,7 @@
 
 4. **Run request trace** (1 min)
    ```powershell
-   .\ops\request_trace.ps1 -RequestId "<uuid>"
+   .\ops\ops.ps1 request-trace -RequestId "<uuid>"
    ```
    - Purpose: Correlate Pazar vs H-OS logs to isolate service boundaries
    - Shows matching log entries with context from both services
@@ -125,9 +125,9 @@ If a CI gate fails in GitHub Actions, check these locations:
 
 ### conformance
 - **What it checks**: World registry drift, forbidden artifacts, disabled-world code, canonical docs, secrets safety
-- **Where to look**: `.github/workflows/conformance.yml` logs, `ops/conformance.ps1` output
+- **Where to look**: `.github/workflows/conformance.yml` logs, `.\ops\ops.ps1 conformance` output
 - **Common causes**: World registry mismatch, disabled world code present, docs not single-source
-- **Fix**: Run `.\ops\conformance.ps1` locally to see detailed failure reasons
+- **Fix**: Run `.\ops\ops.ps1 conformance` locally to see detailed failure reasons
 
 ### contracts (routes)
 - **What it checks**: API routes match snapshot
@@ -173,8 +173,8 @@ git push --force-with-lease origin main
 ```
 
 ### Prevention Discipline
-- **Always**: Test locally with `.\ops\verify.ps1` before pushing
-- **Always**: Run `.\ops\triage.ps1` after any deployment to verify health
+- **Always**: Test locally with `.\ops\ops.ps1 verify` before pushing
+- **Always**: Run `.\ops\ops.ps1 triage` after any deployment to verify health
 - **Always**: Update snapshots (`routes.pazar.json`, `schema.pazar.sql`) when intentionally changing contracts
 - **Never**: Skip gate checks or disable gates without team discussion
 - **Never**: Force push to main without coordinating with team
@@ -186,9 +186,9 @@ git push --force-with-lease origin main
 - Pazar Up: `http://localhost:8080/up`
 
 ### Key Scripts
-- Triage: `.\ops\triage.ps1`
-- Verify: `.\ops\verify.ps1`
-- Conformance: `.\ops\conformance.ps1`
+- Triage: `.\ops\ops.ps1 triage`
+- Verify: `.\ops\ops.ps1 verify`
+- Conformance: `.\ops\ops.ps1 conformance`
 
 ### Log Locations
 - Pazar logs: `docker compose logs pazar-app`
@@ -238,7 +238,7 @@ Named volumes (`pazar_storage`, `pazar_cache`) may be created with incorrect own
 
 5. **Run verify.ps1 FS posture check:**
    ```powershell
-   .\ops\verify.ps1
+   .\ops\ops.ps1 verify
    ```
    - **Expected:** Step 4 "Pazar FS posture (storage/logs writability)" shows PASS
 

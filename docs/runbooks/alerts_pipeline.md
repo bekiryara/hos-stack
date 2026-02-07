@@ -2,7 +2,7 @@
 
 ## Overview
 
-This runbook documents how to verify the end-to-end alert pipeline: Prometheus -> Alertmanager -> Webhook. The pipeline can be proven deterministically using `ops/alert_pipeline_proof.ps1`.
+This runbook documents how to verify the end-to-end alert pipeline: Prometheus -> Alertmanager -> Webhook. The pipeline can be proven deterministically using `ops/_extras/proofs/alert_pipeline_proof.ps1`.
 
 ## Architecture
 
@@ -18,7 +18,7 @@ Prometheus (alerts.yml)
 ### Running the Proof
 
 ```powershell
-.\ops\alert_pipeline_proof.ps1
+.\ops\_extras\proofs\alert_pipeline_proof.ps1
 ```
 
 **Expected Output (PASS):**
@@ -113,17 +113,17 @@ docker exec $containerName python -c "import urllib.request, json; print(json.du
 
 If obs profile is not started:
 ```powershell
-.\ops\stack_up.ps1 -Profile obs
+.\ops\ops.ps1 up -StackProfile obs
 ```
 
 Then re-run the proof:
 ```powershell
-.\ops\alert_pipeline_proof.ps1
+.\ops\_extras\proofs\alert_pipeline_proof.ps1
 ```
 
 ## Related
 
-- `ops/alert_pipeline_proof.ps1` - Automated alert pipeline proof script
+- `ops/_extras/proofs/alert_pipeline_proof.ps1` - Automated alert pipeline proof script
 - `docs/PROOFS/alert_pipeline_pass.md` - Proof documentation with acceptance tests
 - `work/hos/services/observability/alert-webhook/server.py` - Webhook implementation with `/last` endpoint
 

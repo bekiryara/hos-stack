@@ -16,7 +16,7 @@ jobs:
       - name: Run world spine check
         shell: pwsh
         run: |
-          pwsh ./ops/world_spine_check.ps1
+          pwsh ./ops/_checks/world_spine_check.ps1
 
       - name: Upload logs on failure
         if: failure()

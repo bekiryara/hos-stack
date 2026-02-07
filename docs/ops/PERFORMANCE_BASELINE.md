@@ -18,7 +18,7 @@ Warm-up requests eliminate cold-start effects that can skew latency measurements
 - **Measured requests**: Default 30 requests per endpoint (configurable)
 
 ### Scripts
-- **`ops/perf_baseline.ps1`**: Full performance baseline with warm-up and first-hit analysis
+- **`ops/_legacy/legacy.ps1 perf-baseline`**: Full performance baseline with warm-up and first-hit analysis
 - **`ops/slo_check.ps1`**: SLO check with warm-up applied
 
 ## Cold Start and Docker Overhead
@@ -109,7 +109,7 @@ Performance issues persist throughout measurement window.
 
 ### Performance Baseline (Full Analysis)
 ```powershell
-.\ops\perf_baseline.ps1 -N 30
+.\ops\_legacy\legacy.ps1 perf-baseline -N 30
 ```
 - Full warm-up and first-hit analysis
 - Detailed classification (PASS/WARN/FAIL)

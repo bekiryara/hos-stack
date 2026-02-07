@@ -163,9 +163,7 @@ if (!function_exists('pazar_category_intent_schema')) {
             : $default['allowed_transaction_modes'];
 
         $defaultOfferVariant = isset($schema['default_offer_variant']) ? (string) $schema['default_offer_variant'] : $default['default_offer_variant'];
-        if ($defaultOfferVariant === '') $defaultOfferVariant = $default['default_offer_variant'];
-
-        return [
+        if ($defaultOfferVariant === '') $defaultOfferVariant = $default['default_offer_variant'];        return [
             'category_id' => (int) $categoryId,
             'resolved_from' => $resolvedFrom ? [
                 'category_id' => (int) $resolvedFrom->id,

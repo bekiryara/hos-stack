@@ -16,7 +16,7 @@ jobs:
       - name: Run conformance checks
         shell: pwsh
         run: |
-          pwsh ./ops/conformance.ps1
+          pwsh ./ops/_checks/conformance.ps1
 
       - name: Conformance Summary
         if: failure()

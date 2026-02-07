@@ -79,10 +79,10 @@ git stash push -m "WIP: before RC0 release"
 **Missing Snapshots:**
 ```powershell
 # Generate routes snapshot
-.\ops\routes_snapshot.ps1
+.\ops\ops.ps1 routes-snapshot
 
 # Generate schema snapshot
-.\ops\schema_snapshot.ps1
+.\ops\ops.ps1 schema-snapshot
 ```
 
 **VERSION File Issues:**
@@ -98,7 +98,7 @@ git stash push -m "WIP: before RC0 release"
 
 **Command:**
 ```powershell
-.\ops\release_bundle.ps1
+.\ops\ops.ps1 release
 ```
 
 **Expected Output:**
@@ -254,10 +254,10 @@ git stash push -m "WIP: before RC0 release"
 **Remediation:**
 ```powershell
 # Generate routes snapshot
-.\ops\routes_snapshot.ps1
+.\ops\ops.ps1 routes-snapshot
 
 # Generate schema snapshot
-.\ops\schema_snapshot.ps1
+.\ops\ops.ps1 schema-snapshot
 
 # Verify snapshots created
 Test-Path ops\snapshots\routes.pazar.json
@@ -282,7 +282,7 @@ Test-Path ops\snapshots\schema.pazar.sql
 - `docs/RELEASE_CHECKLIST.md` - Manual release checklist
 - `docs/runbooks/rc0_gate.md` - RC0 gate runbook
 - `ops/ops.ps1 release-check` - Release check implementation
-- `ops/release_bundle.ps1` - Release bundle generator implementation
+- `ops/_checks/release_bundle.ps1` - Release bundle generator implementation
 - `docs/RULES.md` - Rule 38: RC0 requires release_check PASS/WARN + bundle attached
 
 

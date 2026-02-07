@@ -52,7 +52,7 @@ Or in CI, set GitHub secrets:
 ### Running the Check
 
 ```powershell
-.\ops\tenant_boundary_check.ps1
+.\ops\ops.ps1 tenant-boundary
 ```
 
 ### Expected Output
@@ -155,7 +155,7 @@ docker compose logs pazar-app | Select-String "request_id"
 
 ### Routes Not Found
 
-1. **Update Snapshot**: Run `ops/routes_snapshot.ps1` to update snapshot
+1. **Update Snapshot**: Run `.\ops\ops.ps1 routes-snapshot` to update snapshot
 2. **Check Route Format**: Verify route format matches snapshot
 3. **Check Middleware**: Ensure routes have required middleware
 

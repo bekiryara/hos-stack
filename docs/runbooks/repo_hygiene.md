@@ -115,7 +115,7 @@ The `ops/ci_guard.ps1` script automatically checks:
 
 **Run locally before committing:**
 ```powershell
-.\ops\ci_guard.ps1
+.\ops\ops.ps1 ci-guard
 ```
 
 ## Repository Inventory Report
@@ -123,7 +123,7 @@ The `ops/ci_guard.ps1` script automatically checks:
 Generate a report of repository contents:
 
 ```powershell
-.\ops\repo_inventory_report.ps1
+.\ops\_legacy\legacy.ps1 repo-inventory
 ```
 
 This shows:
@@ -139,7 +139,7 @@ This shows:
 
 1. Run inventory report:
    ```powershell
-   .\ops\repo_inventory_report.ps1
+   .\ops\_legacy\legacy.ps1 repo-inventory
    ```
 
 2. Review suspicious files
@@ -161,8 +161,8 @@ This shows:
 - [ ] No secrets committed (check `git ls-files` for secrets)
 - [ ] File names are ASCII-only
 - [ ] Large files (>10MB) reviewed and justified
-- [ ] `.\ops\ci_guard.ps1` passes
-- [ ] `.\ops\repo_inventory_report.ps1` reviewed (if adding new files)
+- [ ] `.\ops\ops.ps1 ci-guard` passes
+- [ ] `.\ops\_legacy\legacy.ps1 repo-inventory` reviewed (if adding new files)
 
 ## Related Documentation
 

@@ -29,7 +29,7 @@ jobs:
 
       - name: Run Update Script
         run: |
-          pwsh -File ops/update_code_index.ps1 -AutoCommit
+          pwsh -File ops/_checks/update_code_index.ps1 -AutoCommit
 
       - name: Push Changes
         if: success()

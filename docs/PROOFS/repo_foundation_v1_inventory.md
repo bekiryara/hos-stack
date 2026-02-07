@@ -23,7 +23,7 @@
 ?? docs/REPO_LAYOUT_AZ.md
 ?? docs/runbooks/repo_hygiene.md
 ?? ops/ci_guard.ps1
-?? ops/repo_inventory_report.ps1
+?? ops/_legacy/legacy.ps1 (repo-inventory)
 ```
 
 ## Git Diff Stat

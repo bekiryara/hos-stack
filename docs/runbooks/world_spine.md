@@ -41,13 +41,13 @@ For each disabled world, the check validates:
 ### Basic Usage
 
 ```powershell
-.\ops\world_spine_check.ps1
+.\ops\ops.ps1 world-spine
 ```
 
 ### Custom Paths
 
 ```powershell
-.\ops\world_spine_check.ps1 `
+.\ops\_checks\world_spine_check.ps1 `
     -WORLD_REGISTRY_PATH "work/pazar/WORLD_REGISTRY.md" `
     -WORLDS_CONFIG_PATH "work/pazar/config/worlds.php" `
     -ROUTES_SNAPSHOT "ops/snapshots/routes.pazar.json"

@@ -21,10 +21,10 @@
 - Rentals: `work/pazar/routes/api/06_rentals.php`
 
 **Ops Scripts:**
-- Daily Ops: `ops/ops_run.ps1`
-- Ship: `ops/ops.ps1 ship`
-- Frontend Refresh: `ops/frontend_refresh.ps1`
-- Verify: `ops/verify.ps1`
+- Daily Ops: `.\ops\ops.ps1 run -Profile Prototype|Full`
+- Ship: `.\ops\ops.ps1 ship`
+- Frontend Refresh: `.\ops\ops.ps1 refresh`
+- Verify: `.\ops\ops.ps1 verify`
 
 **Documentation:**
 - Discipline: `docs/DEV_DISCIPLINE.md`
@@ -228,38 +228,38 @@
 
 ### Core Scripts (Most Important)
 
-- **Ops Run:** `ops/ops_run.ps1` - Daily ops entrypoint (Prototype/Full profiles)
+- **Ops Run:** `.\ops\ops.ps1 run` (script: `ops/ops_run.ps1`) - Daily ops entrypoint (Prototype/Full profiles)
 - **Ship:** `ops/ops.ps1 ship` - **Single publish path** to main (gates + push). Only way to publish changes.
-- **Ops Status:** `ops/ops_status.ps1` - Unified ops dashboard
-- **Verify:** `ops/verify.ps1` - Full health check
-- **Baseline Status:** `ops/baseline_status.ps1` - Baseline status check
-- **Conformance:** `ops/conformance.ps1` - Conformance checks
-- **Daily Snapshot:** `ops/daily_snapshot.ps1` - Daily evidence capture
-- **Frontend Refresh:** `ops/frontend_refresh.ps1` - Frontend refresh (restart/rebuild)
-- **Prototype V1:** `ops/prototype_v1.ps1` - Prototype/demo verification
+- **Ops Status:** `.\ops\ops.ps1 status` (script: `ops/ops_status.ps1`) - Unified ops dashboard
+- **Verify:** `.\ops\ops.ps1 verify` (script: `ops/_checks/verify.ps1`) - Full health check
+- **Baseline Status:** `.\ops\ops.ps1 baseline-status` (script: `ops/_checks/baseline_status.ps1`) - Baseline status check
+- **Conformance:** `.\ops\ops.ps1 conformance` (script: `ops/_checks/conformance.ps1`) - Conformance checks
+- **Daily Snapshot:** `.\ops\ops.ps1 daily-snapshot` (script: `ops/_tools/daily_snapshot.ps1`) - Daily evidence capture
+- **Frontend Refresh:** `.\ops\ops.ps1 refresh` (script: `ops/frontend_refresh.ps1`) - Frontend refresh (restart/rebuild)
+- **Prototype V1:** `.\ops\ops.ps1 prototype` (script: `ops/_checks/prototype_v1.ps1`) - Prototype/demo verification
 - **Demo Seed V1:** `ops/demo_seed_v1.ps1` - Idempotent demo seed for E2E tests
 
 ### Security & Governance
 
-- **Public Ready Check:** `ops/public_ready_check.ps1` - Pre-release checks
-- **Secret Scan:** `ops/secret_scan.ps1` - Security scan for secrets
-- **Security Audit:** `ops/security_audit.ps1` - Security audit
-- **Auth Security Check:** `ops/auth_security_check.ps1` - Auth security check
-- **Repo Payload Guard:** `ops/repo_payload_guard.ps1` - Repository payload guard (gate)
-- **Closeouts Size Gate:** `ops/closeouts_size_gate.ps1` - Closeouts size gate (gate)
+- **Public Ready Check:** `.\ops\ops.ps1 public-ready` (script: `ops/_checks/public_ready_check.ps1`) - Pre-release checks
+- **Secret Scan:** `.\ops\ops.ps1 secret-scan` (script: `ops/_tools/secret_scan.ps1`) - Security scan for secrets
+- **Security Audit:** `.\ops\ops.ps1 security-audit` (script: `ops/_checks/security_audit.ps1`) - Security audit
+- **Auth Security Check:** `.\ops\ops.ps1 auth-security` (script: `ops/_checks/auth_security_check.ps1`) - Auth security check
+- **Repo Payload Guard:** `.\ops\ops.ps1 repo-payload-guard` (script: `ops/_checks/repo_payload_guard.ps1`) - Repository payload guard (gate)
+- **Closeouts Size Gate:** `.\ops\ops.ps1 closeouts-size-gate` (script: `ops/_tools/closeouts_size_gate.ps1`) - Closeouts size gate (gate)
 
 ### GitHub & Sync
 
-- **Update Code Index:** `ops/update_code_index.ps1` - Auto-update CODE_INDEX.md with commit and push (`-AutoCommit -AutoPush`)
-- **GitHub Sync Safe:** `ops/github_sync_safe.ps1` - PR-based sync enforcement
-- **CI Guard:** `ops/ci_guard.ps1` - CI drift guard
-- **Repo Integrity:** `ops/repo_integrity.ps1` - Repository integrity check
+- **Update Code Index:** `.\ops\ops.ps1 update-code-index` (script: `ops/_checks/update_code_index.ps1`) - Auto-update CODE_INDEX.md with commit and push (`-AutoCommit -AutoPush`)
+- **GitHub Sync Safe:** `ops/_tools/github_sync_safe.ps1` - PR-based sync enforcement
+- **CI Guard:** `.\ops\ops.ps1 ci-guard` (script: `ops/_checks/ci_guard.ps1`) - CI drift guard
+- **Repo Integrity:** `.\ops\ops.ps1 repo-integrity` (script: `ops/_checks/repo_integrity.ps1`) - Repository integrity check
 
 ### Contract & Spine Checks
 
-- **Pazar Spine Check:** `ops/pazar_spine_check.ps1` - Pazar spine verification
-- **Product Spine Check:** `ops/product_spine_check.ps1` - Product spine check
-- **World Spine Check:** `ops/world_spine_check.ps1` - World spine check
+- **Pazar Spine Check:** `.\ops\ops.ps1 pazar-spine` (script: `ops/_checks/pazar_spine_check.ps1`) - Pazar spine verification
+- **Product Spine Check:** `.\ops\ops.ps1 product-spine` (script: `ops/_checks/product_spine_check.ps1`) - Product spine check
+- **World Spine Check:** `.\ops\ops.ps1 world-spine` (script: `ops/_checks/world_spine_check.ps1`) - World spine check
 - **Listing Contract Check:** `ops/listing_contract_check.ps1` - Listing contract verification
 - **Reservation Contract Check:** `ops/reservation_contract_check.ps1` - Reservation contract check
 - **Catalog Contract Check:** `ops/catalog_contract_check.ps1` - Catalog contract check
@@ -274,22 +274,22 @@
 
 ### Observability & Monitoring
 
-- **Observability Status:** `ops/observability_status.ps1` - Observability status
-- **Routes Snapshot:** `ops/routes_snapshot.ps1` - Routes snapshot
-- **Schema Snapshot:** `ops/schema_snapshot.ps1` - Database schema snapshot
-- **Triage:** `ops/triage.ps1` - System triage and diagnostics
-- **Doctor:** `ops/doctor.ps1` - Comprehensive system diagnostics
+- **Observability Status:** `.\ops\ops.ps1 observability-status` (script: `ops/_checks/observability_status.ps1`) - Observability status
+- **Routes Snapshot:** `.\ops\ops.ps1 routes-snapshot` (script: `ops/_checks/routes_snapshot.ps1`) - Routes snapshot
+- **Schema Snapshot:** `.\ops\ops.ps1 schema-snapshot` (script: `ops/_checks/schema_snapshot.ps1`) - Database schema snapshot
+- **Triage:** `.\ops\ops.ps1 triage` (script: `ops/_checks/triage.ps1`) - System triage and diagnostics
+- **Doctor:** `.\ops\ops.ps1 doctor` (script: `ops/_checks/doctor.ps1`) - Comprehensive system diagnostics
 
 ### Smoke Tests
 
-- **Frontend Smoke:** `ops/frontend_smoke.ps1` - Frontend smoke test (gate)
+- **Frontend Smoke:** `.\ops\ops.ps1 frontend-smoke` (script: `ops/_checks/frontend_smoke.ps1`) - Frontend smoke test (gate)
 - **Prototype Smoke:** `ops/prototype_smoke.ps1` - Prototype smoke test (gate)
 - **Prototype Flow Smoke:** `ops/prototype_flow_smoke.ps1` - Prototype flow smoke test (gate)
-- **Pazar UI Smoke:** `ops/pazar_ui_smoke.ps1` - Pazar UI smoke test
+- **Pazar UI Smoke:** `.\ops\ops.ps1 pazar-ui-smoke` (script: `ops/_checks/pazar_ui_smoke.ps1`) - Pazar UI smoke test
 - **Messaging Proxy Smoke:** `ops/messaging_proxy_smoke.ps1` - Messaging proxy smoke test
-- **Product API Smoke:** `ops/product_api_smoke.ps1` - Product API smoke test
-- **Product Spine Smoke:** `ops/product_spine_smoke.ps1` - Product spine smoke test
-- **Smoke Surface:** `ops/smoke_surface.ps1` - Smoke surface test
+- **Product API Smoke:** `.\ops\ops.ps1 product-api-smoke` (script: `ops/_checks/product_api_smoke.ps1`) - Product API smoke test
+- **Product Spine Smoke:** `.\ops\ops.ps1 product-spine-smoke` (script: `ops/_checks/product_spine_smoke.ps1`) - Product spine smoke test
+- **Smoke Surface:** `.\ops\ops.ps1 smoke-surface` (script: `ops/_checks/smoke_surface.ps1`) - Smoke surface test
 - **Smoke (canonical):** `ops/ops.ps1 smoke` - Smoke pack (world status + smoke surface)
 
 ### Ops Library (`ops/_lib/`)
@@ -307,11 +307,11 @@
 
 - **Release Check:** `ops/ops.ps1 release-check` - Release check
 - **RC0 Gate:** `ops/ops.ps1 rc0-gate` - RC0 gate (gate pack)
-- **RC0 Check:** `ops/rc0_check.ps1` - RC0 check
-- **Release Bundle:** `ops/release_bundle.ps1` - Release bundle generation
-- **Release Note:** `ops/release_note.ps1` - Release note generation
-- **Incident Bundle:** `ops/incident_bundle.ps1` - Incident bundle generation
-- **Self Audit:** `ops/self_audit.ps1` - Self audit bundle generation
+- **RC0 Check:** `.\ops\ops.ps1 rc0` (script: `ops/_checks/rc0_check.ps1`) - RC0 check
+- **Release Bundle:** `.\ops\ops.ps1 release` (script: `ops/_checks/release_bundle.ps1`) - Release bundle generation
+- **Release Note (legacy pack):** `ops/_legacy/legacy.ps1 release-note` - Release note generation
+- **Incident Bundle:** `.\ops\ops.ps1 incident-bundle` (script: `ops/_checks/incident_bundle.ps1`) - Incident bundle generation
+- **Self Audit:** `.\ops\ops.ps1 self-audit` (script: `ops/_tools/self_audit.ps1`) - Self audit bundle generation
 
 ---
 
@@ -336,15 +336,15 @@
 
 ### Infrastructure & Stack Management
 
-- **Stack Up:** `ops/stack_up.ps1` - Start stack
-- **Stack Down:** `ops/stack_down.ps1` - Stop stack
-- **HOS DB Recovery:** `ops/hos_db_recovery.ps1` - HOS database recovery
-- **HOS DB Reset Safe:** `ops/hos_db_reset_safe.ps1` - HOS database safe reset
-- **HOS DB Verify:** `ops/hos_db_verify.ps1` - HOS database verification
+- **Stack Up:** `.\ops\ops.ps1 up -StackProfile core|obs|all` - Start stack
+- **Stack Down:** `.\ops\ops.ps1 down -StackProfile core|obs|all` - Stop stack
+- **HOS DB Recovery (legacy pack):** `ops/_legacy/legacy.ps1 hos-db-recovery` - HOS database recovery
+- **HOS DB Reset Safe (legacy pack):** `ops/_legacy/legacy.ps1 hos-db-reset` - HOS database safe reset
+- **HOS DB Verify (legacy pack):** `ops/_legacy/legacy.ps1 hos-db-verify` - HOS database verification
 
 ### Governance & Guards
 
-- **Ops Drift Guard:** `ops/ops_drift_guard.ps1` - Ops drift guard
+- **Ops Drift Guard:** `ops/_checks/ops_drift_guard.ps1` - Ops drift guard
 - **Repo Governance Freeze V1:** `ops/repo_governance_freeze_v1.ps1` - Repo governance freeze
 
 ---
@@ -400,7 +400,7 @@
 - **Use environment variables** - Check `.env.example` for required vars
 - **PR-based workflow** - All changes go through PRs, never direct push to main
 - **Documentation first** - Read `docs/` before diving into code
-- **Ops scripts** - Run `ops/ops_status.ps1` to check system health
+- **Ops scripts** - Run `.\ops\ops.ps1 status` to check system health
 
 ### How to Read Code Files
 

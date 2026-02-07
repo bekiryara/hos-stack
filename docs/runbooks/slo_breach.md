@@ -2,14 +2,14 @@
 
 ## Overview
 
-This runbook provides step-by-step procedures for responding to SLO breaches detected by `ops/slo_check.ps1`.
+This runbook provides step-by-step procedures for responding to SLO breaches detected by `.\ops\ops.ps1 slo-check` (script: `ops/_checks/slo_check.ps1`).
 
 ## Detection
 
 ### Automated Detection
-Run `ops/slo_check.ps1` to check current SLO status:
+Run `.\ops\ops.ps1 slo-check` to check current SLO status:
 ```powershell
-.\ops\slo_check.ps1
+.\ops\ops.ps1 slo-check
 ```
 
 ### Interpretation
@@ -23,7 +23,7 @@ Run `ops/slo_check.ps1` to check current SLO status:
 
 1. **Check current status**:
    ```powershell
-   .\ops\slo_check.ps1
+   .\ops\ops.ps1 slo-check
    ```
 
 2. **Identify breached SLOs**:
@@ -33,14 +33,14 @@ Run `ops/slo_check.ps1` to check current SLO status:
 
 3. **Check system health**:
    ```powershell
-   .\ops\triage.ps1
+   .\ops\ops.ps1 triage
    ```
 
 ### Step 2: Evidence Collection (10 minutes)
 
 1. **Generate incident bundle**:
    ```powershell
-   .\ops\incident_bundle.ps1
+   .\ops\ops.ps1 incident-bundle
    ```
    Note the bundle path for documentation.
 
@@ -102,7 +102,7 @@ Map SLO breach to SEV level:
 
 1. **Use triage script**:
    ```powershell
-   .\ops\triage.ps1
+   .\ops\ops.ps1 triage
    ```
 
 2. **Check service logs**:
@@ -128,13 +128,13 @@ Map SLO breach to SEV level:
 
 1. **Re-run SLO check**:
    ```powershell
-   .\ops\slo_check.ps1
+   .\ops\ops.ps1 slo-check
    ```
    Must return PASS to consider resolved.
 
 2. **Verify system health**:
    ```powershell
-   .\ops\verify.ps1
+   .\ops\ops.ps1 verify
    ```
 
 3. **Monitor for 24 hours**:
@@ -161,16 +161,16 @@ Map SLO breach to SEV level:
 ### Commands
 ```powershell
 # Check SLO status
-.\ops\slo_check.ps1
+.\ops\ops.ps1 slo-check
 
 # System health check
-.\ops\triage.ps1
+.\ops\ops.ps1 triage
 
 # Generate evidence bundle
-.\ops\incident_bundle.ps1
+.\ops\ops.ps1 incident-bundle
 
 # Verify stack
-.\ops\verify.ps1
+.\ops\ops.ps1 verify
 ```
 
 ### Escalation Path

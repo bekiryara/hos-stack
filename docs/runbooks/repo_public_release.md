@@ -11,7 +11,7 @@ This runbook is referenced by `ops/public_ready_check.ps1` and is the **single s
 1) **Full baseline gates**
 
 ```powershell
-.\ops\ops_run.ps1 -Profile Full
+.\ops\ops.ps1 run -Profile Full
 ```
 
 2) **Publish (gates + push)**
@@ -29,14 +29,14 @@ This runbook is referenced by `ops/public_ready_check.ps1` and is the **single s
 `.\ops\ops.ps1 ship` is the publish entrypoint. It fails fast on:
 
 - **Required publish gates (FAIL if missing or non-zero)**
-  - `ops/update_code_index.ps1 -DryRun -Gate`
-  - `ops/verify_wp_closeouts.ps1 -Gate`
-  - `ops/secret_scan.ps1`
-  - `ops/public_ready_check.ps1`
-  - `ops/repo_payload_guard.ps1`
-  - `ops/closeouts_size_gate.ps1`
-  - `ops/conformance.ps1`
-  - `ops/frontend_smoke.ps1`
+  - `ops/_checks/update_code_index.ps1 -DryRun -Gate`
+  - `ops/_checks/verify_wp_closeouts.ps1 -Gate`
+  - `.\ops\ops.ps1 secret-scan`
+  - `.\ops\ops.ps1 public-ready`
+  - `.\ops\ops.ps1 repo-payload-guard`
+  - `.\ops\ops.ps1 closeouts-size-gate`
+  - `.\ops\ops.ps1 conformance`
+  - `.\ops\ops.ps1 frontend-smoke`
 
 - **Optional gates (SKIP if not present)**
   - `ops/prototype_smoke.ps1`
@@ -49,23 +49,23 @@ This runbook is referenced by `ops/public_ready_check.ps1` and is the **single s
 ## Common Failure Modes & Fixes
 
 - **Secrets found**
-  - Run: `.\ops\secret_scan.ps1`
+  - Run: `.\ops\ops.ps1 secret-scan`
   - Follow: `REMEDIATION_SECRETS.md`
 
 - **Repo payload guard fails (generated artifacts tracked)**
-  - Run: `.\ops\repo_payload_guard.ps1`
+  - Run: `.\ops\ops.ps1 repo-payload-guard`
   - Remove tracked generated files, add to `.gitignore`, re-commit
 
 - **Closeouts policy fails**
-  - Run: `.\ops\closeouts_rollover.ps1 -Keep 8`
+  - Run: `.\ops\_tools\closeouts_rollover.ps1 -Keep 8`
   - Ensure `docs/WP_CLOSEOUTS.md` stays within policy
 
 - **CODE_INDEX gate fails**
-  - Run: `.\ops\update_code_index.ps1`
+  - Run: `.\ops\ops.ps1 update-code-index`
   - Commit the updated `docs/CODE_INDEX.md`
 
 - **WP_CLOSEOUTS proof links drift**
-  - Run: `.\ops\verify_wp_closeouts.ps1`
+  - Run: `.\ops\ops.ps1 verify-wp-closeouts`
   - Fix missing proof/script references
 
 ---
@@ -75,8 +75,8 @@ This runbook is referenced by `ops/public_ready_check.ps1` and is the **single s
 For a public release decision, keep these outputs:
 
 ```powershell
-.\ops\public_ready_check.ps1
-.\ops\repo_payload_guard.ps1
-.\ops\closeouts_size_gate.ps1
+.\ops\ops.ps1 public-ready
+.\ops\ops.ps1 repo-payload-guard
+.\ops\ops.ps1 closeouts-size-gate
 ```
 

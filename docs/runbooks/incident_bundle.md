@@ -7,7 +7,7 @@ The incident bundle generator collects system state, logs, and configuration sna
 ## How to Run
 
 ```powershell
-.\ops\incident_bundle.ps1
+.\ops\ops.ps1 incident-bundle
 ```
 
 The script creates a timestamped folder and collects evidence automatically.
@@ -48,7 +48,7 @@ _archive/incidents/incident-20260108-143022/
 
 1. **Run the bundle generator**:
    ```powershell
-   .\ops\incident_bundle.ps1
+   .\ops\ops.ps1 incident-bundle
    ```
 
 2. **Note the bundle location** (printed at the end)
@@ -60,7 +60,7 @@ _archive/incidents/incident-20260108-143022/
    - Steps taken
    - Current status
 
-4. **Continue investigation** using `ops/triage.ps1` if needed
+4. **Continue investigation** using `.\ops\ops.ps1 triage` if needed
 
 ### After Resolution
 

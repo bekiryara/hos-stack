@@ -43,12 +43,12 @@ Audit rule: `ci_ref=true` in `ops_inventory`.
 
 Examples of what they measure:
 
-- **`ops/openapi_contract.ps1`**: OpenAPI spec exists + drift guard + endpoint probe
-- **`ops/conformance.ps1`**: architecture rules (world ownership lock, forbidden artifacts, secrets guard, docs drift)
-- **`ops/pazar_spine_check.ps1`**: marketplace spine chain (world status, catalog, integrity, listing, reservation)
-- **`ops/verify.ps1`**: stack health (containers + /health + /up + FS posture)
-- **snapshots**: `schema_snapshot.ps1`, `routes_snapshot.ps1`
-- **security posture**: `session_posture_check.ps1`, `security_audit.ps1`, `tenant_boundary_check.ps1`
+- **`.\ops\ops.ps1 openapi`** (script: `ops/_checks/openapi_contract.ps1`): OpenAPI spec exists + drift guard + endpoint probe
+- **`.\ops\ops.ps1 conformance`** (script: `ops/_checks/conformance.ps1`): architecture rules (world ownership lock, forbidden artifacts, secrets guard, docs drift)
+- **`.\ops\ops.ps1 pazar-spine`** (script: `ops/_checks/pazar_spine_check.ps1`): marketplace spine chain (world status, catalog, integrity, listing, reservation)
+- **`.\ops\ops.ps1 verify`** (script: `ops/_checks/verify.ps1`): stack health (containers + /health + /up + FS posture)
+- **snapshots**: `.\ops\ops.ps1 schema-snapshot`, `.\ops\ops.ps1 routes-snapshot`
+- **security posture**: `.\ops\ops.ps1 session-posture`, `.\ops\ops.ps1 security-audit`, `.\ops\ops.ps1 tenant-boundary`
 
 If a script is CI-referenced but looks “legacy”, it must be refactored *behind* a stable wrapper, not deleted.
 
@@ -60,10 +60,10 @@ These are for investigations and local ops work. Many are leaf scripts (nobody c
 
 Examples:
 
-- **DB ops**: `hos_db_reset_safe.ps1`, `hos_db_recovery.ps1`, `hos_db_verify.ps1`
-- **triage**: `triage.ps1`, `doctor.ps1`
+- **DB ops (legacy pack)**: `ops/_legacy/legacy.ps1 hos-db-reset`, `ops/_legacy/legacy.ps1 hos-db-recovery`, `ops/_legacy/legacy.ps1 hos-db-verify`
+- **triage**: `.\ops\ops.ps1 triage`, `.\ops\ops.ps1 doctor`
 - **frontend**: `frontend_smoke.ps1` (does real `npm ci` + `npm run build`)
-- **release helpers**: `release_note.ps1`, `release_bundle.ps1`
+- **release helpers**: `ops/_legacy/legacy.ps1 release-note`, `.\ops\ops.ps1 release`
 
 Rule of thumb:
 
@@ -80,7 +80,7 @@ Examples currently in tree:
 
 - `ops/_archive/demo_seed*.ps1` (demo seed scripts; should not be “day to day”)
 - `.\ops\ops.ps1 run -Profile Prototype|Full` (canonical verification runner; replaces legacy wrappers)
-- `ops/stack_up.ps1`, `ops/stack_down.ps1` (legacy wrappers; still **docs-referenced**. Don’t move without updating runbooks/proofs.)
+- `ops/stack_up.ps1`, `ops/stack_down.ps1` (legacy wrappers; prefer `.\ops\ops.ps1 up/down`. Don’t move without updating any external scripts/proofs.)
 
 Policy recommendation:
 

@@ -29,7 +29,7 @@ jobs:
           HOS_OIDC_CLIENT_ID: ${{ secrets.HOS_OIDC_CLIENT_ID }}
           HOS_OIDC_API_KEY: ${{ secrets.HOS_OIDC_API_KEY }}
         run: |
-          pwsh ./ops/env_contract.ps1
+          pwsh ./ops/_checks/env_contract.ps1
 
       - name: Upload logs on failure
         if: failure()

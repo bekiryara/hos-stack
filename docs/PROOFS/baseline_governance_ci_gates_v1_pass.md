@@ -94,11 +94,11 @@ PASS: All graveyard files comply with policy
 
 **Created:**
 - `docs/RELEASES/PLAN.md` - Release planning guide
-- `ops/release_note.ps1` - Release note generator script
+- `ops/_legacy/legacy.ps1 release-note` - Release note generator command
 
 **Validation:**
 ```powershell
-.\ops\release_note.ps1 -Tag "BASELINE-2026-01-15"
+.\ops\_legacy\legacy.ps1 release-note -Tag "BASELINE-2026-01-15"
 Test-Path "RELEASE_NOTE.md"
 ```
 
@@ -122,7 +122,7 @@ Test-Path "RELEASE_NOTE.md"
 .\ops\conformance.ps1
 
 # 5. Release note generation (test)
-.\ops\release_note.ps1 -Tag "BASELINE-2026-01-15"
+.\ops\_legacy\legacy.ps1 release-note -Tag "BASELINE-2026-01-15"
 Remove-Item "RELEASE_NOTE.md" -ErrorAction SilentlyContinue
 ```
 
@@ -150,7 +150,7 @@ Remove-Item "RELEASE_NOTE.md" -ErrorAction SilentlyContinue
 4. `_graveyard/POLICY.md` - Graveyard policy document
 5. `ops/graveyard_check.ps1` - Graveyard policy enforcement script
 6. `docs/RELEASES/PLAN.md` - Release planning guide
-7. `ops/release_note.ps1` - Release note generator script
+7. `ops/_legacy/legacy.ps1 release-note` - Release note generator command
 
 ### Updated Files
 

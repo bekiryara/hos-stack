@@ -30,7 +30,7 @@
 
 ### (2) Status / Audit
 ```powershell
-.\ops\ops_status.ps1
+.\ops\ops.ps1 status
 ```
 
 **When to use:**
@@ -78,8 +78,8 @@
 
 ### (4) Frontend Apply
 ```powershell
-.\ops\frontend_refresh.ps1          # Restart (default)
-.\ops\frontend_refresh.ps1 -Build   # Rebuild
+.\ops\ops.ps1 refresh          # Restart (default)
+.\ops\ops.ps1 refresh -Build   # Rebuild
 ```
 
 **When to use:**
@@ -102,12 +102,12 @@
 
 | Scenario | Command | Notes |
 |----------|---------|-------|
-| UI change not showing | `.\ops\frontend_refresh.ps1` + Ctrl+F5 | Default restart is usually sufficient |
-| New dependencies or build assets | `.\ops\frontend_refresh.ps1 -Build` | Full rebuild required |
-| Gate fails | `.\ops\ops_status.ps1` + read FAIL section | Review output for specific failures |
+| UI change not showing | `.\ops\ops.ps1 refresh` + Ctrl+F5 | Default restart is usually sufficient |
+| New dependencies or build assets | `.\ops\ops.ps1 refresh -Build` | Full rebuild required |
+| Gate fails | `.\ops\ops.ps1 status` + read FAIL section | Review output for specific failures |
 | Before demo/presentation | `.\ops\ops.ps1 prototype` | Verify environment is ready |
 | Ready to publish | `.\ops\ops.ps1 ship` | Runs all gates before publishing |
-| General health check | `.\ops\ops_status.ps1` | Comprehensive status overview |
+| General health check | `.\ops\ops.ps1 status` | Comprehensive status overview |
 
 ---
 
@@ -115,119 +115,20 @@
 
 **IMPORTANT: DO NOT RUN DIRECTLY unless instructed by a senior engineer or specific troubleshooting guide.**
 
-These scripts are called by the Golden 4 Commands or used for specific diagnostic purposes.
+Leaf scripts now live under these folders:
 
-### Contract Checks
-*These verify API contracts and should only be run as part of gates or troubleshooting.*
+- **`ops/_checks/`**: gates + checks (contract, security, snapshots, smoke)
+- **`ops/_tools/`**: tools + reporting (audit, snapshots, correlation, hygiene)
+- **`ops/_legacy/`**: legacy pack (manual, occasional)
+- **`ops/_extras/`**: prototypes + proofs + packs
 
-- `account_portal_contract_check.ps1` - Account portal API contract verification
-- `account_portal_list_contract_check.ps1` - Account portal list API contract
-- `account_portal_read_check.ps1` - Account portal read operations
-- `boundary_contract_check.ps1` - Boundary contract verification
-- `catalog_contract_check.ps1` - Catalog API contract
-- `catalog_integrity_check.ps1` - Catalog integrity verification
-- `core_persona_contract_check.ps1` - Core persona contract
-- `listing_contract_check.ps1` - Listing API contract
-- `messaging_contract_check.ps1` - Messaging API contract
-- `messaging_write_contract_check.ps1` - Messaging write contract
-- `offer_contract_check.ps1` - Offer API contract
-- `order_contract_check.ps1` - Order API contract
-- `product_contract_check.ps1` - Product API contract
-- `rental_contract_check.ps1` - Rental API contract
-- `reservation_contract_check.ps1` - Reservation API contract
-- `tenant_scope_contract_check.ps1` - Tenant scope contract
+**Discoverability (canonical):**
 
-### Gates
-*These are quality gates that should be run as part of the publish flow.*
+```powershell
+.\ops\_extras\tools\ops_inventory.ps1
+```
 
-- `ci_guard.ps1` - CI drift guard (forbidden files, secrets, non-ASCII paths)
-- `conformance.ps1` - Architecture conformance gate
-- `public_ready_check.ps1` - Public release readiness check
-- `rc0_check.ps1` - RC0 release readiness gate
-- RC0 Gate: `.\ops\ops.ps1 rc0-gate` - RC0 release gate pack (deterministic PASS/WARN/FAIL)
-- Release Check: `.\ops\ops.ps1 release-check` - RC0 release checklist enforcement
-
-### Utilities
-*These are utility scripts for specific operations.*
-
-- `baseline_freeze_v1.ps1` - Baseline freeze control
-- `baseline_status.ps1` - Read-only baseline status check
-- `closeouts_rollover.ps1` - Closeouts rollover
-- `closeouts_size_gate.ps1` - Closeouts size gate
-- `daily_snapshot.ps1` - Daily evidence snapshot
-- `demo_seed.ps1` - Demo seed script
-- `demo_seed_root_listings.ps1` - Demo seed root listings
-- `demo_seed_showcase.ps1` - Demo seed showcase
-- `demo_seed_transaction_modes.ps1` - Demo seed transaction modes
-- `doctor.ps1` - Repository health doctor
-- `drift_monitor.ps1` - Drift detection monitor
-- `ensure_demo_membership.ps1` - Ensure demo membership
-- `ensure_product_test_auth.ps1` - Ensure product test auth
-- `env_contract.ps1` - Environment & secrets contract check
-- `frontend_smoke.ps1` - Frontend smoke test
-- `github_sync_safe.ps1` - GitHub sync safe (PR-based flow)
-- `graveyard_check.ps1` - Enforce _graveyard/ policy
-- `hos_db_recovery.ps1` - HOS-DB corruption recovery
-- `hos_db_reset_safe.ps1` - HOS-DB dev reset + core restore
-- `hos_db_verify.ps1` - Post-reset verification
-- `idempotency_coverage_check.ps1` - Idempotency coverage check
-- `incident_bundle.ps1` - Incident bundle generator
-- `listing_discovery_proof.ps1` - Listing discovery proof
-- `messaging_journey_check.ps1` - Messaging journey check
-- `messaging_proxy_smoke.ps1` - Messaging proxy smoke test
-- `observability_status.ps1` - Observability status check
-- `openapi_contract.ps1` - OpenAPI contract check
-- `ops_drift_guard.ps1` - Ops drift guard
-- `pazar_route_surface_diag.ps1` - Route surface diagnostic
-- `pazar_spine_check.ps1` - Pazar spine check
-- `pazar_storage_posture.ps1` - Pazar storage posture
-- `pazar_ui_smoke.ps1` - UI smoke test + logging regression
-- `perf_baseline.ps1` - Performance baseline
-- `persona_scope_check.ps1` - Persona & scope check
-- `product_api_crud_e2e.ps1` - Product API CRUD E2E gate
-- `product_api_smoke.ps1` - Product API smoke gate
-- `product_e2e.ps1` - Product API E2E gate
-- `product_e2e_contract.ps1` - Product API E2E contract gate
-- `product_mvp_check.ps1` - Product MVP loop E2E check
-- `product_perf_guard.ps1` - Product API performance guardrail
-- `product_read_path_check.ps1` - Product read path check
-- `product_spine_check.ps1` - Product spine governance gate
-- `product_spine_e2e_check.ps1` - Product spine E2E self-audit gate
-- `product_spine_governance.ps1` - Product spine governance gate
-- `product_spine_smoke.ps1` - Product spine E2E smoke test
-- `product_write_spine_check.ps1` - Product write spine check
-- `read_snapshot_check.ps1` - Read snapshot check
-- `release_bundle.ps1` - RC0 release bundle generator
-- `release_note.ps1` - Generate release note from CHANGELOG
-- `repo_governance_freeze_v1.ps1` - Repo governance freeze
-- `repo_integrity.ps1` - Repository integrity check
-- `repo_inventory_report.ps1` - Repository inventory report
-- `repo_payload_audit.ps1` - Repo payload audit
-- `repo_payload_guard.ps1` - Repo payload guard
-- `request_trace.ps1` - Request ID log correlation
-- `routes_snapshot.ps1` - Contract gate (route snapshot)
-- `schema_snapshot.ps1` - DB contract gate (schema snapshot)
-- `secret_scan.ps1` - Secret scan script
-- `security_audit.ps1` - Route/middleware security audit
-- `self_audit.ps1` - Self-audit orchestrator
-- `session_posture_check.ps1` - Identity & session posture check
-- `slo_check.ps1` - SLO check script
-- `smoke.ps1` - Genesis world status smoke test
-- `smoke_surface.ps1` - Smoke surface gate
-- `stack_down.ps1` - Stack shutdown wrapper
-- `stack_up.ps1` - Stack bring-up wrapper
-- `start_ngrok_backend.ps1` - ngrok backend public access
-- `storage_permissions_check.ps1` - Storage permissions check
-- `storage_posture_check.ps1` - Storage posture check
-- `storage_write_check.ps1` - Storage write check
-- `tenant_boundary_check.ps1` - Tenant boundary isolation check
-- `triage.ps1` - Incident triage script
-- `update_code_index.ps1` - Update code index
-- `verify.ps1` - Stack health verification
-- `verify_wp_closeouts.ps1` - WP_CLOSEOUTS.md verification
-- `world_spine_check.ps1` - World spine governance check
-- `world_status_check.ps1` - World status check script
-- `write_snapshot_check.ps1` - Write snapshot check
+**Rule:** Run leaf scripts via `.\ops\ops.ps1 <command>` whenever possible (see `.\ops\ops.ps1 help`). If a specific script is not exposed as a command, use the inventory output to find its exact path under `ops/_checks` or `ops/_tools`.
 
 ---
 

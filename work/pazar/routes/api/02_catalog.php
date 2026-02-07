@@ -189,7 +189,5 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
 
     $schema = pazar_category_intent_schema((int) $id);
     // Additive: include the requested category slug for client convenience
-    $schema['category_slug'] = (string) $category->slug;
-
-    return response()->json($schema);
+    $schema['category_slug'] = (string) $category->slug;    return response()->json($schema);
 });

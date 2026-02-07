@@ -6,7 +6,7 @@
 
 ## Scope
 
-- Created `ops/pazar_route_surface_diag.ps1` - read-only diagnostic script that collects evidence about why route count is abnormally low
+- Created `ops/_legacy/legacy.ps1 route-diag` - read-only diagnostic command that collects evidence about why route count is abnormally low
 - Script checks: container identity/working dir, routes sources presence, route cache status, raw route list output, mount/code reality
 - Produces root cause hypothesis (ranked) and non-destructive remediation options
 - No fixes applied in this pack
@@ -14,7 +14,7 @@
 ## Files Changed
 
 **Created:**
-- `ops/pazar_route_surface_diag.ps1` - Route surface diagnostic script (read-only)
+- `ops/_legacy/legacy.ps1 route-diag` - Route surface diagnostic command (read-only)
 
 **Documentation:**
 - `docs/PROOFS/pazar_route_surface_diag.md` - This proof document
@@ -315,7 +315,7 @@ Findings:
 ### 1) Run Diagnostic Script
 
 ```powershell
-.\ops\pazar_route_surface_diag.ps1
+.\ops\_legacy\legacy.ps1 route-diag
 ```
 
 **Expected:**

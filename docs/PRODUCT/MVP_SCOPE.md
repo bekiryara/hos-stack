@@ -193,17 +193,17 @@
 
 | Ops Gate | Status | Required for MVP-1 | Required for MVP-2 |
 |----------|--------|-------------------|-------------------|
-| `ops/verify.ps1` | PASS | Yes | Yes |
-| `ops/conformance.ps1` | PASS | Yes | Yes |
-| `ops/world_spine_check.ps1` | PASS | Yes | Yes |
-| `ops/routes_snapshot.ps1` | PASS/WARN | Yes | Yes (PASS) |
-| `ops/schema_snapshot.ps1` | PASS | Yes | Yes |
-| `ops/env_contract.ps1` | PASS | No | Yes |
-| `ops/auth_security_check.ps1` | PASS | Yes | Yes |
-| `ops/tenant_boundary_check.ps1` | PASS/WARN | Yes | Yes (PASS) |
-| `ops/session_posture_check.ps1` | PASS/WARN | No | Yes (PASS/WARN) |
-| `ops/error_contract_check.ps1` | PASS | No | Yes |
-| `ops/observability_status` | PASS/WARN | No | Yes (WARN acceptable) |
+| `.\ops\ops.ps1 verify` | PASS | Yes | Yes |
+| `.\ops\ops.ps1 conformance` | PASS | Yes | Yes |
+| `.\ops\ops.ps1 world-spine` | PASS | Yes | Yes |
+| `.\ops\ops.ps1 routes-snapshot` | PASS/WARN | Yes | Yes (PASS) |
+| `.\ops\ops.ps1 schema-snapshot` | PASS | Yes | Yes |
+| `.\ops\ops.ps1 env-contract` | PASS | No | Yes |
+| `.\ops\ops.ps1 auth-security` | PASS | Yes | Yes |
+| `.\ops\ops.ps1 tenant-boundary` | PASS/WARN | Yes | Yes (PASS) |
+| `.\ops\ops.ps1 session-posture` | PASS/WARN | No | Yes (PASS/WARN) |
+| `.\ops\ops.ps1 error-contract` | PASS | No | Yes |
+| `.\ops\ops.ps1 observability-status` | PASS/WARN | No | Yes (WARN acceptable) |
 
 ## Success Criteria
 

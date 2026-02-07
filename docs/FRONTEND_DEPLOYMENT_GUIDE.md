@@ -33,7 +33,7 @@ git push origin main
 
 **Backend'i Aç:**
 ```powershell
-.\ops\start_ngrok_backend.ps1
+.\ops\_legacy\legacy.ps1 ngrok-backend
 ```
 
 **Çıktı:**

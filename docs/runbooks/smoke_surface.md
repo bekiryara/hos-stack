@@ -2,7 +2,7 @@
 
 **Purpose**: Validates critical surfaces don't return 500/regression errors. Ensures RC0 is truly "release-safe" by catching Monolog permission errors and other critical failures before release.
 
-**Script**: `ops/smoke_surface.ps1`
+**Canonical command**: `.\ops\ops.ps1 smoke-surface` (script: `ops/_checks/smoke_surface.ps1`)
 
 ## What It Checks
 
@@ -17,19 +17,19 @@
 ### Local (Interactive)
 
 ```powershell
-.\ops\smoke_surface.ps1
+.\ops\ops.ps1 smoke-surface
 ```
 
 ### With Custom Base URL
 
 ```powershell
-.\ops\smoke_surface.ps1 -BaseUrl "http://localhost:8080"
+.\ops\_checks\smoke_surface.ps1 -BaseUrl "http://localhost:8080"
 ```
 
 ### With Prometheus URL
 
 ```powershell
-.\ops\smoke_surface.ps1 -BaseUrl "http://localhost:8080" -PrometheusUrl "http://localhost:9090"
+.\ops\_checks\smoke_surface.ps1 -BaseUrl "http://localhost:8080" -PrometheusUrl "http://localhost:9090"
 ```
 
 ### CI (Automated)
@@ -243,13 +243,13 @@ If Smoke Surface Gate fails in CI:
 1. Check PR description for Pazar code changes
 2. Verify Docker stack is running and healthy
 3. Check for Monolog permission errors (most common)
-4. Run `.\ops\smoke_surface.ps1` locally to reproduce
+4. Run `.\ops\ops.ps1 smoke-surface` locally to reproduce
 5. Fix issues (storage permissions, error contract, etc.)
 6. Re-run CI check
 
 If Monolog permission error persists:
-1. Generate incident bundle: `.\ops\incident_bundle.ps1`
-2. Check storage permissions: `.\ops\storage_permissions_check.ps1`
+1. Generate incident bundle: `.\ops\ops.ps1 incident-bundle`
+2. Check storage permissions: `.\ops\ops.ps1 storage-permissions`
 3. Review `work/pazar/docker/docker-entrypoint.sh`
 4. Verify `docker-compose.yml` named volumes configuration
 5. Fix permissions and restart stack

@@ -28,7 +28,7 @@ This document describes when to use hard refresh vs container rebuild for fronte
 - Changes don't appear after hard refresh
 
 **Steps:**
-1. Run: `.\ops\frontend_refresh.ps1 -Build`
+1. Run: `.\ops\ops.ps1 refresh -Build`
 2. Wait for build to complete
 3. Open browser and hard refresh (Ctrl+Shift+R)
 
@@ -40,7 +40,7 @@ This document describes when to use hard refresh vs container rebuild for fronte
 - Applying environment variable changes (no rebuild needed)
 
 **Steps:**
-1. Run: `.\ops\frontend_refresh.ps1` (default: restart only)
+1. Run: `.\ops\ops.ps1 refresh` (default: restart only)
 2. Open browser and hard refresh
 
 ## When to Restart Core Services
@@ -59,8 +59,8 @@ This document describes when to use hard refresh vs container rebuild for fronte
 | Change Type | Action | Command |
 |------------|--------|---------|
 | UI text/layout (dev server) | Hard refresh | `Ctrl+Shift+R` in browser |
-| UI text/layout (Docker) | Restart container | `.\ops\frontend_refresh.ps1` |
-| Build config / dependencies | Rebuild container | `.\ops\frontend_refresh.ps1 -Build` |
+| UI text/layout (Docker) | Restart container | `.\ops\ops.ps1 refresh` |
+| Build config / dependencies | Rebuild container | `.\ops\ops.ps1 refresh -Build` |
 | API contracts | Restart services | `docker compose restart <service>` |
 
 ## Troubleshooting
@@ -69,7 +69,7 @@ This document describes when to use hard refresh vs container rebuild for fronte
 1. Check browser console for errors
 2. Clear browser cache completely
 3. Try incognito/private mode
-4. Rebuild container: `.\ops\frontend_refresh.ps1 -Build`
+4. Rebuild container: `.\ops\ops.ps1 refresh -Build`
 
 **Container rebuild fails:**
 1. Check Docker logs: `docker compose logs <service>`

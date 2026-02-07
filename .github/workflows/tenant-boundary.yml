@@ -31,7 +31,7 @@ jobs:
           TENANT_A_SLUG: ${{ secrets.TENANT_A_SLUG }}
           TENANT_B_SLUG: ${{ secrets.TENANT_B_SLUG }}
         run: |
-          pwsh ./ops/tenant_boundary_check.ps1
+          pwsh ./ops/_checks/tenant_boundary_check.ps1
 
       - name: Upload logs on failure
         if: failure()

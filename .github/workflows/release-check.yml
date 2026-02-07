@@ -33,7 +33,7 @@ jobs:
         shell: pwsh
         run: |
           # Generate release bundle for evidence
-          pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/release_bundle.ps1
+          pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/ops.ps1 release -Ci
 
       - name: Upload release bundle artifact
         if: always()
@@ -69,7 +69,7 @@ jobs:
           echo "All release prerequisites met. RC0 release is ready."
           echo "Next steps:"
           echo "  1. Review release bundle artifact"
-          echo "  2. Generate release bundle: .\ops\release_bundle.ps1"
+          echo "  2. Generate release bundle: .\ops\ops.ps1 release -Ci"
           echo "  3. Create git tag: git tag -a v<VERSION> -m \"Release v<VERSION>\""
           echo "  4. Push tag: git push origin v<VERSION>"
 

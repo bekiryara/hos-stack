@@ -6,10 +6,12 @@ Reality lock:
 - **World**: Pazar service world is `marketplace`
 - **Listings API**: `/api/v1/listings` (NOT world-prefixed listing paths)
 
-**Scripts**: 
-- `ops/product_spine_check.ps1` - Wrapper gate (world governance + listings read-path + smoke)
-- `ops/product_read_path_check.ps1` - Read-path surface (`GET /api/v1/listings`)
-- `ops/product_api_smoke.ps1` - Create → publish → show (store scope)
+> Note: Some older sample outputs may still show world-prefixed paths like `/api/v1/marketplace/listings`. Treat that as legacy wording; current reality is `/api/v1/listings`.
+
+**Canonical commands**:
+- `.\ops\ops.ps1 product-spine` (script: `ops/_checks/product_spine_check.ps1`) - Wrapper gate (world governance + listings read-path + smoke)
+- `.\ops\ops.ps1 product-read-path` (script: `ops/_checks/product_read_path_check.ps1`) - Read-path surface (`GET /api/v1/listings`)
+- `.\ops\ops.ps1 product-api-smoke` (script: `ops/_checks/product_api_smoke.ps1`) - Create → publish → show (store scope)
 
 ## What It Checks
 
@@ -27,7 +29,7 @@ Reality lock:
 ### Local (Interactive)
 
 ```powershell
-.\ops\product_spine_check.ps1
+.\ops\ops.ps1 product-spine
 ```
 
 ### CI (Automated)
@@ -95,7 +97,7 @@ Note: Some checks were skipped or inconclusive. Generate routes snapshot for ful
 
 **Exit Code**: 2
 
-**Remediation**: Run `ops/routes_snapshot.ps1` to generate routes snapshot.
+**Remediation**: Run `.\ops\ops.ps1 routes-snapshot` to generate routes snapshot.
 
 ### FAIL
 
@@ -121,11 +123,11 @@ Remediation:
 **Remediation**:
 1. Check `work/pazar/routes/api.php` for missing routes
 2. Ensure routes are under `auth.any + resolve.tenant + tenant.user` middleware
-3. Run `ops/routes_snapshot.ps1` to regenerate snapshot
+3. Run `.\ops\ops.ps1 routes-snapshot` to regenerate snapshot
 
 ## Product Spine E2E Smoke Test
 
-The `ops/product_spine_smoke.ps1` script provides a comprehensive end-to-end smoke test for the Product API spine across marketplace world.
+The Product spine smoke test is exposed via `.\ops\ops.ps1 product-spine-smoke` (script: `ops/_checks/product_spine_smoke.ps1`). It provides a comprehensive end-to-end smoke test for the Product API spine across marketplace world.
 
 ### Purpose
 
@@ -138,7 +140,7 @@ Validates:
 
 **Basic (unauthorized checks only):**
 ```powershell
-.\ops\product_spine_smoke.ps1
+.\ops\ops.ps1 product-spine-smoke
 ```
 
 **With authentication (full E2E):**
@@ -146,14 +148,14 @@ Validates:
 $env:PRODUCT_TEST_EMAIL = "test@example.com"
 $env:PRODUCT_TEST_PASSWORD = "password123"
 $env:PRODUCT_TEST_TENANT_ID = "tenant-a-uuid"
-.\ops\product_spine_smoke.ps1
+.\ops\ops.ps1 product-spine-smoke
 ```
 
 **Or with bearer token:**
 ```powershell
 $env:PRODUCT_TEST_TOKEN = "your-bearer-token"
 $env:PRODUCT_TEST_TENANT_ID = "tenant-a-uuid"
-.\ops\product_spine_smoke.ps1
+.\ops\ops.ps1 product-spine-smoke
 ```
 
 ### Required Environment Variables

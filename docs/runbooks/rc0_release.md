@@ -41,14 +41,14 @@ RC0 represents the minimum quality bar for a release candidate:
 
 ```powershell
 # Run RC0 check
-.\ops\rc0_check.ps1
+.\ops\ops.ps1 rc0
 ```
 
 ### With CI Flag
 
 ```powershell
 # Run with CI flag (for CI-like behavior)
-.\ops\rc0_check.ps1 -Ci
+.\ops\ops.ps1 rc0 -Ci
 ```
 
 ### Environment Variables
@@ -90,7 +90,7 @@ After running RC0 check, create a release bundle for documentation:
 
 ```powershell
 # Generate RC0 release bundle
-.\ops\release_bundle.ps1
+.\ops\ops.ps1 release
 ```
 
 The bundle will be created at: `_archive/releases/rc0-YYYYMMDD-HHMMSS/`
@@ -154,8 +154,8 @@ See `.github/workflows/rc0-check.yml` for details.
 
 ## Release Process
 
-1. Run `.\ops\rc0_check.ps1` locally
-2. If PASS/WARN, proceed to create release bundle: `.\ops\release_bundle.ps1`
+1. Run `.\ops\ops.ps1 rc0` locally
+2. If PASS/WARN, proceed to create release bundle: `.\ops\ops.ps1 release`
 3. Review bundle contents, especially `rc0_check.txt` and `release_note.md`
 4. Update `release_note.md` with actual results
 5. If all checks pass, proceed with release

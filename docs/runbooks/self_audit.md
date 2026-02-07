@@ -14,7 +14,7 @@ The self-audit system provides:
 ### Basic Usage
 
 ```powershell
-.\ops\self_audit.ps1
+.\ops\ops.ps1 self-audit
 ```
 
 **Expected output:**
@@ -63,7 +63,7 @@ AUDIT_OVERALL=PASS
 ### With Ops Status Integration
 
 ```powershell
-.\ops\ops_status.ps1 -RecordAudit
+.\ops\ops.ps1 status -RecordAudit
 ```
 
 This runs ops status checks and then automatically records an audit.
@@ -73,7 +73,7 @@ This runs ops status checks and then automatically records an audit.
 ### Basic Usage (compare with previous audit)
 
 ```powershell
-.\ops\drift_monitor.ps1
+.\ops\_legacy\legacy.ps1 drift-monitor
 ```
 
 This automatically finds the latest audit and compares it with the previous one.
@@ -81,7 +81,7 @@ This automatically finds the latest audit and compares it with the previous one.
 ### Compare Specific Audits
 
 ```powershell
-.\ops\drift_monitor.ps1 -CurrentPath "_archive\audits\audit-20260111-120000" -BaselinePath "_archive\audits\audit-20260110-120000"
+.\ops\_legacy\legacy.ps1 drift-monitor -CurrentPath "_archive\audits\audit-20260111-120000" -BaselinePath "_archive\audits\audit-20260110-120000"
 ```
 
 **Expected output:**
@@ -178,10 +178,10 @@ AUDIT_PATH=_archive\audits\audit-20260111-120000
 
 ```powershell
 # Run self-audit
-.\ops\self_audit.ps1
+.\ops\ops.ps1 self-audit
 
 # Check for drift
-.\ops\drift_monitor.ps1
+.\ops\_legacy\legacy.ps1 drift-monitor
 
 # Review drift_report.md if DRIFT_DETECTED
 ```
@@ -190,19 +190,19 @@ AUDIT_PATH=_archive\audits\audit-20260111-120000
 
 ```powershell
 # Run audit before creating PR
-.\ops\self_audit.ps1
+.\ops\ops.ps1 self-audit
 
 # Capture AUDIT_PATH for PR description
 # Run drift_monitor to generate drift_report.md
-.\ops\drift_monitor.ps1
+.\ops\_legacy\legacy.ps1 drift-monitor
 ```
 
 ### CI Integration
 
 ```powershell
 # In CI pipeline
-.\ops\self_audit.ps1
-.\ops\drift_monitor.ps1
+.\ops\ops.ps1 self-audit
+.\ops\_legacy\legacy.ps1 drift-monitor
 
 # Upload _archive/audits/ as CI artifact
 ```

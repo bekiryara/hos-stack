@@ -68,7 +68,7 @@ This document provides proof that the repository has been hardened to world stan
 ### ✅ C) Cleanup & Hygiene
 
 **Completed:**
-- ✅ **Repository Inventory Report** - Created `ops/repo_inventory_report.ps1`:
+- ✅ **Repository Inventory Report** - Created legacy command `ops/_legacy/legacy.ps1 repo-inventory`:
   - Lists largest 30 files (MB)
   - Lists files that shouldn't be in root
   - Lists node_modules/vendor in wrong places
@@ -113,7 +113,7 @@ Consider moving to _archive/ or _graveyard/
 ### Repository Inventory Report
 
 ```powershell
-.\ops\repo_inventory_report.ps1
+.\ops\_legacy\legacy.ps1 repo-inventory
 ```
 
 **Result:** Report generated successfully
@@ -137,7 +137,7 @@ Shows:
 
 **Operations:**
 - `ops/ci_guard.ps1` - CI drift guard script
-- `ops/repo_inventory_report.ps1` - Repository inventory report
+- `ops/_legacy/legacy.ps1 repo-inventory` - Repository inventory report
 
 **GitHub:**
 - `.github/ISSUE_TEMPLATE/bug_report.md` - Bug report template
@@ -231,7 +231,7 @@ git status --porcelain
 .\ops\ci_guard.ps1
 
 # Repository Inventory
-.\ops\repo_inventory_report.ps1
+.\ops\_legacy\legacy.ps1 repo-inventory
 
 # Verify
 .\ops\verify.ps1

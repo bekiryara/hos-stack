@@ -150,6 +150,28 @@ function Invoke-OpsCheckFromRegistry {
     $notes = ""
     $blocking = $CheckDef.Blocking
 
+    # Compatibility: scripts moved under ops/_checks and ops/_tools.
+    # If registry still points to .\ops\<name>.ps1, auto-resolve to new location.
+    if ($scriptPath -and -not $isInline) {
+        try {
+            if (-not (Test-Path $scriptPath)) {
+                $leaf = Split-Path -Leaf $scriptPath
+                $candidates = @(
+                    (".\\ops\\_checks\\$leaf"),
+                    (".\\ops\\_tools\\$leaf")
+                )
+                foreach ($cand in $candidates) {
+                    if (Test-Path $cand) {
+                        $scriptPath = $cand
+                        break
+                    }
+                }
+            }
+        } catch {
+            # Best-effort only; fall through to normal handling
+        }
+    }
+
     # Registry-only entries: listed for drift guard discoverability, not executed in ops_status.
     if ($isRegistryOnly) {
         # Keep these in the registry for ops_drift_guard, but do not show them in the dashboard

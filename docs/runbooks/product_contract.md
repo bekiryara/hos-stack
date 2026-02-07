@@ -18,7 +18,7 @@ This runbook describes the **current** contract checks for marketplace listings.
 ## How to run
 
 ```powershell
-.\ops\product_contract.ps1
-.\ops\product_contract_check.ps1
+.\ops\ops.ps1 product-contract
+.\ops\ops.ps1 product-contract-check
 ```
 

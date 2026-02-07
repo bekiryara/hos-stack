@@ -28,6 +28,10 @@ param(
   # Pass-through for CI-aware runners
   [switch]$Ci,
 
+  # Pass-through for ops_status.ps1
+  [switch]$RecordAudit,
+  [switch]$ReleaseBundle,
+
   # Pass-through for frontend_refresh.ps1
   [switch]$Build,
 
@@ -38,6 +42,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$checksDir = Join-Path $scriptDir "_checks"
+$toolsDir = Join-Path $scriptDir "_tools"
 if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") { . "${scriptDir}\_lib\ops_exit.ps1"; Initialize-OpsExit }
 if (-not (Get-Command Invoke-OpsExit -ErrorAction SilentlyContinue)) {
   function Invoke-OpsExit { param([int]$Code = 1) exit $Code }
@@ -80,12 +86,48 @@ function Show-Help {
   Write-Host "  messaging  Messaging contract (messaging_contract_check.ps1)" -ForegroundColor White
   Write-Host "  rc0-gate   RC0 gate" -ForegroundColor White
   Write-Host "  status-safe Run ops status in child process" -ForegroundColor White
-  Write-Host "  env-preflight Tool: node/npm/docker preflight (env_preflight.ps1)" -ForegroundColor White
-  Write-Host "  release-note Tool: generate RELEASE_NOTE.md from CHANGELOG (release_note.ps1)" -ForegroundColor White
-  Write-Host "  repo-inventory Tool: repository inventory report (repo_inventory_report.ps1)" -ForegroundColor White
-  Write-Host "  ngrok-backend Tool: expose backend via ngrok (start_ngrok_backend.ps1)" -ForegroundColor White
-  Write-Host "  route-diag Tool: pazar route surface diagnostic (pazar_route_surface_diag.ps1)" -ForegroundColor White
-  Write-Host "  perf-baseline Tool: perf baseline runner (perf_baseline.ps1)" -ForegroundColor White
+  Write-Host ""
+  Write-Host "Common checks (single-entry):" -ForegroundColor Yellow
+  Write-Host "  env-contract     Environment contract (env_contract.ps1)" -ForegroundColor White
+  Write-Host "  security-audit   Security audit (security_audit.ps1)" -ForegroundColor White
+  Write-Host "  routes-snapshot  Routes snapshot contract (routes_snapshot.ps1)" -ForegroundColor White
+  Write-Host "  schema-snapshot  Schema snapshot contract (schema_snapshot.ps1)" -ForegroundColor White
+  Write-Host "  error-contract   Error contract check (error_contract_check.ps1)" -ForegroundColor White
+  Write-Host "  auth-security    Auth security check (auth_security_check.ps1)" -ForegroundColor White
+  Write-Host "  tenant-boundary  Tenant boundary isolation (tenant_boundary_check.ps1)" -ForegroundColor White
+  Write-Host "  session-posture  Session/cookie posture (session_posture_check.ps1)" -ForegroundColor White
+  Write-Host "  world-spine      World spine governance (world_spine_check.ps1)" -ForegroundColor White
+  Write-Host "  incident-bundle  Incident bundle evidence pack" -ForegroundColor White
+  Write-Host "  ci-guard         CI drift guard (ci_guard.ps1)" -ForegroundColor White
+  Write-Host "  graveyard-check  Graveyard policy (graveyard_check.ps1)" -ForegroundColor White
+  Write-Host "  repo-integrity   Repo integrity check (repo_integrity.ps1)" -ForegroundColor White
+  Write-Host "  baseline-status  Baseline status check (baseline_status.ps1)" -ForegroundColor White
+  Write-Host "  triage           Incident triage (triage.ps1)" -ForegroundColor White
+  Write-Host "  frontend-smoke   Frontend smoke (frontend_smoke.ps1)" -ForegroundColor White
+  Write-Host "  pazar-ui-smoke   Pazar UI smoke (pazar_ui_smoke.ps1)" -ForegroundColor White
+  Write-Host "  smoke-surface    Smoke surface gate (smoke_surface.ps1)" -ForegroundColor White
+  Write-Host "  secret-scan      Secret scan (secret_scan.ps1)" -ForegroundColor White
+  Write-Host "  repo-payload-guard Repo payload guard (repo_payload_guard.ps1)" -ForegroundColor White
+  Write-Host "  update-code-index Update CODE_INDEX (update_code_index.ps1)" -ForegroundColor White
+  Write-Host "  self-audit       Self-audit orchestrator (self_audit.ps1)" -ForegroundColor White
+  Write-Host "  observability-status Observability status (observability_status.ps1)" -ForegroundColor White
+  Write-Host "  storage-permissions Storage permissions (storage_permissions_check.ps1)" -ForegroundColor White
+  Write-Host "  storage-write    Storage write check (storage_write_check.ps1)" -ForegroundColor White
+  Write-Host "  storage-posture  Storage posture (storage_posture_check.ps1)" -ForegroundColor White
+  Write-Host "  pazar-storage-posture Pazar storage posture (pazar_storage_posture.ps1)" -ForegroundColor White
+  Write-Host "  slo-check        SLO check (slo_check.ps1)" -ForegroundColor White
+  Write-Host "  daily-snapshot   Daily snapshot tool (daily_snapshot.ps1)" -ForegroundColor White
+  Write-Host "  request-trace    Request ID correlation (request_trace.ps1)" -ForegroundColor White
+  Write-Host "  product-contract Product contract pack (product_contract.ps1)" -ForegroundColor White
+  Write-Host "  product-contract-check Product contract check (product_contract_check.ps1)" -ForegroundColor White
+  Write-Host "  product-spine    Product spine check (product_spine_check.ps1)" -ForegroundColor White
+  Write-Host "  product-read-path Product read path check (product_read_path_check.ps1)" -ForegroundColor White
+  Write-Host "  product-api-smoke Product API smoke (product_api_smoke.ps1)" -ForegroundColor White
+  Write-Host "  product-spine-smoke Product spine smoke (product_spine_smoke.ps1)" -ForegroundColor White
+  Write-Host "  public-ready     Public release readiness (public_ready_check.ps1)" -ForegroundColor White
+  Write-Host "  verify-wp-closeouts WP closeouts verification (verify_wp_closeouts.ps1)" -ForegroundColor White
+  Write-Host "  closeouts-rollover Closeouts rollover tool (closeouts_rollover.ps1)" -ForegroundColor White
+  Write-Host "  closeouts-size-gate Closeouts size gate (closeouts_size_gate.ps1)" -ForegroundColor White
   Write-Host ""
   Write-Host "Examples:" -ForegroundColor Yellow
   Write-Host "  .\ops\ops.ps1 up -StackProfile core" -ForegroundColor White
@@ -126,12 +168,12 @@ function Invoke-FullGatesPack {
       Write-Host ("PASS: {0}" -f $ScriptRel) -ForegroundColor Green
     }
 
-    Run-Step -Label "1) verify" -ScriptRel "verify.ps1"
-    Run-Step -Label "2) openapi_contract" -ScriptRel "openapi_contract.ps1"
-    Run-Step -Label "3) conformance" -ScriptRel "conformance.ps1"
-    Run-Step -Label "4) v2_gate" -ScriptRel "v2_gate.ps1"
-    Run-Step -Label "5) pazar_spine_check" -ScriptRel "pazar_spine_check.ps1"
-    Run-Step -Label "6) messaging_contract_check" -ScriptRel "messaging_contract_check.ps1"
+    Run-Step -Label "1) verify" -ScriptRel "_checks\\verify.ps1"
+    Run-Step -Label "2) openapi_contract" -ScriptRel "_checks\\openapi_contract.ps1"
+    Run-Step -Label "3) conformance" -ScriptRel "_checks\\conformance.ps1"
+    Run-Step -Label "4) v2_gate" -ScriptRel "_checks\\v2_gate.ps1"
+    Run-Step -Label "5) pazar_spine_check" -ScriptRel "_checks\\pazar_spine_check.ps1"
+    Run-Step -Label "6) messaging_contract_check" -ScriptRel "_checks\\messaging_contract_check.ps1"
 
     Write-Host ""
     Write-Host "PASS: FULL GATES" -ForegroundColor Green
@@ -210,8 +252,8 @@ function Invoke-SmokePack {
     Write-Host ""
 
     $steps = @(
-      @{ Name = "World Status"; Path = (Join-Path $scriptDir "world_status_check.ps1"); Args = @() },
-      @{ Name = "Smoke Surface"; Path = (Join-Path $scriptDir "smoke_surface.ps1"); Args = @() }
+      @{ Name = "World Status"; Path = (Join-Path $checksDir "world_status_check.ps1"); Args = @() },
+      @{ Name = "Smoke Surface"; Path = (Join-Path $checksDir "smoke_surface.ps1"); Args = @() }
     )
 
     $exitCodes = @()
@@ -294,14 +336,14 @@ function Invoke-ShipMain {
     Write-Host "[GATES] Running quality gates..." -ForegroundColor Yellow
 
     $gateScripts = @(
-      ".\ops\update_code_index.ps1",
-      ".\ops\verify_wp_closeouts.ps1",
-      ".\ops\secret_scan.ps1",
-      ".\ops\public_ready_check.ps1",
-      ".\ops\repo_payload_guard.ps1",
-      ".\ops\closeouts_size_gate.ps1",
-      ".\ops\conformance.ps1",
-      ".\ops\frontend_smoke.ps1"
+      ".\ops\_checks\update_code_index.ps1",
+      ".\ops\_checks\verify_wp_closeouts.ps1",
+      ".\ops\_tools\secret_scan.ps1",
+      ".\ops\_checks\public_ready_check.ps1",
+      ".\ops\_checks\repo_payload_guard.ps1",
+      ".\ops\_tools\closeouts_size_gate.ps1",
+      ".\ops\_checks\conformance.ps1",
+      ".\ops\_checks\frontend_smoke.ps1"
     )
 
     $gateIndex = 1
@@ -512,7 +554,7 @@ function Invoke-Rc0Gate {
     Write-Host ""
 
     # 0) RC0 Check (aggregate check - must pass)
-    $rc0CheckResult = Invoke-RC0Check -CheckName "0) RC0 Check" -ScriptPath (Join-Path $scriptDir "rc0_check.ps1") -Arguments $(if ($Ci) { @("-Ci") } else { @() })
+    $rc0CheckResult = Invoke-RC0Check -CheckName "0) RC0 Check" -ScriptPath (Join-Path $checksDir "rc0_check.ps1") -Arguments $(if ($Ci) { @("-Ci") } else { @() })
     if ($rc0CheckResult.Status -eq "FAIL") {
       Write-Host ""
       Write-Host "RC0 Check failed - RC0 Gate cannot proceed" -ForegroundColor Red
@@ -522,21 +564,21 @@ function Invoke-Rc0Gate {
     }
 
     # A) Repository Doctor
-    Invoke-RC0Check -CheckName "A) Repository Doctor" -ScriptPath (Join-Path $scriptDir "doctor.ps1") | Out-Null
+    Invoke-RC0Check -CheckName "A) Repository Doctor" -ScriptPath (Join-Path $checksDir "doctor.ps1") | Out-Null
     # B) Stack Verification (RC0 mode: /up required)
-    Invoke-RC0Check -CheckName "B) Stack Verification" -ScriptPath (Join-Path $scriptDir "verify.ps1") -Arguments @("-Release") | Out-Null
+    Invoke-RC0Check -CheckName "B) Stack Verification" -ScriptPath (Join-Path $checksDir "verify.ps1") -Arguments @("-Release") | Out-Null
     # C) Architecture Conformance
-    Invoke-RC0Check -CheckName "C) Architecture Conformance" -ScriptPath (Join-Path $scriptDir "conformance.ps1") | Out-Null
+    Invoke-RC0Check -CheckName "C) Architecture Conformance" -ScriptPath (Join-Path $checksDir "conformance.ps1") | Out-Null
     # D) Environment Contract
-    Invoke-RC0Check -CheckName "D) Environment Contract" -ScriptPath (Join-Path $scriptDir "env_contract.ps1") | Out-Null
+    Invoke-RC0Check -CheckName "D) Environment Contract" -ScriptPath (Join-Path $checksDir "env_contract.ps1") | Out-Null
     # E) Security Audit
-    Invoke-RC0Check -CheckName "E) Security Audit" -ScriptPath (Join-Path $scriptDir "security_audit.ps1") | Out-Null
+    Invoke-RC0Check -CheckName "E) Security Audit" -ScriptPath (Join-Path $checksDir "security_audit.ps1") | Out-Null
     # F) Auth Security Check
-    Invoke-RC0Check -CheckName "F) Auth Security Check" -ScriptPath (Join-Path $scriptDir "auth_security_check.ps1") | Out-Null
+    Invoke-RC0Check -CheckName "F) Auth Security Check" -ScriptPath (Join-Path $checksDir "auth_security_check.ps1") | Out-Null
     # G) Tenant Boundary Check
-    Invoke-RC0Check -CheckName "G) Tenant Boundary Check" -ScriptPath (Join-Path $scriptDir "tenant_boundary_check.ps1") | Out-Null
+    Invoke-RC0Check -CheckName "G) Tenant Boundary Check" -ScriptPath (Join-Path $checksDir "tenant_boundary_check.ps1") | Out-Null
     # H) Session Posture Check
-    $session = Invoke-RC0Check -CheckName "H) Session Posture Check" -ScriptPath (Join-Path $scriptDir "session_posture_check.ps1")
+    $session = Invoke-RC0Check -CheckName "H) Session Posture Check" -ScriptPath (Join-Path $checksDir "session_posture_check.ps1")
     $appEnv = $env:APP_ENV
     if (($appEnv -eq "local") -or ($appEnv -eq "dev") -or (-not $appEnv)) {
       if ($session.Status -eq "FAIL") {
@@ -549,7 +591,7 @@ function Invoke-Rc0Gate {
       }
     }
     # I) SLO Check (non-blocking; map FAIL->WARN)
-    $slo = Invoke-RC0Check -CheckName "I) SLO Check (N=10)" -ScriptPath (Join-Path $scriptDir "slo_check.ps1") -Arguments @("-N", "10")
+    $slo = Invoke-RC0Check -CheckName "I) SLO Check (N=10)" -ScriptPath (Join-Path $checksDir "slo_check.ps1") -Arguments @("-N", "10")
     if ($slo.Status -eq "FAIL") {
       $idx = $script:results.Count - 1
       if ($idx -ge 0) {
@@ -561,9 +603,9 @@ function Invoke-Rc0Gate {
     # J) Observability Status (non-blocking)
     Test-ObservabilityStatus | Out-Null
     # K) Routes Snapshot (non-blocking - real FAIL stays FAIL)
-    Invoke-RC0Check -CheckName "K) Routes Snapshot" -ScriptPath (Join-Path $scriptDir "routes_snapshot.ps1") | Out-Null
+    Invoke-RC0Check -CheckName "K) Routes Snapshot" -ScriptPath (Join-Path $checksDir "routes_snapshot.ps1") | Out-Null
     # L) Schema Snapshot (blocking)
-    Invoke-RC0Check -CheckName "L) Schema Snapshot" -ScriptPath (Join-Path $scriptDir "schema_snapshot.ps1") | Out-Null
+    Invoke-RC0Check -CheckName "L) Schema Snapshot" -ScriptPath (Join-Path $checksDir "schema_snapshot.ps1") | Out-Null
     # M) Error Contract
     Test-ErrorContractInline | Out-Null
     # N) Release Bundle (SKIP; manual)
@@ -587,9 +629,9 @@ function Invoke-Rc0Gate {
     if ($failCount -gt 0) {
       Write-Host "RC0 GATE: FAIL ($failCount blocking failures)" -ForegroundColor Red
       Write-Host ""
-      if (Test-Path (Join-Path $scriptDir "incident_bundle.ps1")) {
+      if (Test-Path (Join-Path $checksDir "incident_bundle.ps1")) {
         Write-Host "Generating incident bundle..." -ForegroundColor Yellow
-        try { & (Join-Path $scriptDir "incident_bundle.ps1") 2>&1 | Out-Null } catch { }
+        try { & (Join-Path $checksDir "incident_bundle.ps1") 2>&1 | Out-Null } catch { }
       }
       Invoke-OpsExit 1
       return
@@ -798,17 +840,15 @@ switch ($cmd) {
       Invoke-OpsExit 1
       break
     }
-    if ($Ci) { & $path -Ci } else { & $path }
+    $args = @()
+    if ($Ci) { $args += "-Ci" }
+    if ($RecordAudit) { $args += "-RecordAudit" }
+    if ($ReleaseBundle) { $args += "-ReleaseBundle" }
+    & $path @args
     Invoke-OpsExit ([int]$global:LASTEXITCODE)
     break
   }
   { $_ -in @("smoke", "smoke-pack", "smoke_pack") } { Invoke-SmokePack; break }
-  { $_ -in @("env-preflight", "env_preflight") } { Invoke-TargetScript -RelPath "env_preflight.ps1"; break }
-  { $_ -in @("release-note", "release_note") } { Invoke-TargetScript -RelPath "release_note.ps1"; break }
-  { $_ -in @("repo-inventory", "repo_inventory") } { Invoke-TargetScript -RelPath "repo_inventory_report.ps1"; break }
-  { $_ -in @("ngrok-backend", "ngrok_backend") } { Invoke-TargetScript -RelPath "start_ngrok_backend.ps1"; break }
-  { $_ -in @("route-diag", "route_diag") } { Invoke-TargetScript -RelPath "pazar_route_surface_diag.ps1"; break }
-  { $_ -in @("perf-baseline", "perf_baseline") } { Invoke-TargetScript -RelPath "perf_baseline.ps1"; break }
   { $_ -in @("status-safe", "status_safe", "run_status") } {
     Invoke-OpsStatusSafe | Out-Null
     break
@@ -829,7 +869,7 @@ switch ($cmd) {
     break
   }
   { $_ -in @("ship", "publish", "ship-main", "ship_main") } { Invoke-ShipMain; break }
-  { $_ -in @("doctor") } { Invoke-TargetScript -RelPath "doctor.ps1"; break }
+  { $_ -in @("doctor") } { Invoke-TargetScript -RelPath "_checks\\doctor.ps1"; break }
   { $_ -in @("refresh", "frontend-refresh", "frontend_refresh") } {
     $path = Join-Path $scriptDir "frontend_refresh.ps1"
     if (-not (Test-Path $path)) {
@@ -842,7 +882,7 @@ switch ($cmd) {
     break
   }
   { $_ -in @("rc0", "rc0-check", "rc0_check") } {
-    $path = Join-Path $scriptDir "rc0_check.ps1"
+    $path = Join-Path $checksDir "rc0_check.ps1"
     if (-not (Test-Path $path)) {
       Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
       Invoke-OpsExit 1
@@ -861,7 +901,7 @@ switch ($cmd) {
     break
   }
   { $_ -in @("release", "release-bundle", "release_bundle") } {
-    $path = Join-Path $scriptDir "release_bundle.ps1"
+    $path = Join-Path $checksDir "release_bundle.ps1"
     if (-not (Test-Path $path)) {
       Write-Host ("FAIL: script not found: {0}" -f $path) -ForegroundColor Red
       Invoke-OpsExit 1
@@ -871,12 +911,52 @@ switch ($cmd) {
     Invoke-OpsExit ([int]$global:LASTEXITCODE)
     break
   }
-  { $_ -in @("verify") } { Invoke-TargetScript -RelPath "verify.ps1"; break }
-  { $_ -in @("openapi", "openapi_contract") } { Invoke-TargetScript -RelPath "openapi_contract.ps1"; break }
-  { $_ -in @("conformance") } { Invoke-TargetScript -RelPath "conformance.ps1"; break }
-  { $_ -in @("pazar-spine", "pazar_spine") } { Invoke-TargetScript -RelPath "pazar_spine_check.ps1"; break }
-  { $_ -in @("v2-gate", "v2_gate", "gate-v2") } { Invoke-TargetScript -RelPath "v2_gate.ps1"; break }
-  { $_ -in @("messaging", "messaging_contract") } { Invoke-TargetScript -RelPath "messaging_contract_check.ps1"; break }
+  { $_ -in @("verify") } { Invoke-TargetScript -RelPath "_checks\\verify.ps1"; break }
+  { $_ -in @("openapi", "openapi_contract") } { Invoke-TargetScript -RelPath "_checks\\openapi_contract.ps1"; break }
+  { $_ -in @("conformance") } { Invoke-TargetScript -RelPath "_checks\\conformance.ps1"; break }
+  { $_ -in @("pazar-spine", "pazar_spine") } { Invoke-TargetScript -RelPath "_checks\\pazar_spine_check.ps1"; break }
+  { $_ -in @("v2-gate", "v2_gate", "gate-v2") } { Invoke-TargetScript -RelPath "_checks\\v2_gate.ps1"; break }
+  { $_ -in @("messaging", "messaging_contract") } { Invoke-TargetScript -RelPath "_checks\\messaging_contract_check.ps1"; break }
+  { $_ -in @("env-contract", "env_contract") } { Invoke-TargetScript -RelPath "_checks\\env_contract.ps1"; break }
+  { $_ -in @("security-audit", "security_audit") } { Invoke-TargetScript -RelPath "_checks\\security_audit.ps1"; break }
+  { $_ -in @("routes-snapshot", "routes_snapshot") } { Invoke-TargetScript -RelPath "_checks\\routes_snapshot.ps1"; break }
+  { $_ -in @("schema-snapshot", "schema_snapshot") } { Invoke-TargetScript -RelPath "_checks\\schema_snapshot.ps1"; break }
+  { $_ -in @("error-contract", "error_contract") } { Invoke-TargetScript -RelPath "_checks\\error_contract_check.ps1"; break }
+  { $_ -in @("auth-security", "auth_security") } { Invoke-TargetScript -RelPath "_checks\\auth_security_check.ps1"; break }
+  { $_ -in @("tenant-boundary", "tenant_boundary") } { Invoke-TargetScript -RelPath "_checks\\tenant_boundary_check.ps1"; break }
+  { $_ -in @("session-posture", "session_posture") } { Invoke-TargetScript -RelPath "_checks\\session_posture_check.ps1"; break }
+  { $_ -in @("world-spine", "world_spine") } { Invoke-TargetScript -RelPath "_checks\\world_spine_check.ps1"; break }
+  { $_ -in @("incident-bundle", "incident_bundle") } { Invoke-TargetScript -RelPath "_checks\\incident_bundle.ps1"; break }
+  { $_ -in @("ci-guard", "ci_guard") } { Invoke-TargetScript -RelPath "_checks\\ci_guard.ps1"; break }
+  { $_ -in @("graveyard-check", "graveyard_check") } { Invoke-TargetScript -RelPath "_checks\\graveyard_check.ps1"; break }
+  { $_ -in @("repo-integrity", "repo_integrity") } { Invoke-TargetScript -RelPath "_checks\\repo_integrity.ps1"; break }
+  { $_ -in @("baseline-status", "baseline_status") } { Invoke-TargetScript -RelPath "_checks\\baseline_status.ps1"; break }
+  { $_ -in @("triage") } { Invoke-TargetScript -RelPath "_checks\\triage.ps1"; break }
+  { $_ -in @("frontend-smoke", "frontend_smoke") } { Invoke-TargetScript -RelPath "_checks\\frontend_smoke.ps1"; break }
+  { $_ -in @("pazar-ui-smoke", "pazar_ui_smoke") } { Invoke-TargetScript -RelPath "_checks\\pazar_ui_smoke.ps1"; break }
+  { $_ -in @("smoke-surface", "smoke_surface") } { Invoke-TargetScript -RelPath "_checks\\smoke_surface.ps1"; break }
+  { $_ -in @("secret-scan", "secret_scan") } { Invoke-TargetScript -RelPath "_tools\\secret_scan.ps1"; break }
+  { $_ -in @("repo-payload-guard", "repo_payload_guard") } { Invoke-TargetScript -RelPath "_checks\\repo_payload_guard.ps1"; break }
+  { $_ -in @("update-code-index", "update_code_index") } { Invoke-TargetScript -RelPath "_checks\\update_code_index.ps1"; break }
+  { $_ -in @("self-audit", "self_audit") } { Invoke-TargetScript -RelPath "_tools\\self_audit.ps1"; break }
+  { $_ -in @("observability-status", "observability_status") } { Invoke-TargetScript -RelPath "_checks\\observability_status.ps1"; break }
+  { $_ -in @("storage-permissions", "storage_permissions") } { Invoke-TargetScript -RelPath "_checks\\storage_permissions_check.ps1"; break }
+  { $_ -in @("storage-write", "storage_write") } { Invoke-TargetScript -RelPath "_checks\\storage_write_check.ps1"; break }
+  { $_ -in @("storage-posture", "storage_posture") } { Invoke-TargetScript -RelPath "_checks\\storage_posture_check.ps1"; break }
+  { $_ -in @("pazar-storage-posture", "pazar_storage_posture") } { Invoke-TargetScript -RelPath "_checks\\pazar_storage_posture.ps1"; break }
+  { $_ -in @("slo-check", "slo_check") } { Invoke-TargetScript -RelPath "_checks\\slo_check.ps1"; break }
+  { $_ -in @("daily-snapshot", "daily_snapshot") } { Invoke-TargetScript -RelPath "_tools\\daily_snapshot.ps1"; break }
+  { $_ -in @("request-trace", "request_trace") } { Invoke-TargetScript -RelPath "_tools\\request_trace.ps1"; break }
+  { $_ -in @("product-contract", "product_contract") } { Invoke-TargetScript -RelPath "_checks\\product_contract.ps1"; break }
+  { $_ -in @("product-contract-check", "product_contract_check") } { Invoke-TargetScript -RelPath "_checks\\product_contract_check.ps1"; break }
+  { $_ -in @("product-spine", "product_spine") } { Invoke-TargetScript -RelPath "_checks\\product_spine_check.ps1"; break }
+  { $_ -in @("product-read-path", "product_read_path") } { Invoke-TargetScript -RelPath "_checks\\product_read_path_check.ps1"; break }
+  { $_ -in @("product-api-smoke", "product_api_smoke") } { Invoke-TargetScript -RelPath "_checks\\product_api_smoke.ps1"; break }
+  { $_ -in @("product-spine-smoke", "product_spine_smoke") } { Invoke-TargetScript -RelPath "_checks\\product_spine_smoke.ps1"; break }
+  { $_ -in @("public-ready", "public_ready") } { Invoke-TargetScript -RelPath "_checks\\public_ready_check.ps1"; break }
+  { $_ -in @("verify-wp-closeouts", "verify_wp_closeouts") } { Invoke-TargetScript -RelPath "_checks\\verify_wp_closeouts.ps1"; break }
+  { $_ -in @("closeouts-rollover", "closeouts_rollover") } { Invoke-TargetScript -RelPath "_tools\\closeouts_rollover.ps1"; break }
+  { $_ -in @("closeouts-size-gate", "closeouts_size_gate") } { Invoke-TargetScript -RelPath "_tools\\closeouts_size_gate.ps1"; break }
   default {
     Write-Host ("Unknown command: {0}" -f $Command) -ForegroundColor Red
     Write-Host ""

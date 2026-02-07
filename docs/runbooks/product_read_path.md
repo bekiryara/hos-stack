@@ -9,12 +9,12 @@
 
 ## Gate script
 
-- `ops/product_read_path_check.ps1`
+- `.\ops\ops.ps1 product-read-path` (script: `ops/_checks/product_read_path_check.ps1`)
 
 ## How to run
 
 ```powershell
-.\ops\product_read_path_check.ps1
+.\ops\ops.ps1 product-read-path
 ```
 
 ## Expected behavior

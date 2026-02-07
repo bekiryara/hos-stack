@@ -2,7 +2,7 @@
 
 **Purpose**: Validates OpenAPI specification exists, is valid, and matches implemented endpoints. Prevents contract drift.
 
-**Script**: `ops/openapi_contract.ps1`
+**Canonical command**: `.\ops\ops.ps1 openapi` (script: `ops/_checks/openapi_contract.ps1`)
 
 ## What It Checks
 
@@ -25,13 +25,13 @@
 ### Local (Interactive)
 
 ```powershell
-.\ops\openapi_contract.ps1
+.\ops\ops.ps1 openapi
 ```
 
 ### With Custom Base URL
 
 ```powershell
-.\ops\openapi_contract.ps1 -BaseUrl "http://localhost:8080"
+.\ops\_checks\openapi_contract.ps1 -BaseUrl "http://localhost:8080"
 ```
 
 ### CI (Automated)
@@ -107,7 +107,7 @@ OVERALL STATUS: FAIL
 ## How to Update openapi.yaml Safely
 
 1. **Edit the spec**: Update `docs/PRODUCT/openapi.yaml` with new endpoints or changes
-2. **Validate locally**: Run `.\ops\openapi_contract.ps1` to check for syntax errors
+2. **Validate locally**: Run `.\ops\ops.ps1 openapi` to check for syntax errors
 3. **Verify endpoints match**: Ensure documented endpoints match actual implementation in `work/pazar/routes/api.php`
 4. **Update PRODUCT_API_SPINE.md**: Add reference to `openapi.yaml` if not already present
 5. **Commit and push**: CI will automatically validate the contract
@@ -135,7 +135,7 @@ OVERALL STATUS: FAIL
 
 3. **Run contract check**:
    ```powershell
-   .\ops\openapi_contract.ps1
+   .\ops\ops.ps1 openapi
    ```
 
 4. **Check endpoint matches** (if stack is up):
@@ -190,7 +190,7 @@ If OpenAPI Contract Check fails in CI:
 1. Check PR description for OpenAPI spec changes
 2. Verify `docs/PRODUCT/openapi.yaml` exists and is valid YAML
 3. Ensure required fields are present (openapi, paths, components, ErrorEnvelope)
-4. Run `.\ops\openapi_contract.ps1` locally to reproduce
+4. Run `.\ops\ops.ps1 openapi` locally to reproduce
 5. Fix issues and re-run CI check
 
 

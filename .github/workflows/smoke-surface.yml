@@ -5,14 +5,14 @@ on:
     branches: [main, develop]
     paths:
       - 'work/pazar/**'
-      - 'ops/smoke_surface.ps1'
+      - 'ops/_checks/smoke_surface.ps1'
       - 'docker-compose.yml'
       - '.github/workflows/smoke-surface.yml'
   pull_request:
     branches: [main, develop]
     paths:
       - 'work/pazar/**'
-      - 'ops/smoke_surface.ps1'
+      - 'ops/_checks/smoke_surface.ps1'
       - 'docker-compose.yml'
       - '.github/workflows/smoke-surface.yml'
 
@@ -38,7 +38,7 @@ jobs:
       - name: Run Smoke Surface Gate
         shell: pwsh
         run: |
-          pwsh ./ops/smoke_surface.ps1
+          pwsh ./ops/_checks/smoke_surface.ps1
       
       - name: Upload logs on failure
         if: failure()

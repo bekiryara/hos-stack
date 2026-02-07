@@ -26,7 +26,7 @@ jobs:
       - name: Run security audit
         shell: pwsh
         run: |
-          pwsh ./ops/security_audit.ps1
+          pwsh ./ops/_checks/security_audit.ps1
 
       - name: Upload violations on failure
         if: failure()

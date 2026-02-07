@@ -17,8 +17,11 @@ if (-not (Test-Path $logsDir)) {
 
 # Script ciktisini log + konsola yaz; cikis kodunu koru
 function Run-Gate {
-    param([string]$ScriptPath)
-    $out = & $ScriptPath 2>&1
+    param(
+        [string]$ScriptPath,
+        [string[]]$ScriptArgs = @()
+    )
+    $out = & $ScriptPath @ScriptArgs 2>&1
     $code = $LASTEXITCODE
     $out | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $logFile -Append }
     return $code
@@ -32,16 +35,16 @@ try {
     "Log: $logFile" | Out-File -FilePath $logFile -Append
     ""
 
-    # 1) env_preflight
-    $code = Run-Gate -ScriptPath "$scriptDir\env_preflight.ps1"
+    # 1) env_preflight (legacy tool)
+    $code = Run-Gate -ScriptPath "$opsRoot\_legacy\legacy.ps1" -ScriptArgs @("env-preflight")
     if ($code -ne 0) {
-        Write-Host "FAIL: env_preflight.ps1 returned $code - gate paketi durduruldu." -ForegroundColor Red
+        Write-Host "FAIL: legacy env-preflight returned $code - gate paketi durduruldu." -ForegroundColor Red
         Pop-Location
         exit 1
     }
 
     # 2) frontend_smoke
-    $code = Run-Gate -ScriptPath "$scriptDir\frontend_smoke.ps1"
+    $code = Run-Gate -ScriptPath "$opsRoot\\_checks\\frontend_smoke.ps1"
     if ($code -ne 0) {
         Write-Host "FAIL: frontend_smoke.ps1 returned $code" -ForegroundColor Red
         Pop-Location
@@ -49,7 +52,7 @@ try {
     }
 
     # 3) verify
-    $code = Run-Gate -ScriptPath "$scriptDir\verify.ps1"
+    $code = Run-Gate -ScriptPath "$opsRoot\\_checks\\verify.ps1"
     if ($code -ne 0) {
         Write-Host "FAIL: verify.ps1 returned $code" -ForegroundColor Red
         Pop-Location
@@ -57,7 +60,7 @@ try {
     }
 
     # 4) conformance
-    $code = Run-Gate -ScriptPath "$scriptDir\conformance.ps1"
+    $code = Run-Gate -ScriptPath "$opsRoot\\_checks\\conformance.ps1"
     if ($code -ne 0) {
         Write-Host "FAIL: conformance.ps1 returned $code" -ForegroundColor Red
         Pop-Location
@@ -65,7 +68,7 @@ try {
     }
 
     # 5) update_code_index
-    $code = Run-Gate -ScriptPath "$scriptDir\update_code_index.ps1"
+    $code = Run-Gate -ScriptPath "$opsRoot\\_checks\\update_code_index.ps1"
     if ($code -ne 0) {
         Write-Host "FAIL: update_code_index.ps1 returned $code" -ForegroundColor Red
         Pop-Location

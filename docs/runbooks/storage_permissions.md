@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Storage Permissions check (`ops/storage_permissions_check.ps1`) verifies that Laravel storage directories are correctly configured with proper permissions, preventing Monolog permission denied errors (`laravel.log` write failures).
+The Storage Permissions check is exposed via `.\ops\ops.ps1 storage-permissions` (script: `ops/_checks/storage_permissions_check.ps1`). It verifies that Laravel storage directories are correctly configured with proper permissions, preventing Monolog permission denied errors (`laravel.log` write failures).
 
 ## Why This Fails on Windows/Docker
 
@@ -101,7 +101,7 @@ docker compose exec -T pazar-app sh -c "stat -c '%U:%G' /var/www/html/storage"
 ### 3. Run Storage Permissions Check
 
 ```powershell
-.\ops\storage_permissions_check.ps1
+.\ops\ops.ps1 storage-permissions
 ```
 
 **Expected Output:**
@@ -176,7 +176,7 @@ docker compose logs pazar-app --tail 50 | Select-String -Pattern "permission|Per
 
 5. Re-run check:
    ```powershell
-   .\ops\storage_permissions_check.ps1
+   .\ops\ops.ps1 storage-permissions
    ```
 
 ### pazar-perms-init Failed

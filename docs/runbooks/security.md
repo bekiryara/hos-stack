@@ -37,7 +37,7 @@ Allowlisted paths:
 
 ```powershell
 # Run security audit
-.\ops\security_audit.ps1
+.\ops\ops.ps1 security-audit
 ```
 
 Expected output:
@@ -84,14 +84,14 @@ Route::post('/api/products', [ProductsController::class, 'store'])
 
 After fixing violations:
 
-1. Run the audit locally: `.\ops\security_audit.ps1`
+1. Run the audit locally: `.\ops\ops.ps1 security-audit`
 2. Ensure it passes: `✓ PASS: 0 violations found`
-3. Verify existing gates still pass: `.\ops\verify.ps1`, `.\ops\doctor.ps1`
+3. Verify existing gates still pass: `.\ops\ops.ps1 verify`, `.\ops\ops.ps1 doctor`
 4. Push changes and verify CI gate passes
 
 ## Related Documentation
 
 - `docs/RULES.md` - Rule 25: PR merge requires security-gate PASS
-- `ops/security_audit.ps1` - Security audit script
+- `.\ops\ops.ps1 security-audit` - Security audit script
 - `.github/workflows/security-gate.yml` - CI workflow
 

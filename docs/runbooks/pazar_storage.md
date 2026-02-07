@@ -8,7 +8,7 @@ This runbook provides steps to diagnose and resolve "Permission denied" errors r
 
 - Pazar UI returns HTTP 500 errors
 - Container logs show `UnexpectedValueException (Monolog StreamHandler) cannot open /var/www/html/storage/logs/laravel.log: Permission denied.`
-- `ops/pazar_storage_posture.ps1` returns `FAIL`
+- `.\ops\ops.ps1 pazar-storage-posture` (script: `ops/_checks/pazar_storage_posture.ps1`) returns `FAIL`
 
 ## Root Cause
 
@@ -36,7 +36,7 @@ This runbook provides steps to diagnose and resolve "Permission denied" errors r
 
 2. **Run Pazar Storage Posture Check:**
    ```powershell
-   .\ops\pazar_storage_posture.ps1
+   .\ops\ops.ps1 pazar-storage-posture
    ```
    - **Expected:** `OVERALL STATUS: PASS`
    - **If `WARN`:** Container might not be running (see step 1)
@@ -60,7 +60,7 @@ This runbook provides steps to diagnose and resolve "Permission denied" errors r
 
 5. **Re-run Storage Posture Check:**
    ```powershell
-   .\ops\pazar_storage_posture.ps1
+   .\ops\ops.ps1 pazar-storage-posture
    ```
    - **Expected:** `OVERALL STATUS: PASS`
 
@@ -85,4 +85,4 @@ docker compose exec -T pazar-app sh -lc "
 docker compose exec -T pazar-app supervisorctl restart php-fpm
 ```
 
-After manual remediation, re-run `.\ops\pazar_storage_posture.ps1` to verify.
+After manual remediation, re-run `.\ops\ops.ps1 pazar-storage-posture` to verify.

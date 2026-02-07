@@ -25,8 +25,8 @@ Canonical docs:
 ## Local commands
 
 ```powershell
-.\ops\product_contract.ps1
-.\ops\product_read_path_check.ps1
-.\ops\product_api_smoke.ps1
+.\ops\ops.ps1 product-contract
+.\ops\ops.ps1 product-read-path
+.\ops\ops.ps1 product-api-smoke
 ```
 

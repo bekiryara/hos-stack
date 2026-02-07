@@ -26,7 +26,7 @@ jobs:
       - name: Run auth security check
         shell: pwsh
         run: |
-          pwsh ./ops/auth_security_check.ps1
+          pwsh ./ops/_checks/auth_security_check.ps1
 
       - name: Upload logs on failure
         if: failure()

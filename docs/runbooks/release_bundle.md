@@ -2,7 +2,7 @@
 
 **Purpose:** Create a deterministic, single-command RC0 release bundle artifact.
 
-**Script:** `ops/release_bundle.ps1`
+**Canonical command:** `.\ops\ops.ps1 release` (script: `ops/_checks/release_bundle.ps1`)
 
 **Output:** Timestamped zip file with source snapshot, ops evidence, snapshots, and metadata.
 
@@ -10,7 +10,7 @@
 
 ## When to Run
 
-Run `ops/release_bundle.ps1` before:
+Run `.\ops\ops.ps1 release` before:
 - Creating an RC0 tag
 - Pushing to main (for release validation)
 - Creating release notes for a PR
@@ -51,13 +51,13 @@ Run `ops/release_bundle.ps1` before:
 
 ```powershell
 # From repo root
-.\ops\release_bundle.ps1
+.\ops\ops.ps1 release
 ```
 
 ### CI Mode
 
 ```powershell
-.\ops\release_bundle.ps1 -Ci
+.\ops\ops.ps1 release -Ci
 ```
 
 **Output:**
@@ -77,12 +77,12 @@ Run `ops/release_bundle.ps1` before:
 - **1 (FAIL)**: Blocking check FAIL (doctor/verify/ops_status failed) or bundle creation failed
 
 **Blocking checks (must PASS):**
-- `doctor.ps1`: Repository health check
-- `verify.ps1`: Stack verification
-- `ops_status.ps1`: Unified ops status dashboard
+- `.\ops\ops.ps1 doctor`: Repository health check
+- `.\ops\ops.ps1 verify`: Stack verification
+- `.\ops\ops.ps1 status`: Unified ops status dashboard
 
 **Non-blocking checks (WARN acceptable):**
-- `observability_status.ps1`: Observability status (if service unavailable)
+- `.\ops\ops.ps1 observability-status`: Observability status (if service unavailable)
 - Git working directory dirty (should be clean, but WARN only)
 - Missing optional files (VERSION, snapshots, CHANGELOG [Unreleased] section)
 
@@ -92,7 +92,7 @@ Run `ops/release_bundle.ps1` before:
 
 1. **Run the script:**
    ```powershell
-   .\ops\release_bundle.ps1
+   .\ops\ops.ps1 release
    ```
 
 2. **Locate the zip file:**
@@ -192,10 +192,10 @@ echo "0.1.0" > VERSION
 **Fix:**
 ```powershell
 # Generate routes snapshot
-.\ops\routes_snapshot.ps1
+.\ops\ops.ps1 routes-snapshot
 
 # Generate schema snapshot
-.\ops\schema_snapshot.ps1
+.\ops\ops.ps1 schema-snapshot
 ```
 
 ### Stack Not Running
@@ -208,7 +208,7 @@ echo "0.1.0" > VERSION
 docker compose up -d
 
 # Wait for services to be healthy
-.\ops\verify.ps1
+.\ops\ops.ps1 verify
 ```
 
 ### Zip Creation Failed

@@ -6,16 +6,16 @@ on:
     paths:
       - 'work/pazar/routes/api.php'
       - 'work/pazar/config/worlds.php'
-      - 'ops/product_contract.ps1'
-      - 'ops/product_contract_check.ps1'
+      - 'ops/_checks/product_contract.ps1'
+      - 'ops/_checks/product_contract_check.ps1'
       - '.github/workflows/product-contract.yml'
   pull_request:
     branches: [main, develop]
     paths:
       - 'work/pazar/routes/api.php'
       - 'work/pazar/config/worlds.php'
-      - 'ops/product_contract.ps1'
-      - 'ops/product_contract_check.ps1'
+      - 'ops/_checks/product_contract.ps1'
+      - 'ops/_checks/product_contract_check.ps1'
       - '.github/workflows/product-contract.yml'
 
 jobs:
@@ -46,7 +46,7 @@ jobs:
       - name: Run Product Contract Gate (spine validation)
         shell: pwsh
         run: |
-          pwsh ./ops/product_contract.ps1
+          pwsh ./ops/_checks/product_contract.ps1
         continue-on-error: false
       
       - name: Upload logs on failure

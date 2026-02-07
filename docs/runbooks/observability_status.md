@@ -10,24 +10,24 @@ This runbook explains how to bring up and manage the observability stack (Promet
 
 **Core Stack (Pazar + H-OS):**
 ```powershell
-.\ops\stack_up.ps1 -Profile core
+.\ops\ops.ps1 up -StackProfile core
 ```
 
 **Observability Stack:**
 ```powershell
-.\ops\stack_up.ps1 -Profile obs
+.\ops\ops.ps1 up -StackProfile obs
 ```
 
 **Both Stacks:**
 ```powershell
-.\ops\stack_up.ps1 -Profile all
+.\ops\ops.ps1 up -StackProfile all
 ```
 
 **Shutdown:**
 ```powershell
-.\ops\stack_down.ps1 -Profile obs  # Only observability
-.\ops\stack_down.ps1 -Profile core # Only core
-.\ops\stack_down.ps1               # All (default)
+.\ops\ops.ps1 down -StackProfile obs  # Only observability
+.\ops\ops.ps1 down -StackProfile core # Only core
+.\ops\ops.ps1 down -StackProfile all  # Both
 ```
 
 ## Important Rule: Obs Profile Does NOT Include Core Services
@@ -69,7 +69,7 @@ The obs profile only starts these services:
 **Cause:** Obs profile tried to start `api` service which conflicts with core stack's `hos-api`.
 
 **Fix:**
-1. Use `ops/stack_up.ps1 -Profile obs` instead of manual compose commands
+1. Use `.\ops\ops.ps1 up -StackProfile obs` instead of manual compose commands
 2. The script explicitly lists only observability services
 3. Verify: `docker compose -f work/hos/docker-compose.yml --profile obs ps` should NOT show `api` or `web`
 
@@ -105,7 +105,7 @@ The observability stack uses the same Docker network as the core stack (via exte
 
 ## Manual Commands (Debugging Only)
 
-While `ops/stack_up.ps1` is the canonical entry point, manual commands for debugging:
+While `.\ops\ops.ps1 up` is the canonical entry point, manual commands for debugging:
 
 ```powershell
 # Start only observability services
@@ -119,7 +119,7 @@ docker compose -f work/hos/docker-compose.yml --profile obs logs prometheus
 docker compose -f work/hos/docker-compose.yml --profile obs logs alert-webhook
 ```
 
-**Important:** These manual commands are for debugging only. Use `ops/stack_up.ps1` for normal operations.
+**Important:** These manual commands are for debugging only. Use `.\ops\ops.ps1 up -StackProfile obs` for normal operations.
 
 
 

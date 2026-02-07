@@ -36,7 +36,7 @@ If OIDC is enabled (`HOS_OIDC_ISSUER` is set):
 ### Basic Usage
 
 ```powershell
-.\ops\env_contract.ps1
+.\ops\ops.ps1 env-contract
 ```
 
 ### Setting Environment Variables

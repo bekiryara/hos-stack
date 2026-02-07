@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Unified Ops Status Dashboard (`ops/ops_status.ps1`) aggregates all operational checks into a single command, providing a comprehensive view of system health, security, and compliance.
+The Unified Ops Status Dashboard is exposed via `.\ops\ops.ps1 status` (internally backed by `ops/ops_status.ps1`). It aggregates operational checks into a single command, providing a comprehensive view of system health, security, and compliance.
 
 ## Running Locally
 
@@ -17,10 +17,10 @@ This wrapper prevents the terminal from closing and preserves exit codes. It's t
 ### Direct Usage (Alternative)
 
 ```powershell
-.\ops\ops_status.ps1
+.\ops\ops.ps1 status
 ```
 
-**Note:** Ops scripts now use safe exit behavior: in interactive PowerShell sessions, the terminal will not close (exit codes are set via `$global:LASTEXITCODE`). In CI environments (GitHub Actions), exit codes are properly propagated. This applies to all ops scripts (ops_status.ps1, doctor.ps1, verify.ps1, triage.ps1, conformance.ps1, schema_snapshot.ps1, pazar_storage_posture.ps1).
+**Note:** Ops scripts now use safe exit behavior: in interactive PowerShell sessions, the terminal will not close (exit codes are set via `$global:LASTEXITCODE`). In CI environments (GitHub Actions), exit codes are properly propagated. This applies to ops entrypoints plus scripts under `ops/_checks/` and `ops/_tools/`.
 
 **Safe Exit Behavior:**
 - **Interactive Mode**: Scripts set `$global:LASTEXITCODE` and return (terminal stays open)
@@ -43,7 +43,7 @@ The `-Ci` switch ensures proper exit code propagation for CI/CD pipelines.
 ### Prerequisites
 
 - Docker Compose services must be running
-- All ops scripts must be available in `ops/` directory
+- Ops checks/tools must be present under `ops/`, `ops/_checks/`, `ops/_tools/`
 - PowerShell 5.1+ or PowerShell Core
 
 ## Interpreting Results
@@ -92,45 +92,45 @@ The dashboard determines overall status based on blocking semantics:
 
 ## Checks Performed
 
-The dashboard runs the following checks in order:
+The dashboard runs the following checks in order (run individually via `.\ops\ops.ps1 <command>` where available):
 
-1. **Repository Doctor** (`ops/doctor.ps1`)
+1. **Repository Doctor** (`.\ops\ops.ps1 doctor`, script: `ops/_checks/doctor.ps1`)
    - Docker Compose services status
    - Health endpoints
    - Repository structure
 
-2. **Stack Verification** (`ops/verify.ps1`)
+2. **Stack Verification** (`.\ops\ops.ps1 verify`, script: `ops/_checks/verify.ps1`)
    - Docker Compose services
    - H-OS health endpoint
    - Pazar health endpoint
 
-3. **Incident Triage** (`ops/triage.ps1`)
+3. **Incident Triage** (`.\ops\ops.ps1 triage`, script: `ops/_checks/triage.ps1`)
    - Quick health check for all services
    - Service status summary
 
-4. **SLO Check** (`ops/slo_check.ps1`)
+4. **SLO Check** (script: `ops/_checks/slo_check.ps1`)
    - Service Level Objectives validation
    - Availability, latency, error rate checks
 
-5. **Security Audit** (`ops/security_audit.ps1`)
+5. **Security Audit** (`.\ops\ops.ps1 security-audit`, script: `ops/_checks/security_audit.ps1`)
    - Route/middleware security validation
    - Admin/panel surface protection
    - State-changing route protection
 
-6. **Conformance** (`ops/conformance.ps1`)
+6. **Conformance** (`.\ops\ops.ps1 conformance`, script: `ops/_checks/conformance.ps1`)
    - Architecture conformance checks
    - World registry validation
    - Documentation compliance
 
-7. **World Spine Governance** (`ops/world_spine_check.ps1`)
+7. **World Spine Governance** (`.\ops\ops.ps1 world-spine`, script: `ops/_checks/world_spine_check.ps1`)
    - World spine route validation
    - Enabled/disabled world policy enforcement
 
-8. **Routes Snapshot** (`ops/routes_snapshot.ps1`)
+8. **Routes Snapshot** (`.\ops\ops.ps1 routes-snapshot`, script: `ops/_checks/routes_snapshot.ps1`)
    - API route contract validation
    - Route changes detection
 
-9. **Schema Snapshot** (`ops/schema_snapshot.ps1`)
+9. **Schema Snapshot** (`.\ops\ops.ps1 schema-snapshot`, script: `ops/_checks/schema_snapshot.ps1`)
    - Database schema contract validation
    - Schema changes detection
 
@@ -138,7 +138,7 @@ The dashboard runs the following checks in order:
    - Error envelope validation (422, 404)
    - Standard error format compliance
 
-11. **Product Contract** (`ops/product_contract.ps1`)
+11. **Product Contract** (script: `ops/_checks/product_contract.ps1`)
    - Product API spine documentation validation
    - Spine endpoints vs routes snapshot alignment
    - Middleware posture validation
@@ -148,7 +148,7 @@ The dashboard runs the following checks in order:
 
 When overall status is **FAIL**, the dashboard automatically:
 
-1. Runs `ops/incident_bundle.ps1` to generate an incident bundle
+1. Runs `.\ops\ops.ps1 incident-bundle` (script: `ops/_checks/incident_bundle.ps1`) to generate an incident bundle
 2. Prints the bundle path: `INCIDENT_BUNDLE_PATH=incident_bundles/incident_bundle_YYYYMMDD_HHMMSS`
 
 The incident bundle contains:
@@ -182,8 +182,8 @@ The dashboard is integrated into CI via `.github/workflows/ops-status.yml`:
 
 3. **Review Individual Scripts**: Run each check individually to identify the issue
    ```powershell
-   .\ops\doctor.ps1
-   .\ops\verify.ps1
+   .\ops\ops.ps1 doctor
+   .\ops\ops.ps1 verify
    ```
 
 ### Specific Check Fails
@@ -196,13 +196,13 @@ The dashboard is integrated into CI via `.github/workflows/ops-status.yml`:
 ### Incident Bundle Not Generated
 
 If incident bundle generation fails:
-1. Check `ops/incident_bundle.ps1` is executable
+1. Check `ops/_checks/incident_bundle.ps1` is executable
 2. Verify `incident_bundles/` directory exists or can be created
 3. Check disk space and permissions
 
 ## Related Documentation
 
 - `docs/RULES.md` - Rule 27: New ops gates must be integrated into ops_status.ps1
-- `ops/incident_bundle.ps1` - Incident bundle generation
+- `.\ops\ops.ps1 incident-bundle` - Incident bundle generation
 - Individual ops script runbooks in `docs/runbooks/`
 

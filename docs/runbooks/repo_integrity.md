@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `ops/repo_integrity.ps1` script performs non-destructive checks to detect repository drift, duplicate files, missing critical scripts, and unexpected untracked dumps. This runbook provides a handover checklist for repository health.
+The Repository Integrity check is exposed via `.\ops\ops.ps1 repo-integrity` (script: `ops/_checks/repo_integrity.ps1`). It performs non-destructive checks to detect repository drift, duplicate files, missing critical scripts, and unexpected untracked dumps. This runbook provides a handover checklist for repository health.
 
 ## What It Checks
 
@@ -15,7 +15,7 @@ The `ops/repo_integrity.ps1` script performs non-destructive checks to detect re
 ## Running the Check
 
 ```powershell
-.\ops\repo_integrity.ps1
+.\ops\ops.ps1 repo-integrity
 ```
 
 **Exit Codes:**
@@ -27,7 +27,7 @@ The `ops/repo_integrity.ps1` script performs non-destructive checks to detect re
 
 Before handing over the repository to a new team member, ensure:
 
-- [ ] `.\ops\repo_integrity.ps1` returns PASS or WARN (not FAIL)
+- [ ] `.\ops\ops.ps1 repo-integrity` returns PASS or WARN (not FAIL)
 - [ ] No massive deleted-tracked files (>10 files)
 - [ ] Unexpected untracked dumps moved to `_archive/` or added to `.gitignore`
 - [ ] Duplicate/scratch folders removed or archived
@@ -82,11 +82,11 @@ git ls-files ops/*.ps1
 
 ## Integration
 
-The integrity check is automatically called by `ops/doctor.ps1` if `repo_integrity.ps1` exists. It is WARN-only unless critical scripts are missing (FAIL).
+The integrity check is automatically called by Repository Doctor (`.\ops\ops.ps1 doctor`). It is WARN-only unless critical scripts are missing (FAIL).
 
 ## Related
 
-- `ops/doctor.ps1` - Comprehensive repository health check
+- `.\ops\ops.ps1 doctor` - Comprehensive repository health check
 - `docs/REPO_LAYOUT.md` - Repository structure contract
 - `docs/RULES.md` - Development rules
 

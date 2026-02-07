@@ -5,8 +5,8 @@
 The Storage Posture checks verify that Laravel storage and cache directories are writable by the runtime user (`www-data`), preventing Monolog permission denied errors (`laravel.log` write failures).
 
 There are two complementary checks:
-- **Storage Write Check** (`ops/storage_write_check.ps1`): Validates log append works from container runtime context (www-data user perspective)
-- **Storage Posture Check** (`ops/storage_posture_check.ps1`): Verifies directories are writable by www-data user
+- **Storage Write Check** (`.\ops\ops.ps1 storage-write`, script: `ops/_checks/storage_write_check.ps1`): Validates log append works from container runtime context (www-data user perspective)
+- **Storage Posture Check** (`.\ops\ops.ps1 storage-posture`, script: `ops/_checks/storage_posture_check.ps1`): Verifies directories are writable by www-data user
 
 ## Why This Fails on Windows/Docker
 
@@ -48,7 +48,7 @@ Benefits:
 
 ## What storage_write_check.ps1 Does
 
-The `ops/storage_write_check.ps1` script (worker perspective validation):
+The `storage_write_check` script (worker perspective validation, located at `ops/_checks/storage_write_check.ps1`):
 
 1. Checks if `pazar-app` container is running
 2. Verifies paths exist: `/var/www/html/storage`, `/var/www/html/storage/logs`, `/var/www/html/bootstrap/cache`
@@ -61,7 +61,7 @@ This check validates the **actual runtime behavior** that php-fpm workers will e
 
 ## What storage_posture_check.ps1 Does
 
-The `ops/storage_posture_check.ps1` script (directory writability):
+The `storage_posture_check` script (directory writability, located at `ops/_checks/storage_posture_check.ps1`):
 
 1. Checks if `pazar-app` container is running
 2. Tests `/var/www/html/storage` writability (via `www-data` user)
@@ -101,7 +101,7 @@ docker compose exec -T pazar-app sh -c "stat -c '%U:%G' /var/www/html/storage"
 ### 3. Run Storage Write Check (Worker Perspective)
 
 ```powershell
-.\ops\storage_write_check.ps1
+.\ops\ops.ps1 storage-write
 ```
 
 **Expected Output:**
@@ -127,7 +127,7 @@ OVERALL STATUS: PASS
 ### 4. Run Storage Posture Check
 
 ```powershell
-.\ops\storage_posture_check.ps1
+.\ops\ops.ps1 storage-posture
 ```
 
 **Expected Output:**
@@ -202,7 +202,7 @@ docker compose logs pazar-app --tail 50 | Select-String -Pattern "permission|Per
 
 5. Re-run check:
    ```powershell
-   .\ops\storage_posture_check.ps1
+   .\ops\ops.ps1 storage-posture
    ```
 
 ### Entrypoint Script Failed
@@ -264,12 +264,12 @@ docker compose logs pazar-app --tail 50 | Select-String -Pattern "permission|Per
 - Keep code directories bind-mounted for live development
 - Ensure `docker-entrypoint.sh` runs on every container start (via `ENTRYPOINT` in Dockerfile)
 - Ensure `pazar-app` runs as root (`user: "0:0"`) for initial permissions fix
-- Run `.\ops\storage_posture_check.ps1` as part of CI/CD pipeline
+- Run `.\ops\ops.ps1 storage-posture` as part of CI/CD pipeline
 - Ensure `ops_status.ps1` includes storage_posture as BLOCKING check
 
 ## Related Documentation
 
-- `ops/storage_posture_check.ps1` - Automated storage posture verification
+- `.\ops\ops.ps1 storage-posture` - Automated storage posture verification
 - `docs/PROOFS/storage_posture_pass.md` - Proof documentation with acceptance tests
 - `docs/RULES.md` - Storage posture gate rule (RC0 requirement)
 - `work/pazar/docker/docker-entrypoint.sh` - Entrypoint script that ensures permissions on every start

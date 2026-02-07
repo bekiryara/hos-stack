@@ -12,7 +12,7 @@ Capture daily evidence snapshots of the stack state for:
 Run this command once per day (or as needed):
 
 ```powershell
-.\ops\daily_snapshot.ps1
+.\ops\ops.ps1 daily-snapshot
 ```
 
 ## What It Captures
@@ -31,7 +31,7 @@ The snapshot captures:
 5. **Health Checks**:
    - H-OS: `http://localhost:3000/v1/health`
    - Pazar: `http://localhost:8080/up`
-6. **Ops Status**: Output of `ops\ops_status.ps1` (if available)
+6. **Ops Status**: Output of `.\ops\ops.ps1 status` (if available)
 
 ## Snapshot Location
 
@@ -61,7 +61,7 @@ _archive/daily/20260114-143022/
 For automation or scripts, use quiet mode:
 
 ```powershell
-.\ops\daily_snapshot.ps1 -Quiet
+.\ops\_tools\daily_snapshot.ps1 -Quiet
 ```
 
 This suppresses progress messages and only outputs:

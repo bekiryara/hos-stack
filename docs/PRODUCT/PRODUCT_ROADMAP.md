@@ -61,16 +61,16 @@
 - [ ] Tenant context visible in UI
 - [ ] Home pages render for marketplace world (with vertical selection: commerce, food, rentals)
 - [ ] No database writes during MVP-0 (read-only operations only)
-- [ ] `ops/verify.ps1` PASS (stack health, FS posture)
-- [ ] `ops/conformance.ps1` PASS (world registry, disabled-world code policy)
+- [ ] `.\ops\ops.ps1 verify` PASS (stack health, FS posture)
+- [ ] `.\ops\ops.ps1 conformance` PASS (world registry, disabled-world code policy)
 - [ ] `ops/world_spine_check.ps1` PASS (world routes/controllers present)
 - [ ] `ops/routes_snapshot.ps1` PASS (route contract stable)
 - [ ] No UI 500 errors (storage/logs writable)
 - [ ] Request tracing functional (request_id in logs)
 
 **Ops Gates Required:**
-- `ops/verify.ps1` - PASS (stack health, FS posture)
-- `ops/conformance.ps1` - PASS (world registry, disabled-world code)
+- `.\ops\ops.ps1 verify` - PASS (stack health, FS posture)
+- `.\ops\ops.ps1 conformance` - PASS (world registry, disabled-world code)
 - `ops/world_spine_check.ps1` - PASS (world routes/controllers)
 - `ops/routes_snapshot.ps1` - PASS or WARN (route contract)
 - `ops/schema_snapshot.ps1` - PASS (schema contract, read-only = no changes)
@@ -98,8 +98,8 @@
 - [ ] Listings are tenant-scoped (only current tenant's listings visible)
 - [ ] World context maintained (world=marketplace parameter, vertical=commerce)
 - [ ] Basic listing fields displayed (title, description, price, images, etc.)
-- [ ] `ops/verify.ps1` PASS (stack health, FS posture)
-- [ ] `ops/conformance.ps1` PASS (world registry, disabled-world code)
+- [ ] `.\ops\ops.ps1 verify` PASS (stack health, FS posture)
+- [ ] `.\ops\ops.ps1 conformance` PASS (world registry, disabled-world code)
 - [ ] `ops/world_spine_check.ps1` PASS (marketplace world routes/controllers)
 - [ ] `ops/routes_snapshot.ps1` PASS (route contract updated with listing routes)
 - [ ] `ops/schema_snapshot.ps1` PASS (schema contract, listing tables/columns)
@@ -111,8 +111,8 @@
 - [ ] Basic metrics available (/metrics endpoint)
 
 **Ops Gates Required:**
-- `ops/verify.ps1` - PASS
-- `ops/conformance.ps1` - PASS
+- `.\ops\ops.ps1 verify` - PASS
+- `.\ops\ops.ps1 conformance` - PASS
 - `ops/world_spine_check.ps1` - PASS
 - `ops/routes_snapshot.ps1` - PASS (route contract updated)
 - `ops/schema_snapshot.ps1` - PASS (schema contract updated with listing tables)
@@ -146,8 +146,8 @@
 - [ ] Ops hooks integrated (metrics, alerts, request traces)
 - [ ] Tenant-scoped creation (only tenant can create listings)
 - [ ] World context maintained (world=marketplace parameter, vertical=commerce)
-- [ ] `ops/verify.ps1` PASS (stack health, FS posture)
-- [ ] `ops/conformance.ps1` PASS (world registry, disabled-world code)
+- [ ] `.\ops\ops.ps1 verify` PASS (stack health, FS posture)
+- [ ] `.\ops\ops.ps1 conformance` PASS (world registry, disabled-world code)
 - [ ] `ops/world_spine_check.ps1` PASS (marketplace world routes/controllers)
 - [ ] `ops/routes_snapshot.ps1` PASS (route contract updated with create/publish routes)
 - [ ] `ops/schema_snapshot.ps1` PASS (schema contract updated with audit fields, events table)
@@ -162,8 +162,8 @@
 - [ ] Alerting baseline functional (critical errors alert)
 
 **Ops Gates Required:**
-- `ops/verify.ps1` - PASS
-- `ops/conformance.ps1` - PASS
+- `.\ops\ops.ps1 verify` - PASS
+- `.\ops\ops.ps1 conformance` - PASS
 - `ops/world_spine_check.ps1` - PASS
 - `ops/routes_snapshot.ps1` - PASS (route contract updated)
 - `ops/schema_snapshot.ps1` - PASS (schema contract updated with audit/events)

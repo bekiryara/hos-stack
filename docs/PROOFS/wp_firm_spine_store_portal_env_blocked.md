@@ -12,7 +12,7 @@ Timestamp: 2026-01-30
 - Conformance ve update_code_index bu ortamda PASS.
 
 ## Yerel doğrulama adımları
-1. **Ortam ön kontrolü:** `.\ops\env_preflight.ps1` — node, npm, docker, docker compose sürümleri; biri FAIL ise aksiyon mesajı ile exit 1.
+1. **Ortam ön kontrolü:** `.\ops\_legacy\legacy.ps1 env-preflight` — node, npm, docker, docker compose sürümleri; biri FAIL ise aksiyon mesajı ile exit 1.
 2. **Gate paketi:** `.\ops\run_wp_next_local_gates.ps1` — env_preflight → frontend_smoke → verify → conformance → update_code_index; çıktı `docs/PROOFS/_logs/wp_next_gates_YYYYMMDD_HHMMSS.log` dosyasına yazılır.
 3. **PASS kanıtı:** Yerel koşumdan sonra `docs/PROOFS/wp_firm_spine_store_portal_final_pass.md` doldurulacak (timestamp, log referansı, Sonuç: PASS).
 

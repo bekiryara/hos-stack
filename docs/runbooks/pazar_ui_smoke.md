@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Pazar UI Smoke Gate (`ops/pazar_ui_smoke.ps1`) validates that the Pazar admin UI endpoint (`/ui/admin/control-center`) is accessible and that no logging permission denied errors are present in container logs. This gate prevents UI 500 errors caused by Monolog "Permission denied" errors when Laravel cannot write to `storage/logs/laravel.log`.
+The Pazar UI Smoke Gate is exposed via `.\ops\ops.ps1 pazar-ui-smoke` (script: `ops/_checks/pazar_ui_smoke.ps1`). It validates that the Pazar admin UI endpoint (`/ui/admin/control-center`) is accessible and that no logging permission denied errors are present in container logs. This gate prevents UI 500 errors caused by Monolog "Permission denied" errors when Laravel cannot write to `storage/logs/laravel.log`.
 
 ## What It Checks
 
@@ -24,7 +24,7 @@ The Pazar UI Smoke Gate (`ops/pazar_ui_smoke.ps1`) validates that the Pazar admi
 docker compose up -d
 
 # Run the gate
-powershell -ExecutionPolicy Bypass -File .\ops\pazar_ui_smoke.ps1
+.\ops\ops.ps1 pazar-ui-smoke
 ```
 
 ### With CI
@@ -33,7 +33,7 @@ The gate runs automatically via `.github/workflows/pazar-ui-smoke.yml` on:
 - Pull requests to `main` or `develop` affecting:
   - `work/pazar/docker/docker-entrypoint.sh`
   - `docker-compose.yml`
-  - `ops/pazar_ui_smoke.ps1`
+  - `ops/_checks/pazar_ui_smoke.ps1`
   - `.github/workflows/pazar-ui-smoke.yml`
 - Pushes to `main` or `develop` affecting the same paths
 
@@ -123,7 +123,7 @@ Action: Check HOS_LARAVEL_LOG_STDOUT=1 is set and docker-entrypoint.sh symlinks 
 
 3. **Re-run the gate**:
    ```powershell
-   powershell -ExecutionPolicy Bypass -File .\ops\pazar_ui_smoke.ps1
+   .\ops\ops.ps1 pazar-ui-smoke
    ```
 
 ### Endpoint Not Reachable
@@ -158,6 +158,7 @@ The gate is integrated into `ops/ops_status.ps1` as a **BLOCKING** check:
 The gate runs automatically in CI via `.github/workflows/pazar-ui-smoke.yml`:
 - Brings up core stack (root compose)
 - Runs `ops/pazar_ui_smoke.ps1`
+- (via dispatcher: `.\ops\ops.ps1 pazar-ui-smoke`)
 - On FAIL: Uploads docker compose logs as artifact
 - Always: Cleans up (docker compose down)
 

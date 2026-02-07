@@ -37,7 +37,7 @@ jobs:
           WORLD: commerce
           CI: true
         run: |
-          pwsh -File ./ops/product_spine_e2e_check.ps1
+          pwsh -File ./ops/_checks/product_spine_e2e_check.ps1
       
       - name: Upload Logs on Failure
         if: failure()

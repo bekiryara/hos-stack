@@ -68,7 +68,7 @@ Baseline is "working" when:
 ## Verification Command
 
 ```powershell
-.\ops\verify.ps1
+.\ops\ops.ps1 verify
 ```
 
 This command checks:
@@ -97,7 +97,7 @@ docker compose up -d --build
 
 **Alternative (with wrapper):**
 ```powershell
-.\ops\stack_up.ps1 -Profile core
+.\ops\ops.ps1 up -StackProfile core
 ```
 
 **Note:** If `docker-compose.override.yml` exists, it will be automatically used by Docker Compose to override environment variables (e.g., `HOS_OIDC_ISSUER`, `HOS_OIDC_WORLD` for pazar-app). This is intentional for local development customization.
@@ -109,11 +109,11 @@ docker compose up -d --build
 1. **Start:** `docker compose up -d --build`
    - Starts all services in detached mode
 
-2. **Verify:** `.\ops\verify.ps1`
+2. **Verify:** `.\ops\ops.ps1 verify`
    - Checks container status, health endpoints, filesystem posture
    - Exit code: 0=PASS, 1=FAIL
 
-3. **Snapshot:** `.\ops\daily_snapshot.ps1`
+3. **Snapshot:** `.\ops\ops.ps1 daily-snapshot`
    - Creates daily evidence snapshot in `_archive/daily/YYYYMMDD-HHmmss/`
    - Captures: git status, commit hash, container status, logs, health checks
 
@@ -124,9 +124,9 @@ docker compose up -d --build
 Use this when “I changed frontend code but browser still shows old UI”:
 
 1. **Hard refresh first:** `Ctrl+Shift+R` (Windows/Linux) / `Cmd+Shift+R` (Mac). (`Ctrl+F5` is also ok.)
-2. If still stale (Docker-served UI): run `.\ops\frontend_refresh.ps1` (restart web containers).
-3. If still stale or build/deps changed: run `.\ops\frontend_refresh.ps1 -Build` (rebuild web containers).
-5. If you changed only docs/backend: do **not** rebuild frontend; rerun `.\ops\verify.ps1` instead.
+2. If still stale (Docker-served UI): run `.\ops\ops.ps1 refresh` (restart web containers).
+3. If still stale or build/deps changed: run `.\ops\ops.ps1 refresh -Build` (rebuild web containers).
+5. If you changed only docs/backend: do **not** rebuild frontend; rerun `.\ops\ops.ps1 verify` instead.
 6. If you still can’t see changes: confirm you’re on the right URL (`/marketplace/`) and no browser extension is caching.
 
 See: `docs/runbooks/frontend_refresh.md` for the full decision table.
@@ -134,8 +134,8 @@ See: `docs/runbooks/frontend_refresh.md` for the full decision table.
 ## No PASS, No Next Step Rule
 
 **CRITICAL:** Before starting new work:
-- Run `.\ops\verify.ps1` → Must PASS (exit code 0)
-- Run `.\ops\conformance.ps1` → Must PASS (exit code 0)
+- Run `.\ops\ops.ps1 verify` → Must PASS (exit code 0)
+- Run `.\ops\ops.ps1 conformance` → Must PASS (exit code 0)
 - If either fails, fix issues before proceeding
 
 This ensures baseline remains stable and prevents breaking changes.
@@ -171,8 +171,8 @@ This ensures baseline remains stable and prevents breaking changes.
 
 **Yerel gate koşumu:**
 - Yerel gate koşumu için Node.js + npm + Docker Desktop zorunludur.
-- Aşağıdaki script ile tek komut gate pack çalışır: `ops/run_wp_next_local_gates.ps1`.
-- Önce `ops/env_preflight.ps1` ile ortam kontrolü yapılır; FAIL ise gate paketi çalıştırılmaz.
+- Aşağıdaki script ile tek komut gate pack çalışır: `ops/_checks/run_wp_next_local_gates.ps1`.
+- Önce `.\ops\_legacy\legacy.ps1 env-preflight` ile ortam kontrolü yapılır; FAIL ise gate paketi çalıştırılmaz.
 - Tüm gate çıktısı `docs/PROOFS/_logs/wp_next_gates_YYYYMMDD_HHMMSS.log` dosyasına yazılır.
 - PASS kanıtı yerel koşumdan sonra `docs/PROOFS/wp_firm_spine_store_portal_final_pass.md` ile doldurulur.
 

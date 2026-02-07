@@ -26,7 +26,7 @@ jobs:
       - name: Check route snapshot
         shell: pwsh
         run: |
-          pwsh ./ops/routes_snapshot.ps1
+          pwsh ./ops/_checks/routes_snapshot.ps1
 
       - name: Upload diff on failure
         if: failure()

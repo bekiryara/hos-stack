@@ -26,7 +26,7 @@ jobs:
       - name: Run ops drift guard
         shell: pwsh
         run: |
-          pwsh ./ops/ops_drift_guard.ps1 -Ci
+          pwsh ./ops/_checks/ops_drift_guard.ps1 -Ci
 
       - name: Run ops status dashboard
         shell: pwsh

@@ -4,12 +4,12 @@ on:
   pull_request:
     paths:
       - 'work/pazar/**'
-      - 'ops/pazar_spine_check.ps1'
-      - 'ops/world_status_check.ps1'
-      - 'ops/catalog_contract_check.ps1'
-      - 'ops/listing_contract_check.ps1'
-      - 'ops/reservation_contract_check.ps1'
-      - 'ops/v2_gate.ps1'
+      - 'ops/_checks/pazar_spine_check.ps1'
+      - 'ops/_checks/world_status_check.ps1'
+      - 'ops/_checks/catalog_contract_check.ps1'
+      - 'ops/_checks/listing_contract_check.ps1'
+      - 'ops/_checks/reservation_contract_check.ps1'
+      - 'ops/_checks/v2_gate.ps1'
       - 'docs/SPEC.md'
       - '.github/workflows/gate-pazar-spine.yml'
   push:
@@ -17,8 +17,8 @@ on:
       - main
     paths:
       - 'work/pazar/**'
-      - 'ops/pazar_spine_check.ps1'
-      - 'ops/v2_gate.ps1'
+      - 'ops/_checks/pazar_spine_check.ps1'
+      - 'ops/_checks/v2_gate.ps1'
       - '.github/workflows/gate-pazar-spine.yml'
 
 jobs:
@@ -75,11 +75,11 @@ jobs:
       
       - name: Run V2 Gate (0-targets)
         run: |
-          pwsh -File ./ops/v2_gate.ps1
+          pwsh -File ./ops/_checks/v2_gate.ps1
         continue-on-error: false
       
       - name: Run Pazar Spine Check
         run: |
-          pwsh -File ./ops/pazar_spine_check.ps1
+          pwsh -File ./ops/_checks/pazar_spine_check.ps1
         continue-on-error: false
 
