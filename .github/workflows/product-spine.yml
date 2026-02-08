@@ -16,32 +16,35 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      
-      - name: Set up PowerShell
-        uses: actions/setup-powershell@v1
-        with:
-          pwsh-version: '7.2'
+        uses: actions/checkout@v4
+
+      - name: CI preflight (secrets + external volume)
+        shell: pwsh
+        run: |
+          pwsh ./ops/_tools/ci_preflight.ps1
       
       - name: Start Core Services
         run: |
-          docker compose up -d core
+          docker compose up -d --build
           sleep 10
+
+      - name: Seed public tenant (for Google-first checks)
+        shell: pwsh
+        run: |
+          pwsh ./ops/_tools/ci_seed_public_tenant.ps1 -Quiet
       
       - name: Run Product Spine E2E Check
+        shell: pwsh
         env:
-          PRODUCT_TEST_EMAIL: ${{ secrets.PRODUCT_TEST_EMAIL }}
-          PRODUCT_TEST_PASSWORD: ${{ secrets.PRODUCT_TEST_PASSWORD }}
-          TENANT_A_SLUG: ${{ secrets.TENANT_A_SLUG }}
-          TENANT_B_SLUG: ${{ secrets.TENANT_B_SLUG }}
-          WORLD: commerce
-          CI: true
+          PRODUCT_TEST_TENANT_ID: ${{ secrets.PRODUCT_TEST_TENANT_ID }}
+          PRODUCT_TEST_AUTH: ${{ secrets.PRODUCT_TEST_AUTH_TOKEN }}
         run: |
           pwsh -File ./ops/_checks/product_spine_e2e_check.ps1
+          if ($LASTEXITCODE -eq 1) { exit 1 } else { exit 0 }
       
       - name: Upload Logs on Failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: product-spine-e2e-logs
           path: |

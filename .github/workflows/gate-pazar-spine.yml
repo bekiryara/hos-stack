@@ -39,6 +39,11 @@ jobs:
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: CI preflight (secrets + external volume)
+        shell: pwsh
+        run: |
+          pwsh ./ops/_tools/ci_preflight.ps1
       
       - name: Start services
         run: |
@@ -47,6 +52,11 @@ jobs:
           export CATALOG_MANIFESTS_HOST_PATH=./work/pazar/catalog/manifests_ci
           docker compose up -d --build
           sleep 10
+
+      - name: Seed public tenant (for Google-first checks)
+        shell: pwsh
+        run: |
+          pwsh ./ops/_tools/ci_seed_public_tenant.ps1 -Quiet
       
       - name: Wait for services
         run: |
@@ -69,9 +79,6 @@ jobs:
             echo "SKIP: catalog manifests not found at /var/www/html/catalog/manifests (external dataset not mounted in CI)."
           fi
         continue-on-error: false
-      
-      - name: Install PowerShell
-        uses: microsoft/setup-powershell@v1
       
       - name: Run V2 Gate (0-targets)
         run: |

@@ -24,9 +24,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup PowerShell
-        uses: actions/setup-powershell@v1
-
       - name: Run Update Script
         run: |
           pwsh -File ops/_checks/update_code_index.ps1 -AutoCommit

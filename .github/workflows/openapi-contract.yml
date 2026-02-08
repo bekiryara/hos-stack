@@ -24,11 +24,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup PowerShell
-        uses: microsoft/setup-powershell@v1
-        with:
-          pwsh-version: '7.4'
-      
       - name: Run OpenAPI Contract Check
         shell: pwsh
         run: |
