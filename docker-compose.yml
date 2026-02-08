@@ -35,6 +35,9 @@ services:
       PORT: 3000
       HOS_DEBUG_OIDC: "true"
       HOS_API_KEY: "dev-api-key"
+      # Where the browser should land after successful Google OAuth.
+      # Used by /v1/auth/google/callback (HTML flow) to hand token back to Marketplace.
+      MARKETPLACE_WEB_PUBLIC_URL: "http://localhost:3002/marketplace"
       OTEL_ENABLED: "false"
       PAZAR_STATUS_URL: "http://pazar-app:80"
       MESSAGING_STATUS_URL: "http://messaging-api:3000"

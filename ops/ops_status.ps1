@@ -60,6 +60,7 @@ $checkRegistry = @(
     @{ Id = "triage"; Name = "Incident Triage"; ScriptPath = ".\ops\triage.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); CoreDependent = $false },
     @{ Id = "storage_write"; Name = "Storage Write"; ScriptPath = ".\ops\storage_write_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "storage_posture"; Name = "Storage Posture"; ScriptPath = ".\ops\storage_posture_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
+    @{ Id = "google_first_oauth_smoke"; Name = "Google-first OAuth Smoke"; ScriptPath = ".\ops\google_first_oauth_smoke.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $true },
     @{ Id = "pazar_ui_smoke"; Name = "Pazar UI Smoke"; ScriptPath = ".\ops\pazar_ui_smoke.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "pazar_storage_posture"; Name = "Pazar Storage Posture"; ScriptPath = ".\ops\pazar_storage_posture.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "slo_check"; Name = "SLO Check"; ScriptPath = ".\ops\slo_check.ps1"; Blocking = $false; OnFailAction = $null; Arguments = @("10"); Optional = $true; CoreDependent = $true },

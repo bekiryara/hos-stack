@@ -14,7 +14,8 @@ import {
 } from "./helpers.js";
 
 const googleStartQuery = z.object({
-  tenantSlug: z.string().min(3).max(50)
+  // Optional: if omitted, defaults to public customer login (tenantless token).
+  tenantSlug: z.string().min(3).max(50).optional()
 });
 
 const googleCallbackQuery = z.object({
@@ -31,8 +32,20 @@ export function registerGoogleOAuth(app, { db }) {
     const parsed = googleStartQuery.safeParse(req.query ?? {});
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
 
-    const tenant = await db.query("select id from tenants where slug = $1", [parsed.data.tenantSlug]);
-    if (tenant.rowCount === 0) return reply.code(404).send({ error: "tenant_not_found" });
+    const DEFAULT_PUBLIC_TENANT_SLUG = readEnvOrFile("DEFAULT_PUBLIC_TENANT_SLUG") || "public";
+    const tenantSlug = String(parsed.data.tenantSlug || DEFAULT_PUBLIC_TENANT_SLUG)
+      .toLowerCase()
+      .trim();
+    const mode = tenantSlug === DEFAULT_PUBLIC_TENANT_SLUG ? "public" : "tenant";
+
+    const tenant = await db.query("select id from tenants where slug = $1 limit 1", [tenantSlug]);
+    if (tenant.rowCount === 0) {
+      if (mode === "public") {
+        // Misconfigured system: public tenant missing.
+        return reply.code(501).send({ error: "public_tenant_not_configured" });
+      }
+      return reply.code(404).send({ error: "tenant_not_found" });
+    }
 
     const state = crypto.randomUUID();
     const verifier = base64Url(crypto.randomBytes(32));
@@ -42,7 +55,8 @@ export function registerGoogleOAuth(app, { db }) {
 
     reply.setCookie("hos_oauth_state", state, cookieOpts);
     reply.setCookie("hos_oauth_verifier", verifier, cookieOpts);
-    reply.setCookie("hos_oauth_tenant", parsed.data.tenantSlug, cookieOpts);
+    reply.setCookie("hos_oauth_tenant", tenantSlug, cookieOpts);
+    reply.setCookie("hos_oauth_mode", mode, cookieOpts);
 
     const params = new URLSearchParams({
       client_id: readEnvOrFile("GOOGLE_CLIENT_ID"),
@@ -59,21 +73,38 @@ export function registerGoogleOAuth(app, { db }) {
   });
 
   app.get("/auth/google/callback", async (req, reply) => {
+    const accept = String(req.headers.accept || "");
+    const wantsHtml = accept.includes("text/html");
+    const marketplaceBase =
+      String(readEnvOrFile("MARKETPLACE_WEB_PUBLIC_URL") || "http://localhost:3002/marketplace").replace(/\/+$/, "");
+
+    function redirectToMarketplaceLogin(reason, extra = {}) {
+      const qs = new URLSearchParams({ reason, ...extra });
+      return reply.redirect(`${marketplaceBase}/login?${qs.toString()}`);
+    }
+
     if (!isGoogleConfigured()) {
+      if (wantsHtml) return redirectToMarketplaceLogin("google_not_configured");
       return reply.code(501).send({ error: "google_oauth_not_configured" });
     }
 
     const parsed = googleCallbackQuery.safeParse(req.query ?? {});
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    if (!parsed.success) {
+      if (wantsHtml) return redirectToMarketplaceLogin("google_invalid_callback");
+      return reply.code(400).send({ error: parsed.error.flatten() });
+    }
 
     const expectedState = req.cookies?.hos_oauth_state;
     const verifier = req.cookies?.hos_oauth_verifier;
     const tenantSlug = req.cookies?.hos_oauth_tenant;
+    const modeCookie = req.cookies?.hos_oauth_mode;
 
     if (!expectedState || !verifier || !tenantSlug) {
+      if (wantsHtml) return redirectToMarketplaceLogin("google_state_missing");
       return reply.code(401).send({ error: "oauth_state_missing" });
     }
     if (parsed.data.state !== expectedState) {
+      if (wantsHtml) return redirectToMarketplaceLogin("google_state_mismatch");
       return reply.code(401).send({ error: "oauth_state_mismatch" });
     }
 
@@ -92,18 +123,23 @@ export function registerGoogleOAuth(app, { db }) {
 
     if (!tokenRes.ok) {
       const txt = await tokenRes.text().catch(() => "");
+      if (wantsHtml) return redirectToMarketplaceLogin("google_token_exchange_failed");
       return reply.code(401).send({ error: "oauth_token_exchange_failed", detail: txt.slice(0, 500) });
     }
 
     const tokenJson = await tokenRes.json();
     const idToken = tokenJson?.id_token;
-    if (!idToken) return reply.code(401).send({ error: "missing_id_token" });
+    if (!idToken) {
+      if (wantsHtml) return redirectToMarketplaceLogin("google_missing_id_token");
+      return reply.code(401).send({ error: "missing_id_token" });
+    }
 
     const infoRes = await fetch(
       `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`
     );
     if (!infoRes.ok) {
       const txt = await infoRes.text().catch(() => "");
+      if (wantsHtml) return redirectToMarketplaceLogin("google_invalid_token");
       return reply.code(401).send({ error: "invalid_google_token", detail: txt.slice(0, 500) });
     }
     const info = await infoRes.json();
@@ -112,12 +148,32 @@ export function registerGoogleOAuth(app, { db }) {
     const emailVerified = String(info?.email_verified ?? "") === "true";
     const aud = String(info?.aud ?? "");
 
-    if (!googleSub || !email) return reply.code(401).send({ error: "invalid_google_claims" });
-    if (aud !== readEnvOrFile("GOOGLE_CLIENT_ID")) return reply.code(401).send({ error: "invalid_google_audience" });
-    if (!emailVerified) return reply.code(401).send({ error: "email_not_verified" });
+    if (!googleSub || !email) {
+      if (wantsHtml) return redirectToMarketplaceLogin("google_invalid_claims");
+      return reply.code(401).send({ error: "invalid_google_claims" });
+    }
+    if (aud !== readEnvOrFile("GOOGLE_CLIENT_ID")) {
+      if (wantsHtml) return redirectToMarketplaceLogin("google_invalid_audience");
+      return reply.code(401).send({ error: "invalid_google_audience" });
+    }
+    if (!emailVerified) {
+      if (wantsHtml) return redirectToMarketplaceLogin("google_email_not_verified");
+      return reply.code(401).send({ error: "email_not_verified" });
+    }
 
-    const tenant = await db.query("select id from tenants where slug = $1", [tenantSlug]);
-    if (tenant.rowCount === 0) return reply.code(404).send({ error: "tenant_not_found" });
+    const DEFAULT_PUBLIC_TENANT_SLUG = readEnvOrFile("DEFAULT_PUBLIC_TENANT_SLUG") || "public";
+    const effectiveMode =
+      modeCookie === "public" || modeCookie === "tenant"
+        ? modeCookie
+        : String(tenantSlug).toLowerCase() === DEFAULT_PUBLIC_TENANT_SLUG
+          ? "public"
+          : "tenant";
+
+    const tenant = await db.query("select id from tenants where slug = $1 limit 1", [tenantSlug]);
+    if (tenant.rowCount === 0) {
+      if (wantsHtml) return redirectToMarketplaceLogin("google_tenant_not_found");
+      return reply.code(404).send({ error: "tenant_not_found" });
+    }
     const tenantId = tenant.rows[0].id;
 
     let user = await db.query(
@@ -145,31 +201,31 @@ export function registerGoogleOAuth(app, { db }) {
       }
     }
 
-    const token = signAccessToken({ sub: user.rows[0].id, tenantId, role: user.rows[0].role ?? "member" });
-    const refresh = await issueRefreshToken(db, { tenantId, userId: user.rows[0].id });
-    reply.setCookie("hos_refresh", refresh.token, sessionCookieOptions(req));
-    await audit(db, { action: "user.login.google", tenantId, actorUserId: user.rows[0].id });
+    const role = user.rows[0].role ?? "member";
+    const userId = user.rows[0].id;
+    const token =
+      effectiveMode === "public"
+        ? signAccessToken({ sub: userId, tenantId: null, role })
+        : signAccessToken({ sub: userId, tenantId, role });
+
+    if (effectiveMode !== "public") {
+      const refresh = await issueRefreshToken(db, { tenantId, userId });
+      reply.setCookie("hos_refresh", refresh.token, sessionCookieOptions(req));
+    }
+
+    await audit(db, { action: "user.login.google", tenantId, actorUserId: userId });
 
     const cookieOpts = oauthCookieOptions();
     reply.clearCookie("hos_oauth_state", cookieOpts);
     reply.clearCookie("hos_oauth_verifier", cookieOpts);
     reply.clearCookie("hos_oauth_tenant", cookieOpts);
+    reply.clearCookie("hos_oauth_mode", cookieOpts);
 
-    const accept = String(req.headers.accept || "");
-    if (accept.includes("text/html")) {
-      reply.header("content-type", "text/html; charset=utf-8");
-      reply.header("cache-control", "no-store");
-      return reply.send(`<!doctype html>
-<html lang="en">
-  <head><meta charset="utf-8"><title>H-OS Login</title></head>
-  <body style="font-family:system-ui,Segoe UI,Arial,sans-serif;padding:24px;max-width:900px">
-    <h2>Login OK</h2>
-    <p>JWT token:</p>
-    <textarea style="width:100%;height:140px" readonly>${token}</textarea>
-    <p>Test:</p>
-    <pre>curl -H "Authorization: Bearer &lt;token&gt;" http://localhost:3000/v1/me</pre>
-  </body>
-</html>`);
+    if (wantsHtml) {
+      // Standard UX: send user back to Marketplace to store session token.
+      // Put token in URL fragment (not query) to avoid server logs.
+      const fragment = `token=${encodeURIComponent(token)}`;
+      return reply.redirect(`${marketplaceBase}/oauth/complete#${fragment}`);
     }
 
     return reply.send({ token });

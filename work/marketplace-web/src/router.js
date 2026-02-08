@@ -16,6 +16,7 @@ import LoginPage from './pages/LoginPage.vue';
 import RegisterPage from './pages/RegisterPage.vue';
 import FirmRegisterPage from './pages/FirmRegisterPage.vue';
 import FirmPortalPage from './pages/FirmPortalPage.vue';
+import OAuthCompletePage from './pages/OAuthCompletePage.vue';
 import { isLoggedIn } from './lib/session.js';
 
 const routes = [
@@ -34,6 +35,7 @@ const routes = [
   { path: '/account/reservations/:id', component: ReservationDetailPage, props: true, meta: { requiresAuth: true } },
   { path: '/firm', component: FirmPortalPage, meta: { requiresAuth: true, requiresFirm: true } },
   { path: '/firm/register', component: FirmRegisterPage, meta: { requiresAuth: true } },
+  { path: '/oauth/complete', component: OAuthCompletePage },
   { path: '/auth', redirect: '/login' },
   { path: '/login', component: LoginPage },
   { path: '/register', component: RegisterPage },
