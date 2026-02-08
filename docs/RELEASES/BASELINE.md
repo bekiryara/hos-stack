@@ -25,13 +25,13 @@ When you checkout the BASELINE tag, you are guaranteed:
    - Pazar: `GET http://localhost:8080/up` returns `"ok"`
 
 3. **Verification Scripts Pass**
-   - `.\ops\verify.ps1` returns exit code 0
-   - `.\ops\baseline_status.ps1` returns exit code 0
+   - `.\ops\ops.ps1 verify` returns exit code 0
+   - `.\ops\ops.ps1 baseline-status` returns exit code 0
 
 4. **Documentation is Complete**
    - `docs/CURRENT.md` describes the stack
    - `docs/ONBOARDING.md` provides quick start
-   - `docs/DECISIONS.md` documents frozen items
+   - `docs/SPEC.md` and `docs/RULES.md` document baseline rules
 
 ## What is NOT Guaranteed
 
@@ -44,7 +44,7 @@ When you checkout the BASELINE tag, you are guaranteed:
 
 ```powershell
 # Ensure baseline passes
-.\ops\verify.ps1
+.\ops\ops.ps1 verify
 
 # Create tag
 git tag -a BASELINE-2026-01-14 -m "BASELINE: RELEASE-GRADE BASELINE RESET v1"
@@ -63,14 +63,14 @@ git checkout BASELINE-2026-01-14
 docker compose up -d --build
 
 # Verify baseline
-.\ops\verify.ps1
+.\ops\ops.ps1 verify
 ```
 
 ## Related Documentation
 
-- **Proof:** `docs/PROOFS/baseline_pass.md` (verification evidence)
+- **Proof:** `docs/PROOFS/PASS_LOG.md` (verification evidence)
 - **Current State:** `docs/CURRENT.md` (single source of truth)
-- **Decisions:** `docs/DECISIONS.md` (frozen items)
+- **Rules:** `docs/SPEC.md` and `docs/RULES.md` (baseline rules)
 
 
 

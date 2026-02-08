@@ -145,7 +145,7 @@ If a CI gate fails in GitHub Actions, check these locations:
 - **What it checks**: Error envelope format (422 validation, 404 not found)
 - **Where to look**: `.github/workflows/error-contract.yml` logs, response body format
 - **Common causes**: Error response format changed, request_id missing, error_code format changed
-- **Fix**: Ensure error responses use standard envelope format (see `docs/runbooks/errors.md`)
+- **Fix**: Ensure error responses use standard envelope format (see `docs/SPEC.md` “Error Contract” section)
 
 ## Safe Rollback Notes
 
@@ -246,6 +246,6 @@ Named volumes (`pazar_storage`, `pazar_cache`) may be created with incorrect own
 - `pazar-perms-init` service (one-shot, restart: "no") runs before `pazar-app` starts
 - `pazar-app` has `depends_on: pazar-perms-init: condition: service_completed_successfully`
 - Named volumes (`pazar_storage`, `pazar_cache`) are used (not Windows bind mounts)
-- See `docs/PROOFS/rc0_pazar_storage_permissions_pass.md` for complete fix documentation
+- See `docs/PROOFS/PASS_LOG.md` for the latest verification/evidence note
 
 

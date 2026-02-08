@@ -18,8 +18,8 @@ ISLEM SIRASI (degismez):
 TEK MAIN / TEK YAYIN YOLU:
 - Gunluk calisma yerel olabilir, ancak main'e yayin `.\ops\ops.ps1 ship` ile yapilir (veya WP akisinda: commit -> ops_run -Profile Prototype -> push).
 - ship zorunlu kilar: main branch, temiz working tree, gates fail-fast calistir, sonra pull --rebase ve push.
-- Gates sirasi: secret_scan -> public_ready_check -> repo_payload_guard -> closeouts_size_gate -> conformance -> frontend_smoke -> prototype_smoke -> prototype_flow_smoke (varsa).
-- WP kapanisinda: proof dokumani olustur (docs/PROOFS/wpXX_*.md), docs/WP_CLOSEOUTS.md'ye entry ekle (Purpose, Deliverables, Commands, Proof, Key Findings), CHANGELOG.md'ye entry ekle (### WP-XX: Title (tarih) formatinda, **bold** section'lar ile).
+- Gates sirasi: update_code_index -> verify_wp_closeouts -> secret_scan -> public_ready_check -> repo_payload_guard -> closeouts_size_gate -> conformance -> frontend_smoke.
+- WP kapanisinda: kaniti tek dosyaya yaz (docs/PROOFS/PASS_LOG.md), docs/WP_CLOSEOUTS.md'ye entry ekle (Purpose, Deliverables, Commands, Proof, Key Findings), CHANGELOG.md'ye entry ekle (### WP-XX: Title (tarih) formatinda, **bold** section'lar ile).
 
 Roller:
 - Cursor: Sadece dosya duzenler ve komut onerir. Git islemi YAPMAZ.

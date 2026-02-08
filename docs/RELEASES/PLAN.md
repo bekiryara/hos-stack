@@ -29,22 +29,22 @@ Before creating a baseline tag, ensure:
 
 1. **Baseline checks pass:**
    ```powershell
-   .\ops\baseline_status.ps1
-   .\ops\verify.ps1
+   .\ops\ops.ps1 baseline-status
+   .\ops\ops.ps1 verify
    ```
 
 2. **Conformance passes:**
    ```powershell
-   .\ops\conformance.ps1
+   .\ops\ops.ps1 conformance
    ```
 
 3. **CHANGELOG entry exists:**
    - Entry for baseline-impacting change in CHANGELOG.md
    - Format: Keep a Changelog format
 
-4. **Proof doc exists:**
-   - Proof doc in `docs/PROOFS/` for the change
-   - Includes verification commands and expected outputs
+4. **Proof entry exists:**
+   - Proof entry in `docs/PROOFS/PASS_LOG.md` for the change
+   - Includes verification commands and a short expected vs actual note
 
 5. **Release note generated:**
    ```powershell
@@ -55,8 +55,8 @@ Before creating a baseline tag, ensure:
 
 1. **Verify baseline:**
    ```powershell
-   .\ops\baseline_status.ps1
-   .\ops\verify.ps1
+   .\ops\ops.ps1 baseline-status
+   .\ops\ops.ps1 verify
    ```
 
 2. **Generate release note:**
@@ -73,7 +73,7 @@ Before creating a baseline tag, ensure:
 4. **Verify tag:**
    ```powershell
    git checkout BASELINE-2026-01-15
-   .\ops\baseline_status.ps1
+   .\ops\ops.ps1 baseline-status
    git checkout main
    ```
 
@@ -85,9 +85,9 @@ Before creating a baseline tag, ensure:
 
 ## Related Documentation
 
-- **Baseline definition**: `docs/DECISIONS.md`
+- **Baseline rules**: `docs/SPEC.md` and `docs/RULES.md`
 - **Current baseline**: `docs/CURRENT.md`
-- **Release checklist**: `docs/RELEASE_CHECKLIST.md`
+- **Publish discipline**: `docs/DEV_DISCIPLINE.md`
 
 
 

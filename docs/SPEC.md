@@ -12,7 +12,7 @@
 ### §1.1. Baseline Freeze
 - Baseline services, ports, and health endpoints are **frozen** (cannot be changed)
 - Baseline definition: `docs/RELEASES/BASELINE.md`
-- Baseline verification: `ops/baseline_status.ps1`
+- Baseline verification: `.\ops\ops.ps1 baseline-status`
 
 ### §1.2. No Vertical Controllers
 - Schema-driven approach prevents controller explosion
@@ -22,13 +22,12 @@
 ### §1.3. Single Source of Truth
 - `docs/SPEC.md` - Canonical specification (this document)
 - `docs/CURRENT.md` - Current system state
-- `docs/DECISIONS.md` - Baseline decisions
 - `docs/ONBOARDING.md` - Quick start guide
 
 ### §1.4. Proof-Driven Development
-- Every code change requires proof document in `docs/PROOFS/`
-- Proof documents contain real command outputs
-- SPEC references proof documents, not raw outputs
+- Every meaningful code change requires a proof entry in `docs/PROOFS/PASS_LOG.md`
+- Proof entries contain real command outputs (key lines) and the command(s) run
+- SPEC references the proof log (not raw terminal history)
 
 ---
 
@@ -74,7 +73,7 @@ hos-stack/
 ├── docs/                       # Documentation
 │   ├── SPEC.md                 # Canonical spec (this file)
 │   ├── CURRENT.md              # Current system state
-│   ├── PROOFS/                 # Proof documents
+│   ├── PROOFS/                 # Proof log (single file)
 │   └── WP_CLOSEOUTS.md         # WP closeout summaries
 ├── _archive/                   # Historical docs, snapshots
 ├── _graveyard/                 # Unused code (with NOTE.md)
@@ -293,7 +292,7 @@ Every PR MUST include:
 - **SPEC Reference**: `VAR — §X.Y` or `YOK → EK — §X.Y`
 - **Proof**: `ops/doctor` + `ops/smoke` outputs attached
 - **Contracts changed?**: yes/no (API/DB)
-- **Proof Doc Path**: Link to proof document in `docs/PROOFS/`
+- **Proof Log Path**: `docs/PROOFS/PASS_LOG.md` (add a new line for this change)
 
 ### §8.2. CI Gate
 
@@ -337,7 +336,7 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 - Core endpoint returns array with core, marketplace, messaging, social
 - Smoke test (`.\ops\ops.ps1 smoke`) passes
 
-**Proof:** `docs/PROOFS/wp1_1_world_status_smoke_pass.md`, `docs/PROOFS/wp1_3_marketplace_ping_pass.md`
+**Proof:** `docs/PROOFS/PASS_LOG.md`
 
 **Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-1.2
 
@@ -365,7 +364,7 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 - Contract check (`ops/catalog_contract_check.ps1`) passes
 - Contract report (`ops/contract_check_report.ps1`) passes (single report point)
 
-**Proof:** `docs/PROOFS/wp2_catalog_spine_pass.md`
+**Proof:** `docs/PROOFS/PASS_LOG.md`
 
 **Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-2
 
@@ -393,7 +392,7 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 - Contract check (`ops/listing_contract_check.ps1`) passes
 - Contract report (`ops/contract_check_report.ps1`) passes (single report point)
 
-**Proof:** `docs/PROOFS/wp3_supply_spine_pass.md`
+**Proof:** `docs/PROOFS/PASS_LOG.md`
 
 **Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-3
 
@@ -429,7 +428,7 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 - Tenant ownership enforced for accept endpoint
 - Contract check (`ops/reservation_contract_check.ps1`) passes
 
-**Proof:** `docs/PROOFS/wp4_reservation_spine_pass.md`
+**Proof:** `docs/PROOFS/PASS_LOG.md`
 
 **Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-4
 
@@ -437,13 +436,9 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 
 ## §10. References
 
-### §10.1. Proof Documents
+### §10.1. Proof Log
 
-- WP-1.1: `docs/PROOFS/wp1_1_world_status_smoke_pass.md`
-- WP-1.3: `docs/PROOFS/wp1_3_marketplace_ping_pass.md`
-- WP-2: `docs/PROOFS/wp2_catalog_spine_pass.md`
-- WP-3: `docs/PROOFS/wp3_supply_spine_pass.md`
-- WP-4: `docs/PROOFS/wp4_reservation_spine_pass.md`
+- Canonical: `docs/PROOFS/PASS_LOG.md` (single file, append-only)
 
 ### §10.2. Closeout Summaries
 
@@ -483,7 +478,7 @@ See `docs/WP_CLOSEOUTS.md` for detailed closeout summaries of each WP.
 - 3 components: CategoryTree, FiltersPanel, ListingsGrid
 - API client consuming existing Marketplace endpoints
 
-**Proof:** `docs/PROOFS/wp9_marketplace_web_read_spine_pass.md`
+**Proof:** `docs/PROOFS/PASS_LOG.md`
 
 **Closeout:** See `docs/WP_CLOSEOUTS.md` §WP-9
 

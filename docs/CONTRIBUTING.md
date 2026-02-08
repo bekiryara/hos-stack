@@ -77,8 +77,8 @@ Brief description of changes.
 - Each change on a new line
 
 ## Verification
-- [ ] `.\ops\verify.ps1` passes
-- [ ] `.\ops\baseline_status.ps1` passes (if applicable)
+- [ ] `.\ops\ops.ps1 verify` passes
+- [ ] `.\ops\ops.ps1 baseline-status` passes (if applicable)
 - [ ] Documentation updated (if applicable)
 
 ## Related
@@ -125,30 +125,30 @@ Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format:
 Each entry should be:
 - **Descriptive**: Explain what changed and why
 - **Actionable**: Include verification steps or proof docs
-- **Linked**: Reference related proof docs in `docs/PROOFS/`
+- **Linked**: Reference related proof entries in `docs/PROOFS/PASS_LOG.md`
 
 Example:
 ```markdown
-- **BASELINE STATUS SCRIPT**: Added `ops/baseline_status.ps1` for read-only baseline health checks. Checks container status, H-OS health (`/v1/health`), and Pazar health (`/up`). Exit codes: 0=PASS, 1=FAIL. See `docs/PROOFS/baseline_pass.md` for verification.
+- **BASELINE STATUS**: Baseline status check updated. Verify with `.\ops\ops.ps1 baseline-status`. See `docs/PROOFS/PASS_LOG.md` for the latest verification entry.
 ```
 
 ## Code Review Checklist
 
 ### For Reviewers
 
-- [ ] Changes maintain baseline (verify.ps1 still passes)
-- [ ] No breaking changes to frozen items (see `docs/DECISIONS.md`)
+- [ ] Changes maintain baseline (`.\ops\ops.ps1 verify` still passes)
+- [ ] No breaking changes to baseline/spec rules (see `docs/SPEC.md` and `docs/RULES.md`)
 - [ ] Documentation updated (if applicable)
 - [ ] CHANGELOG updated (if baseline-affecting)
-- [ ] Proof doc created (if new feature/fix)
+- [ ] Proof entry added (if new feature/fix): `docs/PROOFS/PASS_LOG.md`
 
 ### For Authors
 
 - [ ] Self-review: Does the change make sense?
-- [ ] Tests pass: `.\ops\verify.ps1` and `.\ops\baseline_status.ps1`
+- [ ] Tests pass: `.\ops\ops.ps1 verify` and `.\ops\ops.ps1 baseline-status`
 - [ ] Documentation: Updated relevant docs
 - [ ] CHANGELOG: Added entry if baseline-affecting
-- [ ] Proof: Created proof doc in `docs/PROOFS/` if needed
+- [ ] Proof: Add proof entry in `docs/PROOFS/PASS_LOG.md` if needed
 
 ## Branch Naming
 
@@ -169,18 +169,18 @@ Example:
 
 1. **Run baseline checks**: 
    ```powershell
-   .\ops\verify.ps1
-   .\ops\conformance.ps1
+   .\ops\ops.ps1 verify
+   .\ops\ops.ps1 conformance
    ```
    Both must return exit code 0 (PASS)
 
-2. **Create proof doc**: Every change must include a proof file under `docs/PROOFS/` with:
+2. **Add proof entry**: Every meaningful change must add a line to `docs/PROOFS/PASS_LOG.md` with:
    - What changed
    - Verification commands run
-   - Expected vs actual outputs
+   - Expected vs actual (kisa ozet)
    - PASS/FAIL conclusion
 
-3. **Paste outputs**: Include actual command outputs in proof doc (do not fake PASS)
+3. **Capture outputs**: Paste key output lines into `PASS_LOG.md` or attach full outputs under `_archive/` (do not fake PASS)
 
 **If checks fail**: Fix issues before submitting PR. CI will reject PRs with failing baseline checks.
 
@@ -188,16 +188,16 @@ Example:
 
 **CRITICAL**: All changes must maintain baseline functionality:
 
-1. **Health checks must pass**: `.\ops\verify.ps1` returns 0
-2. **No breaking changes**: See `docs/DECISIONS.md` for frozen items
+1. **Health checks must pass**: `.\ops\ops.ps1 verify` returns 0
+2. **No breaking changes**: See `docs/SPEC.md` and `docs/RULES.md` for frozen/baseline rules
 3. **Documentation updated**: If behavior changes, update `docs/CURRENT.md`
-4. **Proof provided**: Create proof doc in `docs/PROOFS/` for significant changes
+4. **Proof provided**: Add proof entry in `docs/PROOFS/PASS_LOG.md` for significant changes
 
 ## Questions?
 
 - Read `docs/CURRENT.md` for stack overview
-- Read `docs/DECISIONS.md` for frozen items
+- Read `docs/SPEC.md` and `docs/RULES.md` for baseline rules
 - Read `docs/ONBOARDING.md` for setup
-- Run `.\ops\triage.ps1` for troubleshooting
+- Run `.\ops\ops.ps1 triage` for troubleshooting
 
 

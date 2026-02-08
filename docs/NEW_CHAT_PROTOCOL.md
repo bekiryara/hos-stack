@@ -23,7 +23,7 @@ NEW CHAT CHECKLIST:
 - Uc disiplin dosyasini oku (.cursorrules, docs/DEV_DISCIPLINE.md, docs/NEW_CHAT_PROTOCOL.md).
 - Mevcut durumu docs/WP_CLOSEOUTS.md son entry'den tespit et (en son kapanan WP'yi bul).
 - Yeni sistem onerme.
-- WP kapanisinda: proof dokumani olustur (docs/PROOFS/wpXX_*.md), docs/WP_CLOSEOUTS.md'ye entry ekle (mevcut format: Purpose, Deliverables, Commands, Proof, Key Findings), CHANGELOG.md'ye entry ekle (### WP-XX: Title (tarih) formatinda, **bold** section'lar ile).
+- WP kapanisinda: kaniti tek dosyaya yaz (docs/PROOFS/PASS_LOG.md), docs/WP_CLOSEOUTS.md'ye entry ekle (mevcut format: Purpose, Deliverables, Commands, Proof, Key Findings), CHANGELOG.md'ye entry ekle (### WP-XX: Title (tarih) formatinda, **bold** section'lar ile).
 - Yayin istenirse: `.\ops\ops.ps1 ship` kullan (gates PASS sonrasi otomatik pull --rebase ve push).
 
 ---
@@ -65,7 +65,7 @@ ALTIN KURAL:
 ## Adim 1 — Scope kilidi (en kritik)
 - AJAN-1 (Frontend): `work/marketplace-web/**`
 - AJAN-2 (Backend/Pazar): `work/pazar/**`
-- AJAN-3 (Ops/Docs): `ops/**` ve gerekirse `docs/runbooks/**` + `docs/PROOFS/**`
+- AJAN-3 (Ops/Docs): `ops/**` ve gerekirse `docs/runbooks/**` + `docs/PROOFS/PASS_LOG.md`
 
 Kural: Ayni klasore ayni anda 2 ajan girmez.
 
@@ -139,7 +139,7 @@ CONTEXT
 - Publish yolu: sadece `.\ops\ops.ps1 ship` (ajan publish ETMEZ).
 
 SCOPE
-- Sadece: `ops/**` ve gerekirse `docs/runbooks/**` + `docs/PROOFS/**`
+- Sadece: `ops/**` ve gerekirse `docs/runbooks/**` + `docs/PROOFS/PASS_LOG.md`
 - Dokunma: urun/UX feature ekleme, yeni publish yolu uretme, genis refactor
 
 OUTPUT (ZORUNLU)

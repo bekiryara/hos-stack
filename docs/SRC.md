@@ -28,7 +28,7 @@
 
 ## Proof & Closeout Entrypoints
 
-- `docs/PROOFS/` - Evidence snapshots and PASS proofs for work packages.
+- `docs/PROOFS/PASS_LOG.md` - Single proof/evidence log (append-only) for work packages.
 - `docs/WP_CLOSEOUTS.md` - Current WP closeouts (recent window).
 - `docs/closeouts/` - Archived WP closeouts (older windows).
 - `docs/RELEASES/` - Release-grade baseline artifacts (RCs and plans).

@@ -9,14 +9,14 @@ This is a full-stack marketplace platform built with Laravel (backend), Vue.js (
 ## Quick Navigation
 
 ### For Developers
-- **[Code Index](CODE_INDEX.html)** - Complete codebase navigation guide
-- **[Architecture](ARCHITECTURE.html)** - System architecture overview
-- **[Specification](SPEC.html)** - Technical specification
-- **[Getting Started](START_HERE.html)** - Onboarding guide
+- **[Code Index](CODE_INDEX.md)** - Complete codebase navigation guide
+- **[Architecture](ARCHITECTURE.md)** - System architecture overview
+- **[Specification](SPEC.md)** - Technical specification
+- **[Getting Started](START_HERE.md)** - Onboarding guide
 
 ### For AI/ChatGPT
 - 🔁 **New Chat / New Agent Start:** [`docs/NEW_CHAT_PROTOCOL.md`](NEW_CHAT_PROTOCOL.md)
-- **[Code Index](CODE_INDEX.html)** - Start here to understand the codebase structure
+- **[Code Index](CODE_INDEX.md)** - Start here to understand the codebase structure
 - **[API Routes](https://github.com/bekiryara/hos-stack/blob/main/work/pazar/routes/api.php)** - All backend endpoints
 - **[Frontend Components](https://github.com/bekiryara/hos-stack/tree/main/work/marketplace-web/src)** - Vue.js components
 
@@ -63,15 +63,14 @@ This is a full-stack marketplace platform built with Laravel (backend), Vue.js (
 - [Docker Compose](https://github.com/bekiryara/hos-stack/blob/main/docker-compose.yml)
 
 ### Documentation
-- [Architecture](ARCHITECTURE.html)
-- [Product Roadmap](PRODUCT/PRODUCT_ROADMAP.html)
+- [Architecture](ARCHITECTURE.md)
+- [Current Baseline](CURRENT.md)
 - [Runbooks](runbooks/)
-- [Proofs](PROOFS/)
+- [Proof Log](PROOFS/PASS_LOG.md)
 
 ### Operations
-- [Ops Status Runbook](runbooks/ops_status.html)
-- [Security Runbook](runbooks/security.html)
-- [Incident Response](runbooks/incident.html)
+- [Ops Entrypoints](ops/OPS_ENTRYPOINTS.md)
+- [Incident Response](runbooks/incident.md)
 - **Publish:** `ops/ops.ps1 ship` (single publish path - see `docs/DEV_DISCIPLINE.md`)
 
 ---

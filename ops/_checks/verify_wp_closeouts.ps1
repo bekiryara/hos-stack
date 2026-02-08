@@ -13,6 +13,8 @@ $warnings = 0
 
 # 1. Check proof files
 Write-Host "[1] Proof dosyalari kontrol ediliyor..." -ForegroundColor Yellow
+$consolidatedProofLog = "docs/PROOFS/PASS_LOG.md"
+$hasConsolidatedProofLog = Test-Path $consolidatedProofLog
 $proofFiles = Select-String -Path docs/WP_CLOSEOUTS.md -Pattern "docs/PROOFS/([^`\s`"]+)" | 
     ForEach-Object { 
         if ($_.Line -match "docs/PROOFS/([^`\s`"]+)") { 
@@ -22,20 +24,25 @@ $proofFiles = Select-String -Path docs/WP_CLOSEOUTS.md -Pattern "docs/PROOFS/([^
     } | Sort-Object -Unique
 
 $missingProofs = @()
-foreach ($proof in $proofFiles) {
-    # Ignore placeholders/examples (e.g. wpNN_<short_slug>_pass.md) and anything with invalid path chars
-    if ($proof -match '<' -or $proof -match 'wpNN_') { continue }
-    if (-not (Test-Path "docs/PROOFS/$proof")) {
-        $missingProofs += $proof
-        $warnings++
-    }
-}
-
-if ($missingProofs.Count -eq 0) {
-    Write-Host "  PASS: Tum proof dosyalari mevcut ($($proofFiles.Count) dosya)" -ForegroundColor Green
+if ($hasConsolidatedProofLog) {
+    Write-Host "  PASS: Proof'lar tek dosyada konsolide edildi: $consolidatedProofLog" -ForegroundColor Green
+    Write-Host "  INFO: WP_CLOSEOUTS icindeki tekil docs/PROOFS/* referanslari bu modda zorunlu degil." -ForegroundColor Gray
 } else {
-    Write-Host "  WARN: $($missingProofs.Count) proof dosyasi eksik:" -ForegroundColor Yellow
-    $missingProofs | ForEach-Object { Write-Host "    - $_" -ForegroundColor Yellow }
+    foreach ($proof in $proofFiles) {
+        # Ignore placeholders/examples (e.g. wpNN_<short_slug>_pass.md) and anything with invalid path chars
+        if ($proof -match '<' -or $proof -match 'wpNN_') { continue }
+        if (-not (Test-Path "docs/PROOFS/$proof")) {
+            $missingProofs += $proof
+            $warnings++
+        }
+    }
+    
+    if ($missingProofs.Count -eq 0) {
+        Write-Host "  PASS: Tum proof dosyalari mevcut ($($proofFiles.Count) dosya)" -ForegroundColor Green
+    } else {
+        Write-Host "  WARN: $($missingProofs.Count) proof dosyasi eksik:" -ForegroundColor Yellow
+        $missingProofs | ForEach-Object { Write-Host "    - $_" -ForegroundColor Yellow }
+    }
 }
 
 Write-Host ""
@@ -114,7 +121,11 @@ Write-Host ""
 
 # 5. Summary
 Write-Host "=== OZET ===" -ForegroundColor Cyan
-Write-Host "Proof dosyalari: $($proofFiles.Count - $missingProofs.Count)/$($proofFiles.Count) mevcut"
+if ($hasConsolidatedProofLog) {
+    Write-Host "Proof dosyalari: konsolide (PASS_LOG.md)"
+} else {
+    Write-Host "Proof dosyalari: $($proofFiles.Count - $missingProofs.Count)/$($proofFiles.Count) mevcut"
+}
 Write-Host "Ops scriptleri: $($scripts.Count - $missingScripts.Count)/$($scripts.Count) mevcut"
 Write-Host "Route dosyalari: $($routeFiles.Count - $missingRoutes.Count)/$($routeFiles.Count) mevcut"
 Write-Host "Frontend dosyalari: $($frontendFiles.Count - $missingFrontend.Count)/$($frontendFiles.Count) mevcut"

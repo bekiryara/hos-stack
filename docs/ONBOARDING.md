@@ -38,7 +38,7 @@ This command:
 ### Step 2: Verify Everything Works
 
 ```powershell
-.\ops\verify.ps1
+.\ops\ops.ps1 verify
 ```
 
 This command checks:
@@ -51,10 +51,10 @@ This command checks:
 
 ## If It Fails: Run Triage
 
-If `verify.ps1` fails, run the triage script:
+If verification fails, run triage:
 
 ```powershell
-.\ops\triage.ps1
+.\ops\ops.ps1 triage
 ```
 
 This will:
@@ -75,7 +75,7 @@ This will:
 **After verification passes, capture evidence:**
 
 ```powershell
-.\ops\daily_snapshot.ps1
+.\ops\ops.ps1 daily-snapshot
 ```
 
 This creates a snapshot in `_archive/daily/YYYYMMDD-HHmmss/` containing:
@@ -104,8 +104,8 @@ Read `docs/CURRENT.md` for the complete stack overview.
 
 ## Getting Help
 
-- **Stack issues**: Run `.\ops\triage.ps1`
-- **Full status**: Run `.\ops\baseline_status.ps1` (faster) or `.\ops\doctor.ps1` (comprehensive)
+- **Stack issues**: Run `.\ops\ops.ps1 triage`
+- **Full status**: Run `.\ops\ops.ps1 baseline-status` (faster) or `.\ops\ops.ps1 doctor` (comprehensive)
 - **Documentation**: Start with `docs/CURRENT.md`
 
 ## Publishing Changes

@@ -124,25 +124,25 @@ Pazar logs:
 
 ## Operational Entry Points
 
-### ops/verify.ps1
+### .\ops\ops.ps1 verify
 - **Purpose**: Quick stack health verification
 - **Checks**: Docker Compose services, H-OS health, Pazar up
 - **Exit Code**: 0 on PASS, 1 on FAIL
 - **Usage**: Run before/after deployments
 
-### ops/triage.ps1
+### .\ops\ops.ps1 triage
 - **Purpose**: Incident triage and diagnostics
 - **Checks**: Services, health endpoints, recent logs (120 lines), error patterns
 - **Output**: Summary table with PASS/FAIL/WARN, log excerpts
 - **Usage**: Run during incidents to identify service failures
 
-### ops/conformance.ps1
+### .\ops\ops.ps1 conformance
 - **Purpose**: Architecture conformance validation
 - **Checks**: World registry drift, forbidden artifacts, disabled-world code, canonical docs, secrets safety
 - **CI Gate**: `.github/workflows/conformance.yml`
 - **Usage**: Validate architectural rules before merge
 
-### ops/doctor.ps1
+### .\ops\ops.ps1 doctor
 - **Purpose**: Comprehensive repository health check
 - **Checks**: Services, health endpoints, tracked secrets, forbidden root artifacts, snapshot files
 - **Output**: PASS/FAIL/WARN with next-step hints
@@ -150,9 +150,7 @@ Pazar logs:
 
 ## Related Documentation
 
-- [Repository Layout](./REPO_LAYOUT.md) - Repo structure contract
 - [Rules](./RULES.md) - Development rules and standards
 - [Incident Runbook](./runbooks/incident.md) - Incident response procedures
-- [Observability Runbook](./runbooks/observability.md) - Request ID tracing
-- [Errors Runbook](./runbooks/errors.md) - Error code reference
+- [Environment Contract](./runbooks/env_contract.md) - Required environment variables and guardrails
 

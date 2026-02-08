@@ -3,6 +3,9 @@
 **Last Updated:** 2026-02-01  
 **Purpose:** Short summaries of completed Workspace Packages (WP) with deliverables, commands, and proof evidence.
 
+**Proof policy (single file):** Proof/evidence is now recorded in `docs/PROOFS/PASS_LOG.md` (append-only).
+Older entries below may still contain historical `docs/PROOFS/<file>.md` links even if those files no longer exist.
+
 ---
 
 ## WP-NEXT: Portal records panels base — PASS
@@ -278,9 +281,9 @@ If a WP entry has a wrong WP number/title/date or a proof link mistake:
 
 ## Proof Naming Standard
 
-- **Canonical format:** `docs/PROOFS/wpNN_<short_slug>_pass.md`
-- **Allowed variants:** `wpNN_<short_slug>_final_pass.md`, `wpNN_<short_slug>_lock_pass.md`
-- **Rule:** Do not rename existing proof files just to match the format; record naming drift as an ERRATA note instead (lower risk, no broken links).
+- **Canonical (now):** add a new line to `docs/PROOFS/PASS_LOG.md`
+- **Format:** `YYYY-MM-DD | WP-XX | <what ran> | PASS/FAIL | (optional) commit`
+- **Rule:** Do not rewrite old WP entries; if you must correct something, add an **ERRATA** note.
 
 
 

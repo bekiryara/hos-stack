@@ -129,7 +129,7 @@ Use this when “I changed frontend code but browser still shows old UI”:
 5. If you changed only docs/backend: do **not** rebuild frontend; rerun `.\ops\ops.ps1 verify` instead.
 6. If you still can’t see changes: confirm you’re on the right URL (`/marketplace/`) and no browser extension is caching.
 
-See: `docs/runbooks/frontend_refresh.md` for the full decision table.
+See: `ops/frontend_refresh.ps1` (canonical implementation).
 
 ## No PASS, No Next Step Rule
 
@@ -169,12 +169,10 @@ This ensures baseline remains stable and prevents breaking changes.
 7. Optional: User can create firm (`/firm/register`) → gains FIRM_OWNER role (additive, CUSTOMER remains)
 8. Firm Spine v1: User creates firm → selects active tenant on `/account` → opens Firm Portal (`/firm`) to see store listings, incoming orders, rentals, and reservations. No active tenant → guard redirects to `/account?reason=firm_required`.
 
-**Yerel gate koşumu:**
-- Yerel gate koşumu için Node.js + npm + Docker Desktop zorunludur.
-- Aşağıdaki script ile tek komut gate pack çalışır: `ops/_checks/run_wp_next_local_gates.ps1`.
-- Önce `.\ops\_legacy\legacy.ps1 env-preflight` ile ortam kontrolü yapılır; FAIL ise gate paketi çalıştırılmaz.
-- Tüm gate çıktısı `docs/PROOFS/_logs/wp_next_gates_YYYYMMDD_HHMMSS.log` dosyasına yazılır.
-- PASS kanıtı yerel koşumdan sonra `docs/PROOFS/wp_firm_spine_store_portal_final_pass.md` ile doldurulur.
+**Yerel gate koşumu (önerilen):**
+- Hızlı sağlık: `.\ops\ops.ps1 verify`
+- Daha geniş paket: `.\ops\ops.ps1 full` (tek komut “full gates” paketi)
+- Kanıt notu: `docs/PROOFS/PASS_LOG.md` içine koştuğun komut + sonuç satırı ekle.
 
 ## Catalog / Search Final (Category → Catalog → Listing)
 
@@ -225,13 +223,11 @@ This ensures baseline remains stable and prevents breaking changes.
 
 ## Catalog Invariants (Drift Guard)
 
-**Locked rules** (leaf-only, active-only, schema-driven attributes, required non-empty, CTA determinism):
-- `docs/PRODUCT/CATALOG_INVARIANTS.md`
+**Locked rules** live in `docs/SPEC.md` and this document (contract/behavior sections above).
 
 ## Related Docs
 
 - **Source Map:** `docs/SRC.md` (repo entrypoints, minimal navigation map)
 - **Onboarding:** `docs/ONBOARDING.md` (quick start for newcomers)
-- **Decisions:** `docs/DECISIONS.md` (baseline definition + frozen items)
 - **Start Here:** `docs/START_HERE.md` (7 rule set)
 - **Rules:** `docs/RULES.md` (fundamental rules)
