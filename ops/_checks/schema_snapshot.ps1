@@ -96,6 +96,24 @@ if ($LASTEXITCODE -ne 0) {
     }
 }
 
+# Ensure migrations are applied before taking schema snapshot.
+# CI containers start clean; without migrations, pg_dump will not match snapshot.
+Write-Host "`n[1b] Ensuring Pazar migrations are applied..." -ForegroundColor Yellow
+try {
+    $migrateOut = docker compose exec -T pazar-app php artisan migrate --force 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[FAIL] Migrations failed" -ForegroundColor Red
+        Write-Host $migrateOut
+        Invoke-OpsExit 1
+        return
+    }
+    Write-Host "  [PASS] Migrations applied" -ForegroundColor Green
+} catch {
+    Write-Host "[FAIL] Error running migrations: $($_.Exception.Message)" -ForegroundColor Red
+    Invoke-OpsExit 1
+    return
+}
+
 Write-Host "`n[2] Exporting current schema..." -ForegroundColor Yellow
 try {
     # Export schema using pg_dump (schema-only, no owner, no privileges)
