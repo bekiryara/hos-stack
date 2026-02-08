@@ -422,6 +422,24 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
     });
   }
 
+  // Platform admin boundary (tenant-admin scoped for now).
+  // Used by security gates and future admin surface.
+  app.get("/admin/tenants", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    // Public customers have tenantId:null; they must never see tenant directory.
+    if (!payload.tenantId) {
+      return reply.code(403).send({ error: "forbidden", reason: "tenant_required" });
+    }
+
+    const res = await db.query(
+      "select id, slug, name, display_name, status, created_at from tenants where id = $1 limit 1",
+      [payload.tenantId]
+    );
+    return reply.send({ items: res.rows });
+  });
+
   const auditQuery = z.object({
     limit: z.coerce.number().int().min(1).max(200).default(50)
   });

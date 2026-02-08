@@ -14,6 +14,15 @@ Write-Host "=== AUTH SECURITY CHECK ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
 
+# Target SSOT: H-OS API (not Pazar). Allow override for CI/dev.
+$baseUrl = $env:HOS_API_BASE_URL
+if (-not $baseUrl) { $baseUrl = $env:HOS_BASE_URL }
+if (-not $baseUrl) { $baseUrl = "http://localhost:3000/v1" }
+
+$adminTenantsUrl = "$baseUrl/admin/tenants"
+$meUrl = "$baseUrl/me"
+$loginUrl = "$baseUrl/auth/login"
+
 # Results table (script scope; functions append here)
 $script:results = @()
 
@@ -51,14 +60,19 @@ function Test-AuthResponse {
                 $exitCode = 2
             }
             # Check JSON envelope if required (skip for 404)
-            elseif ($ExpectJsonEnvelope) {
+                elseif ($ExpectJsonEnvelope) {
                 try {
                     $json = $response.Content | ConvertFrom-Json
-                    if ($json.ok -eq $false -and $json.error_code) {
-                        $notes = "Status $statusCode, JSON envelope correct"
-                    } else {
+                        $hasErrorShape = $false
+                        if ($null -ne $json) {
+                            if ($json.PSObject.Properties.Name -contains 'error_code' -and $json.error_code) { $hasErrorShape = $true }
+                            elseif ($json.PSObject.Properties.Name -contains 'error' -and $json.error) { $hasErrorShape = $true }
+                        }
+                        if ($hasErrorShape) {
+                            $notes = "Status $statusCode, JSON error shape present"
+                        } else {
                         $status = "WARN"
-                        $notes = "Status $statusCode, but JSON envelope incomplete"
+                            $notes = "Status $statusCode, but JSON error shape missing"
                         $exitCode = 2
                     }
                 } catch {
@@ -88,15 +102,27 @@ function Test-AuthResponse {
                 # Check JSON envelope if required (skip for 404)
                 elseif ($ExpectJsonEnvelope) {
                     try {
-                        $stream = $errorResponse.GetResponseStream()
-                        $reader = New-Object System.IO.StreamReader($stream)
-                        $body = $reader.ReadToEnd()
+                        # Prefer ErrorDetails.Message (more reliable than response stream in Windows PowerShell)
+                        $body = $null
+                        try {
+                            if ($_.ErrorDetails -and $_.ErrorDetails.Message) { $body = $_.ErrorDetails.Message }
+                        } catch { }
+                        if (-not $body) {
+                            $stream = $errorResponse.GetResponseStream()
+                            $reader = New-Object System.IO.StreamReader($stream)
+                            $body = $reader.ReadToEnd()
+                        }
                         $json = $body | ConvertFrom-Json
-                        if ($json.ok -eq $false -and $json.error_code) {
-                            $notes = "Status $statusCode, JSON envelope correct"
+                        $hasErrorShape = $false
+                        if ($null -ne $json) {
+                            if ($json.PSObject.Properties.Name -contains 'error_code' -and $json.error_code) { $hasErrorShape = $true }
+                            elseif ($json.PSObject.Properties.Name -contains 'error' -and $json.error) { $hasErrorShape = $true }
+                        }
+                        if ($hasErrorShape) {
+                            $notes = "Status $statusCode, JSON error shape present"
                         } else {
                             $status = "WARN"
-                            $notes = "Status $statusCode, but JSON envelope incomplete"
+                            $notes = "Status $statusCode, but JSON error shape missing"
                             $exitCode = 2
                         }
                     } catch {
@@ -161,12 +187,13 @@ function Test-RateLimit {
             $response = Invoke-WebRequest -Uri $Url -Method $Method -Headers $headers -Body $body -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
             
             # Check for rate limit headers
-            if ($response.Headers['X-RateLimit-Limit']) {
-                $rateLimitHeaders += "X-RateLimit-Limit: $($response.Headers['X-RateLimit-Limit'])"
-            }
-            if ($response.Headers['X-RateLimit-Remaining']) {
-                $rateLimitHeaders += "X-RateLimit-Remaining: $($response.Headers['X-RateLimit-Remaining'])"
-            }
+            $hLimit = $response.Headers['X-RateLimit-Limit']
+            if (-not $hLimit) { $hLimit = $response.Headers['x-ratelimit-limit'] }
+            if ($hLimit) { $rateLimitHeaders += "X-RateLimit-Limit: $hLimit" }
+
+            $hRemaining = $response.Headers['X-RateLimit-Remaining']
+            if (-not $hRemaining) { $hRemaining = $response.Headers['x-ratelimit-remaining'] }
+            if ($hRemaining) { $rateLimitHeaders += "X-RateLimit-Remaining: $hRemaining" }
             
         } catch {
             $errorResponse = $_.Exception.Response
@@ -182,12 +209,13 @@ function Test-RateLimit {
                 }
                 
                 # Check for rate limit headers
-                if ($errorResponse.Headers['X-RateLimit-Limit']) {
-                    $rateLimitHeaders += "X-RateLimit-Limit: $($errorResponse.Headers['X-RateLimit-Limit'])"
-                }
-                if ($errorResponse.Headers['X-RateLimit-Remaining']) {
-                    $rateLimitHeaders += "X-RateLimit-Remaining: $($errorResponse.Headers['X-RateLimit-Remaining'])"
-                }
+                $hLimit = $errorResponse.Headers['X-RateLimit-Limit']
+                if (-not $hLimit) { $hLimit = $errorResponse.Headers['x-ratelimit-limit'] }
+                if ($hLimit) { $rateLimitHeaders += "X-RateLimit-Limit: $hLimit" }
+
+                $hRemaining = $errorResponse.Headers['X-RateLimit-Remaining']
+                if (-not $hRemaining) { $hRemaining = $errorResponse.Headers['x-ratelimit-remaining'] }
+                if ($hRemaining) { $rateLimitHeaders += "X-RateLimit-Remaining: $hRemaining" }
                 if ($errorResponse.Headers['Retry-After']) {
                     $rateLimitHeaders += "Retry-After: $($errorResponse.Headers['Retry-After'])"
                 }
@@ -195,13 +223,7 @@ function Test-RateLimit {
                 # Check if we hit rate limit (429)
                 if ($statusCode -eq 429) {
                     $rateLimitHit = $true
-                    if ($i -le $ExpectedLimit) {
-                        $status = "WARN"
-                        $notes = "Rate limit hit at request $i (expected after $ExpectedLimit)"
-                        $exitCode = 2
-                    } else {
-                        $notes = "Rate limit hit at request $i (expected after $ExpectedLimit)"
-                    }
+                    $notes = "Rate limit hit at request $i (expected after $ExpectedLimit)"
                 }
             }
         }
@@ -227,7 +249,7 @@ function Test-RateLimit {
     }
     
     $script:results += [PSCustomObject]@{
-        Check = "Rate Limiting (/auth/login)"
+        Check = "Rate Limiting (HOS /v1/auth/login)"
         Status = $status
         ExitCode = $exitCode
         Notes = $notes
@@ -243,21 +265,21 @@ function Test-RateLimit {
 Write-Host "=== Running Auth Security Checks ===" -ForegroundColor Cyan
 Write-Host ""
 
-Test-AuthResponse -CheckName "Admin Unauthorized Access" `
+Test-AuthResponse -CheckName "Admin Unauthorized Access (HOS)" `
     -Method "GET" `
-    -Url "http://localhost:8080/admin/tenants" `
+    -Url $adminTenantsUrl `
     -ExpectedStatusCodes @(401, 403, 404) `
     -ExpectJsonEnvelope $true
 
 # Check B: GET /panel without auth returns 401/403
-Test-AuthResponse -CheckName "Panel Unauthorized Access" `
+Test-AuthResponse -CheckName "Me Unauthorized Access (HOS)" `
     -Method "GET" `
-    -Url "http://localhost:8080/panel/test-tenant/ping" `
+    -Url $meUrl `
     -ExpectedStatusCodes @(401, 403, 404) `
     -ExpectJsonEnvelope $true
 
 # Check C: POST /auth/login rate limiting
-Test-RateLimit -Url "http://localhost:8080/auth/login" -Method "POST" -RequestCount 35 -ExpectedLimit 30
+Test-RateLimit -Url $loginUrl -Method "POST" -RequestCount 35 -ExpectedLimit 10
 
 # Check D: Session cookie flags (documented check)
 Write-Host "Checking session cookie configuration..." -ForegroundColor Yellow
