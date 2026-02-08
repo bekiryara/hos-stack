@@ -1,5 +1,6 @@
 param(
-  [string]$OutDir = "secrets",
+  # Default: write to the same location used by root docker-compose.yml secrets.
+  [string]$OutDir = "work/hos/secrets",
   [switch]$Apply,
   [switch]$Force,
   [switch]$SkipGoogle,
@@ -62,7 +63,7 @@ if ($Apply) {
 Write-Host " - Force:  $([string]$Force)"
 Write-Host ""
 
-# Required for docker-compose.secrets.yml:
+# Required for the root stack (docker-compose.yml):
 $pgUser = Get-Env "POSTGRES_USER"; if (-not $pgUser) { $pgUser = "hos" }
 $pgDb   = Get-Env "POSTGRES_DB";   if (-not $pgDb)   { $pgDb = "hos" }
 $pgPass = Get-Env "POSTGRES_PASSWORD"
@@ -130,11 +131,10 @@ foreach ($p in $plans) {
 
 if (-not $Apply) {
   Write-Host ""
-  Write-Host "Dry-run done. To write the files, re-run with: .\\ops\\secrets_from_env.ps1 -Apply" -ForegroundColor Yellow
+  Write-Host "Dry-run done. To write the files, re-run with: .\ops\ops.ps1 secrets-from-env -Apply" -ForegroundColor Yellow
 } else {
   Write-Host ""
-  Write-Host "Done. You can now run secrets mode:" -ForegroundColor Green
-  Write-Host "  docker compose -f docker-compose.yml -f docker-compose.secrets.yml up -d --build"
+  Write-Host "Done. You can now (re)start the stack:" -ForegroundColor Green
+  Write-Host "  docker compose up -d --build" -ForegroundColor Gray
 }
-
 

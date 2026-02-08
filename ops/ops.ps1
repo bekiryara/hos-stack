@@ -104,6 +104,7 @@ function Show-Help {
   Write-Host "  pazar-ui-smoke   Pazar UI smoke (pazar_ui_smoke.ps1)" -ForegroundColor White
   Write-Host "  smoke-surface    Smoke surface gate (smoke_surface.ps1)" -ForegroundColor White
   Write-Host "  secret-scan      Secret scan (secret_scan.ps1)" -ForegroundColor White
+  Write-Host "  secrets-from-env Generate docker secrets files (secrets_from_env.ps1)" -ForegroundColor White
   Write-Host "  repo-payload-guard Repo payload guard (repo_payload_guard.ps1)" -ForegroundColor White
   Write-Host "  update-code-index Update CODE_INDEX (update_code_index.ps1)" -ForegroundColor White
   Write-Host "  update-code-index-deep Deep CODE_INDEX scan (update_code_index.ps1 -Deep)" -ForegroundColor White
@@ -916,6 +917,7 @@ switch ($cmd) {
   { $_ -in @("pazar-ui-smoke", "pazar_ui_smoke") } { Invoke-TargetScript -RelPath "_checks\\pazar_ui_smoke.ps1"; break }
   { $_ -in @("smoke-surface", "smoke_surface") } { Invoke-TargetScript -RelPath "_checks\\smoke_surface.ps1"; break }
   { $_ -in @("secret-scan", "secret_scan") } { Invoke-TargetScript -RelPath "_tools\\secret_scan.ps1"; break }
+  { $_ -in @("secrets-from-env", "secrets_from_env") } { Invoke-TargetScript -RelPath "_tools\\secrets_from_env.ps1"; break }
   { $_ -in @("repo-payload-guard", "repo_payload_guard") } { Invoke-TargetScript -RelPath "_checks\\repo_payload_guard.ps1"; break }
   { $_ -in @("update-code-index", "update_code_index") } { Invoke-TargetScript -RelPath "_checks\\update_code_index.ps1"; break }
   { $_ -in @("update-code-index-deep", "update_code_index_deep") } { & (Join-Path $checksDir "update_code_index.ps1") -Deep; break }

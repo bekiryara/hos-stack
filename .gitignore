@@ -74,3 +74,6 @@ work/pazar/vendor/
 **/dist/
 work/marketplace-web/dist/
 **/.vite/
+
+# Editor / workspace settings (local)
+.vscode/

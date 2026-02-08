@@ -27,8 +27,8 @@ Bu sayede “default obs” akışı docker.sock erişimini otomatik olarak devr
 ## Risk Register (özet)
 | ID | Risk | Etki | Olasılık | Skor | Seviye | Kanıt | Önerilen aksiyon |
 |---|---:|---:|---:|---:|---|---|---|
-| R1 | PII içeren dump/backup dosyaları | 5 | 2 | 10 | Medium | `ops/restore_smoke.ps1` (başarı sonrası dump cleanup) + `ops/backup.ps1` (varsayılan repo dışı) | Varsayılanları koru, `-IncludeData` dump’larını paylaşma/zip’leme, periyodik temizlik |
-| R2 | Secrets sızıntısı (local secrets dolu) | 5 | 4 | 20 | Critical | `secrets/*.txt` + `ops/secrets_from_env.ps1` | compromise varsay → rotate + secret-store standardı (CI/Vault → env → secrets files) |
+| R1 | PII içeren dump/backup dosyaları | 5 | 2 | 10 | Medium | `backups-test/*` + repo payload guard / hygiene kontrolleri | Varsayılanları koru, `-IncludeData` dump’larını paylaşma/zip’leme, periyodik temizlik |
+| R2 | Secrets sızıntısı (local secrets dolu) | 5 | 4 | 20 | Critical | `work/hos/secrets/*.txt` + `ops/_tools/secrets_from_env.ps1` | compromise varsay → rotate + secret-store standardı (CI/Vault → env → secrets files) |
 | R3 | Tenant takeover / yetki yükseltme (onboarding) | 5 | 4 | 20 | Critical | `/v1/auth/register` rol modeli | “ilk kullanıcı owner, sonrası member” + invite/approval |
 | R4 | Docker socket mount (Promtail) | 5 | 3 | 15 | High | promtail + docker.sock | prod’da devre dışı/izolasyon |
 | R5 | Local-insecure default’ların prod’a taşınması | 4 | 3 | 12 | Medium | grafana anon/admin, port publish | prod compose standardı, network segmentasyonu |
