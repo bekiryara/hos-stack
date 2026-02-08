@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { readEnvOrFile } from "../../config.js";
 import { canTransitionPazar } from "../../policy/pazar/contract/can_transition.js";
+import { isGoogleConfigured } from "./auth/helpers.js";
+import { createWorldEnforcer } from "../../worlds/enforce_world.js";
 
 /**
  * Register v1 core, world, contract and proof routes. No behavior change — extracted from app.js.
@@ -114,39 +115,7 @@ export async function registerV1CoreWorldContractRoutes(app, { db, legacy = fals
   });
 
   // REGISTER v1.2 world enforcement (FOUNDING_SPEC)
-  const CANONICAL_WORLDS = ["marketplace", "messaging", "social"];
-  const allowedWorlds = new Set(
-    String(process.env.HOS_WORLD_ALLOWLIST ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-  );
-  if (allowedWorlds.size === 0) {
-    for (const w of CANONICAL_WORLDS) allowedWorlds.add(w);
-  }
-  const closedWorlds = new Set(
-    String(process.env.HOS_WORLD_CLOSED ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-  );
-
-  function enforceWorldOrReply(reply, worldRaw) {
-    const world = String(worldRaw ?? "").trim();
-    if (!world) {
-      reply.code(400).send({ error: "missing_world" });
-      return null;
-    }
-    if (!allowedWorlds.has(world)) {
-      reply.code(400).send({ error: "invalid_world" });
-      return null;
-    }
-    if (closedWorlds.has(world)) {
-      reply.code(410).send({ error: "world_closed", error_subcode: "WORLD_CLOSED" });
-      return null;
-    }
-    return world;
-  }
+  const { enforceWorldOrReply } = createWorldEnforcer();
 
   const contractBody = z.object({
     subject_ref: z.any(),
@@ -178,14 +147,6 @@ export async function registerV1CoreWorldContractRoutes(app, { db, legacy = fals
     const decision = canTransitionPazar({ subject_ref: body.data.subject_ref, to: body.data.to });
     return reply.send({ ok: true, allowed: !!decision.allowed, reason: decision.reason ?? "unknown" });
   });
-
-  function isGoogleConfigured() {
-    return Boolean(
-      readEnvOrFile("GOOGLE_CLIENT_ID") &&
-        readEnvOrFile("GOOGLE_CLIENT_SECRET") &&
-        readEnvOrFile("GOOGLE_REDIRECT_URI")
-    );
-  }
 
   app.get("/meta/features", async (_req, reply) => {
     return reply.send({

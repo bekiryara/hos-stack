@@ -69,8 +69,10 @@ class ErrorEnvelope
             return $response; // Already in standard format with valid request_id
         }
 
-        // Check if has legacy "error" key and no "ok" key
-        if (isset($decoded['error']) && !isset($decoded['ok'])) {
+        // Check if has legacy "error" key and no "ok" key.
+        // IMPORTANT: only normalize legacy error objects/arrays.
+        // Many endpoints use { error: "SOME_CODE", message: "...", ... } and those must pass through unchanged.
+        if (isset($decoded['error']) && !isset($decoded['ok']) && is_array($decoded['error'])) {
             $errorData = $decoded['error'];
             $errorCode = 'HTTP_ERROR';
             $message = 'Request failed.';

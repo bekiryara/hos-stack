@@ -8,7 +8,7 @@ test("x-request-id is echoed back when provided", async () => {
 
   const res = await app.inject({
     method: "GET",
-    url: "/health",
+    url: "/v1/health",
     headers: { "x-request-id": "req-test-12345678" }
   });
 
@@ -22,7 +22,7 @@ test("x-request-id is generated when missing", async () => {
   const db = { query: async () => ({ rowCount: 1, rows: [] }) };
   const app = await buildApp({ db });
 
-  const res = await app.inject({ method: "GET", url: "/health" });
+  const res = await app.inject({ method: "GET", url: "/v1/health" });
   assert.equal(res.statusCode, 200);
   assert.ok(typeof res.headers["x-request-id"] === "string");
   assert.ok(res.headers["x-request-id"].length >= 8);

@@ -104,7 +104,8 @@ export async function apiRequest(endpoint, options = {}, skipAuth = false) {
     }
     const error = new Error(errorData.message || `API request failed: ${response.status}`);
     error.status = response.status;
-    error.errorCode = errorData.error;
+    // Support both legacy {error: "..."} and standard {ok:false, error_code:"..."} envelopes
+    error.errorCode = errorData.error || errorData.error_code || 'unknown';
     error.data = errorData;
     throw error;
   }
@@ -225,7 +226,8 @@ export async function hosApiRequest(endpoint, options = {}, skipAuth = false) {
     }
     const error = new Error(errorData.message || `API request failed: ${response.status}`);
     error.status = response.status;
-    error.errorCode = errorData.error;
+    // Support both legacy {error: "..."} and standard {ok:false, error_code:"..."} envelopes
+    error.errorCode = errorData.error || errorData.error_code || 'unknown';
     error.data = errorData;
     throw error;
   }

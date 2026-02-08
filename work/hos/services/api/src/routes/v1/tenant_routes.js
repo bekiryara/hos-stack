@@ -12,21 +12,40 @@ export async function registerV1TenantRoutes(app, { db }) {
     name: z.string().min(1).max(200)
   });
 
+  async function insertTenantAndEnsureOwnerMembership({ tenantId, slug, displayName, userId }) {
+    // Single implementation for tenant creation + owner membership + audit.
+    await db.query(
+      "insert into tenants (id, slug, name, display_name, status, created_by_user_id) values ($1, $2, $3, $4, $5, $6)",
+      [tenantId, slug, displayName, displayName, "active", userId]
+    );
+
+    await db.query(
+      "insert into memberships (tenant_id, user_id, role, status) values ($1, $2, $3, $4) on conflict (tenant_id, user_id) do nothing",
+      [tenantId, userId, "owner", "active"]
+    );
+
+    await audit(db, { action: "tenant.create", tenantId: tenantId, actorUserId: userId, metadata: { slug } });
+  }
+
   app.post(
     "/tenants",
     { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } },
     async (req, reply) => {
+      // Lockdown: tenant creation must be authenticated (prevents open surface drift).
+      const payload = requireAuth(req, reply);
+      if (!payload) return;
+
       const body = createTenantBody.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: body.error.flatten() });
 
       const id = crypto.randomUUID();
       try {
-        await db.query("insert into tenants (id, slug, name) values ($1, $2, $3)", [
-          id,
-          body.data.slug,
-          body.data.name
-        ]);
-        await audit(db, { action: "tenant.create", tenantId: id, metadata: { slug: body.data.slug } });
+        await insertTenantAndEnsureOwnerMembership({
+          tenantId: id,
+          slug: body.data.slug,
+          displayName: body.data.name,
+          userId: payload.sub
+        });
       } catch (e) {
         if (String(e?.code) === "23505") return reply.code(409).send({ error: "tenant_conflict" });
         throw e;
@@ -59,17 +78,12 @@ export async function registerV1TenantRoutes(app, { db }) {
     const tenantId = crypto.randomUUID();
 
     try {
-      await db.query(
-        "insert into tenants (id, slug, name, display_name, status, created_by_user_id) values ($1, $2, $3, $4, $5, $6)",
-        [tenantId, slug, displayName, displayName, "active", userId]
-      );
-
-      await db.query(
-        "insert into memberships (tenant_id, user_id, role, status) values ($1, $2, $3, $4) on conflict (tenant_id, user_id) do nothing",
-        [tenantId, userId, "owner", "active"]
-      );
-
-      await audit(db, { action: "tenant.create", tenantId, actorUserId: userId, metadata: { slug } });
+      await insertTenantAndEnsureOwnerMembership({
+        tenantId,
+        slug,
+        displayName,
+        userId
+      });
 
       return reply.code(201).send({
         tenant_id: tenantId,

@@ -7,7 +7,7 @@ test("GET /metrics returns Prometheus text", async () => {
   const app = await buildApp({ db });
 
   // Generate at least one request for request-level metrics.
-  const health = await app.inject({ method: "GET", url: "/health" });
+  const health = await app.inject({ method: "GET", url: "/v1/health" });
   assert.equal(health.statusCode, 200);
 
   const res = await app.inject({ method: "GET", url: "/metrics" });

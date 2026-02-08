@@ -37,6 +37,32 @@ fi
 # d) Ensure storage/logs directory exists
 mkdir -p /var/www/html/storage/logs
 
+# f) Ensure APP_KEY exists (required for Laravel runtime).
+# In local/dev, auto-provision a stable key persisted in the storage volume.
+if [ -z "${APP_KEY:-}" ]; then
+    KEY_PATH="/var/www/html/storage/app/app_key.txt"
+    if [ -f "$KEY_PATH" ]; then
+        export APP_KEY="$(cat "$KEY_PATH" 2>/dev/null | tr -d '\r\n' || true)"
+        if [ -n "${APP_KEY:-}" ]; then
+            echo "[INFO] Loaded APP_KEY from storage (dev)" >&2
+        fi
+    fi
+    if [ -z "${APP_KEY:-}" ]; then
+        # Only auto-generate in local/dev contexts (avoid surprising prod behavior)
+        if [ "${APP_ENV:-production}" = "local" ] || [ "${APP_DEBUG:-false}" = "true" ]; then
+            mkdir -p "$(dirname "$KEY_PATH")" 2>/dev/null || true
+            export APP_KEY="$(php -r "echo 'base64:'.base64_encode(random_bytes(32));" 2>/dev/null || true)"
+            if [ -n "${APP_KEY:-}" ]; then
+                echo "$APP_KEY" > "$KEY_PATH" 2>/dev/null || true
+                chmod 0600 "$KEY_PATH" 2>/dev/null || true
+                echo "[WARN] APP_KEY was missing; generated dev key and persisted to storage" >&2
+            else
+                echo "[WARN] APP_KEY missing and could not be generated (php unavailable?)" >&2
+            fi
+        fi
+    fi
+fi
+
 # e) STATELESS LOGGING: If LOG_CHANNEL=stderr, skip laravel.log file creation entirely
 # Laravel will write to php://stderr which is captured by docker logs
 if [ "${LOG_CHANNEL:-}" = "stderr" ]; then

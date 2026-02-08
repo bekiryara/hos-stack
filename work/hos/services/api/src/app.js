@@ -26,12 +26,14 @@ export async function buildApp({ db, logStream } = {}) {
           "req.headers.cookie",
           "req.headers['set-cookie']",
           "req.headers['x-api-key']",
+          "req.headers['x-hos-api-key']",
           "req.headers['x-forwarded-authorization']",
           // Common shapes developers might log accidentally:
           "headers.authorization",
           "headers.cookie",
           "headers['set-cookie']",
           "headers['x-api-key']",
+          "headers['x-hos-api-key']",
           "headers['x-forwarded-authorization']"
         ],
         censor: "[REDACTED]"

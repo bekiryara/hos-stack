@@ -24,28 +24,34 @@ export function registerLogin(app, { db }) {
       const tenantSlug = body.tenantSlug || DEFAULT_PUBLIC_TENANT_SLUG;
 
       if (tenantSlug === DEFAULT_PUBLIC_TENANT_SLUG) {
+        // Public customer login MUST be tenant-scoped to avoid cross-tenant ambiguity.
+        const publicTenant = await db.query("select id from tenants where slug = $1 limit 1", [
+          DEFAULT_PUBLIC_TENANT_SLUG
+        ]);
+        if (publicTenant.rowCount === 0) {
+          // Do not leak whether a public tenant exists.
+          return reply.code(401).send({ error: "invalid_credentials" });
+        }
+
+        const publicTenantId = publicTenant.rows[0].id;
         const user = await db.query(
-          "select id, tenant_id, password_hash, role from users where email = $1 limit 1",
-          [body.email.toLowerCase()]
+          "select id, tenant_id, password_hash, role from users where tenant_id = $1 and email = $2 limit 1",
+          [publicTenantId, body.email.toLowerCase()]
         );
         if (user.rowCount === 0) return reply.code(401).send({ error: "invalid_credentials" });
-        if (!verifyPassword(body.password, user.rows[0].password_hash))
+        if (!verifyPassword(body.password, user.rows[0].password_hash)) {
           return reply.code(401).send({ error: "invalid_credentials" });
+        }
 
         const userRow = user.rows[0];
-        const publicTenant = await db.query("select id from tenants where slug = $1 limit 1", [DEFAULT_PUBLIC_TENANT_SLUG]);
-        const isPublicCustomer = publicTenant.rowCount > 0 && userRow.tenant_id === publicTenant.rows[0].id;
-
         const token = signAccessToken({
           sub: userRow.id,
-          tenantId: isPublicCustomer ? null : userRow.tenant_id,
+          // Public customers are "tenantless" in access token to prevent accidental tenant scoping in downstream worlds.
+          tenantId: null,
           role: userRow.role ?? "member"
         });
-        if (!isPublicCustomer) {
-          const refresh = await issueRefreshToken(db, { tenantId: userRow.tenant_id, userId: userRow.id });
-          reply.setCookie("hos_refresh", refresh.token, sessionCookieOptions(req));
-          await audit(db, { action: "user.login", tenantId: userRow.tenant_id, actorUserId: userRow.id });
-        }
+
+        // Public customer login does NOT issue refresh cookies (stateless for MVP).
         return reply.send({ token });
       } else {
         const tenant = await db.query("select id from tenants where slug = $1", [tenantSlug]);

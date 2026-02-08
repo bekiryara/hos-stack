@@ -37,6 +37,12 @@ final class AuthAny
             
             // WP-50: Also validate as JWT token (allows user-like auth flow)
             $jwtSecret = env('HOS_JWT_SECRET') ?: env('JWT_SECRET');
+            if ($jwtSecret === null || $jwtSecret === '') {
+                $jwtSecretFile = env('HOS_JWT_SECRET_FILE') ?: env('JWT_SECRET_FILE');
+                if ($jwtSecretFile && is_string($jwtSecretFile) && file_exists($jwtSecretFile)) {
+                    $jwtSecret = trim((string) @file_get_contents($jwtSecretFile));
+                }
+            }
             if ($jwtSecret && strlen($jwtSecret) >= 32) {
                 try {
                     // Use same JWT verification logic as AuthContext

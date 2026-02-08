@@ -1,10 +1,12 @@
-.$PSScriptRoot\\_lib.ps1
-$docker = Get-DockerCmd
+param()
 
-Write-Host "Stopping stack..."
-# Include obs/logs profile services as well; otherwise the project network may stay "in use".
-& $docker compose --profile obs --profile logs down --remove-orphans
-Write-Host "OK."
+$ErrorActionPreference = "Stop"
+
+Write-Host "DEPRECATED: work/hos/ops/stop.ps1 is retired." -ForegroundColor Yellow
+Write-Host "Use canonical shutdown from repo root:" -ForegroundColor Yellow
+Write-Host "  cd D:\stack" -ForegroundColor Gray
+Write-Host "  .\ops\ops.ps1 down -StackProfile all" -ForegroundColor Gray
+exit 1
 
 
 

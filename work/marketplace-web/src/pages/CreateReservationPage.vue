@@ -192,10 +192,15 @@ export default {
         // Improve error display with hint
         const hint = err.status === 401 ? '401 → Token missing or invalid. Check Authorization Token.' : 
                      err.status === 404 ? '404 → Listing not found. Check Listing ID.' :
+                     err.status === 409 ? '409 → Slot conflict. Pick a different time range.' :
                      err.status === 422 ? '422 → Validation error. Check all required fields.' : null;
+        // NOTE: spreading Error drops non-enumerable `.message`, so map explicitly.
         this.error = {
-          ...err,
-          hint: hint || (err.message || 'Unknown error'),
+          status: err?.status,
+          errorCode: err?.errorCode,
+          message: err?.message,
+          data: err?.data,
+          hint: hint || (err?.message || 'Unknown error'),
         };
       } finally {
         this.loading = false;

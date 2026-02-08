@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
 import { z } from "zod";
-import { hashPassword, verifyAccessToken } from "../../auth.js";
+import { hashPassword } from "../../auth.js";
 import { audit } from "../../audit.js";
 import { readEnvOrFile } from "../../config.js";
+import { requireRole } from "./request_auth.js";
+import { createWorldEnforcer } from "../../worlds/enforce_world.js";
 
 /**
  * Register v1 admin, permits, audit, users routes. No behavior change — extracted from app.js.
@@ -37,39 +39,7 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
     return sha256Hex(json);
   }
 
-  const CANONICAL_WORLDS = ["marketplace", "messaging", "social"];
-  const allowedWorlds = new Set(
-    String(process.env.HOS_WORLD_ALLOWLIST ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-  );
-  if (allowedWorlds.size === 0) {
-    for (const w of CANONICAL_WORLDS) allowedWorlds.add(w);
-  }
-  const closedWorlds = new Set(
-    String(process.env.HOS_WORLD_CLOSED ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-  );
-
-  function enforceWorldOrReply(reply, worldRaw) {
-    const world = String(worldRaw ?? "").trim();
-    if (!world) {
-      reply.code(400).send({ error: "missing_world" });
-      return null;
-    }
-    if (!allowedWorlds.has(world)) {
-      reply.code(400).send({ error: "invalid_world" });
-      return null;
-    }
-    if (closedWorlds.has(world)) {
-      reply.code(410).send({ error: "world_closed", error_subcode: "WORLD_CLOSED" });
-      return null;
-    }
-    return world;
-  }
+  const { enforceWorldOrReply } = createWorldEnforcer();
 
   function requireApiKey(req, reply) {
     const expected = String(readEnvOrFile("HOS_API_KEY") || "");
@@ -396,7 +366,11 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
 
       const proofId = crypto.randomUUID();
       const occurredAt = new Date().toISOString();
-      const subjectRef = typeof permit.snapshot === "string" ? JSON.parse(permit.snapshot) : permit.snapshot;
+      const snapshot = typeof permit.snapshot === "string" ? JSON.parse(permit.snapshot) : permit.snapshot;
+      const subjectRef = snapshot?.subject_ref ?? null;
+      if (!subjectRef || typeof subjectRef !== "object") {
+        return reply.code(500).send({ error: "invalid_permit_snapshot", error_subcode: "INVALID_PERMIT_SNAPSHOT" });
+      }
 
       const proofPayload = {
         permit_id: permitId,
@@ -446,43 +420,6 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
 
       return reply.send({ ok: true, proof_id: proofId });
     });
-  }
-
-  function getBearer(req) {
-    const auth = req.headers.authorization;
-    if (!auth?.startsWith("Bearer ")) return null;
-    return auth.slice("Bearer ".length);
-  }
-
-  function requireAuth(req, reply) {
-    const token = getBearer(req);
-    if (!token) {
-      reply.code(401).send({ error: "missing_token" });
-      return null;
-    }
-
-    try {
-      const payload = verifyAccessToken(token);
-      if (!payload?.sub) {
-        reply.code(401).send({ error: "invalid_token" });
-        return null;
-      }
-      return payload;
-    } catch {
-      reply.code(401).send({ error: "invalid_token" });
-      return null;
-    }
-  }
-
-  function requireRole(req, reply, allowedRoles) {
-    const payload = requireAuth(req, reply);
-    if (!payload) return null;
-    const role = payload?.role ?? "member";
-    if (!allowedRoles.includes(role)) {
-      reply.code(403).send({ error: "forbidden", required: allowedRoles, role });
-      return null;
-    }
-    return payload;
   }
 
   const auditQuery = z.object({

@@ -29,6 +29,12 @@ class AuthContext
 
             // Get JWT secret from environment
             $jwtSecret = env('HOS_JWT_SECRET') ?: env('JWT_SECRET');
+            if ($jwtSecret === null || $jwtSecret === '') {
+                $jwtSecretFile = env('HOS_JWT_SECRET_FILE') ?: env('JWT_SECRET_FILE');
+                if ($jwtSecretFile && is_string($jwtSecretFile) && file_exists($jwtSecretFile)) {
+                    $jwtSecret = trim((string) @file_get_contents($jwtSecretFile));
+                }
+            }
             if (!$jwtSecret || strlen($jwtSecret) < 32) {
                 // Only fail if token is provided but secret is missing
                 return response()->json([

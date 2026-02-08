@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
-import fs from "node:fs";
+import { readEnvOrFile } from "./config.js";
 
 const SCRYPT_N = 2 ** 15;
 const SCRYPT_R = 8;
@@ -16,16 +16,7 @@ export function requireStrongJwtSecret(secret) {
 }
 
 function getJwtSecret() {
-  const direct = process.env.JWT_SECRET;
-  if (direct && direct.length > 0) return direct;
-
-  const filePath = process.env.JWT_SECRET_FILE;
-  if (!filePath) return undefined;
-  try {
-    return fs.readFileSync(filePath, "utf8").trim();
-  } catch {
-    return undefined;
-  }
+  return readEnvOrFile("JWT_SECRET");
 }
 
 export function hashPassword(password) {

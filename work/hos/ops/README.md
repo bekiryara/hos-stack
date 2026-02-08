@@ -1,57 +1,28 @@
-# Ops (H-OS)
+# Ops (work/hos) — RETIRED
 
-This directory intentionally contains **small, repeatable commands**. The goal is to avoid drift between machines and avoid "random docker run" usage.
+Bu klasör artık **giriş noktası değildir**.
 
-## Canonical local start (dev)
+Amaç: “iki farklı çalıştırma yolu” yüzünden drift/kafa karışıklığı olmasın.
 
-From repo root:
+## Tek kanonik yol (kullanılacak tek yol)
 
-```powershell
-docker compose -f docker-compose.yml -f docker-compose.ports.yml up -d --build
-```
-
-Health:
+Repo root’tan çalıştır:
 
 ```powershell
-curl.exe -sS -i http://localhost:3000/v1/health
+cd D:\stack
+docker compose up -d --build
+.\ops\ops.ps1 status
 ```
 
-## Production-oriented overrides (optional)
-
-`docker-compose.prod.yml` disables anonymous Grafana and requires admin creds:
+Obs (opsiyonel):
 
 ```powershell
-$env:GRAFANA_ADMIN_USER='admin'
-$env:GRAFANA_ADMIN_PASSWORD='admin'
-docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.ports.yml up -d --build
+.\ops\ops.ps1 up -StackProfile obs
 ```
 
+## Not
 
-This directory intentionally contains **small, repeatable commands**. The goal is to avoid drift between machines and avoid "random docker run" usage.
-
-## Canonical local start (dev)
-
-From repo root:
-
-```powershell
-docker compose -f docker-compose.yml -f docker-compose.ports.yml up -d --build
-```
-
-Health:
-
-```powershell
-curl.exe -sS -i http://localhost:3000/v1/health
-```
-
-## Production-oriented overrides (optional)
-
-`docker-compose.prod.yml` disables anonymous Grafana and requires admin creds:
-
-```powershell
-$env:GRAFANA_ADMIN_USER='admin'
-$env:GRAFANA_ADMIN_PASSWORD='admin'
-docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.ports.yml up -d --build
-```
+`work/hos/docker-compose.yml` dosyası yalnızca obs bileşenleri için bir “component” olarak tutulur; core stack için kullanılmaz.
 
 
 

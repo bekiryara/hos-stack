@@ -1,5 +1,15 @@
+#
+# NOTE (CANONICAL / SINGLE-PATH):
+# - Do NOT use this compose file to start the core system.
+# - Core stack is started from repo root: `docker compose up -d --build`
+# - This file is kept as a component for OBS-only bring-up via root ops:
+#     `.\ops\ops.ps1 up -StackProfile obs`
+#
 services:
   db:
+    # Retired core service (kept only for backwards compatibility).
+    # Prevent accidental "second core stack" by requiring an explicit profile.
+    profiles: ["hos-legacy"]
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: hos
@@ -19,6 +29,8 @@ services:
     restart: unless-stopped
 
   api:
+    # Retired core service (kept only for backwards compatibility).
+    profiles: ["hos-legacy"]
     build:
       context: .
       dockerfile: services/api/Dockerfile
@@ -60,6 +72,8 @@ services:
     restart: unless-stopped
 
   web:
+    # Retired core service (kept only for backwards compatibility).
+    profiles: ["hos-legacy"]
     build:
       context: .
       dockerfile: services/web/Dockerfile
@@ -95,8 +109,7 @@ services:
       - ./services/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./services/observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
     depends_on:
-      api:
-        condition: service_started
+      # OBS-only: do not pull up core services as dependencies.
       postgres-exporter:
         condition: service_started
     restart: unless-stopped

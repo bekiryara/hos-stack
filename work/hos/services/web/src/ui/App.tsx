@@ -108,7 +108,7 @@ export function App() {
 
     // Check 3: Pazar reachable
     try {
-      const resp = await fetch('http://localhost:8080/api/world/status', { cache: 'no-store' });
+      const resp = await fetch('/api/marketplace/api/world/status', { cache: 'no-store' });
       if (resp.ok) {
         const data = await resp.json();
         checks.pazar = { pass: true, message: `Pazar: ${data.world_key || 'OK'}` };
@@ -157,7 +157,7 @@ export function App() {
   async function fetchListingForMessaging() {
     try {
       setListingError(null);
-      const resp = await fetch('http://localhost:8080/api/v1/listings?status=published&limit=1', {
+      const resp = await fetch('/api/marketplace/api/v1/listings?status=published&limit=1', {
         cache: 'no-store',
       });
       if (!resp.ok) {
@@ -169,7 +169,7 @@ export function App() {
         setListingId(items[0].id);
       } else {
         // Try without status filter
-        const resp2 = await fetch('http://localhost:8080/api/v1/listings?limit=1', {
+        const resp2 = await fetch('/api/marketplace/api/v1/listings?limit=1', {
           cache: 'no-store',
         });
         if (resp2.ok) {
@@ -432,21 +432,16 @@ export function App() {
             <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>Quick Links</div>
             <div style={{ fontSize: '0.875rem' }}>
               <div style={{ marginBottom: '0.25rem' }}>
-                <a href="http://localhost:3000/v1/worlds" target="_blank" rel="noreferrer">http://localhost:3000/v1/worlds</a>
+                <a href="/api/v1/worlds" target="_blank" rel="noreferrer">/api/v1/worlds</a>
               </div>
               <div style={{ marginBottom: '0.25rem' }}>
-                <a href="http://localhost:3000/v1/world/status" target="_blank" rel="noreferrer">http://localhost:3000/v1/world/status</a>
+                <a href="/api/v1/world/status" target="_blank" rel="noreferrer">/api/v1/world/status</a>
               </div>
               <div style={{ marginBottom: '0.25rem' }}>
-                <a href="http://localhost:8080/api/world/status" target="_blank" rel="noreferrer">http://localhost:8080/api/world/status</a>
+                <a href="/api/marketplace/api/world/status" target="_blank" rel="noreferrer">/api/marketplace/api/world/status</a>
               </div>
               <div style={{ marginBottom: '0.25rem' }}>
-                <a href="http://localhost:8090/api/world/status" target="_blank" rel="noreferrer">http://localhost:8090/api/world/status</a>
-                {process.env.MESSAGING_PUBLIC_URL && (
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#666' }}>
-                    (env override: {process.env.MESSAGING_PUBLIC_URL})
-                  </span>
-                )}
+                <a href="/api/messaging/api/world/status" target="_blank" rel="noreferrer">/api/messaging/api/world/status</a>
               </div>
             </div>
           </div>
@@ -481,18 +476,18 @@ export function App() {
                     </div>
                     {world.world_key === 'marketplace' && (
                       <div style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
-                        <a href="http://localhost:8080/api/world/status" target="_blank" rel="noreferrer">Direct status</a>
+                        <a href="/api/marketplace/api/world/status" target="_blank" rel="noreferrer">Direct status</a>
                       </div>
                     )}
                     {world.world_key === 'messaging' && (
                       <div style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
-                        <a href="http://localhost:8090/api/world/status" target="_blank" rel="noreferrer">Direct status</a>
+                        <a href="/api/messaging/api/world/status" target="_blank" rel="noreferrer">Direct status</a>
                       </div>
                     )}
                   </div>
                 ))}
                 <div style={{ marginTop: '1rem', fontSize: '0.875rem' }}>
-                  <a href="http://localhost:3000/v1/worlds" target="_blank" rel="noreferrer">H-OS API worlds endpoint</a>
+                  <a href="/api/v1/worlds" target="_blank" rel="noreferrer">H-OS API worlds endpoint</a>
                 </div>
               </div>
             )}
