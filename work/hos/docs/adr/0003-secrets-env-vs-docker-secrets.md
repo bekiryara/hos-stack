@@ -23,21 +23,21 @@ Riskler:
 - Basit local kullanım için varsayılan/kolay mod.
 
 2) **Docker secrets mode**
-- Secrets `secrets/*.txt` dosyalarıdır (gitignore) ve compose `docker-compose.secrets.yml` ile mount edilir.
+- Secrets `work/hos/secrets/*.txt` dosyalarıdır (gitignore) ve **root** `docker-compose.yml` tarafından Docker secrets olarak mount edilir.
 - Uygulama `*_FILE` değişkenlerini destekler (örn. `JWT_SECRET_FILE`, `DATABASE_URL_FILE`, `POSTGRES_PASSWORD_FILE`).
-- Secrets modunda base compose içindeki env’ler override ile boşlanır; böylece `*_FILE` kazanır.
+- Stack wiring’de varsayılan olarak `*_FILE` kazanır (compose içinde ilgili plain env değerleri bilinçli olarak boş bırakılır).
 
 Operasyonel ergonomi:
-- `ops/bootstrap.ps1` secrets dosyalarını gerektiğinde üretir ve DB kullanıcı şifresini volume uyumu için senkronlamaya çalışır.
-- Secrets modunda compose config doğrulaması, env export gerektirmeden yapılabilir.
+- Secrets dosyaları kanonik araç ile üretilebilir: `.\ops\ops.ps1 secrets-from-env -Apply`
+- Tek kanonik start: `docker compose up -d --build`
 
 ## Consequences
 
 ### Positive
 
 - Local dev hızlı (env mode) + prod-benzeri güvenli mod (secrets mode).
-- CI’da env/secrets iki mod da test edilebilir (compose-smoke).
-- Secrets drift/mismatch riski ops bootstrap ile düşer.
+- CI’da env/secrets iki mod da test edilebilir (pipeline gates + test matrix yaklaşımı).
+- Secrets drift/mismatch riski kanonik ops araçları ve sözleşme kontrolleri ile düşer.
 
 ### Negative / Risks
 
@@ -53,9 +53,8 @@ Operasyonel ergonomi:
 ## Proof
 
 - Local:
-  - Env: `.\ops\bootstrap.ps1` + `.\ops\check.ps1 -SkipAuth`
-  - Secrets: `.\ops\bootstrap.ps1 -Secrets` + `docker compose -f docker-compose.yml -f docker-compose.secrets.yml config`
+  - Secrets (canonical): `.\ops\ops.ps1 secrets-from-env -Apply` + `docker compose up -d --build` + `.\ops\ops.ps1 status`
 - CI:
-  - GitHub Actions `compose-smoke` (env + secrets matrix)
+  - GitHub Actions `CI` workflow (ops gates + tests)
 
 

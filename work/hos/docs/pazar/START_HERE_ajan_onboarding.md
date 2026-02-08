@@ -44,8 +44,8 @@ Her PR şu min. adımlarla ilerler:
 1) **Repo haritası**: `docs/tr/hos_repo_haritasi.md`
 2) **Runbook**: `RUNBOOK.md`
 3) **Kanıt**:
-   - `.\ops\check.ps1 -SkipAuth`
-   - `.\ops\smoke.ps1` (gerekirse)
+   - `.\ops\ops.ps1 verify`
+   - `.\ops\ops.ps1 smoke` (gerekirse)
 4) Pazar ile entegrasyon değişiyorsa:
    - `docs/pazar/` altındaki sözleşme dokümanlarını güncelle
    - shadow/enforce planını yaz
@@ -152,9 +152,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\docs\proof_bundle.ps1 -Bas
 
 ### 5.2 H-OS (Docker Desktop)
 ```powershell
-cd $env:USERPROFILE\Desktop\h-os
-.\ops\bootstrap.ps1 -Obs -Web
-.\ops\check.ps1 -SkipAuth
+cd D:\stack
+docker compose up -d --build
+.\ops\ops.ps1 status
+
+# Obs (opsiyonel):
+.\ops\ops.ps1 up -StackProfile obs
 ```
 
 ## 6) “Dokunma listesi” (yüksek risk)

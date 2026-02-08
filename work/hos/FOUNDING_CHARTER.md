@@ -55,14 +55,14 @@ H-OS, farklı internet projeleri için tekrar kullanılabilir “platform-işlet
 - Tenant-scope audit log
 - Prometheus metrics endpoint’i + Grafana dashboard provisioning
 - Alerting/observability stack (opt-in profile)
-- Ops script’leri: `bootstrap`, `check`, `smoke`, `stop`, `backup`, `restore`
+- Ops: tek dispatcher `.\ops\ops.ps1` + status/verify/smoke/full gate paketleri
 - Release checklist: `RELEASE.md`
 
 ## 6) İlk MVP / “İlk Bitiş” (BIFK) — Success Criteria
 Bu milestone “tamamlandı” demek için:
-- `.\ops\bootstrap.ps1 -Obs` çalışır (tek komutla start)
-- `.\ops\check.ps1 -SkipAuth` **OK** döner (tek komutla doğrulama)
-- CI içinde `compose-smoke` (env + secrets) başarılıdır
+- Core stack `docker compose up -d --build` ile kalkar (tek kanonik yol)
+- Doğrulama: `.\ops\ops.ps1 verify` ve `.\ops\ops.ps1 status` **PASS**
+- Observability (opsiyonel): `.\ops\ops.ps1 up -StackProfile obs`
 
 ## 7) Paydaşlar, Roller, Sorumluluklar (özet)
 - **Maintainers / Core Team**: tasarım kararları, merge, release, güvenlik triage
@@ -86,15 +86,16 @@ Bu milestone “tamamlandı” demek için:
 - Loglarda secret/PII sızıntısı riski → redact zorunlu
 
 ## 11) Güvenlik ve Operasyon Standardı (prod yaklaşımı)
-- `docker-compose.prod.yml`: daha güvenli varsayılanlar (Grafana anonymous kapalı, `COOKIE_SECURE=true`).
-- Secrets: `docker-compose.secrets.yml` + `secrets/*.txt` (gitignore).
+- Prod hardening (yaklaşım): ortam değişkenleri + reverse-proxy/TLS + network segmentasyonu.
+- Secrets: `work/hos/secrets/*.txt` (gitignore) + uygulama tarafında `*_FILE` (Docker secrets) standardı.
+- Secrets dosyalarını üretme: `.\ops\ops.ps1 secrets-from-env -Apply`
 - Deploy öncesi/sonrası: `RELEASE.md` checklist.
 
 ## 12) Prensipler
 - **Güvenlik varsayılanı**: secret’lar mümkünse dosya/secrets, loglarda redaction, cookie güvenliği (`COOKIE_SECURE`).
 - **Tenant izolasyonu**: tüm kritik okuma/yazmalar tenant-scope olmalı; cross-tenant sızıntı sev-1 bug.
 - **Sözleşme disiplini**: versiyonlu API (`/v1/...`) + deprecation.
-- **Operasyonel ergonomi**: reboot/bağlantı kopması durumunda bile tek komutla durum görülebilmeli (`ops/check.ps1`).
+- **Operasyonel ergonomi**: reboot/bağlantı kopması durumunda bile tek komutla durum görülebilmeli (`.\ops\ops.ps1 status`).
 - **Gözlemlenebilirlik**: metrics/traces/alerts opt-in ama hazır.
 - **Deterministik build**: lockfile + CI gate + migration gate.
 

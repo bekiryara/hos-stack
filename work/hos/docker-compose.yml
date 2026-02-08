@@ -88,7 +88,8 @@ services:
     profiles: ["obs"]
     image: grafana/grafana:11.3.0
     environment:
-      # Dev default: anonymous viewer enabled. Use docker-compose.prod.yml to disable and require admin password.
+      # Dev default: anonymous viewer enabled.
+      # For safer defaults, disable anonymous auth and set admin credentials via environment overrides.
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
     volumes:

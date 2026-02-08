@@ -1,5 +1,5 @@
 # Reverse proxy (optional) for prod-like HTTPS testing on localhost.
-# Used by: work/hos/docker-compose.proxy.yml
+# NOTE: Previously wired via a legacy compose override (removed). Keep as a reference snippet.
 
 api.localhost {
   reverse_proxy api:3000

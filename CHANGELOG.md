@@ -4,6 +4,17 @@
 
 **Rule:** Only edit this top `[Unreleased]` section. Any lower legacy blocks are historical artifacts and must not be appended to.
 
+### auth: Google-first OAuth handoff (2026-02-08)
+- HOS Google OAuth callback now redirects back to Marketplace for token handoff; Marketplace `/oauth/complete` persists the session and redirects to `/account`.
+- Login UX: Google login defaults to public customer mode; optional tenant slug is hidden under advanced options.
+- Ops: added blocking check `Google-first OAuth Smoke` and wired `MARKETPLACE_WEB_PUBLIC_URL` for redirect base.
+- Proof: `docs/PROOFS/PASS_LOG.md` (commits: 0bf305d, 603b6e1)
+
+### cleanup: remove retired work/hos ops surfaces (2026-02-08)
+- Removed retired `work/hos/ops/*` stubs and legacy `work/hos/docker-compose.*.yml` overlays to prevent drift/duality.
+- Moved secrets generator to canonical `ops/_tools/secrets_from_env.ps1` and wired `.\ops\ops.ps1 secrets-from-env`.
+- Proof: `docs/PROOFS/PASS_LOG.md` (commit: 603b6e1)
+
 ### WP-FINAL: Category / Catalog / Listing Finalization (2026-01-28)
 - Proof: docs/PROOFS/wp_category_catalog_listing_final_pass.md
 

@@ -1,5 +1,5 @@
-# Template used by ops/bootstrap.ps1 -MailpitAlerts
-# It generates `alertmanager.generated.yml` for local testing with Mailpit (no auth, no TLS).
+# Template for generating an Alertmanager config for local testing with Mailpit (no auth, no TLS).
+# NOTE: Legacy bootstrap tooling was removed; generate a derived config via your ops workflow if needed.
 global:
   smtp_smarthost: "mailpit:1025"
   smtp_from: "__ALERT_EMAIL_FROM__"

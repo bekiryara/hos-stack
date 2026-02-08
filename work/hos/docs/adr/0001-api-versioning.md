@@ -44,9 +44,9 @@ Aynı zamanda mevcut “legacy” endpoint’leri kullanan erken kullanıcılar/
 ## Proof
 
 - Local:
-  - `.\ops\smoke.ps1` (v1 endpoint’leriyle uçtan uca doğrular)
-  - `.\ops\check.ps1 -SkipAuth` (health/ready/metrics)
+  - `.\ops\ops.ps1 smoke` (v1 endpoint’leriyle uçtan uca doğrular)
+  - `.\ops\ops.ps1 verify` (health + basic stack verification)
 - CI:
-  - GitHub Actions `CI` workflow (api tests + compose-smoke)
+  - GitHub Actions `CI` workflow (api tests + ops gates)
 
 

@@ -45,8 +45,8 @@ Tehditler:
 ## Proof
 
 - Local:
-  - `.\ops\smoke.ps1` (refresh cookie + refresh/logout flow’u doğrular)
-  - `.\ops\check.ps1` (opsiyonel refresh/logout check)
+  - `.\ops\ops.ps1 smoke` (refresh cookie + refresh/logout flow’u doğrular)
+  - `.\ops\ops.ps1 verify` (stack verification; opsiyonel)
 - Tests:
   - `services/api/test/refresh.test.js`
 

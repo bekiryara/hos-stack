@@ -52,7 +52,7 @@
 - H-OS Web: `3002`
 - Pazar App: `8080`
 - H-OS DB: `5432` (internal)
-- Pazar DB: `5433` (internal)
+- Pazar DB: `5432` (internal)
 
 ---
 

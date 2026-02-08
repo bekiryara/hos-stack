@@ -21,8 +21,8 @@ Bu doküman, H-OS repo’su için yapılan güvenlik/operasyon odaklı risk değ
 - **Self-register akışında rol/tenant onboarding boşlukları**
 - **Promtail docker.sock mount gibi host-privilege etkisi yüksek bileşenler**
 
-Not: Log toplama (Loki/Promtail) artık ayrı bir profile’dadır: `--profile logs` / `.\ops\bootstrap.ps1 -Logs`.
-Bu sayede “default obs” akışı docker.sock erişimini otomatik olarak devreye almaz.
+Not: Log toplama (Loki/Promtail) observability profili altındadır (`work/hos/docker-compose.yml` → `profiles: ["obs"]`).
+Core stack bu servisleri default açmaz; ihtiyaç olursa `.\ops\ops.ps1 up -StackProfile obs` ile alınır.
 
 ## Risk Register (özet)
 | ID | Risk | Etki | Olasılık | Skor | Seviye | Kanıt | Önerilen aksiyon |
@@ -35,8 +35,8 @@ Bu sayede “default obs” akışı docker.sock erişimini otomatik olarak devr
 | R6 | Metrics endpoint dışa açık | 3 | 4 | 12 | Medium | `GET /metrics` | internal-only scrape / auth |
 
 ## Hızlı kazanımlar (24–48 saat)
-- Repo klasörünü paylaşmadan/zip’lemeden önce dump dosyalarını temizle (özellikle `backups-test/*.sql`). `restore_smoke` artık başarı sonrası dump’ı otomatik temizler; eski dump’lar manuel silinmeli.
-- `secrets/*.txt` içeriğini compromise kabul et ve rotate et.
+- Repo klasörünü paylaşmadan/zip’lemeden önce dump dosyalarını temizle (özellikle `backups-test/*.sql`) ve `.gitignore`/payload guard kurallarını koru.
+- `work/hos/secrets/*.txt` içeriğini compromise kabul et ve rotate et.
 - Tenant onboarding politikasını netleştir (invite vs self-register).
 
 

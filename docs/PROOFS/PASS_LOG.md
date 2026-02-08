@@ -18,3 +18,7 @@ Her satır: tarih + hangi komut(lar) + sonuç + (varsa) commit.
 
 <!-- Append new lines below. -->
 
+2026-02-08 | hos-api: npm test; marketplace-web: npm run build | PASS | commits: 0bf305d, 603b6e1
+2026-02-08 | docker: compose up -d --build hos-api hos-web | PASS | commits: 0bf305d
+2026-02-08 | ops: ops_status (includes Google-first OAuth Smoke) | PASS | commits: 603b6e1
+

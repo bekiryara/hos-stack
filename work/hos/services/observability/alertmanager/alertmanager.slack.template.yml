@@ -1,5 +1,5 @@
-# Template used by ops/bootstrap.ps1 -SlackAlerts
-# It generates `alertmanager.generated.yml` by replacing __PLACEHOLDER__ tokens.
+# Template for generating an Alertmanager Slack config by replacing __PLACEHOLDER__ tokens.
+# NOTE: Legacy bootstrap tooling was removed; generate a derived config via your ops workflow if needed.
 route:
   receiver: "slack"
   group_by: ["alertname", "job", "instance"]

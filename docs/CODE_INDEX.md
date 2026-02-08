@@ -72,7 +72,6 @@
 
 - **Action Catalog:** `work/hos/services/api/src/policy/pazar/actions/action_catalog.js`
 - **Action Keys:** `work/hos/services/api/src/policy/pazar/actions/action_keys.js`
-- **Allowed Actions:** `work/hos/services/api/src/policy/pazar/actions/allowed_actions.js`
 - **Reservation Contract:** `work/hos/services/api/src/policy/pazar/actions/reservation_contract.js`
 
 #### Policy Contract (`work/hos/services/api/src/policy/pazar/contract/`)
