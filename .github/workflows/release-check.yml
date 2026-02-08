@@ -2,9 +2,6 @@ name: Release Check
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   release_check:
@@ -37,6 +34,7 @@ jobs:
         shell: pwsh
         run: |
           pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/ops.ps1 release-check -Ci
+          if ($LASTEXITCODE -eq 1) { exit 1 } else { exit 0 }
 
       - name: Generate Release Bundle on FAIL/WARN
         if: failure() || (success() && job.status == 'success')

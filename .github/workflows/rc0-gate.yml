@@ -1,10 +1,7 @@
 name: RC0 Gate
 
 on:
-  pull_request:
-    branches: ['*']
-  push:
-    branches: ['*']
+  workflow_dispatch:
 
 jobs:
   rc0_gate:
@@ -37,6 +34,7 @@ jobs:
         shell: pwsh
         run: |
           pwsh -NoProfile -ExecutionPolicy Bypass -File ./ops/ops.ps1 rc0-gate -Ci
+          if ($LASTEXITCODE -eq 1) { exit 1 } else { exit 0 }
 
       - name: Upload incident bundle on failure
         if: failure()

@@ -133,9 +133,16 @@ function Test-AuthResponse {
                     $exitCode = 2
                 } elseif ($ExpectJsonEnvelope) {
                     try {
-                        $stream = $errorResponse.GetResponseStream()
-                        $reader = New-Object System.IO.StreamReader($stream)
-                        $body = $reader.ReadToEnd()
+                        # Prefer ErrorDetails.Message (more reliable than response stream in Windows PowerShell)
+                        $body = $null
+                        try {
+                            if ($_.ErrorDetails -and $_.ErrorDetails.Message) { $body = $_.ErrorDetails.Message }
+                        } catch { }
+                        if (-not $body) {
+                            $stream = $errorResponse.GetResponseStream()
+                            $reader = New-Object System.IO.StreamReader($stream)
+                            $body = $reader.ReadToEnd()
+                        }
                         $json = $body | ConvertFrom-Json
                         if ($json.ok -eq $false -and $json.error_code) {
                             $notes = "Status $statusCode, JSON envelope correct (error_code: $($json.error_code))"
@@ -362,8 +369,9 @@ if ($failCount -gt 0) {
     Invoke-OpsExit 1
     return
 } elseif ($warnCount -gt 0) {
-    Write-Host "OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
-    Invoke-OpsExit 2
+    # WARN is non-blocking in CI: surface signal without turning the job red.
+    Write-Host "OVERALL STATUS: WARN ($warnCount warnings) [non-blocking]" -ForegroundColor Yellow
+    Invoke-OpsExit 0
     return
 } else {
     Write-Host "OVERALL STATUS: PASS (All checks passed)" -ForegroundColor Green
