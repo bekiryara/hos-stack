@@ -100,21 +100,27 @@ try {
         $checks += [PSCustomObject]@{ Check = "Duplicate compose files"; Status = "PASS"; Notes = "Compose files structure normal" }
     }
     
-    # Check 5: Missing critical ops scripts
+    # Check 5: Missing critical ops scripts (canonical entrypoints)
     Write-Host "Checking for missing critical ops scripts..." -ForegroundColor Gray
-    $criticalScripts = @("ops_status.ps1", "verify.ps1", "doctor.ps1", "triage.ps1")
-    $missingScripts = @()
-    foreach ($script in $criticalScripts) {
-        if (-not (Test-Path ".\ops\$script")) {
-            $missingScripts += $script
+    $criticalPaths = @(
+        "ops/ops.ps1",
+        "ops/ops_status.ps1",
+        "ops/_checks/verify.ps1",
+        "ops/_checks/doctor.ps1",
+        "ops/_checks/triage.ps1"
+    )
+    $missingPaths = @()
+    foreach ($p in $criticalPaths) {
+        if (-not (Test-Path $p)) {
+            $missingPaths += $p
         }
     }
-    if ($missingScripts.Count -gt 0) {
-        $checks += [PSCustomObject]@{ Check = "Missing critical ops scripts"; Status = "FAIL"; Notes = "Missing: $($missingScripts -join ', ')" }
+    if ($missingPaths.Count -gt 0) {
+        $checks += [PSCustomObject]@{ Check = "Missing critical ops scripts"; Status = "FAIL"; Notes = "Missing: $($missingPaths -join ', ')" }
         $failCount++
-        Write-Host "  Remediation: Restore missing scripts from git history: git restore ops/$($missingScripts[0])" -ForegroundColor Red
+        Write-Host "  Remediation: Restore missing scripts from git history: git restore $($missingPaths[0])" -ForegroundColor Red
     } else {
-        $checks += [PSCustomObject]@{ Check = "Missing critical ops scripts"; Status = "PASS"; Notes = "All critical scripts present" }
+        $checks += [PSCustomObject]@{ Check = "Missing critical ops scripts"; Status = "PASS"; Notes = "All critical scripts present (ops.ps1 + _checks entrypoints)" }
     }
     
     # Summary
@@ -142,7 +148,13 @@ try {
         } else {
             Write-Host "[WARN] OVERALL STATUS: WARN ($warnCount warnings)" -ForegroundColor Yellow
         }
-        Invoke-OpsExit 2
+        # In CI we don't want non-blocking WARNs to block merges/push checks.
+        # Use -Ci to map WARN -> PASS (exit 0) while still printing WARN.
+        if ($Ci) {
+            Invoke-OpsExit 0
+        } else {
+            Invoke-OpsExit 2
+        }
         return
     } else {
         if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {

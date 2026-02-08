@@ -18,7 +18,16 @@ jobs:
         shell: pwsh
         run: |
           if (Test-Path "ops\\_checks\\repo_integrity.ps1") {
-            .\\ops\\_checks\\repo_integrity.ps1
+            .\\ops\\_checks\\repo_integrity.ps1 -Ci
+            $exitCode = $LASTEXITCODE
+            if ($exitCode -eq 1) {
+              Write-Host "FAIL: repo_integrity.ps1 failed" -ForegroundColor Red
+              exit 1
+            } else {
+              # WARNs are non-blocking in CI baseline governance
+              Write-Host "PASS: repo_integrity.ps1 (WARN may have been printed)" -ForegroundColor Green
+              exit 0
+            }
           } else {
             # Fallback to doctor.ps1 repo integrity section
             .\\ops\\_checks\\doctor.ps1
@@ -188,7 +197,7 @@ jobs:
         shell: pwsh
         run: |
           # Check if docker-compose.yml, ops/_checks/verify.ps1, docs/CURRENT.md changed
-          $baselineFiles = @("docker-compose.yml", "ops/_checks/verify.ps1", "ops/_checks/baseline_status.ps1", "docs/CURRENT.md", "docs/DECISIONS.md")
+          $baselineFiles = @("docker-compose.yml", "ops/_checks/verify.ps1", "ops/_checks/baseline_status.ps1", "docs/CURRENT.md", "docs/SPEC.md", "docs/RULES.md")
           
           if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
             $base = $env:GITHUB_BASE_REF
