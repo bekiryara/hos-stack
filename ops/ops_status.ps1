@@ -147,8 +147,6 @@ function Invoke-OpsCheckFromRegistry {
     $isCoreDependent = if ($CheckDef.CoreDependent) { $CheckDef.CoreDependent } else { $false }
     $isRegistryOnly = if ($CheckDef.RegistryOnly) { $CheckDef.RegistryOnly } else { $false }
     
-    Write-Host "Running $checkName..." -ForegroundColor Yellow
-    
     $exitCode = 0
     $status = "PASS"
     $notes = ""
@@ -231,6 +229,9 @@ function Invoke-OpsCheckFromRegistry {
             Blocking = $blocking
         }
     }
+
+    # Only print "Running ..." for checks that will actually execute.
+    Write-Host "Running $checkName..." -ForegroundColor Yellow
     
     if ($isInline) {
         # Handle inline checks (e.g., Test-ErrorContract)
@@ -383,16 +384,29 @@ Write-Host ""
 Write-Host "Check                                      Status ExitCode Notes" -ForegroundColor Gray
 Write-Host "--------------------------------------------------------------------------------" -ForegroundColor Gray
 
+# In local mode, hide optional SKIP rows to reduce “scary” noise.
+# (We still count them in the summary; run with -Ci to execute them.)
+$displayResults = $script:results
+$hiddenOptionalSkips = 0
+if (-not $Ci) {
+    $hiddenOptionalSkips = ($script:results | Where-Object { $_.Status -eq "SKIP" -and $_.Notes -like "OPTIONAL_DISABLED*" }).Count
+    $displayResults = $script:results | Where-Object { -not ($_.Status -eq "SKIP" -and $_.Notes -like "OPTIONAL_DISABLED*") }
+}
+
 # Print rows using helper (if available) or Format-Table
 if (Get-Command Write-OpsTableRow -ErrorAction SilentlyContinue) {
-    foreach ($result in $script:results) {
+    foreach ($result in $displayResults) {
         Write-OpsTableRow -Check $result.Check -Status $result.Status -ExitCode $result.ExitCode -Notes $result.Notes
     }
 } else {
-    $script:results | Format-Table -Property Check, Status, ExitCode, Notes -AutoSize
+    $displayResults | Format-Table -Property Check, Status, ExitCode, Notes -AutoSize
 }
 
 Write-Host ""
+if (-not $Ci -and $hiddenOptionalSkips -gt 0) {
+    Write-Host ("(hidden) {0} optional checks skipped. Run with -Ci to enable." -f $hiddenOptionalSkips) -ForegroundColor Gray
+    Write-Host ""
+}
 
 # Determine overall status based on blocking semantics
 $blockingFails = ($script:results | Where-Object { $_.Blocking -eq $true -and $_.Status -eq "FAIL" }).Count
@@ -451,7 +465,11 @@ if ($ReleaseBundle) {
 
 # Print summary
 Write-Host "=== Summary ===" -ForegroundColor Cyan
-Write-Host "PASS: $passCount, WARN: $warnCount, FAIL: $failCount, SKIP: $skipCount" -ForegroundColor Gray
+if (-not $Ci -and $hiddenOptionalSkips -gt 0) {
+    Write-Host "PASS: $passCount, WARN: $warnCount, FAIL: $failCount, SKIP: $skipCount (optional hidden: $hiddenOptionalSkips)" -ForegroundColor Gray
+} else {
+    Write-Host "PASS: $passCount, WARN: $warnCount, FAIL: $failCount, SKIP: $skipCount" -ForegroundColor Gray
+}
 if ($rootCause) {
     Write-Host "Root cause: $rootCause" -ForegroundColor Gray
 }

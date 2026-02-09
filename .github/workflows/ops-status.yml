@@ -26,7 +26,9 @@ jobs:
       - name: Start services
         run: |
           echo "Starting docker compose services..."
-          docker compose up -d --build
+          # Reduce log noise from image pulls.
+          docker compose pull --quiet || true
+          docker compose up -d --build --quiet-pull
           echo "Waiting for services to be ready..."
           sleep 15
 
