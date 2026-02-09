@@ -102,7 +102,7 @@ export function App() {
     setAdminOut(null);
     setAuthBusy(true);
     try {
-      const resp = await hosLogin({ tenant_slug: tenantSlug || undefined, email, password });
+      const resp = await hosLogin({ tenantSlug: tenantSlug || undefined, email, password });
       const t = resp?.token || resp?.access_token || resp?.jwt;
       if (!t) throw new Error('Login succeeded but no token returned');
       setToken(String(t));

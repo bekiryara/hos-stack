@@ -88,7 +88,7 @@ async function fetchJson(path: string, opts?: { method?: string; headers?: Recor
   return json;
 }
 
-export async function hosLogin(params: { tenant_slug?: string; email: string; password: string }) {
+export async function hosLogin(params: { tenantSlug?: string; email: string; password: string }) {
   return await fetchJson('/api/v1/auth/login', { method: 'POST', body: params });
 }
 
