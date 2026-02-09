@@ -1,20 +1,7 @@
 name: Product API CRUD Gate
 
 on:
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'work/pazar/routes/api.php'
-      - 'work/pazar/app/Http/Controllers/Api/**/*.php'
-      - 'ops/_checks/product_api_crud_e2e.ps1'
-      - '.github/workflows/product-api-crud-gate.yml'
-  push:
-    branches: [main, develop]
-    paths:
-      - 'work/pazar/routes/api.php'
-      - 'work/pazar/app/Http/Controllers/Api/**/*.php'
-      - 'ops/_checks/product_api_crud_e2e.ps1'
-      - '.github/workflows/product-api-crud-gate.yml'
+  workflow_dispatch:
 
 jobs:
   product-api-crud:

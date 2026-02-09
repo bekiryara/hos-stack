@@ -1,10 +1,7 @@
 name: Gate SPEC
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, edited]
-  push:
-    branches: [main, develop]
+  workflow_dispatch:
 
 jobs:
   gate-spec:

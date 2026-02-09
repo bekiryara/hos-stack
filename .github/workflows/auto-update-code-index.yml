@@ -2,13 +2,6 @@ name: Auto-Update CODE_INDEX.md
 
 on:
   workflow_dispatch:  # Manuel tetikleme
-  push:
-    branches:
-      - main
-    paths:
-      - 'work/**'
-      - 'ops/**'
-      - '!docs/CODE_INDEX.md'
 
 permissions:
   contents: write

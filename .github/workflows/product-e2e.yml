@@ -1,20 +1,7 @@
 name: Product E2E Gate
 
 on:
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'work/pazar/routes/api.php'
-      - 'work/pazar/app/Http/Controllers/Api/**/*.php'
-      - 'ops/_checks/product_e2e.ps1'
-      - '.github/workflows/product-e2e.yml'
-  push:
-    branches: [main, develop]
-    paths:
-      - 'work/pazar/routes/api.php'
-      - 'work/pazar/app/Http/Controllers/Api/**/*.php'
-      - 'ops/_checks/product_e2e.ps1'
-      - '.github/workflows/product-e2e.yml'
+  workflow_dispatch:
 
 jobs:
   product-e2e:

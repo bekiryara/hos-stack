@@ -1,20 +1,7 @@
 name: OpenAPI Contract Check
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'docs/product/openapi.yaml'
-      - 'ops/_checks/openapi_contract.ps1'
-      - 'work/pazar/routes/api.php'
-      - 'work/pazar/app/Http/Controllers/Api/**/*.php'
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'docs/product/openapi.yaml'
-      - 'ops/_checks/openapi_contract.ps1'
-      - 'work/pazar/routes/api.php'
-      - 'work/pazar/app/Http/Controllers/Api/**/*.php'
+  workflow_dispatch:
 
 jobs:
   openapi-contract:

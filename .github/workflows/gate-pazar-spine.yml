@@ -1,25 +1,7 @@
 name: Gate Pazar Spine
 
 on:
-  pull_request:
-    paths:
-      - 'work/pazar/**'
-      - 'ops/_checks/pazar_spine_check.ps1'
-      - 'ops/_checks/world_status_check.ps1'
-      - 'ops/_checks/catalog_contract_check.ps1'
-      - 'ops/_checks/listing_contract_check.ps1'
-      - 'ops/_checks/reservation_contract_check.ps1'
-      - 'ops/_checks/v2_gate.ps1'
-      - 'docs/SPEC.md'
-      - '.github/workflows/gate-pazar-spine.yml'
-  push:
-    branches:
-      - main
-    paths:
-      - 'work/pazar/**'
-      - 'ops/_checks/pazar_spine_check.ps1'
-      - 'ops/_checks/v2_gate.ps1'
-      - '.github/workflows/gate-pazar-spine.yml'
+  workflow_dispatch:
 
 jobs:
   gate-pazar-spine:

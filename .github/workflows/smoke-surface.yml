@@ -1,20 +1,7 @@
 name: Smoke Surface Gate
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'work/pazar/**'
-      - 'ops/_checks/smoke_surface.ps1'
-      - 'docker-compose.yml'
-      - '.github/workflows/smoke-surface.yml'
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'work/pazar/**'
-      - 'ops/_checks/smoke_surface.ps1'
-      - 'docker-compose.yml'
-      - '.github/workflows/smoke-surface.yml'
+  workflow_dispatch:
 
 jobs:
   smoke-surface:

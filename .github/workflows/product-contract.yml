@@ -1,22 +1,7 @@
 name: Product Contract Gate
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'work/pazar/routes/api.php'
-      - 'work/pazar/config/worlds.php'
-      - 'ops/_checks/product_contract.ps1'
-      - 'ops/_checks/product_contract_check.ps1'
-      - '.github/workflows/product-contract.yml'
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'work/pazar/routes/api.php'
-      - 'work/pazar/config/worlds.php'
-      - 'ops/_checks/product_contract.ps1'
-      - 'ops/_checks/product_contract_check.ps1'
-      - '.github/workflows/product-contract.yml'
+  workflow_dispatch:
 
 jobs:
   product-contract:

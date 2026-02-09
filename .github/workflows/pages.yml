@@ -1,13 +1,6 @@
 name: GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - 'work/marketplace-web/**'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:

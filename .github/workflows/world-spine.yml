@@ -1,10 +1,7 @@
 name: World Spine Gate
 
 on:
-  pull_request:
-    branches: ['*']
-  push:
-    branches: ['*']
+  workflow_dispatch:
 
 jobs:
   world_spine:

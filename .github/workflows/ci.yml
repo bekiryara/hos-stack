@@ -1,10 +1,8 @@
 name: CI Baseline Governance
 
 on:
-  pull_request:
-    branches: [main, develop]
-  push:
-    branches: [main, develop]
+  # Canonical PR/push signal is ops-status.yml. Keep this workflow manual to reduce noise.
+  workflow_dispatch:
 
 jobs:
   repo_integrity:

@@ -1,10 +1,12 @@
 name: Ops Status Dashboard
 
 on:
+  # Single measurement for PR/push: ops_status is the canonical CI signal.
   pull_request:
-    branches: ['*']
+    branches: [main, develop]
   push:
-    branches: ['*']
+    branches: [main, develop]
+  workflow_dispatch:
 
 jobs:
   ops_status:

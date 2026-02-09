@@ -1,10 +1,7 @@
 name: Error Contract Gate
 
 on:
-  pull_request:
-    branches: ['*']
-  push:
-    branches: ['*']
+  workflow_dispatch:
 
 jobs:
   error_contract:

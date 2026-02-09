@@ -1,10 +1,7 @@
 name: DB Contract Gate
 
 on:
-  pull_request:
-    branches: ['*']
-  push:
-    branches: ['*']
+  workflow_dispatch:
 
 jobs:
   db_contracts:
