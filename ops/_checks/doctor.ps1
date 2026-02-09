@@ -64,13 +64,6 @@ try {
         if ($duplicateServices.Count -gt 0) {
             $conflicts += "Duplicate service names: $($duplicateServices -join ', ')"
         }
-        
-        # Check for port conflicts (simplified: check if both have services on same ports)
-        # This is a heuristic check - actual conflicts depend on which compose is used
-        $conflictMsg = "Both root and work/hos compose files exist. Ensure obs profile does not start core services."
-        if ($conflicts.Count -eq 0 -and $conflictMsg) {
-            $conflicts += $conflictMsg
-        }
     }
     
     if ($conflicts.Count -gt 0) {
@@ -85,7 +78,7 @@ try {
         $results += @{
             Check = "Duplicate Compose Patterns"
             Status = "PASS"
-            Details = "No conflicts detected"
+            Details = "Root + work/hos compose files present (expected: canonical + observability)"
         }
     }
 } catch {
@@ -224,9 +217,9 @@ Write-Host "[5] Checking for forbidden root artifacts..." -ForegroundColor Yello
 $forbiddenPatterns = @("*.zip", "*.rar", "*.bak", "*.tmp")
 $foundArtifacts = @()
 foreach ($pattern in $forbiddenPatterns) {
-    $matches = Get-ChildItem -Path . -Filter $pattern -File -ErrorAction SilentlyContinue
-    if ($matches) {
-        $foundArtifacts += $matches.Name
+    $artifactMatches = Get-ChildItem -Path . -Filter $pattern -File -ErrorAction SilentlyContinue
+    if ($artifactMatches) {
+        $foundArtifacts += $artifactMatches.Name
     }
 }
 if ($foundArtifacts.Count -gt 0) {
@@ -282,38 +275,29 @@ Write-Host "[7] Running repository integrity check..." -ForegroundColor Yellow
 $repoIntegrityPath = ".\\ops\\_checks\\repo_integrity.ps1"
 if (Test-Path $repoIntegrityPath) {
     try {
-        $integrityOutput = & $repoIntegrityPath 2>&1 | Out-String
-        $integrityExitCode = $LASTEXITCODE
-        
-        # Extract status from output (look for OVERALL STATUS line)
-        if ($integrityOutput -match "OVERALL STATUS:\s*(PASS|WARN|FAIL)") {
-            $integrityStatus = $matches[1]
-            if ($integrityStatus -eq "FAIL") {
-                $results += @{
-                    Check = "Repository Integrity"
-                    Status = "FAIL"
-                    Details = "Critical integrity issues detected (see repo_integrity.ps1 output above)"
-                }
-                $hasFailures = $true
-            } elseif ($integrityStatus -eq "WARN") {
-                $results += @{
-                    Check = "Repository Integrity"
-                    Status = "WARN"
-                    Details = "Minor integrity issues detected (non-critical drift)"
-                }
-            } else {
-                $results += @{
-                    Check = "Repository Integrity"
-                    Status = "PASS"
-                    Details = "No integrity issues detected"
-                }
+        # repo_integrity.ps1 writes mostly to host (not to pipeline), so parse via exit code.
+        & $repoIntegrityPath
+        $integrityExitCode = [int]$LASTEXITCODE
+
+        if ($integrityExitCode -eq 0) {
+            $results += @{
+                Check = "Repository Integrity"
+                Status = "PASS"
+                Details = "No integrity issues detected"
+            }
+        } elseif ($integrityExitCode -eq 2) {
+            $results += @{
+                Check = "Repository Integrity"
+                Status = "WARN"
+                Details = "Minor integrity issues detected (non-critical drift)"
             }
         } else {
             $results += @{
                 Check = "Repository Integrity"
-                Status = "WARN"
-                Details = "Could not parse integrity check output"
+                Status = "FAIL"
+                Details = "Critical integrity issues detected (see repo_integrity.ps1 output above)"
             }
+            $hasFailures = $true
         }
     } catch {
         $results += @{

@@ -70,7 +70,14 @@ try {
     $duplicateFolderPatterns = @("*Yeni klasör*", "*New Folder*", "*Copy*", "*Backup*", "*bak-*")
     $duplicateFolders = @()
     foreach ($pattern in $duplicateFolderPatterns) {
-        $found = Get-ChildItem -Path . -Directory -Filter $pattern -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notlike "*\.git\*" -and $_.FullName -notlike "*\_archive\*" -and $_.FullName -notlike "*node_modules\*" -and $_.FullName -notlike "*vendor\*" }
+        $found = Get-ChildItem -Path . -Directory -Filter $pattern -Recurse -ErrorAction SilentlyContinue | Where-Object {
+            $_.FullName -notlike "*\.git\*" -and
+            $_.FullName -notlike "*\_archive\*" -and
+            $_.FullName -notlike "*node_modules\*" -and
+            $_.FullName -notlike "*vendor\*" -and
+            # Allowlist: this is an intentional quarantine folder (README only). Dumps are .gitignored.
+            $_.FullName -notlike "*\work\hos\backups-test"
+        }
         if ($found) {
             $duplicateFolders += $found
         }
