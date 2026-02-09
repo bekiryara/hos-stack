@@ -153,14 +153,76 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
       [tenantId, email]
     );
     if (existing.rowCount > 0) {
+      const userId = existing.rows[0].id;
+      const currentRole = existing.rows[0].role ?? "member";
+      const nextRole = parsed.data.role ?? null;
+      const nextPassword = parsed.data.password ?? null;
+
+      // If caller didn't ask to change anything, keep prior behavior.
+      if (!nextRole && !nextPassword) {
+        return reply.send({
+          id: userId,
+          email,
+          role: currentRole,
+          tenantId,
+          tenantSlug,
+          tenantCreated,
+          created: false,
+          updated: false
+        });
+      }
+
+      const updates = [];
+      const params = [];
+      let i = 1;
+
+      let roleChanged = false;
+      let passwordChanged = false;
+
+      if (nextRole && nextRole !== currentRole) {
+        updates.push(`role = $${i++}`);
+        params.push(nextRole);
+        roleChanged = true;
+      }
+
+      if (nextPassword) {
+        updates.push(`password_hash = $${i++}`);
+        params.push(hashPassword(nextPassword));
+        passwordChanged = true;
+      }
+
+      if (updates.length > 0) {
+        params.push(tenantId);
+        params.push(userId);
+        await db.query(`update users set ${updates.join(", ")} where tenant_id = $${i++} and id = $${i++}`, params);
+
+        await audit(db, {
+          action: "user.update.admin",
+          tenantId,
+          actorUserId: userId,
+          metadata: { roleChanged, passwordChanged, nextRole: nextRole ?? currentRole }
+        });
+      }
+
+      // Canonical model: ensure active membership exists for this tenant/user.
+      // Keep membership role aligned with users.role (until users.role is fully deprecated).
+      const membershipRole = nextRole ?? currentRole;
+      await db.query(
+        "insert into memberships (tenant_id, user_id, role, status) values ($1, $2, $3, $4) on conflict (tenant_id, user_id) do update set role = $3, status = $4",
+        [tenantId, userId, membershipRole, "active"]
+      );
+
       return reply.send({
-        id: existing.rows[0].id,
+        id: userId,
         email,
-        role: existing.rows[0].role ?? "member",
+        role: nextRole ?? currentRole,
         tenantId,
         tenantSlug,
         tenantCreated,
-        created: false
+        created: false,
+        updated: updates.length > 0,
+        roleChanged,
+        passwordChanged
       });
     }
 
@@ -173,6 +235,13 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
         "insert into users (id, tenant_id, email, password_hash, role) values ($1, $2, $3, $4, $5)",
         [userId, tenantId, email, passwordHash, role]
       );
+
+      // Canonical model: create active membership for this tenant/user.
+      await db.query(
+        "insert into memberships (tenant_id, user_id, role, status) values ($1, $2, $3, $4) on conflict (tenant_id, user_id) do update set role = $3, status = $4",
+        [tenantId, userId, role, "active"]
+      );
+
       await audit(db, {
         action: "user.upsert.admin",
         tenantId,
@@ -208,7 +277,8 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
       tenantSlug,
       tenantCreated,
       created: true,
-      password
+      // Only return generated password (avoid echoing explicit passwords back).
+      ...(parsed.data.password ? {} : { password })
     });
   });
 

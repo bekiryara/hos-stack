@@ -20,6 +20,8 @@ if (-not $baseUrl) { $baseUrl = $env:HOS_BASE_URL }
 if (-not $baseUrl) { $baseUrl = "http://localhost:3000/v1" }
 
 $adminTenantsUrl = "$baseUrl/admin/tenants"
+$adminUsersUrl = "$baseUrl/admin/users"
+$adminAuditUrl = "$baseUrl/admin/audit?limit=1"
 $meUrl = "$baseUrl/me"
 $loginUrl = "$baseUrl/auth/login"
 
@@ -174,6 +176,7 @@ function Test-RateLimit {
     $exitCode = 0
     $rateLimitHeaders = @()
     $rateLimitHit = $false
+    $hitAt = $null
     
     for ($i = 1; $i -le $RequestCount; $i++) {
         try {
@@ -223,7 +226,9 @@ function Test-RateLimit {
                 # Check if we hit rate limit (429)
                 if ($statusCode -eq 429) {
                     $rateLimitHit = $true
-                    $notes = "Rate limit hit at request $i (expected after $ExpectedLimit)"
+                    $hitAt = $i
+                    $notes = "Rate limit hit at request $i (expected around $ExpectedLimit)"
+                    break
                 }
             }
         }
@@ -239,7 +244,14 @@ function Test-RateLimit {
         $notes = "Rate limit not hit after $RequestCount requests (expected after $ExpectedLimit)"
         $exitCode = 2
     } else {
-        if ($notes -eq "") {
+        # Truthful measurement: if rate limit triggers far later than configured expectation, WARN.
+        # Allow small jitter (e.g., shared store window boundary) but not 3x+ drift.
+        $tolerance = 2
+        if ($null -ne $hitAt -and $hitAt -gt ($ExpectedLimit + $tolerance)) {
+            $status = "WARN"
+            $exitCode = 2
+            $notes = "Rate limit enforced late at request $hitAt (expected <= $($ExpectedLimit + $tolerance))"
+        } elseif ($notes -eq "") {
             $notes = "Rate limit enforced, headers present: $($rateLimitHeaders -join ', ')"
         }
     }
@@ -264,6 +276,20 @@ Write-Host ""
 Test-AuthResponse -CheckName "Admin Unauthorized Access (HOS)" `
     -Method "GET" `
     -Url $adminTenantsUrl `
+    -ExpectedStatusCodes @(401, 403, 404) `
+    -ExpectJsonEnvelope $true
+
+# Check A2: GET /admin/users without auth returns 401/403
+Test-AuthResponse -CheckName "Admin Users Unauthorized Access (HOS)" `
+    -Method "GET" `
+    -Url $adminUsersUrl `
+    -ExpectedStatusCodes @(401, 403, 404) `
+    -ExpectJsonEnvelope $true
+
+# Check A3: GET /admin/audit without auth returns 401/403
+Test-AuthResponse -CheckName "Admin Audit Unauthorized Access (HOS)" `
+    -Method "GET" `
+    -Url $adminAuditUrl `
     -ExpectedStatusCodes @(401, 403, 404) `
     -ExpectJsonEnvelope $true
 
