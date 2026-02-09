@@ -62,8 +62,6 @@ jobs:
           echo "Review the output above or check the violations artifact."
           echo ""
           echo "Security Policy:"
-          echo "  1. /admin/* routes must have: auth.any AND super.admin"
-          echo "  2. /panel/* routes must have: auth.any"
-          echo "  3. /panel/* routes with {tenant} must have: tenant.resolve AND tenant.user"
-          echo "  4. POST/PUT/PATCH/DELETE routes must have: auth.any (or be allowlisted)"
+          echo "  1. Pazar MUST NOT expose /admin* or /panel* (Admin SSOT = H-OS)"
+          echo "  2. POST/PUT/PATCH/DELETE routes must have: auth.any (or be allowlisted)"
 

@@ -151,34 +151,13 @@ foreach ($route in $routes) {
     
     $violationsForRoute = @()
     
-    # Rule 1: Admin routes must have auth.any AND super.admin
-    if ($uri -like '/admin*') {
-        if ($middleware -notcontains 'auth.any') {
-            $violationsForRoute += "Missing middleware: auth.any"
-        }
-        if ($middleware -notcontains 'super.admin') {
-            $violationsForRoute += "Missing middleware: super.admin"
-        }
+    # Rule 1 (SSOT boundary): Pazar MUST NOT expose /admin* or /panel* routes.
+    # Admin surface lives in H-OS only (/v1/admin/* + /ui/admin/*).
+    if ($uri -like '/admin*' -or $uri -like '/panel*') {
+        $violationsForRoute += "Forbidden surface: Pazar must not expose /admin or /panel (SSOT=H-OS)"
     }
     
-    # Rule 2: Panel routes must have auth.any
-    if ($uri -like '/panel*') {
-        if ($middleware -notcontains 'auth.any') {
-            $violationsForRoute += "Missing middleware: auth.any"
-        }
-    }
-    
-    # Rule 3: Tenant-scoped panel routes must have tenant.resolve AND tenant.user
-    if ($uri -like '/panel*' -and ($uri -match '\{tenant\}' -or $uri -match '\{tenant_slug\}')) {
-        if ($middleware -notcontains 'tenant.resolve' -and $middleware -notcontains 'resolve.tenant') {
-            $violationsForRoute += "Missing middleware: tenant.resolve or resolve.tenant"
-        }
-        if ($middleware -notcontains 'tenant.user') {
-            $violationsForRoute += "Missing middleware: tenant.user"
-        }
-    }
-    
-    # Rule 4: State-changing routes must have auth.any OR be allowlisted
+    # Rule 2: State-changing routes must have auth.any OR be allowlisted
     $stateChangingMethods = @('POST', 'PUT', 'PATCH', 'DELETE')
     if ($stateChangingMethods -contains $method) {
         if (-not (Test-Allowlisted -Path $uri)) {
@@ -221,10 +200,8 @@ if ($violations.Count -eq 0) {
     }
     
     Write-Host "`nSecurity Policy:" -ForegroundColor Yellow
-    Write-Host "  1. /admin/* routes must have: auth.any AND super.admin" -ForegroundColor Gray
-    Write-Host "  2. /panel/* routes must have: auth.any" -ForegroundColor Gray
-    Write-Host "  3. /panel/* routes with {tenant} must have: tenant.resolve AND tenant.user" -ForegroundColor Gray
-    Write-Host "  4. POST/PUT/PATCH/DELETE routes must have: auth.any (or be allowlisted)" -ForegroundColor Gray
+    Write-Host "  1. Pazar MUST NOT expose /admin* or /panel* (Admin SSOT = H-OS)" -ForegroundColor Gray
+    Write-Host "  2. POST/PUT/PATCH/DELETE routes must have: auth.any (or be allowlisted)" -ForegroundColor Gray
     
     Invoke-OpsExit 1
     return
