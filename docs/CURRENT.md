@@ -1,6 +1,6 @@
 # CURRENT - Single Source of Truth
 
-**Last Updated:** 2026-01-28  
+**Last Updated:** 2026-02-09  
 **Baseline:** RELEASE-GRADE BASELINE RESET v1
 
 ## What is the Stack?
@@ -36,6 +36,10 @@ This repository runs **H-OS** (universe governance) and **Pazar** (marketplace w
 
 - `GET /v1/health` - Health check
 - `GET /v1/worlds` - World directory (returns array of worlds: core, marketplace, etc.)
+- **Admin SSOT (H-OS only)**:
+  - UI (DEV): `http://localhost:3002/ui/admin/control-center`
+  - API (role-guarded `owner|admin`): `GET /v1/admin/tenants`, `GET /v1/admin/users`, `GET /v1/admin/audit`
+  - Persistent storage (hos-db): `tenants`, `users`, `memberships`, `audit_events`
 
 ### Pazar API (Port 8080)
 
@@ -46,6 +50,11 @@ This repository runs **H-OS** (universe governance) and **Pazar** (marketplace w
 - `GET /api/v1/listings` - Single listing read/search engine (category + filters)
 
 **Note:** Laravel routes in `routes/api.php` are automatically prefixed with `/api` by default.
+
+## SSOT Boundary (locked)
+
+- **Pazar has NO admin/panel/auth surface** (`/admin`, `/panel`, `/auth/login` are forbidden in Pazar).
+- **Admin SSOT = H-OS** (`/v1/admin/*` + `/ui/admin/*`).
 
 ## Transaction Decisions v1 (Orders/Rentals/Reservations)
 

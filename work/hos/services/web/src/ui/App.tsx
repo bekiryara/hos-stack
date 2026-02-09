@@ -569,51 +569,9 @@ export function App() {
           )}
         </div>
 
-        <h1>Prototype Launcher</h1>
+        <h1>Quick Links</h1>
 
         <div data-test="prototype-launcher">
-          <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
-            <div style={{ marginBottom: '1rem', fontWeight: 'bold', fontSize: '1.1rem' }}>Marketplace Access</div>
-            <div>
-              <a
-                href="/marketplace/"
-                data-marker="marketplace-access"
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  fontSize: '1rem',
-                  backgroundColor: '#0066cc',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  display: 'inline-block',
-                  marginRight: '0.5rem',
-                }}
-              >
-                Open Marketplace
-              </a>
-              <a
-                href="/marketplace/login"
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  fontSize: '1rem',
-                  backgroundColor: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  display: 'inline-block',
-                }}
-              >
-                Login / Register
-              </a>
-              <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
-                Marketplace Web: Customer login/register entry point
-              </div>
-            </div>
-          </div>
           <div style={{ marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}>
             <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>Quick Links</div>
             <div style={{ fontSize: '0.875rem' }}>

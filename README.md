@@ -27,8 +27,26 @@ That's it! The stack should be running.
   - Account: `http://localhost:3002/marketplace/account`
 - **H-OS API**: `http://localhost:3000` (health: `/v1/health`)
 - **H-OS Web (ops/admin UI)**: `http://localhost:3002/`
+- **H-OS Admin Control Center (DEV)**: `http://localhost:3002/ui/admin/control-center`
 - **Pazar (marketplace world backend)**: `http://localhost:8080` (health: `/up`)
 - **Messaging (world backend)**: `http://localhost:8090` (health: `/health` via messaging API)
+
+## Admin SSOT (H-OS)
+
+Hard rule: **Pazar has NO admin/panel surface.** Admin is **SSOT = H-OS**.
+
+- **Admin API** lives under `http://localhost:3000/v1/admin/*` (role-guarded: `owner|admin`):
+  - `GET /v1/admin/tenants`
+  - `GET /v1/admin/users`
+  - `GET /v1/admin/audit`
+- **Admin UI** (minimal shell, DEV-only): `http://localhost:3002/ui/admin/control-center`
+  - This UI is intentionally minimal: it proves login/token + admin endpoints + audit trail.
+- **Where data is stored** (persistent):
+  - `hos-db` (PostgreSQL) tables: `tenants`, `users`, `memberships` (roles), `audit_events` (immutable-ish trail)
+  - Docker volume: `hos_db_data` (survives container restarts)
+
+Enforcement:
+- Architecture conformance gate fails if Pazar reintroduces `/admin` or `/panel` surfaces.
 
 ## What is This Repo?
 
@@ -47,6 +65,7 @@ This stack supports a **Google-first** onboarding:
 3. On success: you are redirected back, session is saved automatically, and you land on `/marketplace/account`
 
 Notes:
+- This requires Google OAuth secrets to be configured (see **Secrets & Configuration**). If not configured, H-OS returns `501 google_oauth_not_configured`.
 - **Tenant slug is optional** for Google login. Leaving it empty logs you in as a **public customer**.
 - Firm/tenant features only apply when you explicitly create/select a firm.
 
