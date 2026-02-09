@@ -440,6 +440,109 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
     return reply.send({ items: res.rows });
   });
 
+  // Admin aliases (SSOT): prefer /admin/* paths (keep legacy /users,/audit for back-compat).
+  app.get("/admin/audit", async (req, reply) => {
+    // Same semantics as GET /audit
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+    if (!payload.tenantId) {
+      return reply.code(403).send({ error: "forbidden", reason: "tenant_required" });
+    }
+
+    const limitRaw = req?.query?.limit;
+    let limit = Number(limitRaw ?? 50);
+    if (!Number.isFinite(limit)) limit = 50;
+    limit = Math.floor(limit);
+    if (limit < 1) limit = 1;
+    if (limit > 200) limit = 200;
+
+    const res = await db.query(
+      "select id, action, created_at, metadata, actor_user_id from audit_events where tenant_id = $1 order by created_at desc limit $2",
+      [payload.tenantId, limit]
+    );
+
+    function normalizeMetadata(v) {
+      if (v == null) return {};
+      if (typeof v === "object") return v;
+      if (typeof v === "string") {
+        try {
+          const parsed = JSON.parse(v);
+          return parsed && typeof parsed === "object" ? parsed : {};
+        } catch {
+          return {};
+        }
+      }
+      return {};
+    }
+
+    const items = res.rows.map((r) => ({ ...r, metadata: normalizeMetadata(r.metadata) }));
+    return reply.send({ items });
+  });
+
+  app.get("/admin/users", async (req, reply) => {
+    // Same semantics as GET /users
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+    if (!payload.tenantId) {
+      return reply.code(403).send({ error: "forbidden", reason: "tenant_required" });
+    }
+
+    const res = await db.query(
+      "select id, email, role, created_at, (google_sub is not null) as google_linked from users where tenant_id = $1 order by created_at asc",
+      [payload.tenantId]
+    );
+    return reply.send({ items: res.rows });
+  });
+
+  app.patch("/admin/users/:id/role", async (req, reply) => {
+    // Same semantics as PATCH /users/:id/role
+    const payload = requireRole(req, reply, ["owner"]);
+    if (!payload) return;
+    if (!payload.tenantId) {
+      return reply.code(403).send({ error: "forbidden", reason: "tenant_required" });
+    }
+
+    const body = z.object({ role: z.enum(["member", "admin", "owner"]) }).safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: body.error.flatten() });
+
+    const userId = String(req.params?.id || "");
+    if (!userId) return reply.code(400).send({ error: "invalid_user_id" });
+
+    const current = await db.query("select id, role from users where tenant_id = $1 and id = $2", [
+      payload.tenantId,
+      userId
+    ]);
+    if (current.rowCount === 0) return reply.code(404).send({ error: "user_not_found" });
+
+    const currentRole = current.rows[0].role ?? "member";
+    const nextRole = body.data.role;
+    if (currentRole === "owner" && nextRole !== "owner") {
+      const owners = await db.query(
+        "select count(*)::int as c from users where tenant_id = $1 and role = 'owner'",
+        [payload.tenantId]
+      );
+      const count = owners.rows?.[0]?.c ?? 0;
+      if (count <= 1) {
+        return reply.code(409).send({ error: "cannot_remove_last_owner" });
+      }
+    }
+
+    await db.query("update users set role = $1 where tenant_id = $2 and id = $3", [
+      nextRole,
+      payload.tenantId,
+      userId
+    ]);
+
+    await audit(db, {
+      action: "user.role.change",
+      tenantId: payload.tenantId,
+      actorUserId: payload.sub,
+      metadata: { targetUserId: userId, role: nextRole }
+    });
+
+    return reply.send({ ok: true });
+  });
+
   const auditQuery = z.object({
     limit: z.coerce.number().int().min(1).max(200).default(50)
   });
@@ -447,6 +550,9 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
   app.get("/audit", async (req, reply) => {
     const payload = requireRole(req, reply, ["owner", "admin"]);
     if (!payload) return;
+    if (!payload.tenantId) {
+      return reply.code(403).send({ error: "forbidden", reason: "tenant_required" });
+    }
 
     const parsed = auditQuery.safeParse(req.query ?? {});
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
@@ -477,6 +583,9 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
   app.get("/users", async (req, reply) => {
     const payload = requireRole(req, reply, ["owner", "admin"]);
     if (!payload) return;
+    if (!payload.tenantId) {
+      return reply.code(403).send({ error: "forbidden", reason: "tenant_required" });
+    }
 
     const res = await db.query(
       "select id, email, role, created_at, (google_sub is not null) as google_linked from users where tenant_id = $1 order by created_at asc",
@@ -492,6 +601,9 @@ export async function registerV1AdminPermitRoutes(app, { db, legacy = false }) {
   app.patch("/users/:id/role", async (req, reply) => {
     const payload = requireRole(req, reply, ["owner"]);
     if (!payload) return;
+    if (!payload.tenantId) {
+      return reply.code(403).send({ error: "forbidden", reason: "tenant_required" });
+    }
 
     const body = patchUserRoleBody.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: body.error.flatten() });

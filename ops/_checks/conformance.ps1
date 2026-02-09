@@ -599,6 +599,63 @@ try {
     Write-FailCheck "G" "Error checking forbidden endpoint: $($_.Exception.Message)"
 }
 
+# H) Pazar admin/panel/auth surface must not exist (SSOT boundary)
+Write-Host "`n[H] Pazar SSOT boundary: no /admin, /panel, /auth..." -ForegroundColor Yellow
+try {
+    $bad = @()
+
+    # 1) Check routes snapshot (static truth locked in repo)
+    $snapshotPath = "ops\snapshots\routes.pazar.json"
+    if (Test-Path $snapshotPath) {
+        try {
+            $raw = Get-Content $snapshotPath -Raw -Encoding UTF8
+            $routes = $raw | ConvertFrom-Json
+            foreach ($r in ($routes | Where-Object { $_ -ne $null })) {
+                $uri = [string]$r.uri
+                if (-not $uri) { continue }
+                if ($uri -like "admin/*" -or $uri -like "/admin/*") { $bad += $uri; continue }
+                if ($uri -like "panel/*" -or $uri -like "/panel/*") { $bad += $uri; continue }
+                if ($uri -eq "auth/login" -or $uri -eq "/auth/login") { $bad += $uri; continue }
+            }
+        } catch {
+            # If snapshot parse fails, do a conservative raw scan
+            $raw2 = Get-Content $snapshotPath -Raw -Encoding UTF8
+            if ($raw2 -match '\"uri\":\"\\/admin\\/' -or $raw2 -match '\"uri\":\"\\/panel\\/' -or $raw2 -match '\"uri\":\"\\/auth\\/login\"') {
+                $bad += "<routes_snapshot_contains_admin_or_panel_or_auth_login>"
+            }
+        }
+    }
+
+    # 2) Check Pazar routes source (prevent drift even if snapshot not updated)
+    $routesRoot = "work\pazar\routes"
+    if (Test-Path $routesRoot) {
+        # Keep patterns simple to avoid PowerShell quoting edge-cases.
+        $patterns = @("/admin", "/panel", "/auth/login")
+        $hits = @()
+        $routeFiles = Get-ChildItem -Path $routesRoot -Recurse -File -Filter "*.php" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\_archive\*" }
+        foreach ($p in $patterns) {
+            foreach ($f in $routeFiles) {
+                $m = Select-String -Path $f.FullName -Pattern $p -SimpleMatch -ErrorAction SilentlyContinue
+                if ($m) { $hits += $f.FullName }
+            }
+        }
+        $hits = $hits | Select-Object -Unique
+        if ($hits.Count -gt 0) {
+            foreach ($p in ($hits | Select-Object -First 20)) { $bad += $p }
+        }
+    }
+
+    $bad = $bad | Where-Object { $_ -ne $null -and $_ -ne "" } | Select-Object -Unique
+    if ($bad.Count -gt 0) {
+        Write-FailCheck "H" "Pazar must not expose /admin, /panel, or /auth. Admin SSOT lives in H-OS (/v1/admin/* + /ui/admin/*)." $bad
+    } else {
+        Write-PassCheck "H" "No admin/panel/auth surface in Pazar (SSOT boundary ok)"
+    }
+} catch {
+    Write-FailCheck "H" "Error checking Pazar SSOT boundary: $($_.Exception.Message)"
+}
+
 # Summary
 Write-Host ""
 if (Test-Path "${scriptDir}\_lib\ops_output.ps1") {

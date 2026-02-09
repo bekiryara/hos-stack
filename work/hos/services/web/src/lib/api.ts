@@ -49,3 +49,62 @@ export async function getWorlds(): Promise<any[]> {
 
   return json;
 }
+
+async function fetchJson(path: string, opts?: { method?: string; headers?: Record<string, string>; body?: any }, token?: string) {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...(opts?.headers ?? {}),
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const method = opts?.method ?? 'GET';
+  const body = opts?.body;
+  if (body !== undefined && body !== null) {
+    headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
+  }
+
+  const resp = await fetch(path, {
+    method,
+    headers,
+    body: body === undefined || body === null ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
+    cache: 'no-store',
+  });
+
+  const text = await resp.text();
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = { raw: text };
+  }
+
+  if (!resp.ok) {
+    const err: any = new Error(`${method} ${path} failed: ${resp.status}`);
+    err.status = resp.status;
+    err.body = json;
+    throw err;
+  }
+
+  return json;
+}
+
+export async function hosLogin(params: { tenant_slug?: string; email: string; password: string }) {
+  return await fetchJson('/api/v1/auth/login', { method: 'POST', body: params });
+}
+
+export async function hosMe(token: string) {
+  return await fetchJson('/api/v1/me', undefined, token);
+}
+
+export async function adminTenants(token: string) {
+  return await fetchJson('/api/v1/admin/tenants', undefined, token);
+}
+
+export async function adminUsers(token: string) {
+  return await fetchJson('/api/v1/admin/users', undefined, token);
+}
+
+export async function adminAudit(token: string, limit: number = 50) {
+  const qs = new URLSearchParams({ limit: String(limit) }).toString();
+  return await fetchJson(`/api/v1/admin/audit?${qs}`, undefined, token);
+}

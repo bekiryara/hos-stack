@@ -1,5 +1,12 @@
 # RULES
 
+## SSOT Boundaries (hard rules)
+
+- **Pazar has NO admin/panel/auth surface**: Do **not** add `/admin/*`, `/panel/*`, or `/auth/*` entrypoints to Pazar.
+  - Pazar is a **world backend**. It only exposes **world APIs** under `GET/POST /api/v1/*` + `GET /up`.
+- **Admin SSOT = HOS**: Any admin/control-center surface MUST live in **H-OS** (API: `/v1/admin/*`, Web: `/ui/admin/*`).
+  - Do not resurrect legacy “Pazar admin” to satisfy CI; fix the gate to match SSOT instead.
+
 1. **Scratch yok**: Yeni özellik ekleme, büyük refactor yapma
 2. **Küçük patch**: Sadece minimal, gerekli değişiklik
 3. **Proof zorunlu**: Her anlamlı değişiklik için test/smoke + kanıt notu (`docs/PROOFS/PASS_LOG.md`)
