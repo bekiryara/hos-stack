@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import websocket from "@fastify/websocket";
 import pino from "pino";
 import { z } from "zod";
 
@@ -34,6 +35,9 @@ export async function buildApp({ db, logStream } = {}) {
     max: 200,
     timeWindow: "1 minute"
   });
+
+  // WebSocket support (optional; used by Marketplace Web for realtime updates)
+  await app.register(websocket);
 
   app.addHook("onSend", async (_req, reply, payload) => {
     if (reply.id) reply.header("x-request-id", String(reply.id));
@@ -71,17 +75,148 @@ export async function buildApp({ db, logStream } = {}) {
   });
 
   // Internal API key middleware
-  async function requireApiKey(req, reply) {
-    const apiKey = req.headers["messaging-api-key"] || req.headers["x-messaging-api-key"];
-    const expectedKey = process.env.MESSAGING_API_KEY || "dev-messaging-key";
+  const expectedKey = process.env.MESSAGING_API_KEY || "dev-messaging-key";
 
-    if (apiKey !== expectedKey) {
+  function getApiKeyFromReq(req) {
+    const headerKey = req.headers["messaging-api-key"] || req.headers["x-messaging-api-key"];
+    // Browser WebSocket cannot send custom headers, so we also allow query param for /ws.
+    const q = req.query && typeof req.query === "object" ? req.query : {};
+    const queryKey = q.api_key || q.apiKey || q.key || null;
+    return headerKey || queryKey || null;
+  }
+
+  function isAuthorized(req) {
+    return getApiKeyFromReq(req) === expectedKey;
+  }
+
+  async function requireApiKey(req, reply) {
+    if (!isAuthorized(req)) {
       return reply.code(401).send({
         error: "unauthorized",
         message: "Invalid or missing MESSAGING_API_KEY header"
       });
     }
   }
+
+  // In-memory pub/sub (single-instance). For multi-instance, add Redis/NATS later.
+  const subscribersByThreadId = new Map(); // threadId -> Set<WebSocket>
+
+  function subscribeSocketToThread(threadId, socket) {
+    if (!subscribersByThreadId.has(threadId)) subscribersByThreadId.set(threadId, new Set());
+    subscribersByThreadId.get(threadId).add(socket);
+  }
+
+  function unsubscribeSocketFromThread(threadId, socket) {
+    const set = subscribersByThreadId.get(threadId);
+    if (!set) return;
+    set.delete(socket);
+    if (set.size === 0) subscribersByThreadId.delete(threadId);
+  }
+
+  function broadcastToThread(threadId, payload) {
+    const set = subscribersByThreadId.get(threadId);
+    if (!set || set.size === 0) return;
+    const msg = JSON.stringify(payload);
+    for (const socket of set) {
+      try {
+        if (socket.readyState === 1 /* OPEN */) socket.send(msg);
+      } catch {
+        // ignore send errors
+      }
+    }
+  }
+
+  // GET /ws - WebSocket endpoint for realtime message delivery
+  // Connect via: ws(s)://<host>/api/messaging/ws?api_key=...
+  // Client must send: {"action":"subscribe","thread_id":"..."}
+  app.get("/ws", { websocket: true }, (connection, req) => {
+    // fastify-websocket handler argument may be either a connection wrapper or the raw WebSocket.
+    const socket = connection?.socket ?? connection;
+
+    if (!isAuthorized(req)) {
+      try {
+        if (socket && typeof socket.close === "function") {
+          socket.close(1008, "unauthorized"); // Policy Violation
+        }
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    const subscribed = new Set();
+
+    function send(obj) {
+      try {
+        if (socket.readyState === 1 /* OPEN */) socket.send(JSON.stringify(obj));
+      } catch {
+        // ignore
+      }
+    }
+
+    send({ type: "hello", world_key: "messaging", version: String(process.env.MESSAGING_VERSION ?? "1.4.0") });
+
+    socket.on("message", async (raw) => {
+      let msg;
+      try {
+        msg = JSON.parse(String(raw));
+      } catch {
+        send({ type: "error", error: "invalid_json" });
+        return;
+      }
+
+      const action = msg?.action;
+      if (action === "subscribe") {
+        const threadId = String(msg?.thread_id || "").trim();
+        if (!threadId) {
+          send({ type: "error", error: "missing_thread_id" });
+          return;
+        }
+
+        try {
+          const exists = await db.query("select id from threads where id = $1", [threadId]);
+          if (exists.rowCount === 0) {
+            send({ type: "error", error: "thread_not_found", thread_id: threadId });
+            return;
+          }
+        } catch {
+          send({ type: "error", error: "db_error" });
+          return;
+        }
+
+        subscribeSocketToThread(threadId, socket);
+        subscribed.add(threadId);
+        send({ type: "subscribed", thread_id: threadId });
+        return;
+      }
+
+      if (action === "unsubscribe") {
+        const threadId = String(msg?.thread_id || "").trim();
+        if (!threadId) {
+          send({ type: "error", error: "missing_thread_id" });
+          return;
+        }
+        unsubscribeSocketFromThread(threadId, socket);
+        subscribed.delete(threadId);
+        send({ type: "unsubscribed", thread_id: threadId });
+        return;
+      }
+
+      if (action === "ping") {
+        send({ type: "pong", ts: Date.now() });
+        return;
+      }
+
+      send({ type: "error", error: "unknown_action" });
+    });
+
+    socket.on("close", () => {
+      for (const threadId of subscribed) {
+        unsubscribeSocketFromThread(threadId, socket);
+      }
+      subscribed.clear();
+    });
+  });
 
   // POST /api/v1/threads/upsert - Upsert thread by context
   const upsertThreadSchema = z.object({
@@ -185,6 +320,19 @@ export async function buildApp({ db, logStream } = {}) {
     `, [thread_id, sender_type, sender_id, body]);
 
     const message = msgRes.rows[0];
+
+    // Realtime push (best-effort)
+    broadcastToThread(thread_id, {
+      type: "message:new",
+      thread_id,
+      message: {
+        id: message.id,
+        sender_type,
+        sender_id,
+        body,
+        created_at: message.created_at
+      }
+    });
 
     return reply.code(201).send({
       message_id: message.id,

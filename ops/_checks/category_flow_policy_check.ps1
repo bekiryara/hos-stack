@@ -103,6 +103,30 @@ $catRaw -split "`n" | Where-Object { $_.Trim().Length -gt 0 } | ForEach-Object {
     }
 }
 
+# 3.1) Drift visibility: policy rule keys must exist as category slugs
+# This is a WARNING-only signal (does not fail the check) to prevent silent typos like "isyeri" vs "is-yeri".
+# The check is intentionally non-blocking while catalog/policy is still evolving.
+$allCategorySlugs = @{}
+foreach ($kv in $catById.GetEnumerator()) {
+    $s = $kv.Value.slug
+    if (-not [string]::IsNullOrWhiteSpace($s)) {
+        $allCategorySlugs[$s] = $true
+    }
+}
+
+$unknownPolicyKeys = @()
+foreach ($k in $rules.Keys) {
+    if (-not $allCategorySlugs.ContainsKey($k)) {
+        $unknownPolicyKeys += $k
+    }
+}
+$unknownPolicyKeys = $unknownPolicyKeys | Sort-Object
+if ($unknownPolicyKeys.Count -gt 0) {
+    Write-Host "WARN: Policy rules reference missing category slug(s): $($unknownPolicyKeys -join ', ')" -ForegroundColor Yellow
+    Write-Host "  Note: This is non-blocking (visibility-only). Consider enforcing later in CI." -ForegroundColor Gray
+    Write-Host ""
+}
+
 function Get-CategoryPathSlugs {
     param([string]$categoryId)
     $path = @()

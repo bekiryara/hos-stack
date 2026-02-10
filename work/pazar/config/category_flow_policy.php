@@ -41,7 +41,7 @@ return [
                 ['key' => 'devren_satilik_konut', 'label' => 'Devren Satılık Konut', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only'],
             ],
         ],
-        'isyeri' => [
+        'is-yeri' => [
             'allowed_transaction_modes' => ['sale', 'rental'],
             'default_offer_variant' => 'sale',
             'offer_variants' => [
@@ -49,15 +49,6 @@ return [
                 ['key' => 'rental', 'label' => 'Kiralık', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only'],
                 ['key' => 'devren_satilik', 'label' => 'Devren Satılık', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only'],
                 ['key' => 'devren_kiralik', 'label' => 'Devren Kiralık', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only'],
-            ],
-        ],
-        'arsa' => [
-            'allowed_transaction_modes' => ['sale', 'rental'],
-            'default_offer_variant' => 'sale',
-            'offer_variants' => [
-                ['key' => 'sale', 'label' => 'Satılık', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only'],
-                ['key' => 'rental', 'label' => 'Kiralık', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only'],
-                ['key' => 'kat_karsiligi_satilik', 'label' => 'Kat Karşılığı Satılık', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only'],
             ],
         ],
     ],

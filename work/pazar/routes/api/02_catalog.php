@@ -26,6 +26,25 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
             ];
         })
         ->toArray();
+
+    // Additive: expose selectable_for_create to prevent "leaf-only drift" in clients.
+    // Rationale: In Trendyol product taxonomy, some categories can be bindable even if they have children.
+    // For now, allow selecting non-leaf ONLY for Trendyol-derived product categories (service-product-ty-c<ID>).
+    $childCountByParent = [];
+    foreach ($categories as $c) {
+        $pid = $c['parent_id'] ?? null;
+        if (!isset($childCountByParent[$pid])) $childCountByParent[$pid] = 0;
+        $childCountByParent[$pid] += 1;
+    }
+    foreach ($categories as &$c) {
+        $id = $c['id'];
+        $slug = isset($c['slug']) ? (string) $c['slug'] : '';
+        $hasChildren = isset($childCountByParent[$id]) && $childCountByParent[$id] > 0;
+        $isTrendyolProductCategory = str_starts_with($slug, 'service-product-ty-c');
+        // Leaf categories are always selectable; non-leaf only if Trendyol product category.
+        $c['selectable_for_create'] = !$hasChildren || $isTrendyolProductCategory;
+    }
+    unset($c);
     
     // Build tree structure (WP-17 v2: use helper function to avoid redeclare risk)
     $tree = pazar_build_tree($categories);

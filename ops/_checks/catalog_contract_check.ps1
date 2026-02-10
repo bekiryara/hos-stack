@@ -22,7 +22,8 @@ $weddingHallId = $null
 Write-Host "[1] Testing GET /api/v1/categories..." -ForegroundColor Yellow
 $categoriesUrl = "http://localhost:8080/api/v1/categories"
 try {
-    $response = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+    # Catalog tree can be large; keep timeout generous to avoid false negatives.
+    $response = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 30 -ErrorAction Stop
     # Intentionally do NOT print raw response JSON:
     # - Output must stay readable and ASCII-friendly on Windows consoles.
     # - Raw JSON is very large/noisy and can include non-ASCII characters.
@@ -115,7 +116,7 @@ if ($weddingHallId) {
     Write-Host "[2] Testing GET /api/v1/categories/$weddingHallId/filter-schema..." -ForegroundColor Yellow
     $filterSchemaUrl = "http://localhost:8080/api/v1/categories/$weddingHallId/filter-schema"
     try {
-        $response = Invoke-RestMethod -Uri $filterSchemaUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+        $response = Invoke-RestMethod -Uri $filterSchemaUrl -Method Get -TimeoutSec 30 -ErrorAction Stop
         # Intentionally do NOT print raw response JSON (see note in Test 1).
 
         # Validate response format

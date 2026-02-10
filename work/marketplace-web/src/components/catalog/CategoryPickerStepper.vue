@@ -25,11 +25,11 @@
         v-for="result in searchResults"
         :key="result.id"
         class="search-result-item"
-        :class="{ 'is-leaf': result.isLeaf, 'disabled': mode === 'create' && !result.isLeaf }"
+        :class="{ 'is-leaf': result.isLeaf, 'disabled': mode === 'create' && !isSelectableForCreate(result.node) }"
         @click="selectFromSearch(result)"
       >
         <span class="result-path">{{ result.path }}</span>
-        <span v-if="result.isLeaf" class="leaf-badge">Seçilebilir</span>
+        <span v-if="isSelectableForCreate(result.node)" class="leaf-badge">Seçilebilir</span>
         <span v-else-if="mode === 'create'" class="non-leaf-hint">Alt kategori seç</span>
       </div>
     </div>
@@ -76,8 +76,13 @@
           @click="selectCategory(cat)"
         >
           <span class="cat-name">{{ labelFor(cat) }}</span>
-          <span v-if="!isLeaf(cat)" class="arrow">&rarr;</span>
-          <span v-else-if="mode === 'create'" class="check-icon">&#10003;</span>
+          <span
+            v-if="!isLeaf(cat)"
+            class="arrow"
+            title="Alt kategorilere git"
+            @click.stop="drillDown(cat)"
+          >&rarr;</span>
+          <span v-if="mode === 'create' && isSelectableForCreate(cat)" class="check-icon">&#10003;</span>
         </button>
       </div>
     </div>
@@ -197,6 +202,17 @@ export default {
     isLeaf(cat) {
       return isLeafCategory(cat);
     },
+    isSelectableForCreate(cat) {
+      if (!cat) return false;
+      // Prefer server-provided semantics (prevents leaf-only drift across clients).
+      if (typeof cat.selectable_for_create === 'boolean') return cat.selectable_for_create;
+      // Fallback: legacy behavior
+      return this.isLeaf(cat);
+    },
+    drillDown(cat) {
+      if (!cat || !cat.id) return;
+      this.navigationStack.push(cat.id);
+    },
     // Check if category is currently selected
     isSelected(catId) {
       return this.selectedCategoryId === catId;
@@ -204,11 +220,15 @@ export default {
     // Select a category from the stepper
     selectCategory(cat) {
       const leaf = this.isLeaf(cat);
+      const selectable = this.mode !== 'create' || this.isSelectableForCreate(cat);
 
-      if (leaf) {
-        // Leaf node: select and emit
+      if (selectable) {
+        // Select and emit
         this.selectedCategoryId = cat.id;
         this.emitSelection(cat.id);
+        // Create mode: do NOT auto-drill-down on selectable non-leaf.
+        // (Otherwise it feels like the parent "can't be selected" when it immediately shows the child list.)
+        if (this.mode === 'search' && !leaf) this.navigationStack.push(cat.id);
       } else {
         // Non-leaf: in search mode can select, in create mode drill down
         if (this.mode === 'search') {
@@ -225,7 +245,7 @@ export default {
     },
     // Select from search results
     selectFromSearch(result) {
-      if (this.mode === 'create' && !result.isLeaf) {
+      if (this.mode === 'create' && !this.isSelectableForCreate(result.node)) {
         // Can't select non-leaf in create mode, navigate to it instead
         this.syncNavigationToSelection(result.id);
         this.searchQuery = '';

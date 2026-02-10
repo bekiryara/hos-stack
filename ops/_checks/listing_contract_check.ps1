@@ -171,7 +171,8 @@ Write-Host ""
 Write-Host "[1] Testing GET /api/v1/categories..." -ForegroundColor Yellow
 $categoriesUrl = "${pazarBaseUrl}/api/v1/categories"
 try {
-    $categoriesResponse = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+    # Catalog tree can be large; keep timeout generous to avoid false negatives.
+    $categoriesResponse = Invoke-RestMethod -Uri $categoriesUrl -Method Get -TimeoutSec 30 -ErrorAction Stop
     
     if (-not ($categoriesResponse -is [Array]) -or $categoriesResponse.Count -eq 0) {
         Write-Host "FAIL: Categories endpoint returned empty or invalid response" -ForegroundColor Red

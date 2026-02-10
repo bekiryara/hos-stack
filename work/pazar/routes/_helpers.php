@@ -214,7 +214,9 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
             ->where('parent_id', $categoryId)
             ->where('status', 'active')
             ->exists();
-        if ($hasActiveChild) {
+        $slug = isset($categoryRow->slug) ? (string) $categoryRow->slug : '';
+        $isTrendyolProductCategory = str_starts_with($slug, 'service-product-ty-c');
+        if ($hasActiveChild && !$isTrendyolProductCategory) {
             return response()->json([
                 'error' => 'non_leaf_category_not_allowed',
                 'message' => 'Listing write requires a leaf category (category must not have active children)',

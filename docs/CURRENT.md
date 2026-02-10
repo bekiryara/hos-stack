@@ -56,6 +56,35 @@ This repository runs **H-OS** (universe governance) and **Pazar** (marketplace w
 - **Pazar has NO admin/panel/auth surface** (`/admin`, `/panel`, `/auth/login` are forbidden in Pazar).
 - **Admin SSOT = H-OS** (`/v1/admin/*` + `/ui/admin/*`).
 
+## Catalog SSOT (Data vs Runtime) (locked)
+
+**Runtime truth (always):** Pazar serves catalog from the **database** (`categories`, `attributes`, `category_filter_schema`).
+
+**Source-of-change SSOT (team rule):** Catalog data changes MUST be made in the external dataset:
+- `D:\stack-data\catalog-dataset\csv\` (categories/attributes/schema/options)
+
+**How it reaches the DB (artifact + sync):**
+- Dataset generates a manifests artifact (`out/manifests_current/`).
+- Pazar imports/syncs manifests into DB via `php artisan catalog:sync` (default is dry-run).
+
+**Local binding (Docker):**
+- `docker-compose.override.yml` mounts manifests into container path `/var/www/html/catalog/manifests`.
+- Set host path override when you want to use external dataset artifact:
+  - `CATALOG_MANIFESTS_HOST_PATH=D:\stack-data\catalog-dataset\out\manifests_current`
+
+**Canonical daily flow (safe):**
+```powershell
+cd D:\stack-data\catalog-dataset
+node .\tools\validate-csv.mjs
+node .\tools\generate-manifests.mjs --out-dir .\out\manifests_current
+
+cd D:\stack
+$env:CATALOG_MANIFESTS_HOST_PATH="D:\stack-data\catalog-dataset\out\manifests_current"
+docker compose up -d
+docker compose exec -T pazar-app php artisan catalog:sync --dry-run
+.\ops\ops.ps1 pazar-spine
+```
+
 ## Transaction Decisions v1 (Orders/Rentals/Reservations)
 
 - **Allowed transitions (v1):**

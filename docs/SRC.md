@@ -26,6 +26,13 @@
 - `.\ops\ops.ps1 conformance` - Architecture conformance gate (policy + drift rules).
 - `ops/ops.ps1 ship` - Single publish path to main (gates + push).
 
+## Catalog SSOT (External Dataset)
+
+- **Dataset SSOT (source of change)**: `D:\stack-data\catalog-dataset\csv\`
+- **Dataset tools (CSV → manifests artifact)**: `D:\stack-data\catalog-dataset\tools\`
+- **Generated artifact (manifests root)**: `D:\stack-data\catalog-dataset\out\manifests_current\`
+- **Importer entrypoint (inside Pazar/Laravel)**: `work/pazar/routes/console.php` (`catalog:import`, `catalog:sync`)
+
 ## Proof & Closeout Entrypoints
 
 - `docs/PROOFS/PASS_LOG.md` - Single proof/evidence log (append-only) for work packages.
