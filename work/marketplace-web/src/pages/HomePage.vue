@@ -59,20 +59,31 @@
               <div class="root-title">
                 {{ labelFor(root) }}
               </div>
-              <router-link class="root-all" :to="`/search/${root.id}`">
+              <router-link v-if="canonicalIdFor(root)" class="root-all" :to="`/search/${canonicalIdFor(root)}`">
                 Tümünü gör
               </router-link>
+              <span v-else class="root-all" aria-disabled="true">Tümünü gör</span>
             </div>
 
             <div class="root-children">
               <router-link
                 v-for="child in (root.children || [])"
                 :key="child.id"
+                v-if="canonicalIdFor(child)"
                 class="child-pill"
-                :to="`/search/${child.id}`"
+                :to="`/search/${canonicalIdFor(child)}`"
               >
                 {{ labelFor(child) }}
               </router-link>
+              <span
+                v-for="child in (root.children || [])"
+                :key="`no-link-${child.id}`"
+                v-else
+                class="child-pill"
+                aria-disabled="true"
+              >
+                {{ labelFor(child) }}
+              </span>
             </div>
           </section>
         </div>
@@ -81,20 +92,31 @@
         <div v-else class="selected">
           <div class="selected-header">
             <h2 class="selected-title">{{ labelFor(selectedRoot) }}</h2>
-            <router-link class="root-all" :to="`/search/${selectedRoot.id}`">
+            <router-link v-if="canonicalIdFor(selectedRoot)" class="root-all" :to="`/search/${canonicalIdFor(selectedRoot)}`">
               Tümünü gör
             </router-link>
+            <span v-else class="root-all" aria-disabled="true">Tümünü gör</span>
           </div>
 
           <div class="root-children">
             <router-link
               v-for="child in (selectedRoot.children || [])"
               :key="child.id"
+              v-if="canonicalIdFor(child)"
               class="child-pill"
-              :to="`/search/${child.id}`"
+              :to="`/search/${canonicalIdFor(child)}`"
             >
               {{ labelFor(child) }}
             </router-link>
+            <span
+              v-for="child in (selectedRoot.children || [])"
+              :key="`no-link-selected-${child.id}`"
+              v-else
+              class="child-pill"
+              aria-disabled="true"
+            >
+              {{ labelFor(child) }}
+            </span>
           </div>
         </div>
       </main>
@@ -153,7 +175,7 @@ export default {
   },
   async mounted() {
     try {
-      this.categories = await getCategoriesTree();
+      this.categories = await getCategoriesTree({ view: 'menu' });
       if (!this.selectedRootId && Array.isArray(this.categories) && this.categories[0]) {
         this.selectedRootId = this.categories[0].id;
       }
@@ -166,6 +188,16 @@ export default {
   methods: {
     labelFor(node) {
       return categoryLabel(node);
+    },
+    canonicalIdFor(node) {
+      if (!node) return null;
+      const cid = node.canonical_category_id !== undefined && node.canonical_category_id !== null
+        ? Number(node.canonical_category_id)
+        : null;
+      if (Number.isFinite(cid) && cid > 0) return cid;
+      const id = node.id !== undefined && node.id !== null ? Number(node.id) : null;
+      if (Number.isFinite(id) && id > 0) return id;
+      return null;
     },
     selectRoot(id) {
       this.selectedRootId = id;

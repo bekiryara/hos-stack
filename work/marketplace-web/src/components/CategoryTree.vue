@@ -15,7 +15,8 @@
           <span v-else class="toggle-spacer" aria-hidden="true">•</span>
 
           <router-link
-            :to="`/search/${category.id}`"
+            v-if="canonicalIdFor(category)"
+            :to="`/search/${canonicalIdFor(category)}`"
             class="category-link"
             :class="{ 'has-children': hasChildren(category) }"
           >
@@ -24,6 +25,17 @@
               ({{ category.slug }})
             </span>
           </router-link>
+          <span
+            v-else
+            class="category-link"
+            :class="{ 'has-children': hasChildren(category) }"
+            aria-disabled="true"
+          >
+            {{ labelFor(category) }}
+            <span v-if="category.slug && category.title && category.slug !== category.title" class="slug-hint">
+              ({{ category.slug }})
+            </span>
+          </span>
         </div>
         <CategoryTree
           v-if="hasChildren(category) && isOpen(category.id)"
@@ -54,6 +66,16 @@ export default {
   methods: {
     labelFor(node) {
       return categoryLabel(node);
+    },
+    canonicalIdFor(node) {
+      if (!node) return null;
+      const cid = node.canonical_category_id !== undefined && node.canonical_category_id !== null
+        ? Number(node.canonical_category_id)
+        : null;
+      if (Number.isFinite(cid) && cid > 0) return cid;
+      const id = node.id !== undefined && node.id !== null ? Number(node.id) : null;
+      if (Number.isFinite(id) && id > 0) return id;
+      return null;
     },
     hasChildren(node) {
       return !!(node && Array.isArray(node.children) && node.children.length > 0);

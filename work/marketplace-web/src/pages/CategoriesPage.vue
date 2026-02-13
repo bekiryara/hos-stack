@@ -30,7 +30,7 @@ export default {
   },
   async mounted() {
     try {
-      this.categories = await getCategoriesTree();
+      this.categories = await getCategoriesTree({ view: 'menu' });
       this.loading = false;
     } catch (err) {
       this.error = err.message;

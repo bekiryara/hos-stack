@@ -7,14 +7,17 @@ import { api } from '../api/client';
 
 let categoriesPromise = null;
 let categoriesValue = null;
+let categoriesViewKey = ''; // '' | 'menu' | other
 
 const filterSchemaPromises = new Map(); // categoryId -> Promise<schema>
 const intentSchemaPromises = new Map(); // categoryId -> Promise<schema>
 
-export async function getCategoriesTree() {
-  if (categoriesValue) return categoriesValue;
-  if (!categoriesPromise) {
-    categoriesPromise = api.getCategories().then((data) => {
+export async function getCategoriesTree(params = {}) {
+  const view = params && params.view ? String(params.view) : '';
+  if (categoriesValue && categoriesViewKey === view) return categoriesValue;
+  if (!categoriesPromise || categoriesViewKey !== view) {
+    categoriesViewKey = view;
+    categoriesPromise = api.getCategories({ view }).then((data) => {
       categoriesValue = data;
       return data;
     });

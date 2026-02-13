@@ -4,8 +4,10 @@ import { apiRequest, toStableQueryString } from '../request.js';
 
 // GUEST persona: No headers required (SPEC §5.3)
 // WP-68: Public calls use skipAuth to avoid attaching token
-export function getCategories() {
-  return apiRequest('/api/v1/categories', {}, true);
+export function getCategories(params = {}) {
+  const view = params && params.view ? String(params.view) : '';
+  const qs = view ? `?view=${encodeURIComponent(view)}` : '';
+  return apiRequest(`/api/v1/categories${qs}`, {}, true);
 }
 
 export function getFilterSchema(categoryId) {

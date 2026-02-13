@@ -105,7 +105,7 @@ export default {
   },
   async mounted() {
     try {
-      this.categoriesTree = await getCategoriesTree();
+      this.categoriesTree = await getCategoriesTree({ view: 'menu' });
     } catch {
       // Category selector is optional for /search/:categoryId; ignore failures here.
       this.categoriesTree = [];

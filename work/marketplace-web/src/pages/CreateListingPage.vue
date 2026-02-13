@@ -71,7 +71,7 @@ export default {
   },
   async mounted() {
     try {
-      this.categoriesTree = await getCategoriesTree();
+      this.categoriesTree = await getCategoriesTree({ view: 'menu' });
 
       if (!this.tenantId) {
         const activeTenantId = getActiveTenantId();

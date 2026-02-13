@@ -10,7 +10,7 @@
         @input="onSearchInput"
       />
       <button
-        v-if="selectedCategoryId || searchQuery"
+        v-if="selectedCanonicalCategoryId || searchQuery"
         type="button"
         class="clear-btn"
         @click="handleClear"
@@ -88,7 +88,7 @@
     </div>
 
     <!-- Selected Category Display -->
-    <div v-if="selectedCategoryId && selectedCategoryPath" class="selected-display">
+    <div v-if="selectedCanonicalCategoryId && selectedCategoryPath" class="selected-display">
       <strong>Seçili:</strong> {{ selectedCategoryPath }}
       <span
         v-if="mode === 'search' && selectedCategoryMeta && !selectedCategoryMeta.isLeaf"
@@ -134,8 +134,11 @@ export default {
       searchQuery: '',
       // Stack of selected category IDs for navigation
       navigationStack: [],
-      // Internal selected value
-      selectedCategoryId: null,
+      // Internal selected values:
+      // - selectedMenuNodeId: matches node.id (menu-placement id)
+      // - selectedCanonicalCategoryId: matches node.canonical_category_id (or node.id for canonical trees)
+      selectedMenuNodeId: null,
+      selectedCanonicalCategoryId: null,
     };
   },
   computed: {
@@ -164,22 +167,22 @@ export default {
     },
     // Full path string for selected category
     selectedCategoryPath() {
-      if (!this.selectedCategoryId) return '';
-      const cat = this.flatCategories.find((c) => c.id === this.selectedCategoryId);
+      if (!this.selectedMenuNodeId) return '';
+      const cat = this.flatCategories.find((c) => c.id === this.selectedMenuNodeId);
       return cat ? cat.path : '';
     },
     selectedCategoryMeta() {
-      if (!this.selectedCategoryId) return null;
-      return this.flatCategories.find((c) => c.id === this.selectedCategoryId) || null;
+      if (!this.selectedMenuNodeId) return null;
+      return this.flatCategories.find((c) => c.id === this.selectedMenuNodeId) || null;
     },
   },
   watch: {
     modelValue: {
       handler(newVal) {
-        const id = newVal ? Number(newVal) : null;
-        if (id !== this.selectedCategoryId) {
-          this.selectedCategoryId = id;
-          this.syncNavigationToSelection(id);
+        const canonicalId = newVal !== null && newVal !== undefined && newVal !== '' ? Number(newVal) : null;
+        if (canonicalId !== this.selectedCanonicalCategoryId) {
+          this.selectedCanonicalCategoryId = canonicalId;
+          this.syncNavigationToSelection(canonicalId);
         }
       },
       immediate: true,
@@ -209,52 +212,79 @@ export default {
       // Fallback: legacy behavior
       return this.isLeaf(cat);
     },
+    canonicalIdFor(node) {
+      if (!node) return null;
+      if (node.canonical_category_id !== null && node.canonical_category_id !== undefined && node.canonical_category_id !== '') {
+        const n = Number(node.canonical_category_id);
+        return Number.isFinite(n) && n > 0 ? n : null;
+      }
+      // Fallback only for canonical trees (DB ids are positive). Menu placement ids are negative.
+      const id = node.id !== null && node.id !== undefined && node.id !== '' ? Number(node.id) : null;
+      return Number.isFinite(id) && id > 0 ? id : null;
+    },
     drillDown(cat) {
       if (!cat || !cat.id) return;
       this.navigationStack.push(cat.id);
     },
     // Check if category is currently selected
     isSelected(catId) {
-      return this.selectedCategoryId === catId;
+      return this.selectedMenuNodeId === catId;
     },
     // Select a category from the stepper
     selectCategory(cat) {
       const leaf = this.isLeaf(cat);
-      const selectable = this.mode !== 'create' || this.isSelectableForCreate(cat);
+      const selectable = this.isSelectableForCreate(cat);
+      const canonicalId = this.canonicalIdFor(cat);
 
-      if (selectable) {
-        // Select and emit
-        this.selectedCategoryId = cat.id;
-        this.emitSelection(cat.id);
-        // Create mode: do NOT auto-drill-down on selectable non-leaf.
-        // (Otherwise it feels like the parent "can't be selected" when it immediately shows the child list.)
-        if (this.mode === 'search' && !leaf) this.navigationStack.push(cat.id);
-      } else {
-        // Non-leaf: in search mode can select, in create mode drill down
-        if (this.mode === 'search') {
-          // Allow selection of non-leaf in search mode
-          this.selectedCategoryId = cat.id;
-          this.emitSelection(cat.id);
-          // Also drill down to show children
-          this.navigationStack.push(cat.id);
-        } else {
-          // Create mode: must drill down
-          this.navigationStack.push(cat.id);
+      // Create mode: only selectable_for_create + canonical id can be chosen; otherwise drill down.
+      if (this.mode === 'create') {
+        if (selectable && canonicalId) {
+          this.selectedMenuNodeId = cat.id;
+          this.selectedCanonicalCategoryId = canonicalId;
+          this.emitSelection(canonicalId);
+          return;
         }
+        if (!leaf) this.navigationStack.push(cat.id);
+        return;
       }
+
+      // Search mode: any canonical category is selectable; non-leaf also drills down.
+      if (!canonicalId) {
+        if (!leaf) this.navigationStack.push(cat.id);
+        return;
+      }
+      this.selectedMenuNodeId = cat.id;
+      this.selectedCanonicalCategoryId = canonicalId;
+      this.emitSelection(canonicalId);
+      if (!leaf) this.navigationStack.push(cat.id);
     },
     // Select from search results
     selectFromSearch(result) {
-      if (this.mode === 'create' && !this.isSelectableForCreate(result.node)) {
-        // Can't select non-leaf in create mode, navigate to it instead
+      const canonicalId = this.canonicalIdFor(result.node);
+      if (this.mode === 'create') {
+        if (!this.isSelectableForCreate(result.node) || !canonicalId) {
+          this.syncNavigationToSelection(canonicalId || result.id);
+          this.searchQuery = '';
+          return;
+        }
+        this.selectedMenuNodeId = result.id;
+        this.selectedCanonicalCategoryId = canonicalId;
+        this.emitSelection(canonicalId);
+        this.searchQuery = '';
+        this.syncNavigationToSelection(canonicalId);
+        return;
+      }
+
+      if (!canonicalId) {
         this.syncNavigationToSelection(result.id);
         this.searchQuery = '';
         return;
       }
-      this.selectedCategoryId = result.id;
-      this.emitSelection(result.id);
+      this.selectedMenuNodeId = result.id;
+      this.selectedCanonicalCategoryId = canonicalId;
+      this.emitSelection(canonicalId);
       this.searchQuery = '';
-      this.syncNavigationToSelection(result.id);
+      this.syncNavigationToSelection(canonicalId);
     },
     // Navigate to a breadcrumb level
     goToLevel(idx) {
@@ -270,7 +300,8 @@ export default {
     handleClear() {
       this.searchQuery = '';
       this.navigationStack = [];
-      this.selectedCategoryId = null;
+      this.selectedMenuNodeId = null;
+      this.selectedCanonicalCategoryId = null;
       this.emitSelection(null);
     },
     // Emit selection to parent
@@ -280,8 +311,22 @@ export default {
     },
     // Sync navigation stack to match a selected category
     syncNavigationToSelection(targetId) {
-      const path = findCategoryAncestorPathIds(this.categoriesTree, targetId);
-      this.navigationStack = path;
+      if (!targetId) return;
+      const wanted = Number(targetId);
+      if (!Number.isFinite(wanted)) return;
+
+      // Find a menu node that resolves to this canonical id (or direct id match for canonical trees)
+      const match = this.flatCategories.find((c) => {
+        const n = c && c.node ? c.node : null;
+        const cid = this.canonicalIdFor(n);
+        return cid === wanted;
+      }) || this.flatCategories.find((c) => Number(c.id) === wanted) || null;
+
+      if (!match) return;
+      this.selectedMenuNodeId = Number(match.id);
+      this.selectedCanonicalCategoryId = wanted;
+      const path = findCategoryAncestorPathIds(this.categoriesTree, Number(match.id));
+      this.navigationStack = Array.isArray(path) ? path : [];
     },
     onSearchInput() {
       // Debounce could be added here if needed
