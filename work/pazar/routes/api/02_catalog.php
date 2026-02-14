@@ -120,10 +120,13 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
     };
 
     $resolveCanonicalByWc = function (string $wc, array $pathSlugs = []) use ($nodeByWcGen, $bestNodeByWc, $desiredGenForPath) {
+        // Canonical policy: prefer neutral (non-gendered) category id whenever present.
+        // This stabilizes filters/schema (bound to category_id) and prevents g1/g2 leakage across menu DAG paths.
+        if (isset($nodeByWcGen[$wc]) && isset($nodeByWcGen[$wc][0])) return $nodeByWcGen[$wc][0];
+
         $gen = $desiredGenForPath($pathSlugs);
         if ($gen > 0 && isset($nodeByWcGen[$wc]) && isset($nodeByWcGen[$wc][$gen])) return $nodeByWcGen[$wc][$gen];
-        // Fallback: non-gendered node if present
-        if (isset($nodeByWcGen[$wc]) && isset($nodeByWcGen[$wc][0])) return $nodeByWcGen[$wc][0];
+
         return isset($bestNodeByWc[$wc]) ? $bestNodeByWc[$wc] : null;
     };
 
@@ -131,6 +134,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
     $edgeTitleByChildSlug = []; // childSlug => title
     $edgeWebUrlByChildSlug = []; // childSlug => web_url
     $edgeKindByChildSlug = []; // childSlug => kind
+    $edgeWcByChildSlug = []; // childSlug => wc (string)
     $menuEdgesPath = getenv('PAZAR_MENU_EDGES_PATH');
     if (!$menuEdgesPath || !is_string($menuEdgesPath) || $menuEdgesPath === '') {
         $menuEdgesPath = '/var/www/html/catalog/manifests/menu_edges.trendyol.json';
@@ -166,6 +170,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
             }
             if (isset($e['web_url']) && is_string($e['web_url']) && $e['web_url'] !== '') {
                 $edgeWebUrlByChildSlug[$cslug] = $e['web_url'];
+            }
+            // Deterministic: if the manifest already provides wc, prefer it over parsing web_url.
+            if (isset($e['wc']) && is_string($e['wc']) && preg_match('/^\\d+$/', $e['wc'])) {
+                $edgeWcByChildSlug[$cslug] = (string) $e['wc'];
             }
         }
         foreach ($grouped as $p => $list) {
@@ -219,6 +227,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         $includeVirtual,
         $edgeTitleByChildSlug,
         $edgeWebUrlByChildSlug,
+        $edgeWcByChildSlug,
         $menuIdForPath
     ) {
         $slug = (string) $slug;
@@ -240,6 +249,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         if (!$canonical && isset($edgeWebUrlByChildSlug[$slug])) {
             $wc = $extractWcFromWebUrl($edgeWebUrlByChildSlug[$slug]);
             if ($wc) {
+                $resolved = $resolveCanonicalByWc($wc, $pathSlugs);
+                if ($resolved) $canonical = $resolved;
+            }
+        }
+
+        // Resolve virtual nav nodes by explicit wc field (best signal; avoids brittle parsing).
+        if (!$canonical && isset($edgeWcByChildSlug[$slug])) {
+            $wc = (string) $edgeWcByChildSlug[$slug];
+            if ($wc !== '') {
                 $resolved = $resolveCanonicalByWc($wc, $pathSlugs);
                 if ($resolved) $canonical = $resolved;
             }

@@ -715,7 +715,199 @@ final class CatalogImportService
                     }
                 }
             }
+
+            // 4) Trendyol gendered categories normalization (deterministic):
+            // If any gendered variant (service-product-gN-ty-cWC) is active, keep the neutral category
+            // (service-product-ty-cWC) active as the single canonical "ID gate" for schema/filters.
+            //
+            // Rationale: schema is bound to category_id; when neutral is inactive/missing, menu projection
+            // falls back to g1/g2 and causes multiplicity + missing filters on non-gendered paths.
+            $this->normalizeTrendyolNeutralCategoriesFromGendered(now: $now);
         }, attempts: 1);
+    }
+
+    /**
+     * Deterministic backfill:
+     * - Insert missing neutral categories for active gendered variants.
+     * - Activate neutral categories when any gendered variant is active.
+     * - Activate schema rows for those neutral categories (schema is bound to category_id).
+     *
+     * Important: This runs *after* manifest-driven sync steps so it "wins" even if legacy manifests
+     * accidentally mark neutral categories/schema inactive.
+     */
+    private function normalizeTrendyolNeutralCategoriesFromGendered(string $now): void
+    {
+        // 1) Insert missing neutral categories (rare; prefer g1 over g2 deterministically).
+        DB::statement(
+            "with g as (
+                select
+                    parent_id,
+                    slug,
+                    name,
+                    vertical,
+                    sort_order,
+                    substring(slug from '-ty-c([0-9]+)$') as wc,
+                    case
+                        when slug ~ '^service-product-g1-' then 1
+                        when slug ~ '^service-product-g2-' then 2
+                        else 9
+                    end as pri
+                from categories
+                where status='active'
+                  and slug ~ '^service-product-g[0-9]+-ty-c[0-9]+$'
+            ),
+            pick as (
+                select distinct on (wc)
+                    wc,
+                    parent_id,
+                    slug,
+                    name,
+                    vertical,
+                    sort_order
+                from g
+                order by wc, pri asc
+            ),
+            ins as (
+                select
+                    regexp_replace(slug, '^service-product-g[0-9]+-', 'service-product-') as neutral_slug,
+                    parent_id,
+                    name,
+                    vertical,
+                    sort_order
+                from pick
+            )
+            insert into categories (parent_id, slug, name, vertical, status, sort_order, created_at, updated_at)
+            select
+                ins.parent_id,
+                ins.neutral_slug,
+                ins.name,
+                ins.vertical,
+                'active',
+                ins.sort_order,
+                ?,
+                ?
+            from ins
+            where not exists (select 1 from categories n where n.slug = ins.neutral_slug)",
+            [$now, $now]
+        );
+
+        // 2) Activate neutral categories when a gendered variant is active.
+        DB::statement(
+            "with active_gendered as (
+                select distinct regexp_replace(slug, '^service-product-g[0-9]+-', 'service-product-') as neutral_slug
+                from categories
+                where status='active'
+                  and slug ~ '^service-product-g[0-9]+-ty-c[0-9]+$'
+            )
+            update categories n
+            set status='active', updated_at=?
+            from active_gendered ag
+            where n.slug = ag.neutral_slug
+              and n.status <> 'active'",
+            [$now]
+        );
+
+        // 3) Activate schema rows for those neutral categories (filters must work on the neutral id).
+        DB::statement(
+            "with active_gendered as (
+                select distinct regexp_replace(slug, '^service-product-g[0-9]+-', 'service-product-') as neutral_slug
+                from categories
+                where status='active'
+                  and slug ~ '^service-product-g[0-9]+-ty-c[0-9]+$'
+            ),
+            neutral_ids as (
+                select id
+                from categories c
+                join active_gendered ag on ag.neutral_slug = c.slug
+                where c.status='active'
+            )
+            update category_filter_schema s
+            set status='active', updated_at=?
+            from neutral_ids n
+            where s.category_id = n.id
+              and s.status <> 'active'",
+            [$now]
+        );
+
+        // 4) Backfill missing neutral schema rows from the best active gendered variant (prefer g1, else g2).
+        // Some neutral categories may have been historically kept inactive and ended up with 0 schema rows.
+        // This ensures neutral is a complete "filter gate" without requiring manifest changes.
+        DB::statement(
+            "with g as (
+                select
+                    id as g_id,
+                    substring(slug from '-ty-c([0-9]+)$') as wc,
+                    case
+                        when slug ~ '^service-product-g1-' then 1
+                        when slug ~ '^service-product-g2-' then 2
+                        else 9
+                    end as pri
+                from categories
+                where status='active'
+                  and slug ~ '^service-product-g[0-9]+-ty-c[0-9]+$'
+            ),
+            pick as (
+                select distinct on (wc)
+                    wc,
+                    g_id
+                from g
+                order by wc, pri asc
+            ),
+            neutral as (
+                select
+                    id as n_id,
+                    substring(slug from '-ty-c([0-9]+)$') as wc
+                from categories
+                where status='active'
+                  and slug ~ '^service-product-ty-c[0-9]+$'
+            ),
+            pairs as (
+                select
+                    n.n_id as category_id,
+                    s.attribute_key,
+                    s.ui_component,
+                    s.required,
+                    s.filter_mode,
+                    s.rules_json,
+                    s.applies_to_transaction_modes,
+                    s.sort_order
+                from pick p
+                join neutral n on n.wc = p.wc
+                join category_filter_schema s on s.category_id = p.g_id
+            )
+            insert into category_filter_schema (
+                category_id,
+                attribute_key,
+                ui_component,
+                required,
+                filter_mode,
+                rules_json,
+                applies_to_transaction_modes,
+                status,
+                sort_order,
+                created_at,
+                updated_at
+            )
+            select
+                p.category_id,
+                p.attribute_key,
+                p.ui_component,
+                p.required,
+                p.filter_mode,
+                p.rules_json,
+                p.applies_to_transaction_modes,
+                'active',
+                p.sort_order,
+                ?,
+                ?
+            from pairs p
+            where not exists (
+                select 1 from category_filter_schema x
+                where x.category_id = p.category_id
+                  and x.attribute_key = p.attribute_key
+            )",
+            [$now, $now]
+        );
     }
 
     // -----------------------
