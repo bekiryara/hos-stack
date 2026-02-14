@@ -105,7 +105,8 @@ export default {
   },
   async mounted() {
     try {
-      this.categoriesTree = await getCategoriesTree({ view: 'menu' });
+      // Use canonical tree for category pick/searchability (menu view is intentionally pruned).
+      this.categoriesTree = await getCategoriesTree();
     } catch {
       // Category selector is optional for /search/:categoryId; ignore failures here.
       this.categoriesTree = [];

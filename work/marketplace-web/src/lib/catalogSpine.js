@@ -4,6 +4,7 @@
 // No page-level copy/paste fetch logic.
 
 import { api } from '../api/client';
+import { dedupeTrendyolWcVariants } from './trendyolDedupe';
 
 let categoriesPromise = null;
 let categoriesValue = null;
@@ -18,8 +19,10 @@ export async function getCategoriesTree(params = {}) {
   if (!categoriesPromise || categoriesViewKey !== view) {
     categoriesViewKey = view;
     categoriesPromise = api.getCategories({ view }).then((data) => {
-      categoriesValue = data;
-      return data;
+      // Canonical (DB) tree: deterministically dedupe Trendyol gendered variants per WC.
+      // IMPORTANT: Do not apply to view=menu (path-based node identities + multi-placement).
+      categoriesValue = view === 'menu' ? data : dedupeTrendyolWcVariants(data);
+      return categoriesValue;
     });
   }
   return categoriesPromise;
