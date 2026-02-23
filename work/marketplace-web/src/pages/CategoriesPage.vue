@@ -71,7 +71,6 @@ export default {
   },
   async mounted() {
     try {
-      // Canonical catalog tree (full coverage). Menu view is a curated/vitrine projection and can omit long-tail nodes.
       this.categories = await getCategoriesTree();
       this.loading = false;
     } catch (err) {
@@ -92,7 +91,7 @@ export default {
     },
     async ensureCanonicalIndexLoaded() {
       if (this.canonicalFlat) return;
-      this.canonicalTree = await getCategoriesTree(); // canonical DB tree (not menu-projected)
+      this.canonicalTree = await getCategoriesTree();
       this.canonicalFlat = flattenCategoriesTree(this.canonicalTree || []);
     },
     onSearchInput() {

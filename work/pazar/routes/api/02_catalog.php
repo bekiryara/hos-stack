@@ -196,13 +196,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 $uniq[] = $k;
             }
 
-            if ($p === 'service-product' && !$fullRootOverrideServiceProduct && isset($edgesByParentSlug[$p]) && is_array($edgesByParentSlug[$p])) {
-                // Optional merge behavior (disabled when file requests full override)
-                $merged = array_values(array_unique(array_merge($uniq, $edgesByParentSlug[$p])));
-                $edgesByParentSlug[$p] = $merged;
-            } else {
-                $edgesByParentSlug[$p] = $uniq;
-            }
+            // Always merge: menu edges first (nav ordering), then canonical DB children that aren't in nav.
+            // This ensures every active DB category is reachable from the menu (needed for listing creation).
+            $existing = isset($edgesByParentSlug[$p]) && is_array($edgesByParentSlug[$p]) ? $edgesByParentSlug[$p] : [];
+            $edgesByParentSlug[$p] = array_values(array_unique(array_merge($uniq, $existing)));
         }
     }
 
@@ -282,13 +279,13 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
 
         $children = [];
         $childSlugs = isset($edgesByParentSlug[$slug]) ? $edgesByParentSlug[$slug] : [];
-        // Deterministic fallback: nav placement slugs (not present in canonical tree) would otherwise
-        // appear as leaf nodes even when they resolve to a canonical DB category with children.
-        // If this node resolves to a canonical category, prefer canonical children when menu edges are missing.
-        if (empty($childSlugs) && $canonical && isset($canonical['slug']) && is_string($canonical['slug'])) {
+        // Always merge canonical DB children into menu edges so that categories not present
+        // in Trendyol's navigation (e.g. +18 subcategories) still appear in the menu tree.
+        // Menu-edge children come first (preserving nav ordering), canonical-only children follow.
+        if ($canonical && isset($canonical['slug']) && is_string($canonical['slug'])) {
             $canonicalSlug = (string) $canonical['slug'];
             if ($canonicalSlug !== '' && $canonicalSlug !== $slug && isset($edgesByParentSlug[$canonicalSlug]) && is_array($edgesByParentSlug[$canonicalSlug])) {
-                $childSlugs = $edgesByParentSlug[$canonicalSlug];
+                $childSlugs = array_values(array_unique(array_merge($childSlugs, $edgesByParentSlug[$canonicalSlug])));
             }
         }
         foreach ($childSlugs as $cs) {

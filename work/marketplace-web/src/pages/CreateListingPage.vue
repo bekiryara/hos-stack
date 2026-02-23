@@ -71,7 +71,6 @@ export default {
   },
   async mounted() {
     try {
-      // Use canonical tree for category searchability (long-tail categories may not exist in menu edges).
       this.categoriesTree = await getCategoriesTree();
 
       if (!this.tenantId) {
