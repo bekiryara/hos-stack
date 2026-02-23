@@ -33,7 +33,7 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
         'title' => 'required|string|max:120',
         'description' => 'nullable|string',
         'transaction_modes' => 'required|array|min:1',
-        'transaction_modes.*' => 'string|in:sale,rental,reservation',
+        'transaction_modes.*' => 'string|in:' . implode(',', pazar_canonical_transaction_modes()),
         'attributes' => 'nullable|array',
         'location' => 'nullable|array'
     ]);

@@ -1,15 +1,35 @@
 /**
  * Listing actions resolver (single source of truth).
  *
- * Goal: avoid duplicating "transaction_modes.includes(...)" logic across components.
- *
- * Inputs:
- * - listing.transaction_modes: ['sale'|'rental'|'reservation', ...]
- * - listing.attributes.interaction_mode: 'flow' | 'contact_only' (optional; policy-derived)
- *
- * Back-compat:
- * - If interaction_mode is missing, default to allowing flow actions (keeps previous UI behavior).
+ * CTA labels and routes are data-driven via a mode registry.
+ * Adding a new transaction mode only requires adding an entry here
+ * (and the corresponding backend route/spine).
  */
+
+const MODE_CTA = {
+  reservation: {
+    key: 'reservation',
+    labelDetail: 'Rezervasyon Yap',
+    labelGrid: 'Rezerve Et',
+    path: '/reservation/create',
+    uiClassGrid: 'reserve-btn',
+  },
+  rental: {
+    key: 'rental',
+    labelDetail: 'Kiralama Yap',
+    labelGrid: 'Kirala',
+    path: '/rental/create',
+    uiClassGrid: 'rent-btn',
+  },
+  sale: {
+    key: 'sale',
+    labelDetail: 'Satın Al',
+    labelGrid: 'Satın Al',
+    path: '/order/create',
+    uiClassGrid: 'buy-btn',
+  },
+};
+
 function safeArray(v) {
   return Array.isArray(v) ? v : [];
 }
@@ -36,13 +56,10 @@ export function resolveListingActions(listing, opts = {}) {
   const tenantId = listing && listing.tenant_id ? String(listing.tenant_id) : '';
   const modes = safeArray(listing && listing.transaction_modes).map(String);
   const attrs = safeObject(listing && listing.attributes);
-  const interactionMode = attrs.interaction_mode ? String(attrs.interaction_mode) : '';
+  const interactionMode = attrs.interaction_mode ? String(attrs.interaction_mode) : 'contact_only';
 
-  const canFlow = interactionMode ? interactionMode === 'flow' : true; // keep old behavior if unset
-
-  // Common destinations
+  const canFlow = interactionMode === 'flow';
   const msgTo = listingId ? buildMessagingTo(listingId, tenantId) : null;
-
   const actions = [];
 
   if (!listingId) return actions;
@@ -56,8 +73,6 @@ export function resolveListingActions(listing, opts = {}) {
     });
   }
 
-  // If policy explicitly says contact_only, do not show flow actions.
-  // Instead, show only messaging CTA (no call/phone infrastructure yet).
   if (!canFlow) {
     const label = context === 'detail' ? 'Mesaj Gönder' : 'İletişime geç';
     actions.push({
@@ -69,33 +84,17 @@ export function resolveListingActions(listing, opts = {}) {
     return actions;
   }
 
-  // Flow actions: derived from transaction_modes
-  if (modes.includes('reservation')) {
+  for (const mode of modes) {
+    const cta = MODE_CTA[mode];
+    if (!cta) continue;
     actions.push({
-      key: 'reservation',
-      label: context === 'detail' ? 'Rezervasyon Yap' : 'Rezerve Et',
-      to: { path: '/reservation/create', query: { listing_id: listingId } },
-      uiClass: context === 'grid' ? 'reserve-btn' : 'action-button',
-    });
-  }
-  if (modes.includes('rental')) {
-    actions.push({
-      key: 'rental',
-      label: context === 'detail' ? 'Kiralama Yap' : 'Kirala',
-      to: { path: '/rental/create', query: { listing_id: listingId } },
-      uiClass: context === 'grid' ? 'rent-btn' : 'action-button',
-    });
-  }
-  if (modes.includes('sale')) {
-    actions.push({
-      key: 'sale',
-      label: 'Satın Al',
-      to: { path: '/order/create', query: { listing_id: listingId } },
-      uiClass: context === 'grid' ? 'buy-btn' : 'action-button',
+      key: cta.key,
+      label: context === 'detail' ? cta.labelDetail : cta.labelGrid,
+      to: { path: cta.path, query: { listing_id: listingId } },
+      uiClass: context === 'grid' ? cta.uiClassGrid : 'action-button',
     });
   }
 
-  // Messaging (secondary) — show on detail page by default.
   if (context === 'detail') {
     actions.unshift({
       key: 'message',
@@ -107,4 +106,3 @@ export function resolveListingActions(listing, opts = {}) {
 
   return actions;
 }
-

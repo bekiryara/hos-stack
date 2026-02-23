@@ -25,7 +25,16 @@ final class CatalogImportService
     private const ALLOWED_CATEGORY_STATUS = ['active', 'inactive'];
     private const ALLOWED_UI_COMPONENTS = ['text', 'number', 'select', 'boolean'];
     private const ALLOWED_FILTER_MODES = ['exact', 'range'];
-    private const ALLOWED_TX_MODES = ['sale', 'rental', 'reservation'];
+    private static ?array $allowedTxModesCache = null;
+
+    private static function allowedTxModes(): array {
+        if (self::$allowedTxModesCache === null) {
+            self::$allowedTxModesCache = function_exists('pazar_canonical_transaction_modes')
+                ? pazar_canonical_transaction_modes()
+                : ['sale', 'rental', 'reservation'];
+        }
+        return self::$allowedTxModesCache;
+    }
 
     /**
      * Cache for referenced manifest files (rules_ref).
@@ -404,8 +413,8 @@ final class CatalogImportService
                         throw new RuntimeException("schemaBlocks[$bIdx].fields[$fIdx].applies_to_transaction_modes must not contain duplicates.");
                     }
                     foreach ($applies as $mIdx => $mode) {
-                        if (!is_string($mode) || !in_array($mode, self::ALLOWED_TX_MODES, true)) {
-                            $allowed = implode('|', self::ALLOWED_TX_MODES);
+                        if (!is_string($mode) || !in_array($mode, self::allowedTxModes(), true)) {
+                            $allowed = implode('|', self::allowedTxModes());
                             throw new RuntimeException("schemaBlocks[$bIdx].fields[$fIdx].applies_to_transaction_modes[$mIdx] must be one of {$allowed}.");
                         }
                     }

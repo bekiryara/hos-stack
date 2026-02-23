@@ -183,7 +183,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         ->limit($perPage)
         ->get()
         ->map(function ($listing) {
-            return [
+            $row = [
                 'id' => $listing->id,
                 'tenant_id' => $listing->tenant_id,
                 'category_id' => $listing->category_id,
@@ -196,6 +196,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 'created_at' => $listing->created_at,
                 'updated_at' => $listing->updated_at
             ];
+            return pazar_normalize_listing_policy_fields($row);
         })
         ->values()
         ->all();
@@ -217,7 +218,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         ], 404);
     }
     
-    return response()->json([
+    $row = [
         'id' => $listing->id,
         'tenant_id' => $listing->tenant_id,
         'category_id' => $listing->category_id,
@@ -229,5 +230,6 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         'location' => $listing->location_json ? json_decode($listing->location_json, true) : null,
         'created_at' => $listing->created_at,
         'updated_at' => $listing->updated_at
-    ]);
+    ];
+    return response()->json(pazar_normalize_listing_policy_fields($row));
 });

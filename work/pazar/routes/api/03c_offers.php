@@ -43,7 +43,19 @@ Route::middleware($offersWriteMiddleware)->post('/v1/listings/{id}/offers', func
             'message' => 'X-Active-Tenant-Id header must match listing tenant_id'
         ], 403);
     }
-    
+
+    // Policy guard: only listings whose category supports packages may create offers.
+    $categoryId = $listing->category_id ? (int) $listing->category_id : 0;
+    if ($categoryId > 0) {
+        $intent = pazar_category_intent_schema($categoryId);
+        if (empty($intent['supports_packages'])) {
+            return response()->json([
+                'error' => 'packages_not_supported',
+                'message' => 'This listing\'s category does not support packages/offers',
+            ], 422);
+        }
+    }
+
     // Validate required fields
     $validated = $request->validate([
         'code' => 'required|string|max:100',

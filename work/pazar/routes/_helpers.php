@@ -10,6 +10,30 @@
  * Loaded by: `work/pazar/routes/api.php`
  */
 
+// Canonical transaction modes from policy (single source of truth).
+if (!function_exists('pazar_canonical_transaction_modes')) {
+    function pazar_canonical_transaction_modes(): array {
+        $policy = config('category_flow_policy');
+        return is_array($policy) && isset($policy['canonical_transaction_modes']) && is_array($policy['canonical_transaction_modes'])
+            ? $policy['canonical_transaction_modes']
+            : ['sale', 'rental', 'reservation'];
+    }
+}
+
+// Whether a category slug is allowed for listing creation even if it has children.
+if (!function_exists('pazar_is_non_leaf_selectable')) {
+    function pazar_is_non_leaf_selectable(string $slug): bool {
+        $policy = config('category_flow_policy');
+        $prefixes = is_array($policy) && isset($policy['non_leaf_selectable_prefixes']) && is_array($policy['non_leaf_selectable_prefixes'])
+            ? $policy['non_leaf_selectable_prefixes']
+            : [];
+        foreach ($prefixes as $prefix) {
+            if (str_starts_with($slug, (string) $prefix)) return true;
+        }
+        return false;
+    }
+}
+
 // Helper function to build category tree (WP-17: extract from closure, WP-72: optimized to O(n))
 // WP-72: Changed from O(n²) to O(n) by building index first, but output remains identical
 if (!function_exists('pazar_build_tree')) {
@@ -99,14 +123,14 @@ if (!function_exists('pazar_category_descendant_cte_in_clause_sql')) {
 // Walks up ancestors and matches by slug; returns a deterministic response shape.
 if (!function_exists('pazar_category_intent_schema')) {
     function pazar_category_intent_schema(int $categoryId): array {
-        // Default: allow all transaction modes, but treat reservation as FLOW.
+        // Restrictive default: sale-only, contact_only.
+        // Every vertical that needs more modes MUST have an explicit policy rule.
+        // This prevents accidental "everything allowed" for unconfigured categories.
         $default = [
-            'allowed_transaction_modes' => ['sale', 'rental', 'reservation'],
+            'allowed_transaction_modes' => ['sale'],
             'default_offer_variant' => 'sale',
             'offer_variants' => [
                 ['key' => 'sale', 'label' => 'Satılık', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only'],
-                ['key' => 'rental', 'label' => 'Kiralık', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only'],
-                ['key' => 'reservation', 'label' => 'Rezervasyon', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow'],
             ],
         ];
 
@@ -163,7 +187,11 @@ if (!function_exists('pazar_category_intent_schema')) {
             : $default['allowed_transaction_modes'];
 
         $defaultOfferVariant = isset($schema['default_offer_variant']) ? (string) $schema['default_offer_variant'] : $default['default_offer_variant'];
-        if ($defaultOfferVariant === '') $defaultOfferVariant = $default['default_offer_variant'];        return [
+        if ($defaultOfferVariant === '') $defaultOfferVariant = $default['default_offer_variant'];
+
+        $supportsPackages = isset($schema['supports_packages']) ? (bool) $schema['supports_packages'] : false;
+
+        return [
             'category_id' => (int) $categoryId,
             'resolved_from' => $resolvedFrom ? [
                 'category_id' => (int) $resolvedFrom->id,
@@ -172,6 +200,7 @@ if (!function_exists('pazar_category_intent_schema')) {
             'allowed_transaction_modes' => $allowedModes,
             'default_offer_variant' => $defaultOfferVariant,
             'offer_variants' => $variants,
+            'supports_packages' => $supportsPackages,
         ];
     }
 }
@@ -190,13 +219,6 @@ if (!function_exists('pazar_category_intent_schema')) {
  */
 if (!function_exists('pazar_guard_listing_catalog_write')) {
     function pazar_guard_listing_catalog_write(int $categoryId, array $attributes, array $transactionModes) {
-        // Guard must be self-sufficient: category must exist + be active.
-        if (!\Illuminate\Support\Facades\Schema::hasTable('categories')) {
-            return response()->json([
-                'error' => 'catalog_unavailable',
-                'message' => 'Catalog tables are not available',
-            ], 500);
-        }
         $categoryRow = \Illuminate\Support\Facades\DB::table('categories')
             ->where('id', $categoryId)
             ->where('status', 'active')
@@ -215,8 +237,7 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
             ->where('status', 'active')
             ->exists();
         $slug = isset($categoryRow->slug) ? (string) $categoryRow->slug : '';
-        $isTrendyolProductCategory = str_starts_with($slug, 'service-product-ty-c');
-        if ($hasActiveChild && !$isTrendyolProductCategory) {
+        if ($hasActiveChild && !pazar_is_non_leaf_selectable($slug)) {
             return response()->json([
                 'error' => 'non_leaf_category_not_allowed',
                 'message' => 'Listing write requires a leaf category (category must not have active children)',
@@ -224,27 +245,18 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
             ], 422);
         }
 
-        // Required attributes (if schema table + new fields exist).
-        $hasNewFields = \Illuminate\Support\Facades\Schema::hasTable('category_filter_schema')
-            && \Illuminate\Support\Facades\Schema::hasColumn('category_filter_schema', 'required');
-        $hasAppliesToModes = \Illuminate\Support\Facades\Schema::hasTable('category_filter_schema')
-            && \Illuminate\Support\Facades\Schema::hasColumn('category_filter_schema', 'applies_to_transaction_modes');
-
         $requiredAttributes = [];
 
-        // Phase-1 enforcement: attributes must be schema-driven (whitelist by category_filter_schema).
+        // Attributes must be schema-driven (whitelist by category_filter_schema).
         // Always allow policy meta keys (offer_variant, interaction_mode).
         $policyKeys = ['offer_variant' => true, 'interaction_mode' => true];
-        $allowedKeys = [];
-        if (\Illuminate\Support\Facades\Schema::hasTable('category_filter_schema')) {
-            $allowedKeys = \Illuminate\Support\Facades\DB::table('category_filter_schema')
-                ->where('category_id', $categoryId)
-                ->where('status', 'active')
-                ->pluck('attribute_key')
-                ->map(function ($k) { return (string) $k; })
-                ->values()
-                ->all();
-        }
+        $allowedKeys = \Illuminate\Support\Facades\DB::table('category_filter_schema')
+            ->where('category_id', $categoryId)
+            ->where('status', 'active')
+            ->pluck('attribute_key')
+            ->map(function ($k) { return (string) $k; })
+            ->values()
+            ->all();
         $allowedSet = $policyKeys;
         foreach ($allowedKeys as $k) { $allowedSet[$k] = true; }
 
@@ -269,7 +281,7 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         $intentSchema = pazar_category_intent_schema((int) $categoryId);
         $allowedModes = isset($intentSchema['allowed_transaction_modes']) && is_array($intentSchema['allowed_transaction_modes'])
             ? $intentSchema['allowed_transaction_modes']
-            : ['sale', 'rental', 'reservation'];
+            : pazar_canonical_transaction_modes();
 
         $requestedModes = is_array($transactionModes)
             ? array_values(array_filter(array_map('strval', $transactionModes)))
@@ -303,7 +315,7 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
             }
 
             $impliedMode = isset($resolvedVariant['transaction_mode']) ? (string) $resolvedVariant['transaction_mode'] : '';
-            if ($impliedMode === '' || !in_array($impliedMode, ['sale', 'rental', 'reservation'], true)) {
+            if ($impliedMode === '' || !in_array($impliedMode, pazar_canonical_transaction_modes(), true)) {
                 return response()->json([
                     'error' => 'invalid_offer_variant',
                     'message' => "Offer variant '{$offerVariant}' does not define a valid transaction_mode"
@@ -358,63 +370,49 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         }
         $effectiveMode = $effectiveMode !== '' ? $effectiveMode : 'sale';
 
-        // Phase-2 hardening: schema-driven applicability by transaction_mode.
+        // Schema-driven applicability by transaction_mode.
         // - If applies_to_transaction_modes is NULL/empty => applies to all modes.
         // - Otherwise, only the listed modes can store this key.
         $droppedKeys = [];
-        if ($hasAppliesToModes && \Illuminate\Support\Facades\Schema::hasTable('category_filter_schema')) {
-            $rows = \Illuminate\Support\Facades\DB::table('category_filter_schema')
-                ->where('category_id', $categoryId)
-                ->where('status', 'active')
-                ->select(['attribute_key', 'required', 'applies_to_transaction_modes'])
-                ->get();
+        $rows = \Illuminate\Support\Facades\DB::table('category_filter_schema')
+            ->where('category_id', $categoryId)
+            ->where('status', 'active')
+            ->select(['attribute_key', 'required', 'applies_to_transaction_modes'])
+            ->get();
 
-            $appliesMap = [];
-            $requiredForMode = [];
-            foreach ($rows as $r) {
-                $k = isset($r->attribute_key) ? (string) $r->attribute_key : '';
-                if ($k === '') continue;
-                $applies = null;
-                if (isset($r->applies_to_transaction_modes) && $r->applies_to_transaction_modes) {
-                    $decoded = json_decode((string) $r->applies_to_transaction_modes, true);
-                    if (is_array($decoded)) {
-                        $list = array_values(array_filter(array_map('strval', $decoded)));
-                        if (!empty($list)) $applies = $list;
-                    }
-                }
-                $appliesMap[$k] = $applies; // null => all modes
-
-                $isReq = $hasNewFields && isset($r->required) ? (bool) $r->required : false;
-                if ($isReq) {
-                    if ($applies === null || in_array($effectiveMode, $applies, true)) {
-                        $requiredForMode[] = $k;
-                    }
+        $appliesMap = [];
+        $requiredForMode = [];
+        foreach ($rows as $r) {
+            $k = isset($r->attribute_key) ? (string) $r->attribute_key : '';
+            if ($k === '') continue;
+            $applies = null;
+            if (isset($r->applies_to_transaction_modes) && $r->applies_to_transaction_modes) {
+                $decoded = json_decode((string) $r->applies_to_transaction_modes, true);
+                if (is_array($decoded)) {
+                    $list = array_values(array_filter(array_map('strval', $decoded)));
+                    if (!empty($list)) $applies = $list;
                 }
             }
+            $appliesMap[$k] = $applies;
 
-            // Drop keys not applicable for this mode (but keep policy keys always).
-            foreach (array_keys($attributes) as $k) {
-                if ($k === 'offer_variant' || $k === 'interaction_mode') continue;
-                if (!array_key_exists($k, $appliesMap)) continue; // unknown keys handled earlier
-                $applies = $appliesMap[$k];
-                if (is_array($applies) && !in_array($effectiveMode, $applies, true)) {
-                    unset($attributes[$k]);
-                    $droppedKeys[] = $k;
+            if (isset($r->required) && (bool) $r->required) {
+                if ($applies === null || in_array($effectiveMode, $applies, true)) {
+                    $requiredForMode[] = $k;
                 }
-            }
-
-            $requiredAttributes = $requiredForMode;
-        } else {
-            // Back-compat: if applies column doesn't exist, required = all required keys.
-            if ($hasNewFields) {
-                $requiredAttributes = \Illuminate\Support\Facades\DB::table('category_filter_schema')
-                    ->where('category_id', $categoryId)
-                    ->where('status', 'active')
-                    ->where('required', true)
-                    ->pluck('attribute_key')
-                    ->toArray();
             }
         }
+
+        foreach (array_keys($attributes) as $k) {
+            if ($k === 'offer_variant' || $k === 'interaction_mode') continue;
+            if (!array_key_exists($k, $appliesMap)) continue;
+            $applies = $appliesMap[$k];
+            if (is_array($applies) && !in_array($effectiveMode, $applies, true)) {
+                unset($attributes[$k]);
+                $droppedKeys[] = $k;
+            }
+        }
+
+        $requiredAttributes = $requiredForMode;
 
         // Enforce required keys (mode-aware when applies_to_transaction_modes exists).
         foreach ($requiredAttributes as $attrKey) {
@@ -498,5 +496,57 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
             'transaction_modes' => $requestedModes,
             'intent_schema' => $intentSchema,
         ];
+    }
+}
+
+/**
+ * Read-time policy normalization for listing responses.
+ *
+ * Re-derives interaction_mode (and validates offer_variant) from the current
+ * category_flow_policy so that stale data written under old rules is always
+ * served with the correct values. No DB writes — pure projection.
+ */
+if (!function_exists('pazar_normalize_listing_policy_fields')) {
+    function pazar_normalize_listing_policy_fields(array $listing): array {
+        $categoryId = isset($listing['category_id']) ? (int) $listing['category_id'] : 0;
+        if ($categoryId <= 0) return $listing;
+
+        $attrs = isset($listing['attributes']) && is_array($listing['attributes']) ? $listing['attributes'] : [];
+        $offerVariant = isset($attrs['offer_variant']) ? (string) $attrs['offer_variant'] : '';
+
+        try {
+            $intent = pazar_category_intent_schema($categoryId);
+        } catch (\Throwable $e) {
+            return $listing;
+        }
+
+        $variants = isset($intent['offer_variants']) && is_array($intent['offer_variants']) ? $intent['offer_variants'] : [];
+
+        $matched = null;
+        foreach ($variants as $v) {
+            if (is_array($v) && isset($v['key']) && (string) $v['key'] === $offerVariant) {
+                $matched = $v;
+                break;
+            }
+        }
+
+        if (!$matched && !empty($variants)) {
+            $matched = $variants[0];
+            $attrs['offer_variant'] = (string) $matched['key'];
+        }
+
+        if ($matched) {
+            $attrs['interaction_mode'] = isset($matched['interaction_mode']) && $matched['interaction_mode'] === 'flow'
+                ? 'flow' : 'contact_only';
+
+            $impliedMode = isset($matched['transaction_mode']) ? (string) $matched['transaction_mode'] : '';
+            if ($impliedMode !== '' && in_array($impliedMode, pazar_canonical_transaction_modes(), true)) {
+                $listing['transaction_modes'] = [$impliedMode];
+            }
+        }
+
+        $listing['attributes'] = $attrs;
+        $listing['supports_packages'] = isset($intent['supports_packages']) ? (bool) $intent['supports_packages'] : false;
+        return $listing;
     }
 }

@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 // Catalog Spine Endpoints (SPEC §6.2, WP-2)
 // GET /v1/categories (tree format)
@@ -30,9 +29,6 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         })
         ->toArray();
 
-    // Additive: expose selectable_for_create to prevent "leaf-only drift" in clients.
-    // Rationale: In Trendyol product taxonomy, some categories can be bindable even if they have children.
-    // For now, allow selecting non-leaf ONLY for Trendyol-derived product categories (service-product-ty-c<ID>).
     $childCountByParent = [];
     foreach ($categories as $c) {
         $pid = $c['parent_id'] ?? null;
@@ -43,9 +39,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         $id = $c['id'];
         $slug = isset($c['slug']) ? (string) $c['slug'] : '';
         $hasChildren = isset($childCountByParent[$id]) && $childCountByParent[$id] > 0;
-        $isTrendyolProductCategory = preg_match('/^service-product-(?:g\\d+-)?ty-c\\d+$/', $slug) === 1;
-        // Leaf categories are always selectable; non-leaf only if Trendyol product category.
-        $c['selectable_for_create'] = !$hasChildren || $isTrendyolProductCategory;
+        $c['selectable_for_create'] = !$hasChildren || pazar_is_non_leaf_selectable($slug);
     }
     unset($c);
 
@@ -322,32 +316,20 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         ], 404);
     }
     
-    // Fetch filter schema for this category
-    // Check if new fields exist (after migration)
-    $hasNewFields = Schema::hasColumn('category_filter_schema', 'ui_component');
-    $hasAppliesToModes = Schema::hasColumn('category_filter_schema', 'applies_to_transaction_modes');
-    
     $selectFields = [
         'category_filter_schema.id',
         'category_filter_schema.attribute_key',
         'category_filter_schema.status',
         'category_filter_schema.sort_order',
+        'category_filter_schema.ui_component',
+        'category_filter_schema.required',
+        'category_filter_schema.filter_mode',
+        'category_filter_schema.rules_json',
+        'category_filter_schema.applies_to_transaction_modes',
         'attributes.value_type',
         'attributes.unit',
         'attributes.description'
     ];
-    
-    if ($hasNewFields) {
-        $selectFields = array_merge($selectFields, [
-            'category_filter_schema.ui_component',
-            'category_filter_schema.required',
-            'category_filter_schema.filter_mode',
-            'category_filter_schema.rules_json'
-        ]);
-    }
-    if ($hasAppliesToModes) {
-        $selectFields[] = 'category_filter_schema.applies_to_transaction_modes';
-    }
     
     $schema = DB::table('category_filter_schema')
         ->join('attributes', 'category_filter_schema.attribute_key', '=', 'attributes.key')
@@ -370,75 +352,62 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 'sort_order' => $item->sort_order,
             ];
             
-            // Add new fields if migration has run
-            if ($hasNewFields) {
-                // WP-NEXT: Deterministic response shape for schema-driven UI (always emit these keys)
-                $result['ui_component'] = $item->ui_component;
-                // WP-69: Back-compat alias field (ui_type) for clients expecting that name
-                $result['ui_type'] = $item->ui_component;
-                $result['required'] = (bool) $item->required;
-                $result['filter_mode'] = $item->filter_mode;
-                $result['rules'] = (object) []; // default empty object
+            $result['ui_component'] = $item->ui_component;
+            $result['ui_type'] = $item->ui_component;
+            $result['required'] = (bool) $item->required;
+            $result['filter_mode'] = $item->filter_mode;
+            $result['rules'] = (object) [];
 
-                // WP-FINAL: Simple type mapping for UI (additive; keeps existing fields)
-                // Allowed: select|number|range|boolean|text
-                $type = 'text';
-                if ($item->ui_component === 'select' || $item->value_type === 'enum') {
-                    $type = 'select';
-                } elseif ($item->value_type === 'boolean') {
-                    $type = 'boolean';
-                } elseif ($item->filter_mode === 'range') {
-                    $type = 'range';
-                } elseif ($item->value_type === 'number') {
-                    $type = 'number';
-                }
-                $result['type'] = $type;
-                
-                // Parse rules_json if present
-                if ($item->rules_json) {
-                    $rules = json_decode($item->rules_json, true);
-                    if ($rules) {
-                        // WP-NEXT: Normalize enum/select options to a consistent structure (array of strings)
-                        if (isset($rules['options']) && is_array($rules['options'])) {
-                            $mapped = array_map(function ($opt) {
-                                if (is_array($opt)) {
-                                    if (isset($opt['value'])) return (string) $opt['value'];
-                                    if (isset($opt['label'])) return (string) $opt['label'];
-                                    if (isset($opt['key'])) return (string) $opt['key'];
-                                    if (isset($opt['id'])) return (string) $opt['id'];
-                                    return null;
-                                }
-                                if (is_object($opt)) {
-                                    if (isset($opt->value)) return (string) $opt->value;
-                                    if (isset($opt->label)) return (string) $opt->label;
-                                    if (isset($opt->key)) return (string) $opt->key;
-                                    if (isset($opt->id)) return (string) $opt->id;
-                                    return null;
-                                }
-                                if (is_string($opt) || is_numeric($opt)) return (string) $opt;
+            $type = 'text';
+            if ($item->ui_component === 'select' || $item->value_type === 'enum') {
+                $type = 'select';
+            } elseif ($item->value_type === 'boolean') {
+                $type = 'boolean';
+            } elseif ($item->filter_mode === 'range') {
+                $type = 'range';
+            } elseif ($item->value_type === 'number') {
+                $type = 'number';
+            }
+            $result['type'] = $type;
+
+            if ($item->rules_json) {
+                $rules = json_decode($item->rules_json, true);
+                if ($rules) {
+                    if (isset($rules['options']) && is_array($rules['options'])) {
+                        $mapped = array_map(function ($opt) {
+                            if (is_array($opt)) {
+                                if (isset($opt['value'])) return (string) $opt['value'];
+                                if (isset($opt['label'])) return (string) $opt['label'];
+                                if (isset($opt['key'])) return (string) $opt['key'];
+                                if (isset($opt['id'])) return (string) $opt['id'];
                                 return null;
-                            }, $rules['options']);
-                            $rules['options'] = array_values(array_filter($mapped, function ($s) {
-                                return $s !== null && $s !== '';
-                            }));
-                        }
-                        $result['rules'] = $rules;
+                            }
+                            if (is_object($opt)) {
+                                if (isset($opt->value)) return (string) $opt->value;
+                                if (isset($opt->label)) return (string) $opt->label;
+                                if (isset($opt->key)) return (string) $opt->key;
+                                if (isset($opt->id)) return (string) $opt->id;
+                                return null;
+                            }
+                            if (is_string($opt) || is_numeric($opt)) return (string) $opt;
+                            return null;
+                        }, $rules['options']);
+                        $rules['options'] = array_values(array_filter($mapped, function ($s) {
+                            return $s !== null && $s !== '';
+                        }));
                     }
+                    $result['rules'] = $rules;
                 }
             }
 
-            // Phase-2: Schema-driven applicability by transaction_mode
-            // Semantics: null/empty => applies to all modes.
-            if ($hasAppliesToModes) {
-                $applies = null;
-                if (isset($item->applies_to_transaction_modes) && $item->applies_to_transaction_modes) {
-                    $decoded = json_decode($item->applies_to_transaction_modes, true);
-                    if (is_array($decoded)) {
-                        $applies = array_values(array_filter(array_map('strval', $decoded)));
-                    }
+            $applies = null;
+            if (isset($item->applies_to_transaction_modes) && $item->applies_to_transaction_modes) {
+                $decoded = json_decode($item->applies_to_transaction_modes, true);
+                if (is_array($decoded)) {
+                    $applies = array_values(array_filter(array_map('strval', $decoded)));
                 }
-                $result['applies_to_transaction_modes'] = $applies;
             }
+            $result['applies_to_transaction_modes'] = $applies;
             
             return $result;
         })

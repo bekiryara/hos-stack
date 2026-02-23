@@ -38,7 +38,7 @@
           <li v-for="key in sortedAttributeKeys" :key="key"><strong>{{ key }}:</strong> {{ renderAttributeValue(normalizedAttributes[key]) }}</li>
         </ul>
       </div>
-      <div class="detail-section">
+      <div v-if="listing.supports_packages" class="detail-section">
         <h3>Paketler (Offers)</h3>
         <p class="muted">
           Bu bölüm sadece tıklayınca yüklenir (sistemi zorlamaz).
