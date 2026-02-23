@@ -321,7 +321,7 @@
 - `hos-db` - PostgreSQL database for H-OS
 - `pazar-app` - Pazar API (Laravel) on port 8080
 - `pazar-db` - PostgreSQL database for Pazar
-- `pazar-web` - Marketplace frontend (Vue.js/Vite) on port 5173
+- `hos-web` - HOS Web + Marketplace frontend (nginx, built Vue.js) on port 3002
 - `messaging-api` - Messaging service (Node.js)
 
 ### Environment Configuration

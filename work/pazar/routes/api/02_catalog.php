@@ -338,7 +338,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         ->orderBy('category_filter_schema.sort_order')
         ->select($selectFields)
         ->get()
-        ->map(function ($item) use ($hasNewFields, $hasAppliesToModes) {
+        ->map(function ($item) {
             $result = [
                 'attribute_key' => $item->attribute_key,
                 // WP-FINAL: Canonical key alias (catalog defines filter keys; clients should use this)
