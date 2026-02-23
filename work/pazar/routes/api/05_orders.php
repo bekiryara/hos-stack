@@ -66,10 +66,28 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     }
     
     // Create order
-    // WP-13: Get requester_user_id from request attributes (set by AuthContext middleware)
     $orderId = \Illuminate\Support\Str::uuid()->toString();
     $sellerTenantId = $listing->tenant_id;
     $buyerUserId = $request->attributes->get('requester_user_id');
+    
+    // Calculate totals from listing price
+    $attrs = json_decode($listing->attributes_json ?? '{}', true) ?: [];
+    $cardDisplay = pazar_card_display_for_category((int) $listing->category_id);
+    $priceField = $cardDisplay['price_field'] ?? null;
+    $unitPrice = ($priceField && isset($attrs[$priceField]) && is_numeric($attrs[$priceField]))
+        ? (float) $attrs[$priceField]
+        : null;
+    $currency = $cardDisplay['currency'] ?? 'TRY';
+
+    $totals = null;
+    if ($unitPrice !== null) {
+        $totals = [
+            'unit_price' => $unitPrice,
+            'quantity' => $quantity,
+            'subtotal' => round($unitPrice * $quantity, 2),
+            'currency' => $currency,
+        ];
+    }
     
     DB::table('orders')->insert([
         'id' => $orderId,
@@ -78,7 +96,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'buyer_user_id' => $buyerUserId,
         'quantity' => $quantity,
         'status' => 'placed',
-        'totals_json' => null, // Placeholder for future pricing logic
+        'totals_json' => $totals ? json_encode($totals) : null,
         'created_at' => now(),
         'updated_at' => now()
     ]);
@@ -90,7 +108,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'seller_tenant_id' => $sellerTenantId,
         'quantity' => $quantity,
         'status' => 'placed',
-        'totals_json' => null,
+        'totals' => $totals,
         'created_at' => now()->toISOString()
     ];
     

@@ -24,10 +24,43 @@ return [
     // non-leaf categories). All other categories require leaf selection.
     'non_leaf_selectable_prefixes' => ['service-product-ty-c'],
 
+    // Card display config: which attribute is the price and what to highlight.
+    // Frontend reads this to render listing cards per vertical — one component, all verticals.
+    'card_display' => [
+        'vehicle' => [
+            'price_field' => 'vehicle_price',
+            'currency' => 'TRY',
+            'highlights' => ['vehicle_model', 'vehicle_year', 'city', 'vehicle_km_bucket'],
+        ],
+        'konut' => [
+            'price_field' => 'rent_price',
+            'currency' => 'TRY',
+            'highlights' => ['city', 'room_count', 'area_m2'],
+        ],
+        'is-yeri' => [
+            'price_field' => 'rent_price',
+            'currency' => 'TRY',
+            'highlights' => ['city', 'area_m2'],
+        ],
+        'service-product' => [
+            'price_field' => 'product_price',
+            'currency' => 'TRY',
+            'highlights' => ['product_brand', 'product_condition'],
+        ],
+        'events' => [
+            'price_field' => 'event_price',
+            'currency' => 'TRY',
+            'highlights' => ['city', 'capacity_max'],
+        ],
+        'food' => [
+            'price_field' => 'product_price',
+            'currency' => 'TRY',
+            'highlights' => ['city'],
+        ],
+    ],
+
     'rules' => [
         // Vasıta (Vehicle) — Sahibinden-like:
-        // - "Satılık / Kiralık" is NOT a category branch; it's an offer_variant.
-        // - User decision: Kiralık Araç = FLOW (rental workflow).
         'vehicle' => [
             'allowed_transaction_modes' => ['sale', 'rental'],
             'default_offer_variant' => 'sale',
@@ -38,9 +71,7 @@ return [
             ],
         ],
 
-        // Sahibinden-like Emlak (Real Estate) intent sets
-        // The category tree holds "what it is" (Konut / İş Yeri / Arsa ... + type leaves).
-        // The second column is modeled here as "offer_variants".
+        // Sahibinden-like Emlak (Real Estate)
         'konut' => [
             'allowed_transaction_modes' => ['sale', 'rental', 'reservation'],
             'default_offer_variant' => 'sale',
@@ -48,7 +79,6 @@ return [
             'offer_variants' => [
                 ['key' => 'sale', 'label' => 'Satılık', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only'],
                 ['key' => 'rental', 'label' => 'Kiralık', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only'],
-                // User decision: Airbnb-like reservation flow for daily rentals
                 ['key' => 'turistik_gunluk_kiralik', 'label' => 'Turistik Günlük Kiralık', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow'],
                 ['key' => 'devren_satilik_konut', 'label' => 'Devren Satılık Konut', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only'],
             ],
@@ -66,7 +96,6 @@ return [
         ],
 
         // Ürün (Trendyol e-commerce): order flow only.
-        // No rental/reservation — physical goods are sold and shipped.
         'service-product' => [
             'allowed_transaction_modes' => ['sale'],
             'default_offer_variant' => 'sale',
@@ -77,7 +106,6 @@ return [
         ],
 
         // Etkinlik (Events): reservation flow only.
-        // Tickets are booked and paid for upfront.
         'events' => [
             'allowed_transaction_modes' => ['reservation'],
             'default_offer_variant' => 'reservation',
@@ -88,7 +116,6 @@ return [
         ],
 
         // Yemek (Food): order flow only.
-        // Food is ordered and delivered/picked up.
         'food' => [
             'allowed_transaction_modes' => ['sale'],
             'default_offer_variant' => 'sale',

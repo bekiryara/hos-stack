@@ -10,16 +10,17 @@
         <div class="thumb" aria-hidden="true">
           <div class="thumb-placeholder">
             <div class="thumb-badge">Fotoğraf</div>
-            <div class="thumb-subtle">Demo</div>
           </div>
         </div>
         <h4>{{ listing.title || 'Untitled' }}</h4>
-        <p class="listing-id">
-          ID: {{ listing.id }}
-          <button @click.stop="copyListingId(listing.id, $event)" class="copy-id-btn" title="Copy listing ID">Copy</button>
-        </p>
-        <p v-if="listing.category_id" class="listing-category">Category ID: {{ listing.category_id }}</p>
-        <p class="listing-status">Status: {{ listing.status }}</p>
+        <div v-if="listing.price" class="listing-price">
+          {{ formatPrice(listing.price, listing.price_currency) }}
+        </div>
+        <div v-if="highlightsFor(listing).length" class="highlights">
+          <span v-for="h in highlightsFor(listing)" :key="h.key" class="highlight-tag">
+            {{ h.value }}
+          </span>
+        </div>
         <div v-if="listing.transaction_modes && listing.transaction_modes.length > 0" class="transaction-modes-summary">
           <span
             v-for="mode in listing.transaction_modes"
@@ -27,16 +28,7 @@
             class="transaction-badge"
             :class="`transaction-badge-${mode}`"
           >
-            {{ mode.charAt(0).toUpperCase() + mode.slice(1) }}
-          </span>
-        </div>
-        <div v-if="listing.attributes" class="attributes-summary">
-          <span
-            v-for="(value, key) in listing.attributes"
-            :key="key"
-            class="attribute-tag"
-          >
-            {{ key }}: {{ value }}
+            {{ modeLabel(mode) }}
           </span>
         </div>
         <div class="listing-actions" @click.stop>
@@ -76,33 +68,29 @@ export default {
       if (!action || !action.to) return;
       this.$router.push(action.to);
     },
-    copyListingId(id, evt) {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(id).then(() => {
-          // Optional: Show brief feedback (minimal UI change)
-          const btn = evt?.target;
-          if (!btn) return;
-          const originalText = btn.textContent;
-          btn.textContent = 'Copied!';
-          setTimeout(() => {
-            btn.textContent = originalText;
-          }, 1000);
-        }).catch(err => {
-          console.error('Failed to copy:', err);
-        });
-      } else {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = id;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-          document.execCommand('copy');
-        } catch (err) {
-          console.error('Fallback copy failed:', err);
-        }
-        document.body.removeChild(textArea);
+    goToDetail(id) {
+      this.$router.push(`/listing/${id}`);
+    },
+    formatPrice(amount, currency) {
+      if (!amount && amount !== 0) return '';
+      const c = currency || 'TRY';
+      try {
+        return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: c, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+      } catch {
+        return `${amount} ${c}`;
       }
+    },
+    highlightsFor(listing) {
+      const keys = listing.card_highlights || [];
+      const attrs = listing.attributes || {};
+      return keys
+        .filter(k => attrs[k] != null && attrs[k] !== '')
+        .map(k => ({ key: k, value: String(attrs[k]) }))
+        .slice(0, 4);
+    },
+    modeLabel(mode) {
+      const labels = { sale: 'Satılık', rental: 'Kiralık', reservation: 'Rezervasyon' };
+      return labels[mode] || mode;
     },
   },
 };
@@ -138,55 +126,26 @@ export default {
   font-weight: 600;
 }
 
-.listing-id {
-  font-size: 0.85rem;
-  color: var(--text-muted, #6b7280);
-  margin-bottom: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.copy-id-btn {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 3px;
-  background: var(--surface-2, #f8fafc);
-  color: var(--text, #374151);
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.copy-id-btn:hover {
-  background: #eef2f7;
-}
-
-.listing-category {
-  font-size: 0.85rem;
-  color: var(--text-muted, #6b7280);
-  margin-bottom: 0.25rem;
-}
-
-.listing-status {
-  font-size: 0.9rem;
-  color: var(--text-muted, #6b7280);
+.listing-price {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent, #ef4444);
   margin-bottom: 0.5rem;
 }
 
-.attributes-summary {
+.highlights {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
 }
 
-.attribute-tag {
+.highlight-tag {
   background: var(--pill-bg, #f1f5f9);
   color: var(--pill-text, #334155);
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 3px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .transaction-modes-summary {
@@ -313,11 +272,6 @@ export default {
   color: var(--text-label, #4b5563);
   font-size: 0.8rem;
   font-weight: 600;
-}
-
-.thumb-subtle {
-  color: var(--text-muted, #6b7280);
-  font-size: 0.8rem;
 }
 
 .no-results {

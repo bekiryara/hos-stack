@@ -547,6 +547,57 @@ if (!function_exists('pazar_normalize_listing_policy_fields')) {
 
         $listing['attributes'] = $attrs;
         $listing['supports_packages'] = isset($intent['supports_packages']) ? (bool) $intent['supports_packages'] : false;
+
+        // Extract price from attributes using card_display config.
+        $cardDisplay = pazar_card_display_for_category($categoryId);
+        $priceField = $cardDisplay['price_field'] ?? null;
+        if ($priceField && isset($attrs[$priceField]) && is_numeric($attrs[$priceField])) {
+            $listing['price'] = (float) $attrs[$priceField];
+            $listing['price_currency'] = $cardDisplay['currency'] ?? 'TRY';
+        } else {
+            $listing['price'] = null;
+            $listing['price_currency'] = null;
+        }
+        $listing['card_highlights'] = $cardDisplay['highlights'] ?? [];
+
         return $listing;
+    }
+}
+
+/**
+ * Resolve card_display config for a category by walking up ancestors.
+ */
+if (!function_exists('pazar_card_display_for_category')) {
+    function pazar_card_display_for_category(int $categoryId): array {
+        static $cache = [];
+        if (isset($cache[$categoryId])) return $cache[$categoryId];
+
+        $policy = config('category_flow_policy');
+        $displayRules = is_array($policy) && isset($policy['card_display']) && is_array($policy['card_display'])
+            ? $policy['card_display']
+            : [];
+
+        if (empty($displayRules)) {
+            $cache[$categoryId] = [];
+            return [];
+        }
+
+        $slugs = array_keys($displayRules);
+        $id = $categoryId;
+        $maxDepth = 20;
+        while ($id && $maxDepth-- > 0) {
+            $row = \Illuminate\Support\Facades\DB::table('categories')->where('id', $id)->select('slug', 'parent_id')->first();
+            if (!$row) break;
+            foreach ($slugs as $s) {
+                if ($row->slug === $s || str_starts_with($row->slug, $s)) {
+                    $cache[$categoryId] = $displayRules[$s];
+                    return $displayRules[$s];
+                }
+            }
+            $id = $row->parent_id;
+        }
+
+        $cache[$categoryId] = [];
+        return [];
     }
 }

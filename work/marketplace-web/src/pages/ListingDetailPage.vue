@@ -4,35 +4,26 @@
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="listing" class="listing-detail">
       <h2>{{ listing.title || 'Untitled Listing' }}</h2>
-      <div class="detail-section">
-        <h3>Basic Info</h3>
-        <p><strong>ID:</strong> {{ listing.id }}</p>
-        <p><strong>Status:</strong> {{ listing.status }}</p>
-        <div v-if="listing.transaction_modes && listing.transaction_modes.length > 0" class="transaction-modes">
-          <strong>Transaction Modes:</strong>
-          <div class="transaction-badges">
-            <span
-              v-for="mode in listing.transaction_modes"
-              :key="mode"
-              class="transaction-badge"
-              :class="`transaction-badge-${mode}`"
-            >
-              {{ mode.charAt(0).toUpperCase() + mode.slice(1) }}
-            </span>
-          </div>
-        </div>
+
+      <div v-if="listing.price" class="price-banner">
+        {{ formatPrice(listing.price, listing.price_currency) }}
       </div>
-      <div class="detail-section">
-        <h3>Category</h3>
-        <p v-if="listing.category_id">
-          <strong>Category:</strong>
-          <template v-if="categoryName">{{ categoryName }} (ID: {{ listing.category_id }})</template>
-          <template v-else>Category ID: {{ listing.category_id }}</template>
-        </p>
-        <p v-else><strong>Category ID:</strong> —</p>
+
+      <div class="detail-meta">
+        <span v-if="categoryName" class="meta-tag">{{ categoryName }}</span>
+        <span class="meta-tag meta-status" :class="`meta-status-${listing.status}`">{{ listing.status }}</span>
+        <span
+          v-for="mode in (listing.transaction_modes || [])"
+          :key="mode"
+          class="transaction-badge"
+          :class="`transaction-badge-${mode}`"
+        >
+          {{ modeLabel(mode) }}
+        </span>
       </div>
+
       <div class="detail-section">
-        <h3>Attributes</h3>
+        <h3>Detaylar</h3>
         <p v-if="!sortedAttributeKeys.length">No attributes</p>
         <ul v-else class="attributes-list">
           <li v-for="key in sortedAttributeKeys" :key="key"><strong>{{ key }}:</strong> {{ renderAttributeValue(normalizedAttributes[key]) }}</li>
@@ -77,10 +68,6 @@
             </li>
           </ul>
         </div>
-      </div>
-      <div v-if="listing" class="detail-section">
-        <h3>Full Data</h3>
-        <pre class="full-json">{{ JSON.stringify(listing, null, 2) }}</pre>
       </div>
       <div class="actions">
         <button
@@ -217,6 +204,19 @@ export default {
       if (!action || !action.to) return;
       this.$router.push(action.to);
     },
+    formatPrice(amount, currency) {
+      if (!amount && amount !== 0) return '';
+      const c = currency || 'TRY';
+      try {
+        return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: c, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+      } catch {
+        return `${amount} ${c}`;
+      }
+    },
+    modeLabel(mode) {
+      const labels = { sale: 'Satılık', rental: 'Kiralık', reservation: 'Rezervasyon' };
+      return labels[mode] || mode;
+    },
   },
 };
 </script>
@@ -227,9 +227,36 @@ export default {
 }
 
 .listing-detail h2 {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
   font-size: 2rem;
 }
+
+.price-banner {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ef4444;
+  margin-bottom: 1rem;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.meta-tag {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.meta-status-published { background: #dcfce7; color: #166534; }
+.meta-status-draft { background: #fef3c7; color: #92400e; }
 
 .detail-section {
   margin-bottom: 2rem;
