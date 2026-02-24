@@ -25,11 +25,11 @@
         v-for="result in searchResults"
         :key="result.id"
         class="search-result-item"
-        :class="{ 'is-leaf': result.isLeaf, 'disabled': mode === 'create' && !isSelectableForCreate(result.node) }"
+        :class="{ 'is-leaf': result.isLeaf, 'disabled': mode === 'create' && !(result.isLeaf && isSelectableForCreate(result.node)) }"
         @click="selectFromSearch(result)"
       >
         <span class="result-path">{{ result.path }}</span>
-        <span v-if="isSelectableForCreate(result.node)" class="leaf-badge">Seçilebilir</span>
+        <span v-if="result.isLeaf && isSelectableForCreate(result.node)" class="leaf-badge">Seçilebilir</span>
         <span v-else-if="mode === 'create'" class="non-leaf-hint">Alt kategori seç</span>
       </div>
     </div>
@@ -82,7 +82,7 @@
             title="Alt kategorilere git"
             @click.stop="drillDown(cat)"
           >&rarr;</span>
-          <span v-if="mode === 'create' && isSelectableForCreate(cat)" class="check-icon">&#10003;</span>
+          <span v-if="mode === 'create' && isLeaf(cat) && isSelectableForCreate(cat)" class="check-icon">&#10003;</span>
         </button>
       </div>
     </div>
@@ -128,7 +128,7 @@ export default {
       validator: (v) => ['create', 'search'].includes(v),
     },
   },
-  emits: ['update:modelValue', 'category-change'],
+  emits: ['update:modelValue', 'category-change', 'gender-context'],
   data() {
     return {
       searchQuery: '',
@@ -189,7 +189,6 @@ export default {
     },
     categoriesTree: {
       handler() {
-        // Re-sync when tree loads
         if (this.modelValue) {
           this.syncNavigationToSelection(Number(this.modelValue));
         }
@@ -236,9 +235,10 @@ export default {
       const selectable = this.isSelectableForCreate(cat);
       const canonicalId = this.canonicalIdFor(cat);
 
-      // Create mode: only selectable_for_create + canonical id can be chosen; otherwise drill down.
+      // Create mode: deterministic UX: only select if it's a leaf in the current menu tree
+      // AND selectable_for_create is true. If it has children, always drill down first.
       if (this.mode === 'create') {
-        if (selectable && canonicalId) {
+        if (leaf && selectable && canonicalId) {
           this.selectedMenuNodeId = cat.id;
           this.selectedCanonicalCategoryId = canonicalId;
           this.emitSelection(canonicalId);
@@ -262,7 +262,8 @@ export default {
     selectFromSearch(result) {
       const canonicalId = this.canonicalIdFor(result.node);
       if (this.mode === 'create') {
-        if (!this.isSelectableForCreate(result.node) || !canonicalId) {
+        // Create mode: only leaf + selectable_for_create can be selected from search.
+        if (!result.isLeaf || !this.isSelectableForCreate(result.node) || !canonicalId) {
           this.syncNavigationToSelection(canonicalId || result.id);
           this.searchQuery = '';
           return;
@@ -304,10 +305,18 @@ export default {
       this.selectedCanonicalCategoryId = null;
       this.emitSelection(null);
     },
-    // Emit selection to parent
+    genderContextFor(node) {
+      if (!node) return null;
+      if (node.gender_context) return node.gender_context;
+      if (node.node && node.node.gender_context) return node.node.gender_context;
+      return null;
+    },
     emitSelection(id) {
       this.$emit('update:modelValue', id);
       this.$emit('category-change', id);
+      const match = this.flatCategories.find((c) => this.canonicalIdFor(c.node) === id)
+        || this.flatCategories.find((c) => Number(c.id) === id);
+      this.$emit('gender-context', match ? this.genderContextFor(match) : null);
     },
     // Sync navigation stack to match a selected category
     syncNavigationToSelection(targetId) {

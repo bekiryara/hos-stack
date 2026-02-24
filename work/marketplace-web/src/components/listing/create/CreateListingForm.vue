@@ -37,6 +37,7 @@
         :categories-tree="categoriesTree"
         mode="create"
         @category-change="emitCategoryChange"
+        @gender-context="onGenderContext"
       />
     </div>
 
@@ -200,7 +201,6 @@ export default {
       return raw.map(String).includes(m);
     },
     emitCategoryChange() {
-      // Reset offer selection when category changes (policy is category-scoped)
       this.local.offer_variant = '';
       this.local.transaction_modes = [];
       if (this.local.attributes) {
@@ -208,6 +208,14 @@ export default {
         delete this.local.attributes.interaction_mode;
       }
       this.$emit('category-change', this.local.category_id);
+    },
+    onGenderContext(gender) {
+      this.local.attributes = this.local.attributes || {};
+      if (gender) {
+        this.local.attributes.gender_context = gender;
+      } else {
+        delete this.local.attributes.gender_context;
+      }
     },
     onOfferVariantChange() {
       this.applyOfferVariant();
@@ -223,9 +231,9 @@ export default {
     },
     onSubmit() {
       const visibleKeys = new Set((this.visibleFilters || []).map((f) => String(f.attribute_key)));
-      // Policy meta keys must always be sent (backend expects these for normalization).
       visibleKeys.add('offer_variant');
       visibleKeys.add('interaction_mode');
+      visibleKeys.add('gender_context');
 
       const rawAttrs = this.local.attributes && typeof this.local.attributes === 'object' ? this.local.attributes : {};
       const filteredAttrs = {};

@@ -190,10 +190,42 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 $uniq[] = $k;
             }
 
-            // Always merge: menu edges first (nav ordering), then canonical DB children that aren't in nav.
-            // This ensures every active DB category is reachable from the menu (needed for listing creation).
+            // Merge: menu edges first (nav ordering), then canonical DB children whose WC
+            // is NOT already covered by a nav node. This prevents duplicate entries where
+            // both `service-product-nav-p-...-ty-c56` and `service-product-ty-c56` appear.
             $existing = isset($edgesByParentSlug[$p]) && is_array($edgesByParentSlug[$p]) ? $edgesByParentSlug[$p] : [];
-            $edgesByParentSlug[$p] = array_values(array_unique(array_merge($uniq, $existing)));
+
+            // full_root_override replaces DB children with nav-only children for
+            // virtual nav containers (service-product-kadin, ...-erkek, etc.) and
+            // nav-placement nodes (-nav-). Canonical DB parents (-ty-c\d+) get MERGE
+            // so their deeper DB children (e.g. Mangal under Bahçe Ürünleri) remain navigable.
+            $isServiceProductScope = $fullRootOverrideServiceProduct && str_starts_with($p, 'service-product');
+            $isCanonicalParent = (bool) preg_match('/-ty-c\\d+$/', $p);
+            if ($isServiceProductScope && !empty($uniq) && !$isCanonicalParent) {
+                $edgesByParentSlug[$p] = $uniq;
+            } else {
+                // Build set of WCs already covered by nav edges
+                $coveredWcs = [];
+                foreach ($uniq as $navSlug) {
+                    if (preg_match('/-ty-c(\d+)$/', $navSlug, $wm)) {
+                        $coveredWcs[$wm[1]] = true;
+                    }
+                    // Also check explicit wc from manifest
+                    if (isset($edgeWcByChildSlug[$navSlug])) {
+                        $coveredWcs[$edgeWcByChildSlug[$navSlug]] = true;
+                    }
+                }
+                // Only add canonical DB children whose WC is not already covered
+                $filtered = [];
+                foreach ($existing as $dbSlug) {
+                    if (in_array($dbSlug, $uniq, true)) continue;
+                    $dbWc = null;
+                    if (preg_match('/-ty-c(\d+)$/', $dbSlug, $wm)) $dbWc = $wm[1];
+                    if ($dbWc !== null && isset($coveredWcs[$dbWc])) continue;
+                    $filtered[] = $dbSlug;
+                }
+                $edgesByParentSlug[$p] = array_merge($uniq, $filtered);
+            }
         }
     }
 
@@ -208,6 +240,13 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
 
     // Recursively build menu tree starting from canonical roots (parent_id=null).
     // Node identity in this view is menu-path-based (multi-parent safe), while canonical DB id is exposed separately.
+    // Gender slugs used to derive gender_context for descendants
+    $genderSlugs = [
+        'service-product-kadin' => 'kadin',
+        'service-product-erkek' => 'erkek',
+        'service-product-anne-cocuk' => 'cocuk',
+    ];
+
     $buildMenuBranch = function ($slug, $pathSlugs = [], $guard = []) use (
         &$buildMenuBranch,
         &$edgesByParentSlug,
@@ -219,7 +258,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         $edgeTitleByChildSlug,
         $edgeWebUrlByChildSlug,
         $edgeWcByChildSlug,
-        $menuIdForPath
+        $menuIdForPath,
+        $genderSlugs
     ) {
         $slug = (string) $slug;
         if ($slug === '') return null;
@@ -245,8 +285,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
             }
         }
 
-        // Resolve virtual nav nodes by explicit wc field (best signal; avoids brittle parsing).
-        if (!$canonical && isset($edgeWcByChildSlug[$slug])) {
+        // Explicit wc field is the strongest signal — always prefer it when present.
+        // This bridges nav nodes (e.g. service-product-ev-yasam) to their Trendyol
+        // WC category (e.g. service-product-ty-c145704), enabling DB child merge.
+        if (isset($edgeWcByChildSlug[$slug])) {
             $wc = (string) $edgeWcByChildSlug[$slug];
             if ($wc !== '') {
                 $resolved = $resolveCanonicalByWc($wc, $pathSlugs);
@@ -259,27 +301,57 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         $status = $canonical ? (string) $canonical['status'] : 'virtual';
         $selectable = $canonical ? (bool) $canonical['selectable_for_create'] : false;
 
+        // Derive gender_context from ancestor path
+        $genderContext = null;
+        foreach ($pathSlugs as $ps) {
+            if (isset($genderSlugs[$ps])) { $genderContext = $genderSlugs[$ps]; break; }
+        }
+
         $node = [
-            // Menu node id (unique per placement/path)
             'id' => $menuIdForPath(!empty($pathSlugs) ? $pathSlugs : [$slug]),
-            // Canonical DB category id (used for writes/search/filter schema); null if unresolved
             'canonical_category_id' => $canonicalId,
             'slug' => $slug,
             'title' => $title,
             'status' => $status,
-            // Invariant: selectable_for_create remains canonical-based; menu children do not affect this.
             'selectable_for_create' => $selectable,
+            'gender_context' => $genderContext,
         ];
 
         $children = [];
         $childSlugs = isset($edgesByParentSlug[$slug]) ? $edgesByParentSlug[$slug] : [];
-        // Always merge canonical DB children into menu edges so that categories not present
-        // in Trendyol's navigation (e.g. +18 subcategories) still appear in the menu tree.
-        // Menu-edge children come first (preserving nav ordering), canonical-only children follow.
-        if ($canonical && isset($canonical['slug']) && is_string($canonical['slug'])) {
+        $isNavPlacement = str_contains($slug, '-nav-');
+        $isGenderPath = false;
+        $isChildPath = false;
+        foreach ($pathSlugs as $ps) {
+            if ($ps === 'service-product-kadin' || $ps === 'service-product-erkek') {
+                $isGenderPath = true;
+                break;
+            }
+            if ($ps === 'service-product-anne-cocuk') {
+                $isChildPath = true;
+                break;
+            }
+        }
+        // Kadın/Erkek: block nav-placement BRANCH nodes (curated children only)
+        // Anne & Çocuk: block ALL nav-placement nodes (prevent adult content under children)
+        $blockDbMerge = $isNavPlacement && (
+            (!empty($childSlugs) && $isGenderPath) || $isChildPath
+        );
+        if (!$blockDbMerge && $canonical && isset($canonical['slug']) && is_string($canonical['slug'])) {
             $canonicalSlug = (string) $canonical['slug'];
             if ($canonicalSlug !== '' && $canonicalSlug !== $slug && isset($edgesByParentSlug[$canonicalSlug]) && is_array($edgesByParentSlug[$canonicalSlug])) {
-                $childSlugs = array_values(array_unique(array_merge($childSlugs, $edgesByParentSlug[$canonicalSlug])));
+                $coveredWcs = [];
+                foreach ($childSlugs as $existingSlug) {
+                    if (preg_match('/-ty-c(\d+)$/', $existingSlug, $wm)) $coveredWcs[$wm[1]] = true;
+                    if (isset($edgeWcByChildSlug[$existingSlug])) $coveredWcs[$edgeWcByChildSlug[$existingSlug]] = true;
+                }
+                foreach ($edgesByParentSlug[$canonicalSlug] as $dbSlug) {
+                    if (in_array($dbSlug, $childSlugs, true)) continue;
+                    $dbWc = null;
+                    if (preg_match('/-ty-c(\d+)$/', $dbSlug, $wm)) $dbWc = $wm[1];
+                    if ($dbWc !== null && isset($coveredWcs[$dbWc])) continue;
+                    $childSlugs[] = $dbSlug;
+                }
             }
         }
         foreach ($childSlugs as $cs) {
@@ -301,6 +373,57 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
     }
 
     return response()->json($roots);
+});
+
+// GET /v1/categories/{id}/children
+// Returns direct DB children of a category (the sidebar sub-categories).
+// Deterministic: pure parent-child from SSOT, independent of menu_edges.
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/categories/{id}/children', function ($id) {
+    $category = DB::table('categories')->where('id', $id)->where('status', 'active')->first();
+    if (!$category) {
+        return response()->json([
+            'error' => 'category_not_found',
+            'message' => "Category with id {$id} not found",
+        ], 404);
+    }
+
+    $directChildren = DB::table('categories')
+        ->where('parent_id', $id)
+        ->where('status', 'active')
+        ->orderBy('sort_order')
+        ->orderBy('id')
+        ->get();
+
+    $childIds = $directChildren->pluck('id')->all();
+    $parentIdsWithGrandchildren = [];
+    if (!empty($childIds)) {
+        $parentIdsWithGrandchildren = DB::table('categories')
+            ->whereIn('parent_id', $childIds)
+            ->where('status', 'active')
+            ->distinct()
+            ->pluck('parent_id')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+    }
+    $hasChildrenSet = array_flip($parentIdsWithGrandchildren);
+
+    $children = $directChildren->map(function ($c) use ($hasChildrenSet) {
+            return [
+                'id' => $c->id,
+                'slug' => $c->slug,
+                'title' => $c->name,
+                'status' => $c->status,
+                'has_children' => isset($hasChildrenSet[(int) $c->id]),
+            ];
+        })
+        ->values()
+        ->all();
+
+    return response()->json([
+        'parent_id' => (int) $id,
+        'parent_slug' => $category->slug,
+        'children' => $children,
+    ]);
 });
 
 // GET /v1/categories/{id}/filter-schema
@@ -412,6 +535,61 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
             return $result;
         })
         ->toArray();
+
+    // Deterministic schema overrides (rollback-safe):
+    // - Fix root-level vehicle_brand contamination for motosiklet (use child brand nodes as source)
+    // - Remove misleading vehicle_brand at ticari-arac root (root children are types, not brands)
+    //
+    // One-click disable: set env PAZAR_FILTER_SCHEMA_BRAND_OVERRIDE=0
+    // Use getenv() instead of env() to avoid config/runtime differences.
+    $enableBrandOverride = getenv('PAZAR_FILTER_SCHEMA_BRAND_OVERRIDE') !== '0';
+    $slug = isset($category->slug) ? (string) $category->slug : '';
+    if ($enableBrandOverride && $slug !== '') {
+        if ($slug === 'motosiklet') {
+            // Optional debug: /filter-schema?__debug=1 will include exception message on failure.
+            $debug = (string) request()->query('__debug', '') === '1';
+            try {
+                $childBrandTitlesRaw = DB::table('categories')
+                    ->where('parent_id', (int) $id)
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->pluck('name')
+                    ->toArray();
+
+                $childBrandTitles = array_values(array_filter(array_map(function ($t) {
+                    return (string) $t;
+                }, is_array($childBrandTitlesRaw) ? $childBrandTitlesRaw : []), function ($t) {
+                    return is_string($t) && $t !== '';
+                }));
+
+                if (!empty($childBrandTitles)) {
+                    $schema = array_map(function ($f) use ($childBrandTitles) {
+                        if (!is_array($f)) return $f;
+                        $k = isset($f['attribute_key']) ? (string) $f['attribute_key'] : (isset($f['key']) ? (string) $f['key'] : '');
+                        if ($k !== 'vehicle_brand') return $f;
+                        if (!isset($f['rules']) || !is_array($f['rules'])) $f['rules'] = [];
+                        $f['rules']['options'] = $childBrandTitles;
+                        return $f;
+                    }, $schema);
+                }
+            } catch (\Throwable $e) {
+                if ($debug) {
+                    return response()->json([
+                        'error' => 'schema_override_exception',
+                        'message' => $e->getMessage(),
+                    ], 500);
+                }
+                // Fail-open: never break the endpoint if override fails.
+            }
+        } elseif ($slug === 'ticari-arac') {
+            // Remove root brand filter to avoid misleading UX. Leaf brand pages handle models/brands correctly.
+            $schema = array_values(array_filter($schema, function ($f) {
+                if (!is_array($f)) return true;
+                $k = isset($f['attribute_key']) ? (string) $f['attribute_key'] : (isset($f['key']) ? (string) $f['key'] : '');
+                return $k !== 'vehicle_brand';
+            }));
+        }
+    }
     
     return response()->json([
         'category_id' => (int) $id,

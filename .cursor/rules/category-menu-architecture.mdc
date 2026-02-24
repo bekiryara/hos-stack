@@ -1,0 +1,55 @@
+---
+description: Category menu architecture - gender isolation, menu_edges, coverage rules
+globs: work/pazar/routes/api/02_catalog.php, work/pazar/routes/menu_edges.trendyol.json
+alwaysApply: false
+---
+
+# Category Menu Architecture
+
+## Critical Invariants
+
+1. **Coverage must stay >=99%** — Run `GET /v1/categories/health` after ANY change to `02_catalog.php` or `menu_edges.trendyol.json`
+2. **Gender isolation** — Erkek > Giyim must NEVER contain: Gelinlik, Etek, Abiye, Tesettür
+3. **Erkek > Giyim**: 20-30 children | **Kadın > Giyim**: 30-45 children
+
+## Two-Layer System
+
+```
+menu_edges.trendyol.json   →   02_catalog.php   →   Menu API (?view=menu)
+(nav structure + gender)       (merge with DB)       (full navigable tree)
+```
+
+- **menu_edges**: Defines top-level nav (Kadın, Erkek, Elektronik...) and hover/sidebar items
+- **DB categories**: 4800+ Trendyol WC categories with parent-child relationships
+- **Merge logic**: Menu edges control structure; DB children fill in deeper levels
+
+## Three Protection Mechanisms (DO NOT REMOVE)
+
+1. **`full_root_override`** — Virtual nav containers (`service-product-kadin`, `-erkek`, `-nav-*`) use ONLY menu_edge children. Canonical DB parents (`-ty-c\d+`) get MERGE to keep deep categories navigable.
+
+2. **`$blockDbMerge` (gender path guard)** — Nav-placement BRANCH nodes under Erkek/Kadın paths keep curated-only children. Prevents gender-blind DB categories leaking into gendered branches.
+
+3. **Explicit WC override** — When `$edgeWcByChildSlug` is set, it ALWAYS overrides slug-based resolution. Bridges nav nodes to their Trendyol WC categories for correct `canonical_category_id` and DB child merge.
+
+## When Editing menu_edges.trendyol.json
+
+- Add `wc` field to nav nodes that should resolve to a Trendyol WC category
+- Use `kind: "sidebar"` for gender-specific additions, `kind: "section"` for top-level
+- Update `edges_count` in the header after adding/removing edges
+- NEVER remove edges under `service-product-kadin` or `service-product-erkek` without checking gender impact
+
+## Verification
+
+Run the Trendyol coverage check after ANY change to these files:
+
+```powershell
+.\ops\_checks\catalog_trendyol_coverage_check.ps1
+```
+
+Or as part of the full spine check:
+
+```powershell
+.\ops\_checks\pazar_spine_check.ps1
+```
+
+7 checks must pass: coverage >= 99%, gender isolation = 0 leaks, Erkek/Kadın Giyim counts in range, >=10 top sections, null CIDs < 5%, menu_edges file integrity.

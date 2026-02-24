@@ -140,6 +140,7 @@ services:
       SESSION_DOMAIN: localhost
       MESSAGING_BASE_URL: http://messaging-api:3000
       MESSAGING_API_KEY: dev-messaging-key
+      PAZAR_MENU_EDGES_PATH: /var/www/html/routes/menu_edges.trendyol.json
     volumes:
       # .env mount removed: stateless runtime, all config from ENV
       - ./work/pazar/resources/views:/var/www/html/resources/views

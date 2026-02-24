@@ -14,6 +14,10 @@ export function getFilterSchema(categoryId) {
   return apiRequest(`/api/v1/categories/${categoryId}/filter-schema`, {}, true);
 }
 
+export function getCategoryChildren(categoryId) {
+  return apiRequest(`/api/v1/categories/${categoryId}/children`, {}, true);
+}
+
 export function getIntentSchema(categoryId) {
   return apiRequest(`/api/v1/categories/${categoryId}/intent-schema`, {}, true);
 }

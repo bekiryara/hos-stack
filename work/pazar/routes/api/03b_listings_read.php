@@ -69,6 +69,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         $query->where('tenant_id', $tenantId);
     }
     
+    // Gender context filter: when browsing under Kadın/Erkek subtree,
+    // only show listings with matching gender_context attribute.
+    if ($request->has('gender_context')) {
+        $gc = (string) $request->input('gender_context');
+        if (in_array($gc, ['kadin', 'erkek', 'cocuk'], true)) {
+            $query->whereRaw("attributes_json->>'gender_context' = ?", [$gc]);
+        }
+    }
+
     // WP-FINAL: Category -> Catalog -> Listing separation (whitelist)
     // If category_id is provided, only allow filter keys that exist in category_filter_schema
     // for that category OR any of its descendants (same CTE used for listings category filter).

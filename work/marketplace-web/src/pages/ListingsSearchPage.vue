@@ -15,6 +15,7 @@
               :categories-tree="categoriesTree"
               mode="search"
               @category-change="onCategorySelectFromPicker"
+              @gender-context="onGenderContext"
             />
           </div>
         </div>
@@ -96,8 +97,9 @@ export default {
       errorFilters: null,
       errorListings: null,
       initialSearchDone: false, // WP-60: Guard to prevent infinite loops
-      searchExecuted: false, // WP-60: Track if search has been executed at least once
-      querySyncTimer: null, // WP-NEXT: debounce URL query sync
+      searchExecuted: false,
+      currentGenderContext: null,
+      querySyncTimer: null,
       syncingFromQuery: false, // prevents state->query loop
       syncingToQuery: false, // prevents query->state loop
       lastSyncedQueryKey: '', // deterministic back/forward hydration
@@ -178,8 +180,10 @@ export default {
   },
   methods: {
     async onCategorySelectFromPicker(nextId) {
-      // Called by CategoryPickerStepper when user selects a category
       await this.onCategorySelect(nextId ? String(nextId) : '');
+    },
+    onGenderContext(gender) {
+      this.currentGenderContext = gender || null;
     },
     async onCategorySelect(nextId) {
       if (!nextId) {
@@ -212,7 +216,6 @@ export default {
         this.filterState = hydrated.filterState;
         this.lastSyncedQueryKey = stableStringify(this.$route.query || {});
 
-        // WP-60: Auto-run initial search after filters load (once only)
         if (!this.initialSearchDone) {
           this.initialSearchDone = true;
           await this.executeSearch(this.filterState);
@@ -236,8 +239,8 @@ export default {
           per_page: 20,
         };
         if (this.q) params.q = String(this.q);
+        if (this.currentGenderContext) params.gender_context = this.currentGenderContext;
 
-        // WP-NEXT: filters empty-safe; determinism in API layer (toStableQueryString)
         const state = filterState ?? this.filterState ?? {};
         const schemaFilters = this.filters ?? [];
         const filterParams = buildListingsApiParamsFromFilterState(schemaFilters, state);
