@@ -1,47 +1,47 @@
 <template>
   <div class="create-rental-page">
-    <h2>Create Rental</h2>
+    <h2>Kiralama Olustur</h2>
     
     <div v-if="authError" class="error">
-      <strong>Authentication Required</strong>
+      <strong>Giris Gerekli</strong>
       <br />
       {{ authError }}
       <br />
-      <router-link to="/login" class="action-link">Go to Login</router-link>
+      <router-link to="/login" class="action-link">Girise Git</router-link>
     </div>
     
     <div v-if="error && !authError" class="error">
       <strong>Error ({{ error.status || 'N/A' }}):</strong> {{ error.errorCode || 'unknown' }}
       <br />
-      {{ error.message || 'Unknown error' }}
+      {{ error.message || 'Bilinmeyen hata' }}
       <div v-if="error.hint" class="error-hint" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-left: 3px solid #dc3545; font-style: italic;">
-        <strong>Hint:</strong> {{ error.hint }}
+        <strong>Ipuclari:</strong> {{ error.hint }}
       </div>
       <div v-if="error.data && error.data.conflicting_rental_id" class="conflict-info">
-        Conflicting Rental ID: {{ error.data.conflicting_rental_id }}
+        Cakisan Kiralama ID: {{ error.data.conflicting_rental_id }}
       </div>
     </div>
     
     <div v-if="success" class="success">
-      <strong>Success!</strong> Rental created with ID: {{ success.id }}
-      <button @click="copyRentalId(success.id, $event)" class="copy-id-btn" title="Copy rental ID">Copy ID</button>
+      <strong>Basarili!</strong> Kiralama olusturuldu. ID: {{ success.id }}
+      <button @click="copyRentalId(success.id, $event)" class="copy-id-btn" title="Kiralama ID kopyala">ID Kopyala</button>
       <br />
-      Status: {{ success.status }}
+      Durum: {{ success.status }}
       <br />
-      Price: {{ formatPrice(success.price_amount, success.price_currency) }}
+      Fiyat: {{ formatPrice(success.price_amount, success.price_currency) }}
       <span v-if="success.billing_model"> • {{ success.billing_model }}</span>
       <br />
       <div class="success-actions">
-        <router-link :to="{ path: '/account', query: { tab: 'rentals' } }" class="action-link">Go to Account</router-link>
-        <router-link v-if="success.listing_id" :to="`/listing/${success.listing_id}`" class="action-link">View Listing</router-link>
-        <router-link v-if="listingCategoryId" :to="`/search/${listingCategoryId}`" class="action-link">Go to Search</router-link>
+        <router-link :to="{ path: '/account', query: { tab: 'rentals' } }" class="action-link">Hesaba Git</router-link>
+        <router-link v-if="success.listing_id" :to="`/listing/${success.listing_id}`" class="action-link">Ilani Gor</router-link>
+        <router-link v-if="listingCategoryId" :to="`/search/${listingCategoryId}`" class="action-link">Aramaya Git</router-link>
       </div>
     </div>
     
     <form v-if="!success && !authError" @submit.prevent="handleSubmit" class="rental-form">
       <div class="form-group">
         <label>
-          Listing ID (UUID) <span class="required">*</span>
+          Ilan ID <span class="required">*</span>
           <input
             v-model="formData.listing_id"
             type="text"
@@ -54,7 +54,7 @@
       
       <div class="form-group">
         <label>
-          Start At (date-time) <span class="required">*</span>
+          Baslangic Tarihi <span class="required">*</span>
           <input
             v-model="formData.start_at"
             type="datetime-local"
@@ -66,7 +66,7 @@
       
       <div class="form-group">
         <label>
-          End At (date-time, must be after start) <span class="required">*</span>
+          Bitis Tarihi <span class="required">*</span>
           <input
             v-model="formData.end_at"
             type="datetime-local"
@@ -77,7 +77,7 @@
       </div>
       
       <button type="submit" :disabled="loading" class="submit-button">
-        {{ loading ? 'Creating...' : 'Create Rental' }}
+        {{ loading ? 'Olusturuluyor...' : 'Kiralama Olustur' }}
       </button>
     </form>
   </div>
@@ -107,7 +107,7 @@ export default {
     // WP-68: Check authentication (userId from token)
     const userId = getUserId();
     if (!userId) {
-      this.authError = 'No authentication token found. Please login first.';
+      this.authError = 'Oturum bulunamadi. Lutfen once giris yapin.';
       return;
     }
     
@@ -128,7 +128,7 @@ export default {
         }
       } catch (err) {
         // Non-fatal: just won't show category in success screen
-        console.warn('Could not load listing category:', err);
+        console.warn('Ilan kategorisi yuklenemedi:', err);
       }
     },
     async handleSubmit() {
@@ -136,12 +136,12 @@ export default {
       const userId = getUserId();
       
       if (!userId) {
-        this.authError = 'No authentication token found. Please login first.';
+        this.authError = 'Oturum bulunamadi. Lutfen once giris yapin.';
         return;
       }
       
       if (!this.formData.listing_id || !this.formData.start_at || !this.formData.end_at) {
-        this.error = { message: 'Please fill all required fields', status: 400 };
+        this.error = { message: 'Lutfen zorunlu alanlari doldurun', status: 400 };
         return;
       }
       
@@ -150,7 +150,7 @@ export default {
       const endAt = new Date(this.formData.end_at).toISOString();
       
       if (endAt <= startAt) {
-        this.error = { message: 'End at must be after start at', status: 400 };
+        this.error = { message: 'Bitis tarihi baslangictan sonra olmalidir', status: 400 };
         return;
       }
       
@@ -183,7 +183,7 @@ export default {
                      err.status === 422 ? '422 → Validation error. Check all required fields.' : null;
         this.error = {
           ...err,
-          hint: hint || (err.message || 'Unknown error'),
+          hint: hint || (err.message || 'Bilinmeyen hata'),
         };
       } finally {
         this.loading = false;
@@ -194,7 +194,7 @@ export default {
         navigator.clipboard.writeText(id).then(() => {
           const btn = event.target;
           const originalText = btn.textContent;
-          btn.textContent = 'Copied!';
+          btn.textContent = 'Kopyalandi!';
           setTimeout(() => {
             btn.textContent = originalText;
           }, 1000);
@@ -335,4 +335,5 @@ export default {
   font-weight: 500;
 }
 </style>
+
 

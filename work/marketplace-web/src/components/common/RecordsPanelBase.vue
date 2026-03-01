@@ -151,8 +151,8 @@ export default {
           const fn = { orders: api.getStoreOrders, rentals: api.getStoreRentals, reservations: api.getStoreReservations }[this.kind];
           const resp = await fn(this.activeTenantId);
           this.items = extractFirmItems(resp);
-          await this.loadFirmListingTitles();
         }
+        await this.loadListingTitles();
       } catch (err) {
         this.errorMsg = err?.message || (typeof err === 'string' ? err : null) || LOAD_ERRORS[this.kind];
         if (this.scope === 'customer') this.items = [];
@@ -164,18 +164,40 @@ export default {
     retry() {
       return this.load();
     },
-    async loadFirmListingTitles() {
-      if (this.scope !== 'firm' || !this.activeTenantId) return;
-      try {
-        const resp = await api.getStoreListings(this.activeTenantId);
-        const rows = extractFirmItems(resp);
-        this.listingTitlesById = rows.reduce((acc, item) => {
-          if (item?.id && item?.title) acc[item.id] = item.title;
-          return acc;
-        }, {});
-      } catch {
+    async loadListingTitles() {
+      const listingIds = [...new Set((this.items || []).map((row) => row?.listing_id).filter(Boolean))];
+      if (!listingIds.length) {
         this.listingTitlesById = {};
+        return;
       }
+
+      if (this.scope === 'firm' && this.activeTenantId) {
+        try {
+          const resp = await api.getStoreListings(this.activeTenantId);
+          const rows = extractFirmItems(resp);
+          this.listingTitlesById = rows.reduce((acc, item) => {
+            if (item?.id && item?.title) acc[item.id] = item.title;
+            return acc;
+          }, {});
+          return;
+        } catch {
+          this.listingTitlesById = {};
+          return;
+        }
+      }
+
+      const pairs = await Promise.all(listingIds.map(async (listingId) => {
+        try {
+          const listing = await api.getListing(listingId);
+          return [listingId, listing?.title || null];
+        } catch {
+          return [listingId, null];
+        }
+      }));
+      this.listingTitlesById = pairs.reduce((acc, [listingId, title]) => {
+        if (listingId && title) acc[listingId] = title;
+        return acc;
+      }, {});
     },
     safe(val) {
       if (val == null || val === '') return '—';

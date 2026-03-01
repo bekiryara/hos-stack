@@ -35,8 +35,8 @@ export default {
     error: { type: String, default: null },
     success: { type: String, default: null },
     empty: { type: Boolean, default: false },
-    emptyText: { type: String, default: 'No data' },
-    retryText: { type: String, default: 'Retry' },
+    emptyText: { type: String, default: 'Veri yok' },
+    retryText: { type: String, default: 'Tekrar dene' },
     onRetry: { type: Function, default: null },
     showWhenEmpty: { type: Boolean, default: true },
   },
@@ -126,3 +126,4 @@ export default {
   color: #666;
 }
 </style>
+
