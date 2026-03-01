@@ -14,29 +14,29 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>{{ scope === 'firm' ? 'Listing ID' : 'Listing ID' }}</th>
-            <th v-if="kind === 'orders'">{{ scope === 'firm' ? 'Toplam' : 'Total' }}</th>
-            <th v-if="kind === 'reservations'">{{ scope === 'firm' ? 'Fiyat' : 'Price' }}</th>
-            <th v-if="kind === 'rentals'">{{ scope === 'firm' ? 'Fiyat' : 'Price' }}</th>
-            <th>{{ scope === 'firm' ? 'Durum' : 'Status' }}</th>
-            <th>{{ scope === 'firm' ? 'Oluşturulma' : 'Created' }}</th>
-            <th v-if="scope === 'firm'">İşlem</th>
+            <th>Ilan</th>
+            <th v-if="kind === 'orders'">Toplam</th>
+            <th v-if="kind === 'reservations'">Fiyat</th>
+            <th v-if="kind === 'rentals'">Fiyat</th>
+            <th>Durum</th>
+            <th>Tarih</th>
+            <th v-if="scope === 'firm'">Islem</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in items" :key="row.id">
-            <td>
+            <td class="mono-cell" :title="safe(row.id)">
               <template v-if="scope === 'customer'">
-                <router-link :to="detailLink(row)" class="id-link">{{ safe(row.id) }}</router-link>
+                <router-link :to="detailLink(row)" class="id-link">{{ shortId(row.id) }}</router-link>
               </template>
-              <template v-else>{{ row.id }}</template>
+              <template v-else>{{ shortId(row.id) }}</template>
             </td>
-            <td>{{ safe(row.listing_id) }}</td>
+            <td :class="titleClass(row)" :title="safe(row.listing_id)">{{ listingDisplay(row) }}</td>
             <td v-if="kind === 'orders'">{{ formatOrderTotal(row) }}</td>
             <td v-if="kind === 'reservations'">{{ formatReservationPrice(row) }}</td>
             <td v-if="kind === 'rentals'">{{ formatRentalPrice(row) }}</td>
-            <td>{{ safe(row.status) }}</td>
-            <td>{{ scope === 'firm' ? formatDate(row.created_at) : safe(row.created_at) }}</td>
+            <td><span class="status-pill">{{ statusLabel(row.status) }}</span></td>
+            <td>{{ formatDate(row.created_at) }}</td>
             <td v-if="scope === 'firm'" class="actions-cell">
               <button
                 type="button"
@@ -44,7 +44,7 @@
                 :disabled="!canApprove(row) || transitioning[row.id]"
                 @click="accept(row.id)"
               >
-                {{ transitioning[row.id] === 'accept' ? 'Working…' : 'Accept' }}
+                {{ transitioning[row.id] === 'accept' ? actionLabel('working') : actionLabel('accept') }}
               </button>
               <button
                 type="button"
@@ -52,7 +52,7 @@
                 :disabled="!canReject(row) || transitioning[row.id]"
                 @click="reject(row.id)"
               >
-                {{ transitioning[row.id] === 'reject' ? 'Working…' : 'Reject' }}
+                {{ transitioning[row.id] === 'reject' ? actionLabel('working') : actionLabel('reject') }}
               </button>
             </td>
           </tr>
@@ -65,20 +65,22 @@
 <script>
 import { api, normalizeListResponse } from '../../api/client.js';
 import { notifySuccess, notifyError } from '../../lib/toast/notify.js';
+import { getActionLabel, getStatusLabel } from '../../lib/displayLabels.js';
+import { formatDisplayDate, formatDisplayPrice, formatShortId } from '../../lib/displayFormatters.js';
 import ActionResultBox from './ActionResultBox.vue';
 import { buildOrderDetailLink, buildRentalDetailLink, buildReservationDetailLink } from '../account/account_record_links.js';
 
-const EMPTY_TEXTS = { orders: 'No orders yet', rentals: 'No rentals yet', reservations: 'No reservations yet' };
+const EMPTY_TEXTS = { orders: 'Henuz siparis yok', rentals: 'Henuz kiralama yok', reservations: 'Henuz rezervasyon yok' };
 const TITLES = {
-  customer: { orders: 'Orders', rentals: 'Rentals', reservations: 'Reservations' },
-  firm: { orders: 'Gelen Siparişler', rentals: 'Gelen Kiralama Talepleri', reservations: 'Gelen Rezervasyonlar' },
+  customer: { orders: 'Siparislerim', rentals: 'Kiralamalarim', reservations: 'Rezervasyonlarim' },
+  firm: { orders: 'Gelen Siparisler', rentals: 'Gelen Kiralama Talepleri', reservations: 'Gelen Rezervasyonlar' },
 };
 const HINTS = {
-  orders: 'Onayla veya Reddet ile sipariş durumunu güncelleyebilirsiniz.',
-  rentals: 'Onayla veya Reddet ile kiralama talebi durumunu güncelleyebilirsiniz.',
-  reservations: 'Onayla veya Reddet ile rezervasyon durumunu güncelleyebilirsiniz.',
+  orders: 'Onayla veya Reddet ile siparis durumunu guncelleyebilirsiniz.',
+  rentals: 'Onayla veya Reddet ile kiralama talebi durumunu guncelleyebilirsiniz.',
+  reservations: 'Onayla veya Reddet ile rezervasyon durumunu guncelleyebilirsiniz.',
 };
-const LOAD_ERRORS = { orders: 'Siparişler yüklenemedi', rentals: 'Kiralamalar yüklenemedi', reservations: 'Rezervasyonlar yüklenemedi' };
+const LOAD_ERRORS = { orders: 'Siparisler yuklenemedi', rentals: 'Kiralamalar yuklenemedi', reservations: 'Rezervasyonlar yuklenemedi' };
 
 function normalizeCustomerItems(res) {
   if (res == null) return [];
@@ -105,6 +107,7 @@ export default {
       loading: false,
       errorMsg: null,
       items: [],
+      listingTitlesById: {},
       transitioning: {},
       loadedOnce: false,
     };
@@ -117,7 +120,7 @@ export default {
       return HINTS[this.kind] || '';
     },
     emptyText() {
-      return EMPTY_TEXTS[this.kind] || 'No data';
+      return EMPTY_TEXTS[this.kind] || 'Henuz veri yok';
     },
   },
   watch: {
@@ -148,6 +151,7 @@ export default {
           const fn = { orders: api.getStoreOrders, rentals: api.getStoreRentals, reservations: api.getStoreReservations }[this.kind];
           const resp = await fn(this.activeTenantId);
           this.items = extractFirmItems(resp);
+          await this.loadFirmListingTitles();
         }
       } catch (err) {
         this.errorMsg = err?.message || (typeof err === 'string' ? err : null) || LOAD_ERRORS[this.kind];
@@ -160,43 +164,55 @@ export default {
     retry() {
       return this.load();
     },
+    async loadFirmListingTitles() {
+      if (this.scope !== 'firm' || !this.activeTenantId) return;
+      try {
+        const resp = await api.getStoreListings(this.activeTenantId);
+        const rows = extractFirmItems(resp);
+        this.listingTitlesById = rows.reduce((acc, item) => {
+          if (item?.id && item?.title) acc[item.id] = item.title;
+          return acc;
+        }, {});
+      } catch {
+        this.listingTitlesById = {};
+      }
+    },
     safe(val) {
-      if (val == null || val === '') return '—';
+      if (val == null || val === '') return '�';
       return val;
     },
     formatDate(dateStr) {
-      if (!dateStr) return '—';
-      try {
-        return new Date(dateStr).toLocaleString();
-      } catch {
-        return dateStr;
-      }
+      return formatDisplayDate(dateStr);
     },
     formatPrice(amount, currency) {
-      const numeric = Number(amount);
-      if (!Number.isFinite(numeric)) return '—';
-      const resolvedCurrency = (typeof currency === 'string' && currency.trim()) || 'TRY';
-      try {
-        return new Intl.NumberFormat(undefined, {
-          style: 'currency',
-          currency: resolvedCurrency,
-          maximumFractionDigits: 2,
-        }).format(numeric);
-      } catch {
-        return `${numeric} ${resolvedCurrency}`;
-      }
+      return formatDisplayPrice(amount, currency);
+    },
+    shortId(value) {
+      return formatShortId(value);
+    },
+    statusLabel(status) {
+      return getStatusLabel(status);
+    },
+    actionLabel(key) {
+      return getActionLabel(key);
+    },
+    titleClass(row) {
+      return this.listingTitlesById[row?.listing_id] ? '' : 'mono-cell';
+    },
+    listingDisplay(row) {
+      return this.listingTitlesById[row?.listing_id] || this.shortId(row?.listing_id);
     },
     formatOrderTotal(row) {
       const totals = row?.totals;
-      if (!totals || typeof totals !== 'object') return '—';
+      if (!totals || typeof totals !== 'object') return '�';
       return this.formatPrice(totals.subtotal, totals.currency);
     },
     formatReservationPrice(row) {
-      if (!row || row.price_amount == null) return '—';
+      if (!row || row.price_amount == null) return '�';
       return this.formatPrice(row.price_amount, row.price_currency);
     },
     formatRentalPrice(row) {
-      if (!row || row.price_amount == null) return '—';
+      if (!row || row.price_amount == null) return '�';
       return this.formatPrice(row.price_amount, row.price_currency);
     },
     detailLink(row) {
@@ -217,11 +233,11 @@ export default {
       try {
         const fns = { orders: api.acceptStoreOrder, rentals: api.acceptStoreRental, reservations: api.acceptStoreReservation };
         await fns[this.kind](id, this.activeTenantId);
-        notifySuccess('Accepted');
+        notifySuccess('Onaylandi');
         await this.load();
       } catch (err) {
-        this.errorMsg = err?.message || err?.data?.message || 'İşlem başarısız';
-        notifyError('Action failed');
+        this.errorMsg = err?.message || err?.data?.message || 'Islem basarisiz';
+        notifyError('Islem basarisiz');
       } finally {
         this.transitioning = { ...this.transitioning, [id]: false };
       }
@@ -233,11 +249,11 @@ export default {
       try {
         const fns = { orders: api.rejectStoreOrder, rentals: api.rejectStoreRental, reservations: api.rejectStoreReservation };
         await fns[this.kind](id, this.activeTenantId);
-        notifySuccess('Rejected');
+        notifySuccess('Reddedildi');
         await this.load();
       } catch (err) {
-        this.errorMsg = err?.message || err?.data?.message || 'İşlem başarısız';
-        notifyError('Action failed');
+        this.errorMsg = err?.message || err?.data?.message || 'Islem basarisiz';
+        notifyError('Islem basarisiz');
       } finally {
         this.transitioning = { ...this.transitioning, [id]: false };
       }
@@ -258,81 +274,77 @@ export default {
 .panel-title {
   margin-top: 0;
   margin-bottom: 0.25rem;
-  color: #333;
 }
 
 .section-hint {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.875rem;
+  margin-top: 0;
   color: #666;
 }
 
-.actions-cell {
-  white-space: nowrap;
-}
-
-.btn-action {
-  display: inline-block;
-  margin-right: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  border-radius: 4px;
-  border: 1px solid #007bff;
-  background: #007bff;
-  color: white;
-  cursor: pointer;
-}
-
-.btn-action:hover {
-  background: #0056b3;
-}
-
-.btn-action:disabled {
-  background: #ccc;
-  border-color: #999;
-  color: #666;
-  cursor: not-allowed;
-}
-
-.btn-action.btn-reject {
-  background: #dc3545;
-  border-color: #dc3545;
-}
-
-.btn-action.btn-reject:hover:not(:disabled) {
-  background: #c82333;
-}
-
-.id-link {
-  color: #0066cc;
-  text-decoration: none;
-}
-
-.id-link:hover {
-  text-decoration: underline;
+.section-list {
+  overflow-x: auto;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border-radius: 4px;
-  overflow: hidden;
+  background: #fff;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
 }
 
 .data-table thead {
   background: #f5f5f5;
 }
 
-.data-table th {
-  padding: 0.75rem;
-  text-align: left;
-  font-weight: 600;
-  border-bottom: 2px solid #ddd;
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  white-space: nowrap;
 }
 
-.data-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #eee;
+.btn-action {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-reject {
+  border-color: #dc2626;
+  background: #dc2626;
+}
+
+.id-link {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.mono-cell {
+  font-family: Consolas, 'Courier New', monospace;
+  white-space: nowrap;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 </style>

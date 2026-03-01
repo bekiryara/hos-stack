@@ -1,44 +1,46 @@
 <template>
   <section class="portal-section">
-    <h3>İlanlarım</h3>
-    <div v-if="loading" class="section-loading">Loading …</div>
+    <h3>Ilanlarim</h3>
+    <div v-if="loading" class="section-loading">Yukleniyor...</div>
     <div v-else-if="error" class="section-error-box">
       <p>{{ error }}</p>
-      <button type="button" class="btn-retry" @click="load">Retry</button>
+      <button type="button" class="btn-retry" @click="load">Tekrar dene</button>
     </div>
-    <div v-else-if="!items.length" class="section-empty">No listings yet</div>
+    <div v-else-if="!items.length" class="section-empty">Henuz ilan yok</div>
     <div v-else class="section-list">
       <table class="data-table">
         <thead>
           <tr>
             <th>ID</th>
-            <th>Başlık</th>
+            <th>Ilan</th>
             <th>Durum</th>
-            <th>Kategori ID</th>
-            <th>Actions</th>
+            <th>Kategori</th>
+            <th>Islem</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td>{{ item.id }}</td>
-            <td>{{ item.title || '—' }}</td>
-            <td>{{ item.status || '—' }}</td>
-            <td>{{ item.category_id || '—' }}</td>
+            <td class="mono-cell" :title="item.id">{{ shortId(item.id) }}</td>
+            <td>{{ item.title || '�' }}</td>
+            <td><span class="status-pill">{{ statusLabel(item.status) }}</span></td>
+            <td class="mono-cell">{{ item.category_id || '�' }}</td>
             <td class="actions-cell">
-              <router-link :to="`/listing/${item.id}`" class="btn-action">View</router-link>
-              <router-link :to="`/listing/${item.id}/message?as=firm`" class="btn-action">Messages</router-link>
-              <router-link :to="`/listing/${item.id}/edit`" class="btn-action btn-secondary">Edit</router-link>
+              <router-link :to="`/listing/${item.id}`" class="btn-action">{{ actionLabel('view') }}</router-link>
+              <router-link :to="`/listing/${item.id}/message?as=firm`" class="btn-action">{{ actionLabel('messages') }}</router-link>
+              <router-link :to="`/listing/${item.id}/edit`" class="btn-action btn-secondary">{{ actionLabel('edit') }}</router-link>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <router-link v-if="activeTenantId" to="/listing/create" class="btn-primary">İlan Ver</router-link>
+    <router-link v-if="activeTenantId" to="/listing/create" class="btn-primary">Ilan ver</router-link>
   </section>
 </template>
 
 <script>
 import { api, normalizeListResponse } from '../../../api/client.js';
+import { getActionLabel, getStatusLabel } from '../../../lib/displayLabels.js';
+import { formatShortId } from '../../../lib/displayFormatters.js';
 
 function extractItems(resp) {
   const { items } = normalizeListResponse(resp);
@@ -69,10 +71,19 @@ export default {
         const resp = await api.getStoreListings(this.activeTenantId);
         this.items = extractItems(resp);
       } catch (err) {
-        this.error = err.message || 'İlanlar yüklenemedi';
+        this.error = err.message || 'Ilanlar yuklenemedi';
       } finally {
         this.loading = false;
       }
+    },
+    shortId(value) {
+      return formatShortId(value);
+    },
+    statusLabel(status) {
+      return getStatusLabel(status);
+    },
+    actionLabel(key) {
+      return getActionLabel(key);
     },
   },
 };
@@ -160,13 +171,6 @@ export default {
   background: #d97706;
 }
 
-.btn-action.btn-disabled {
-  background: #ccc;
-  border-color: #999;
-  color: #666;
-  cursor: not-allowed;
-}
-
 .btn-primary {
   display: inline-block;
   margin-top: 0.75rem;
@@ -193,15 +197,26 @@ export default {
   background: #f5f5f5;
 }
 
-.data-table th {
-  padding: 0.75rem;
-  text-align: left;
-  font-weight: 600;
-  border-bottom: 2px solid #ddd;
-}
-
+.data-table th,
 .data-table td {
   padding: 0.75rem;
+  text-align: left;
   border-bottom: 1px solid #eee;
 }
+
+.mono-cell {
+  font-family: Consolas, 'Courier New', monospace;
+  white-space: nowrap;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
 </style>
+
