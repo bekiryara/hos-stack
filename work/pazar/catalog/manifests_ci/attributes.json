@@ -1,5 +1,3 @@
 [
-  { "key": "city", "value_type": "string", "unit": null, "description": "Şehir" },
-  { "key": "vehicle_price", "value_type": "number", "unit": "TRY", "description": "Fiyat" },
-  { "key": "real_estate_price", "value_type": "number", "unit": "TRY", "description": "Fiyat" }
+  { "key": "city", "value_type": "string", "unit": null, "description": "Şehir" }
 ]

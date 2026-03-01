@@ -42,15 +42,6 @@ import ActionResultBox from '../components/common/ActionResultBox.vue';
 import CreateListingForm from '../components/listing/create/CreateListingForm.vue';
 import CreateListingSuccessBox from '../components/listing/create/CreateListingSuccessBox.vue';
 
-const LEGACY_PRICE_KEYS = [
-  'vehicle_price',
-  'real_estate_price',
-  'product_price',
-  'rent_price',
-  'event_price',
-  'vehicle_price_per_day',
-];
-
 export default {
   name: 'CreateListingPage',
   components: {
@@ -118,18 +109,6 @@ export default {
     }
   },
   methods: {
-    extractCanonicalPrice(attributes) {
-      const source = attributes && typeof attributes === 'object' ? attributes : {};
-      for (const key of LEGACY_PRICE_KEYS) {
-        const raw = source[key];
-        if (raw === null || raw === undefined || raw === '') continue;
-        const numeric = Number(raw);
-        if (Number.isFinite(numeric) && numeric >= 0) {
-          return Math.round(numeric);
-        }
-      }
-      return null;
-    },
     async onCategoryChange(categoryId) {
       if (!categoryId) {
         this.filterSchema = null;
@@ -175,7 +154,7 @@ export default {
         description: formSnapshot.description || null,
         price_amount: Number.isFinite(Number(formSnapshot.price_amount))
           ? Math.round(Number(formSnapshot.price_amount))
-          : this.extractCanonicalPrice(attributes),
+          : null,
         currency: (typeof formSnapshot.currency === 'string' && formSnapshot.currency.trim()) ? formSnapshot.currency.trim().toUpperCase() : 'TRY',
         transaction_modes: formSnapshot.transaction_modes || [],
         attributes: Object.keys(attributes).length > 0 ? attributes : null,

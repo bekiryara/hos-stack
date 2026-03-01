@@ -145,6 +145,7 @@
 <script>
 import CategoryPickerStepper from '../../catalog/CategoryPickerStepper.vue';
 import FilterField from '../../common/FilterField.vue';
+import { isLegacyPriceAttributeKey } from '../../../lib/pricing.js';
 
 export default {
   name: 'CreateListingForm',
@@ -192,7 +193,7 @@ export default {
     visibleFilters() {
       const schema = this.filterSchema;
       const list = schema && Array.isArray(schema.filters) ? schema.filters : [];
-      return list.filter((f) => this.isApplicableForMode(f, this.currentTransactionMode));
+      return list.filter((f) => this.isApplicableForMode(f, this.currentTransactionMode) && !isLegacyPriceAttributeKey(f?.attribute_key));
     },
     hiddenFiltersCount() {
       const schema = this.filterSchema;

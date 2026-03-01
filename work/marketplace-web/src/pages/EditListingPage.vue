@@ -76,6 +76,7 @@ import { categoryLabel, findCategoryById } from '../lib/categoryTree';
 import { normalizeApiError } from '../lib/errors/api_error.js';
 import { notifyApiError, notifyApiSuccess } from '../lib/toast/notify_api.js';
 import { getActiveTenantId } from '../lib/session.js';
+import { isLegacyPriceAttributeKey } from '../lib/pricing.js';
 
 const POLICY_KEYS = new Set(['offer_variant', 'interaction_mode', 'gender_context']);
 
@@ -114,14 +115,14 @@ export default {
       const keys = new Set();
       const filters = Array.isArray(this.filterSchema?.filters) ? this.filterSchema.filters : [];
       filters.forEach((filter) => {
-        if (filter?.attribute_key) keys.add(String(filter.attribute_key));
+        if (filter?.attribute_key && !isLegacyPriceAttributeKey(filter.attribute_key)) keys.add(String(filter.attribute_key));
       });
       POLICY_KEYS.forEach((key) => keys.add(key));
       return keys;
     },
     visibleFilters() {
       const filters = Array.isArray(this.filterSchema?.filters) ? this.filterSchema.filters : [];
-      return filters.filter((filter) => this.isApplicableForMode(filter, this.currentTransactionMode));
+      return filters.filter((filter) => this.isApplicableForMode(filter, this.currentTransactionMode) && !isLegacyPriceAttributeKey(filter?.attribute_key));
     },
     hiddenFiltersCount() {
       const filters = Array.isArray(this.filterSchema?.filters) ? this.filterSchema.filters : [];

@@ -26,34 +26,29 @@ return [
 
     // Card display config: which attribute is the price and what to highlight.
     // Frontend reads this to render listing cards per vertical — one component, all verticals.
+    // Listing price itself is canonical at listings.price_amount / currency.
     'card_display' => [
         'vehicle' => [
-            'price_field' => 'vehicle_price',
             'currency' => 'TRY',
             'highlights' => ['vehicle_model', 'vehicle_year', 'city', 'vehicle_km_bucket'],
         ],
         'konut' => [
-            'price_field' => 'rent_price',
             'currency' => 'TRY',
             'highlights' => ['city', 'room_count', 'area_m2'],
         ],
         'is-yeri' => [
-            'price_field' => 'rent_price',
             'currency' => 'TRY',
             'highlights' => ['city', 'area_m2'],
         ],
         'service-product' => [
-            'price_field' => 'product_price',
             'currency' => 'TRY',
             'highlights' => ['product_brand', 'product_condition'],
         ],
         'events' => [
-            'price_field' => 'event_price',
             'currency' => 'TRY',
             'highlights' => ['city', 'capacity_max'],
         ],
         'food' => [
-            'price_field' => 'product_price',
             'currency' => 'TRY',
             'highlights' => ['city'],
         ],
@@ -126,4 +121,3 @@ return [
         ],
     ],
 ];
-

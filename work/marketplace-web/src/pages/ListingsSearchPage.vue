@@ -68,6 +68,7 @@ import {
 import FiltersPanel from '../components/FiltersPanel.vue';
 import ListingsGrid from '../components/ListingsGrid.vue';
 import CategoryPickerStepper from '../components/catalog/CategoryPickerStepper.vue';
+import { isLegacyPriceAttributeKey } from '../lib/pricing.js';
 
 export default {
   name: 'ListingsSearchPage',
@@ -204,7 +205,7 @@ export default {
         this.errorFilters = null;
         const schema = await getFilterSchemaForCategory(this.categoryId);
         // WP-60: Normalize filters to [] if undefined/null
-        this.filters = (schema && schema.filters) ? schema.filters : [];
+        this.filters = (schema && schema.filters ? schema.filters : []).filter((filter) => !isLegacyPriceAttributeKey(filter?.attribute_key));
         this.loadingFilters = false;
         this.filtersLoaded = true; // WP-60: Mark as loaded even if filters array is empty
         
@@ -381,5 +382,4 @@ export default {
   }
 }
 </style>
-
 

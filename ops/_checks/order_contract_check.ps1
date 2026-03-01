@@ -144,8 +144,14 @@ try {
             category_id = $weddingHallCategoryId
             title = "Test Order Listing $(Get-Date -Format 'yyyyMMddHHmmss')"
             description = 'Test listing for order contract check'
-            transaction_modes = @('sale')
-            attributes = @{ capacity_max = 100 }
+            price_amount = 1000
+            currency = 'TRY'
+            transaction_modes = @('reservation')
+            attributes = @{
+                capacity_max = 100
+                offer_variant = 'reservation'
+                interaction_mode = 'flow'
+            }
         } | ConvertTo-Json
         $storeHeaders = @{
             'Content-Type' = 'application/json'
@@ -255,8 +261,14 @@ if (-not $hasFailures) {
             category_id = $weddingHallCategoryId
             title = "Draft Order Listing $(Get-Date -Format 'yyyyMMddHHmmss')"
             description = 'Draft listing negative test'
+            price_amount = 999
+            currency = 'TRY'
             transaction_modes = @('reservation')
-            attributes = @{ capacity_max = 50 }
+            attributes = @{
+                capacity_max = 50
+                offer_variant = 'reservation'
+                interaction_mode = 'flow'
+            }
         } | ConvertTo-Json
         $storeHeaders = @{
             'Content-Type' = 'application/json'

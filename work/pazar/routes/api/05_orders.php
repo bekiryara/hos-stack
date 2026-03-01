@@ -70,19 +70,13 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     $sellerTenantId = $listing->tenant_id;
     $buyerUserId = $request->attributes->get('requester_user_id');
     
-    // Calculate totals from listing price.
-    // Prefer canonical top-level listing price; fall back to legacy attribute projection.
-    $attrs = json_decode($listing->attributes_json ?? '{}', true) ?: [];
-    $cardDisplay = pazar_card_display_for_category((int) $listing->category_id);
-    $priceField = $cardDisplay['price_field'] ?? null;
+    // Calculate totals from canonical listing price only.
     $unitPrice = is_numeric($listing->price_amount)
         ? (float) $listing->price_amount
-        : (($priceField && isset($attrs[$priceField]) && is_numeric($attrs[$priceField]))
-        ? (float) $attrs[$priceField]
-        : null);
+        : null;
     $currency = (isset($listing->currency) && is_string($listing->currency) && trim($listing->currency) !== '')
         ? strtoupper(trim((string) $listing->currency))
-        : ($cardDisplay['currency'] ?? 'TRY');
+        : 'TRY';
 
     $totals = null;
     if ($unitPrice !== null) {
