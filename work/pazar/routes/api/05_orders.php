@@ -44,6 +44,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
             'message' => "Listing must be published to create orders. Current status: {$listing->status}"
         ], 422);
     }
+
+    try {
+        $pricing = pazar_resolve_transaction_pricing($listing, null);
+    } catch (\InvalidArgumentException $e) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => $e->getMessage()
+        ], 422);
+    }
     
     // Idempotency check (MUST be before order creation)
     // WP-13: Get requester_user_id from request attributes (set by AuthContext middleware)
@@ -70,23 +79,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     $sellerTenantId = $listing->tenant_id;
     $buyerUserId = $request->attributes->get('requester_user_id');
     
-    // Calculate totals from canonical listing price only.
-    $unitPrice = is_numeric($listing->price_amount)
-        ? (float) $listing->price_amount
-        : null;
-    $currency = (isset($listing->currency) && is_string($listing->currency) && trim($listing->currency) !== '')
-        ? strtoupper(trim((string) $listing->currency))
-        : 'TRY';
-
-    $totals = null;
-    if ($unitPrice !== null) {
-        $totals = [
-            'unit_price' => $unitPrice,
-            'quantity' => $quantity,
-            'subtotal' => round($unitPrice * $quantity, 2),
-            'currency' => $currency,
-        ];
-    }
+    $unitPrice = (float) $pricing['price_amount'];
+    $totals = [
+        'pricing_source' => $pricing['pricing_source'],
+        'billing_model' => $pricing['billing_model'],
+        'unit_price' => $unitPrice,
+        'quantity' => $quantity,
+        'subtotal' => round($unitPrice * $quantity, 2),
+        'currency' => $pricing['price_currency'],
+    ];
     
     DB::table('orders')->insert([
         'id' => $orderId,

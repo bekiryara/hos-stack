@@ -181,12 +181,14 @@ $orderHeaders = @{
 Write-Host "[1] Testing POST /api/v1/orders (create order)..." -ForegroundColor Yellow
 try {
     $orderResponse = Invoke-RestMethod -Uri $createOrderUrl -Method Post -Body $orderBody -Headers $orderHeaders -TimeoutSec 15 -ErrorAction Stop
-    if ($orderResponse.id -and $orderResponse.status -eq 'placed') {
+    if ($orderResponse.id -and $orderResponse.status -eq 'placed' -and $orderResponse.totals -and $orderResponse.totals.pricing_source -eq 'listing') {
         $orderId = $orderResponse.id
         Write-Host "PASS: Order created successfully" -ForegroundColor Green
         Write-Host "  Order ID: $orderId" -ForegroundColor Gray
         Write-Host "  Status: $($orderResponse.status)" -ForegroundColor Gray
         Write-Host "  Quantity: $($orderResponse.quantity)" -ForegroundColor Gray
+        Write-Host "  Price: $($orderResponse.totals.unit_price) $($orderResponse.totals.currency)" -ForegroundColor Gray
+        Write-Host "  Pricing Source: $($orderResponse.totals.pricing_source)" -ForegroundColor Gray
     } else {
         Write-Host "FAIL: Order creation returned invalid response" -ForegroundColor Red
         $hasFailures = $true
@@ -206,7 +208,7 @@ if ($orderId -and -not $hasFailures) {
         elseif ($buyerOrders.data -is [Array]) { $ordersArray = $buyerOrders.data }
         elseif ($buyerOrders.items -is [Array]) { $ordersArray = $buyerOrders.items }
         $foundOrder = $ordersArray | Where-Object { $_.id -eq $orderId } | Select-Object -First 1
-        if ($foundOrder) {
+        if ($foundOrder -and $foundOrder.totals -and $foundOrder.totals.pricing_source -eq 'listing') {
             Write-Host "PASS: Created order found in buyer orders" -ForegroundColor Green
         } else {
             Write-Host "FAIL: Created order not found in buyer orders" -ForegroundColor Red
@@ -223,7 +225,7 @@ if ($orderId -and -not $hasFailures) {
     Write-Host "[3] Testing idempotency replay..." -ForegroundColor Yellow
     try {
         $replayResponse = Invoke-RestMethod -Uri $createOrderUrl -Method Post -Body $orderBody -Headers $orderHeaders -TimeoutSec 15 -ErrorAction Stop
-        if ($replayResponse.id -eq $orderId) {
+        if ($replayResponse.id -eq $orderId -and $replayResponse.totals -and $replayResponse.totals.pricing_source -eq 'listing') {
             Write-Host "PASS: Idempotency replay returned same order ID" -ForegroundColor Green
         } else {
             Write-Host "FAIL: Idempotency replay returned different order ID" -ForegroundColor Red
@@ -364,8 +366,8 @@ if (-not $hasFailures) {
         if (-not $canonicalOrder.totals) {
             throw 'Canonical price order did not return totals'
         }
-        if ($canonicalOrder.totals.unit_price -ne 4321 -or $canonicalOrder.totals.subtotal -ne 8642 -or $canonicalOrder.totals.currency -ne 'TRY') {
-            throw "Order totals did not use canonical listing price (unit=$($canonicalOrder.totals.unit_price), subtotal=$($canonicalOrder.totals.subtotal), currency=$($canonicalOrder.totals.currency))"
+        if ($canonicalOrder.totals.unit_price -ne 4321 -or $canonicalOrder.totals.subtotal -ne 8642 -or $canonicalOrder.totals.currency -ne 'TRY' -or $canonicalOrder.totals.pricing_source -ne 'listing') {
+            throw "Order totals did not use canonical listing price (unit=$($canonicalOrder.totals.unit_price), subtotal=$($canonicalOrder.totals.subtotal), currency=$($canonicalOrder.totals.currency), source=$($canonicalOrder.totals.pricing_source))"
         }
 
         Write-Host "PASS: Canonical listing price path works for read + order snapshot" -ForegroundColor Green

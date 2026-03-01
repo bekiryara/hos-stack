@@ -19,6 +19,8 @@
         <li><strong>id:</strong> {{ safe(item.id) }}</li>
         <li><strong>listing_id:</strong> {{ safe(item.listing_id) }}</li>
         <li><strong>quantity:</strong> {{ safe(item.quantity) }}</li>
+        <li><strong>pricing_source:</strong> {{ formatTotalsValue(item.totals, 'pricing_source') }}</li>
+        <li><strong>billing_model:</strong> {{ formatTotalsValue(item.totals, 'billing_model') }}</li>
         <li><strong>unit_price:</strong> {{ formatTotals(item.totals, 'unit_price') }}</li>
         <li><strong>subtotal:</strong> {{ formatTotals(item.totals, 'subtotal') }}</li>
         <li><strong>status:</strong> {{ safe(item.status) }}</li>
@@ -92,6 +94,10 @@ export default {
     formatTotals(totals, field) {
       if (!totals || typeof totals !== 'object') return '—';
       return this.formatPrice(totals[field], totals.currency);
+    },
+    formatTotalsValue(totals, field) {
+      if (!totals || typeof totals !== 'object') return '—';
+      return this.safe(totals[field]);
     },
     async load() {
       this.loadError = null;
