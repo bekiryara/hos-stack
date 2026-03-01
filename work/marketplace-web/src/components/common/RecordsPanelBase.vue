@@ -15,6 +15,7 @@
           <tr>
             <th>ID</th>
             <th>{{ scope === 'firm' ? 'Listing ID' : 'Listing ID' }}</th>
+            <th v-if="kind === 'orders'">{{ scope === 'firm' ? 'Toplam' : 'Total' }}</th>
             <th>{{ scope === 'firm' ? 'Durum' : 'Status' }}</th>
             <th>{{ scope === 'firm' ? 'Oluşturulma' : 'Created' }}</th>
             <th v-if="scope === 'firm'">İşlem</th>
@@ -29,6 +30,7 @@
               <template v-else>{{ row.id }}</template>
             </td>
             <td>{{ safe(row.listing_id) }}</td>
+            <td v-if="kind === 'orders'">{{ formatOrderTotal(row) }}</td>
             <td>{{ safe(row.status) }}</td>
             <td>{{ scope === 'firm' ? formatDate(row.created_at) : safe(row.created_at) }}</td>
             <td v-if="scope === 'firm'" class="actions-cell">
@@ -165,6 +167,25 @@ export default {
       } catch {
         return dateStr;
       }
+    },
+    formatPrice(amount, currency) {
+      const numeric = Number(amount);
+      if (!Number.isFinite(numeric)) return '—';
+      const resolvedCurrency = (typeof currency === 'string' && currency.trim()) || 'TRY';
+      try {
+        return new Intl.NumberFormat(undefined, {
+          style: 'currency',
+          currency: resolvedCurrency,
+          maximumFractionDigits: 2,
+        }).format(numeric);
+      } catch {
+        return `${numeric} ${resolvedCurrency}`;
+      }
+    },
+    formatOrderTotal(row) {
+      const totals = row?.totals;
+      if (!totals || typeof totals !== 'object') return '—';
+      return this.formatPrice(totals.subtotal, totals.currency);
     },
     detailLink(row) {
       const fns = { orders: buildOrderDetailLink, rentals: buildRentalDetailLink, reservations: buildReservationDetailLink };

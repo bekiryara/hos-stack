@@ -510,6 +510,69 @@ if ($listingId) {
 
 Write-Host ""
 
+# Test 6A: PATCH /api/v1/listings/{id} (edit v1 base fields)
+if ($listingId) {
+    Write-Host "[6A] Testing PATCH /api/v1/listings/$listingId..." -ForegroundColor Yellow
+    $patchUrl = "${pazarBaseUrl}/api/v1/listings/${listingId}"
+    $patchedTitle = "Test Wedding Hall Listing (Edited)"
+    $patchedDescription = "Edited via PATCH contract check"
+    $patchBody = @{
+        title = $patchedTitle
+        description = $patchedDescription
+        price_amount = 4321
+        currency = "try"
+        attributes = @{
+            capacity_max = 650
+            offer_variant = "reservation"
+            interaction_mode = "flow"
+        }
+    } | ConvertTo-Json
+
+    try {
+        $headers = @{
+            "Content-Type" = "application/json"
+            "Authorization" = $authToken
+            "X-Active-Tenant-Id" = $tenantId
+        }
+        $patchResponse = Invoke-RestMethod -Uri $patchUrl -Method Patch -Body $patchBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
+
+        if ($patchResponse.title -ne $patchedTitle) {
+            Write-Host "FAIL: PATCH response title mismatch" -ForegroundColor Red
+            $hasFailures = $true
+        } elseif ($patchResponse.price_amount -ne 4321) {
+            Write-Host "FAIL: PATCH response price_amount mismatch" -ForegroundColor Red
+            $hasFailures = $true
+        } elseif ($patchResponse.currency -ne "TRY") {
+            Write-Host "FAIL: PATCH response currency should normalize to TRY, got '$($patchResponse.currency)'" -ForegroundColor Red
+            $hasFailures = $true
+        } else {
+            $patchedGet = Invoke-RestMethod -Uri $patchUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+            if ($patchedGet.title -ne $patchedTitle) {
+                Write-Host "FAIL: Patched listing title not persisted" -ForegroundColor Red
+                $hasFailures = $true
+            } elseif ($patchedGet.price -ne 4321) {
+                Write-Host "FAIL: Patched listing canonical price not visible in read model" -ForegroundColor Red
+                $hasFailures = $true
+            } elseif (-not $patchedGet.attributes -or $patchedGet.attributes.capacity_max -ne 650) {
+                Write-Host "FAIL: Patched attributes not persisted" -ForegroundColor Red
+                $hasFailures = $true
+            } else {
+                Write-Host "PASS: Listing PATCH updated canonical fields and read model" -ForegroundColor Green
+                Write-Host "  Price: $($patchedGet.price) $($patchedGet.price_currency)" -ForegroundColor Gray
+                Write-Host "  capacity_max: $($patchedGet.attributes.capacity_max)" -ForegroundColor Gray
+            }
+        }
+    } catch {
+        Write-Host "FAIL: Patch listing request failed: $($_.Exception.Message)" -ForegroundColor Red
+        $hasFailures = $true
+    }
+} else {
+    Write-Host "[6A] SKIP: Cannot test patch listing (listing ID not available)" -ForegroundColor Yellow
+    $hasFailures = $true
+}
+
+Write-Host ""
+
 # Test 7: GET /api/v1/listings?category_id={weddingHallId}
 if (-not $weddingHallId) {
     Write-Host "[7] SKIP: Cannot test search listings (wedding-hall category ID not available)" -ForegroundColor Yellow

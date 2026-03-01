@@ -548,12 +548,26 @@ if (!function_exists('pazar_normalize_listing_policy_fields')) {
         $listing['attributes'] = $attrs;
         $listing['supports_packages'] = isset($intent['supports_packages']) ? (bool) $intent['supports_packages'] : false;
 
-        // Extract price from attributes using card_display config.
+        // Canonical preference: top-level listing price first, legacy attribute projection second.
         $cardDisplay = pazar_card_display_for_category($categoryId);
         $priceField = $cardDisplay['price_field'] ?? null;
-        if ($priceField && isset($attrs[$priceField]) && is_numeric($attrs[$priceField])) {
-            $listing['price'] = (float) $attrs[$priceField];
-            $listing['price_currency'] = $cardDisplay['currency'] ?? 'TRY';
+        $canonicalPrice = isset($listing['price_amount']) && is_numeric($listing['price_amount'])
+            ? (float) $listing['price_amount']
+            : null;
+        $canonicalCurrency = isset($listing['currency']) && is_string($listing['currency']) && trim($listing['currency']) !== ''
+            ? strtoupper(trim((string) $listing['currency']))
+            : null;
+        $legacyPrice = ($priceField && isset($attrs[$priceField]) && is_numeric($attrs[$priceField]))
+            ? (float) $attrs[$priceField]
+            : null;
+        $legacyCurrency = $cardDisplay['currency'] ?? 'TRY';
+
+        if ($canonicalPrice !== null) {
+            $listing['price'] = $canonicalPrice;
+            $listing['price_currency'] = $canonicalCurrency ?? 'TRY';
+        } elseif ($legacyPrice !== null) {
+            $listing['price'] = $legacyPrice;
+            $listing['price_currency'] = $legacyCurrency;
         } else {
             $listing['price'] = null;
             $listing['price_currency'] = null;

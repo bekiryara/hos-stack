@@ -4,6 +4,7 @@ import CategoriesPage from './pages/CategoriesPage.vue';
 import ListingsSearchPage from './pages/ListingsSearchPage.vue';
 import ListingDetailPage from './pages/ListingDetailPage.vue';
 import CreateListingPage from './pages/CreateListingPage.vue';
+import EditListingPage from './pages/EditListingPage.vue';
 import CreateReservationPage from './pages/CreateReservationPage.vue';
 import CreateRentalPage from './pages/CreateRentalPage.vue';
 import CreateOrderPage from './pages/CreateOrderPage.vue';
@@ -26,6 +27,7 @@ const routes = [
   { path: '/listing/:id', component: ListingDetailPage, props: true },
   { path: '/listing/:id/message', component: MessagingPage, props: true, meta: { requiresAuth: true } },
   { path: '/listing/create', component: CreateListingPage, meta: { requiresAuth: true, requiresFirm: true } },
+  { path: '/listing/:id/edit', component: EditListingPage, props: true, meta: { requiresAuth: true, requiresFirm: true } },
   { path: '/reservation/create', component: CreateReservationPage, meta: { requiresAuth: true } },
   { path: '/rental/create', component: CreateRentalPage, meta: { requiresAuth: true } },
   { path: '/order/create', component: CreateOrderPage, meta: { requiresAuth: true } },
@@ -90,4 +92,3 @@ router.beforeEach((to, from, next) => {
 });
 
 export default router;
-

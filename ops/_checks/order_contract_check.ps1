@@ -306,6 +306,65 @@ if ($orderId -and -not $hasFailures) {
 }
 
 Write-Host ""
+if (-not $hasFailures) {
+    Write-Host "[7] Testing canonical listing price path..." -ForegroundColor Yellow
+    try {
+        $canonicalTitle = "Canonical Price Probe $(Get-Date -Format 'yyyyMMddHHmmss')"
+        $canonicalCreateBody = @{
+            category_id = $weddingHallCategoryId
+            title = $canonicalTitle
+            description = 'Canonical price path probe'
+            price_amount = 4321
+            currency = 'TRY'
+            transaction_modes = @('reservation')
+            attributes = @{ capacity_max = 25 }
+        } | ConvertTo-Json
+        $canonicalStoreHeaders = @{
+            'Content-Type' = 'application/json'
+            'Authorization' = $authToken
+            'X-Active-Tenant-Id' = $tenantId
+            'Idempotency-Key' = 'test-canonical-listing-' + [guid]::NewGuid().ToString()
+        }
+        $canonicalDraft = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings" -Method Post -Body $canonicalCreateBody -Headers $canonicalStoreHeaders -TimeoutSec 15 -ErrorAction Stop
+        $canonicalListingId = $canonicalDraft.id
+
+        Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings/$canonicalListingId/publish" -Method Post -Headers @{
+            'Authorization' = $authToken
+            'X-Active-Tenant-Id' = $tenantId
+        } -TimeoutSec 15 -ErrorAction Stop | Out-Null
+
+        $canonicalListing = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings/$canonicalListingId" -Method Get -TimeoutSec 15 -ErrorAction Stop
+        if ($canonicalListing.price -ne 4321 -or $canonicalListing.price_currency -ne 'TRY') {
+            throw "Listing read did not prefer canonical price_amount (price=$($canonicalListing.price), currency=$($canonicalListing.price_currency))"
+        }
+
+        $canonicalOrderHeaders = @{
+            'Content-Type' = 'application/json'
+            'Authorization' = $authToken
+            'Idempotency-Key' = 'test-canonical-order-' + [guid]::NewGuid().ToString()
+        }
+        $canonicalOrderBody = @{
+            listing_id = $canonicalListingId
+            quantity = 2
+        } | ConvertTo-Json
+        $canonicalOrder = Invoke-RestMethod -Uri $createOrderUrl -Method Post -Body $canonicalOrderBody -Headers $canonicalOrderHeaders -TimeoutSec 15 -ErrorAction Stop
+
+        if (-not $canonicalOrder.totals) {
+            throw 'Canonical price order did not return totals'
+        }
+        if ($canonicalOrder.totals.unit_price -ne 4321 -or $canonicalOrder.totals.subtotal -ne 8642 -or $canonicalOrder.totals.currency -ne 'TRY') {
+            throw "Order totals did not use canonical listing price (unit=$($canonicalOrder.totals.unit_price), subtotal=$($canonicalOrder.totals.subtotal), currency=$($canonicalOrder.totals.currency))"
+        }
+
+        Write-Host "PASS: Canonical listing price path works for read + order snapshot" -ForegroundColor Green
+        Write-Host "  Listing ID: $canonicalListingId" -ForegroundColor Gray
+    } catch {
+        Write-Host "FAIL: Canonical listing price path failed: $($_.Exception.Message)" -ForegroundColor Red
+        $hasFailures = $true
+    }
+}
+
+Write-Host ""
 if ($hasFailures) {
     Write-Host "=== ORDER CONTRACT CHECK: FAIL ===" -ForegroundColor Red
     if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {

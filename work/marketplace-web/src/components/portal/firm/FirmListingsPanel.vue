@@ -27,7 +27,7 @@
             <td class="actions-cell">
               <router-link :to="`/listing/${item.id}`" class="btn-action">View</router-link>
               <router-link :to="`/listing/${item.id}/message?as=firm`" class="btn-action">Messages</router-link>
-              <button type="button" class="btn-action btn-disabled" disabled title="not implemented">Edit</button>
+              <router-link :to="`/listing/${item.id}/edit`" class="btn-action btn-secondary">Edit</router-link>
             </td>
           </tr>
         </tbody>
@@ -149,6 +149,15 @@ export default {
 
 .btn-action:hover {
   background: #0056b3;
+}
+
+.btn-action.btn-secondary {
+  background: #f59e0b;
+  border-color: #d97706;
+}
+
+.btn-action.btn-secondary:hover {
+  background: #d97706;
 }
 
 .btn-action.btn-disabled {

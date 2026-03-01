@@ -68,6 +68,30 @@
     </div>
 
     <div class="form-group">
+      <label class="price-label">
+        Fiyat
+      </label>
+      <div class="price-row">
+        <input
+          v-model.number="local.price_amount"
+          type="number"
+          min="0"
+          step="1"
+          placeholder="Fiyat"
+          class="form-input"
+        />
+        <select v-model="local.currency" class="form-input price-currency">
+          <option value="TRY">TRY</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+      <small class="hint">
+        Canonical fiyat alani. Eski attribute fiyatlari gecis icin ayrica kalabilir.
+      </small>
+    </div>
+
+    <div class="form-group">
       <label>
         İlan Türü <span class="required">*</span>
         <select
@@ -143,6 +167,8 @@ export default {
         category_id: '',
         title: '',
         description: '',
+        price_amount: null,
+        currency: 'TRY',
         transaction_modes: [],
         offer_variant: '',
         attributes: {},
@@ -247,6 +273,8 @@ export default {
         category_id: this.local.category_id,
         title: this.local.title,
         description: this.local.description,
+        price_amount: this.local.price_amount,
+        currency: this.local.currency || 'TRY',
         transaction_modes: [...(this.local.transaction_modes || [])],
         // Submit only visible attrs (do not delete hidden values from local state).
         attributes: filteredAttrs,
@@ -306,6 +334,16 @@ export default {
   margin-top: 0.35rem;
   color: #666;
   font-size: 0.875rem;
+}
+
+.price-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px;
+  gap: 0.75rem;
+}
+
+.price-currency {
+  min-width: 0;
 }
 
 .dot {

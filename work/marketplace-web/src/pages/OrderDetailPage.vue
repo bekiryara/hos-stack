@@ -19,6 +19,8 @@
         <li><strong>id:</strong> {{ safe(item.id) }}</li>
         <li><strong>listing_id:</strong> {{ safe(item.listing_id) }}</li>
         <li><strong>quantity:</strong> {{ safe(item.quantity) }}</li>
+        <li><strong>unit_price:</strong> {{ formatTotals(item.totals, 'unit_price') }}</li>
+        <li><strong>subtotal:</strong> {{ formatTotals(item.totals, 'subtotal') }}</li>
         <li><strong>status:</strong> {{ safe(item.status) }}</li>
         <li><strong>created_at:</strong> {{ safe(item.created_at) }}</li>
         <li><strong>updated_at:</strong> {{ safe(item.updated_at) }}</li>
@@ -40,7 +42,7 @@ export default {
       loading: false,
       loadError: null,
       fetched: null,
-      limited: { id: this.id, listing_id: null, quantity: null, status: null, created_at: null, updated_at: null },
+      limited: { id: this.id, listing_id: null, quantity: null, totals: null, status: null, created_at: null, updated_at: null },
     };
   },
   computed: {
@@ -67,10 +69,29 @@ export default {
         id: this.id,
         listing_id: q.listing_id ?? null,
         quantity: q.quantity ?? null,
+        totals: null,
         status: q.status ?? null,
         created_at: q.created_at ?? null,
         updated_at: q.updated_at ?? null,
       };
+    },
+    formatPrice(amount, currency) {
+      const numeric = Number(amount);
+      if (!Number.isFinite(numeric)) return '—';
+      const resolvedCurrency = (typeof currency === 'string' && currency.trim()) || 'TRY';
+      try {
+        return new Intl.NumberFormat(undefined, {
+          style: 'currency',
+          currency: resolvedCurrency,
+          maximumFractionDigits: 2,
+        }).format(numeric);
+      } catch {
+        return `${numeric} ${resolvedCurrency}`;
+      }
+    },
+    formatTotals(totals, field) {
+      if (!totals || typeof totals !== 'object') return '—';
+      return this.formatPrice(totals[field], totals.currency);
     },
     async load() {
       this.loadError = null;

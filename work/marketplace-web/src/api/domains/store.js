@@ -121,3 +121,15 @@ export function publishListing(id, tenantId) {
     headers,
   });
 }
+
+export function updateListing(id, data, tenantId) {
+  const activeTenantId = tenantId || getActiveTenantIdFromSession();
+  const headers = {
+    'X-Active-Tenant-Id': activeTenantId,
+  };
+  return apiRequest(`/api/v1/listings/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    headers,
+  });
+}
