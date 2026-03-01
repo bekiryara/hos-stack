@@ -20,6 +20,7 @@ $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
 $hosBaseUrl = "http://localhost:3000"
 $providerTenantId = $null
+$activeTenantId = $null
  
 # Load test_auth helper
 if (Test-Path "${scriptDir}\_lib\test_auth.ps1") {
@@ -73,7 +74,72 @@ if (-not $userId) {
 }
 Write-Host "Auth enabled: User ID from token: $userId" -ForegroundColor Gray
 Write-Host ""
- 
+
+# Helper: Extract tenant_id robustly from memberships
+function Get-TenantIdFromMemberships {
+    param([object]$Memberships)
+
+    if (-not $Memberships) { return $null }
+
+    $membershipsArray = $null
+    if ($Memberships -is [Array]) {
+        $membershipsArray = $Memberships
+    } elseif ($Memberships -is [PSCustomObject]) {
+        if ($Memberships.PSObject.Properties['items'] -and $Memberships.items -is [Array]) {
+            $membershipsArray = $Memberships.items
+        } elseif ($Memberships.PSObject.Properties['data'] -and $Memberships.data -is [Array]) {
+            $membershipsArray = $Memberships.data
+        }
+    } elseif ($Memberships.items -is [Array]) {
+        $membershipsArray = $Memberships.items
+    } elseif ($Memberships.data -is [Array]) {
+        $membershipsArray = $Memberships.data
+    }
+
+    if (-not $membershipsArray -or $membershipsArray.Count -eq 0) { return $null }
+
+    foreach ($membership in $membershipsArray) {
+        $tid = $null
+        if ($membership.tenant_id) {
+            $tid = $membership.tenant_id
+        } elseif ($membership.tenant -and $membership.tenant.id) {
+            $tid = $membership.tenant.id
+        } elseif ($membership.tenantId) {
+            $tid = $membership.tenantId
+        } elseif ($membership.store_tenant_id) {
+            $tid = $membership.store_tenant_id
+        }
+
+        if ($tid -and $tid -is [string] -and $tid.Trim().Length -gt 0) {
+            $guidResult = [System.Guid]::Empty
+            if ([System.Guid]::TryParse($tid, [ref]$guidResult)) {
+                return $tid
+            }
+        }
+    }
+
+    return $null
+}
+
+# Acquire active tenant for deterministic listing bootstrap
+Write-Host "[PREP] Resolving active tenant..." -ForegroundColor Yellow
+try {
+    $membershipsResponse = Invoke-RestMethod -Uri "$hosBaseUrl/v1/me/memberships" `
+        -Headers @{ "Authorization" = $authHeader } `
+        -TimeoutSec 10 `
+        -ErrorAction Stop
+    $activeTenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+    if (-not $activeTenantId) {
+        throw "No tenant_id found in memberships"
+    }
+    Write-Host "PASS: Active tenant resolved: $activeTenantId" -ForegroundColor Green
+} catch {
+    Write-Host "FAIL: Could not resolve active tenant: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host ""
+
 # Helper: find wedding-hall category id
 function FindCategoryInTree($tree, $slug) {
     foreach ($item in $tree) {
@@ -86,7 +152,7 @@ function FindCategoryInTree($tree, $slug) {
     return $null
 }
  
-# Test 0: Get or create a published listing (wedding-hall category)
+# Test 0: Get or create a published canonical-priced listing
 Write-Host "[0] Getting or creating published listing for testing..." -ForegroundColor Yellow
 $listingId = $null
 try {
@@ -98,17 +164,43 @@ try {
     }
  
     $listings = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings?category_id=$weddingHallCategoryId&status=published" -Method Get -TimeoutSec 10 -ErrorAction Stop
-    $testListing = $listings | Where-Object { $_.title -like "*Test Wedding Hall Listing*" } | Select-Object -First 1
+    $testListing = $listings | Where-Object { $_.tenant_id -eq $activeTenantId -and [double]($_.price) -gt 0 } | Select-Object -First 1
     if (-not $testListing) {
-        $testListing = $listings | Select-Object -First 1
+        $testListing = $listings | Where-Object { [double]($_.price) -gt 0 } | Select-Object -First 1
     }
     if ($testListing -and $testListing.id) {
         $listingId = $testListing.id
-        Write-Host "PASS: Found existing published listing: $listingId" -ForegroundColor Green
+        Write-Host "PASS: Found existing published canonical-priced listing: $listingId" -ForegroundColor Green
         Write-Host "  Title: $($testListing.title)" -ForegroundColor Gray
+        Write-Host "  Price: $($testListing.price) $($testListing.price_currency)" -ForegroundColor Gray
     } else {
-        Write-Host "FAIL: No published listing found for testing." -ForegroundColor Red
-        exit 1
+        Write-Host "  No suitable listing found. Creating canonical-priced rental listing..." -ForegroundColor Yellow
+        $createListingBody = @{
+            category_id = $weddingHallCategoryId
+            title = "Test Rental Listing (WP-7)"
+            description = "Deterministic rental contract listing"
+            price_amount = 15000
+            currency = "TRY"
+            transaction_modes = @("rental")
+            attributes = @{
+                capacity_max = 500
+                city = "Istanbul"
+                offer_variant = "rental"
+                interaction_mode = "flow"
+            }
+        } | ConvertTo-Json -Compress
+        $createHeaders = @{
+            "Authorization" = $authHeader
+            "X-Active-Tenant-Id" = $activeTenantId
+            "Content-Type" = "application/json"
+        }
+        $createdListing = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings" -Method Post -Headers $createHeaders -Body $createListingBody -TimeoutSec 10 -ErrorAction Stop
+        $listingId = if ($createdListing.id) { $createdListing.id } else { $createdListing.listing_id }
+        Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/listings/$listingId/publish" -Method Post -Headers @{
+            "Authorization" = $authHeader
+            "X-Active-Tenant-Id" = $activeTenantId
+        } -TimeoutSec 10 -ErrorAction Stop | Out-Null
+        Write-Host "PASS: Created and published rental listing: $listingId" -ForegroundColor Green
     }
 } catch {
     Write-Host "FAIL: Could not get listing for test: $($_.Exception.Message)" -ForegroundColor Red
@@ -149,16 +241,18 @@ try {
     }
  
     $resp = Invoke-RestMethod -Uri $createRentalUrl -Method Post -Body $rentalBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
-    if ($resp.id -and $resp.status -eq "requested") {
+    if ($resp.id -and $resp.status -eq "requested" -and $resp.price_amount -and $resp.price_currency -and $resp.pricing_source -eq "listing") {
         $rentalId = $resp.id
         $providerTenantId = $resp.provider_tenant_id
         Write-Host "PASS: Rental created successfully" -ForegroundColor Green
         Write-Host "  Rental ID: $rentalId" -ForegroundColor Gray
         Write-Host "  Status: $($resp.status)" -ForegroundColor Gray
+        Write-Host "  Price: $($resp.price_amount) $($resp.price_currency)" -ForegroundColor Gray
+        Write-Host "  Pricing Source: $($resp.pricing_source)" -ForegroundColor Gray
         Write-Host "  Start: $($resp.start_at)" -ForegroundColor Gray
         Write-Host "  End: $($resp.end_at)" -ForegroundColor Gray
     } else {
-        Write-Host "FAIL: Rental creation returned invalid response" -ForegroundColor Red
+        Write-Host "FAIL: Rental creation returned invalid pricing snapshot response" -ForegroundColor Red
         $hasFailures = $true
     }
 } catch {
@@ -185,11 +279,11 @@ if ($rentalId -and -not $hasFailures) {
         } | ConvertTo-Json
  
         $replay = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/rentals" -Method Post -Body $replayBody -Headers $replayHeaders -TimeoutSec 10 -ErrorAction Stop
-        if ($replay.id -eq $rentalId) {
+        if ($replay.id -eq $rentalId -and $replay.price_amount -and $replay.price_currency -and $replay.pricing_source -eq "listing") {
             Write-Host "PASS: Idempotency replay returned same rental ID" -ForegroundColor Green
             Write-Host "  Rental ID: $($replay.id)" -ForegroundColor Gray
         } else {
-            Write-Host "FAIL: Idempotency replay returned different rental ID" -ForegroundColor Red
+            Write-Host "FAIL: Idempotency replay returned invalid rental snapshot" -ForegroundColor Red
             Write-Host "  Expected: $rentalId" -ForegroundColor Yellow
             Write-Host "  Got: $($replay.id)" -ForegroundColor Yellow
             $hasFailures = $true
@@ -253,11 +347,12 @@ if ($rentalId -and -not $hasFailures) {
                 "Authorization" = $authHeader
             }
             $acceptResp = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/rentals/$rentalId/accept" -Method Post -Headers $acceptHeaders -TimeoutSec 10 -ErrorAction Stop
-            if ($acceptResp.status -eq "accepted") {
+            if ($acceptResp.status -eq "accepted" -and $acceptResp.price_amount -and $acceptResp.price_currency -and $acceptResp.pricing_source -eq "listing") {
                 Write-Host "PASS: Rental accepted successfully" -ForegroundColor Green
                 Write-Host "  Status: $($acceptResp.status)" -ForegroundColor Gray
+                Write-Host "  Price: $($acceptResp.price_amount) $($acceptResp.price_currency)" -ForegroundColor Gray
             } else {
-                Write-Host "FAIL: Accept returned wrong status: $($acceptResp.status)" -ForegroundColor Red
+                Write-Host "FAIL: Accept returned invalid pricing snapshot response" -ForegroundColor Red
                 $hasFailures = $true
             }
         }

@@ -68,6 +68,7 @@ function Get-DevTestJwtToken {
             -Method Post `
             -Body $upsertBody `
             -ContentType "application/json" `
+            -UseBasicParsing `
             -Headers @{
                 "x-hos-api-key" = $HosApiKey
             } `
@@ -198,6 +199,7 @@ function Get-DevTestJwtToken {
             -Method Post `
             -Body $loginBody `
             -ContentType "application/json" `
+            -UseBasicParsing `
             -TimeoutSec 10 `
             -ErrorAction Stop
         

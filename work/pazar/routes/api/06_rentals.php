@@ -42,6 +42,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
             'message' => "Listing must be published to create rentals. Current status: {$listing->status}"
         ], 422);
     }
+
+    try {
+        $pricing = pazar_resolve_transaction_pricing($listing, null);
+    } catch (\InvalidArgumentException $e) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => $e->getMessage()
+        ], 422);
+    }
     
     // Idempotency check (MUST be before overlap check to avoid false conflicts)
     // WP-13: Get requester_user_id from request attributes (set by AuthContext middleware)
@@ -105,6 +114,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'listing_id' => $validated['listing_id'],
         'renter_user_id' => $renterUserId,
         'provider_tenant_id' => $providerTenantId,
+        'pricing_source' => $pricing['pricing_source'],
+        'price_amount' => $pricing['price_amount'],
+        'price_currency' => $pricing['price_currency'],
+        'billing_model' => $pricing['billing_model'],
         'start_at' => $startAt->format('Y-m-d H:i:s'),
         'end_at' => $endAt->format('Y-m-d H:i:s'),
         'status' => 'requested',
@@ -117,6 +130,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'listing_id' => $validated['listing_id'],
         'renter_user_id' => $renterUserId,
         'provider_tenant_id' => $providerTenantId,
+        'pricing_source' => $pricing['pricing_source'],
+        'price_amount' => $pricing['price_amount'],
+        'price_currency' => $pricing['price_currency'],
+        'billing_model' => $pricing['billing_model'],
         'start_at' => $startAt->format('Y-m-d\TH:i:s\Z'),
         'end_at' => $endAt->format('Y-m-d\TH:i:s\Z'),
         'status' => 'requested',
@@ -204,6 +221,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
         'listing_id' => $rental->listing_id,
         'renter_user_id' => $rental->renter_user_id,
         'provider_tenant_id' => $rental->provider_tenant_id,
+        'pricing_source' => $rental->pricing_source ?? null,
+        'price_amount' => $rental->price_amount ?? null,
+        'price_currency' => $rental->price_currency ?? null,
+        'billing_model' => $rental->billing_model ?? null,
         'start_at' => $rental->start_at,
         'end_at' => $rental->end_at,
         'status' => $rental->status,
@@ -240,6 +261,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
         'listing_id' => $rental->listing_id,
         'renter_user_id' => $rental->renter_user_id,
         'provider_tenant_id' => $rental->provider_tenant_id,
+        'pricing_source' => $rental->pricing_source ?? null,
+        'price_amount' => $rental->price_amount ?? null,
+        'price_currency' => $rental->price_currency ?? null,
+        'billing_model' => $rental->billing_model ?? null,
         'start_at' => $rental->start_at,
         'end_at' => $rental->end_at,
         'status' => $rental->status,
@@ -292,5 +317,4 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     $row = DB::table('rentals')->where('id', $id)->first();
     return response()->json(['id' => $row->id, 'status' => $row->status, 'updated_at' => $row->updated_at], 200);
 });
-
 

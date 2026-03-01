@@ -18,6 +18,9 @@
       <ul class="detail-list">
         <li><strong>id:</strong> {{ safe(item.id) }}</li>
         <li><strong>listing_id:</strong> {{ safe(item.listing_id) }}</li>
+        <li><strong>pricing_source:</strong> {{ safe(item.pricing_source) }}</li>
+        <li><strong>price_amount:</strong> {{ formatPrice(item.price_amount, item.price_currency) }}</li>
+        <li><strong>billing_model:</strong> {{ safe(item.billing_model) }}</li>
         <li><strong>start_at:</strong> {{ safe(item.start_at) }}</li>
         <li><strong>end_at:</strong> {{ safe(item.end_at) }}</li>
         <li><strong>status:</strong> {{ safe(item.status) }}</li>
@@ -67,6 +70,10 @@ export default {
       this.limited = {
         id: this.id,
         listing_id: q.listing_id ?? null,
+        pricing_source: q.pricing_source ?? null,
+        price_amount: q.price_amount ?? null,
+        price_currency: q.price_currency ?? null,
+        billing_model: q.billing_model ?? null,
         start_at: q.start_at ?? null,
         end_at: q.end_at ?? null,
         status: q.status ?? null,
@@ -84,6 +91,16 @@ export default {
         this.loadError = (err.message || err.status || 'Request failed').toString();
       } finally {
         this.loading = false;
+      }
+    },
+    formatPrice(amount, currency) {
+      const numeric = Number(amount);
+      if (!Number.isFinite(numeric)) return '—';
+      const c = currency || 'TRY';
+      try {
+        return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: c, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(numeric);
+      } catch {
+        return `${numeric} ${c}`;
       }
     },
   },
