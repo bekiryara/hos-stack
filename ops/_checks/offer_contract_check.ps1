@@ -17,13 +17,81 @@ Write-Host ""
 
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
-$tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo
+$hosBaseUrl = "http://localhost:3000"
+$tenantId = $null
+$authToken = $null
 $listingId = $null
 $offerId = $null
+
+if (Test-Path "${scriptDir}\_lib\test_auth.ps1") {
+    . "${scriptDir}\_lib\test_auth.ps1"
+} else {
+    Write-Host "FAIL: test_auth.ps1 not found" -ForegroundColor Red
+    exit 1
+}
+
+function Get-TenantIdFromMemberships {
+    param([object]$Memberships)
+
+    if (-not $Memberships) {
+        return $null
+    }
+
+    $membershipsArray = $null
+    if ($Memberships -is [Array]) {
+        $membershipsArray = $Memberships
+    } elseif ($Memberships -is [PSCustomObject]) {
+        if ($Memberships.PSObject.Properties['items'] -and $Memberships.items -is [Array]) {
+            $membershipsArray = $Memberships.items
+        } elseif ($Memberships.PSObject.Properties['data'] -and $Memberships.data -is [Array]) {
+            $membershipsArray = $Memberships.data
+        }
+    } elseif ($Memberships.items -is [Array]) {
+        $membershipsArray = $Memberships.items
+    } elseif ($Memberships.data -is [Array]) {
+        $membershipsArray = $Memberships.data
+    }
+
+    if (-not $membershipsArray) {
+        $membershipsArray = @()
+    }
+
+    foreach ($membership in $membershipsArray) {
+        $candidate = $membership.tenant_id
+        if (-not $candidate -and $membership.tenant -and $membership.tenant.id) { $candidate = $membership.tenant.id }
+        if (-not $candidate -and $membership.tenantId) { $candidate = $membership.tenantId }
+        if (-not $candidate -and $membership.store_tenant_id) { $candidate = $membership.store_tenant_id }
+        $parsed = [System.Guid]::Empty
+        if ($candidate -and [System.Guid]::TryParse([string]$candidate, [ref]$parsed)) {
+            return [string]$candidate
+        }
+    }
+
+    return $null
+}
 
 # Generate deterministic idempotency key based on timestamp
 $now = Get-Date
 $idempotencyKey = "test-offer-key-" + $now.ToString("yyyyMMddHHmmss") + "-" + $now.Millisecond.ToString("D3")
+
+Write-Host "[PREP] Acquiring JWT token and tenant_id..." -ForegroundColor Yellow
+try {
+    $apiKey = $env:HOS_API_KEY
+    if (-not $apiKey) { $apiKey = "dev-api-key" }
+    $jwtToken = Get-DevTestJwtToken -HosBaseUrl $hosBaseUrl -HosApiKey $apiKey
+    if (-not $jwtToken) { throw "Failed to obtain JWT token" }
+    $authToken = "Bearer $jwtToken"
+    $env:PRODUCT_TEST_AUTH = $authToken
+    $env:HOS_TEST_AUTH = $authToken
+
+    $membershipsResponse = Invoke-RestMethod -Uri "$hosBaseUrl/v1/me/memberships" -Headers @{ "Authorization" = $authToken } -TimeoutSec 10 -ErrorAction Stop
+    $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+    if (-not $tenantId) { throw "No tenant_id found in memberships" }
+    Write-Host "PASS: tenant_id acquired: $tenantId" -ForegroundColor Green
+} catch {
+    Write-Host "FAIL: Could not bootstrap auth/tenant: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
 
 Write-Host ""
 
@@ -67,73 +135,39 @@ if ($hasFailures) {
 
 Write-Host ""
 
-# Test 1: Get or create DRAFT listing
-Write-Host "[1] Getting or creating DRAFT listing..." -ForegroundColor Yellow
+# Test 1: Create DRAFT listing
+Write-Host "[1] Creating DRAFT listing..." -ForegroundColor Yellow
 
-# First, try to find existing draft or published listing
-$listingsUrl = "${pazarBaseUrl}/api/v1/listings?category_id=${weddingHallCategoryId}&status=all"
 try {
-    $listingsResponse = Invoke-RestMethod -Uri $listingsUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
-    $testListing = $listingsResponse | Where-Object { $_.tenant_id -eq $tenantId } | Select-Object -First 1
-    
-    if ($testListing) {
-        $listingId = $testListing.id
-        Write-Host "PASS: Found existing listing: $listingId" -ForegroundColor Green
-        Write-Host "  Title: $($testListing.title)" -ForegroundColor Gray
-        Write-Host "  Status: $($testListing.status)" -ForegroundColor Gray
-    } else {
-        # Create new draft listing (skip if creation fails, use existing listing)
-        $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
-        $listingBody = @{
-            category_id = $weddingHallCategoryId
-            title = "Test Wedding Hall Listing for WP-9 Offers"
-            description = "Test listing for offers contract check"
-            transaction_modes = @("sale", "rental", "reservation")
-            attributes = @{
-                capacity_max = 100  # Required attribute for wedding-hall category
-            }
-        } | ConvertTo-Json
+    $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
+    $listingBody = @{
+        category_id = $weddingHallCategoryId
+        title = "Test Wedding Hall Listing for WP-9 Offers $(Get-Date -Format 'yyyyMMddHHmmss')"
+        description = "Test listing for offers contract check"
+        transaction_modes = @("reservation")
+        attributes = @{
+            capacity_max = 100
+        }
+    } | ConvertTo-Json
 
-        $listingHeaders = @{
-            "Content-Type" = "application/json"
-            "X-Active-Tenant-Id" = $tenantId
-        }
-        
-        try {
-            $listingResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $listingHeaders -TimeoutSec 10 -ErrorAction Stop
-            
-            if ($listingResponse.id -and $listingResponse.status -eq "draft") {
-                $listingId = $listingResponse.id
-                Write-Host "PASS: Draft listing created successfully" -ForegroundColor Green
-                Write-Host "  Listing ID: $listingId" -ForegroundColor Gray
-                Write-Host "  Status: $($listingResponse.status)" -ForegroundColor Gray
-            } else {
-                Write-Host "FAIL: Listing creation returned invalid response" -ForegroundColor Red
-                $hasFailures = $true
-            }
-        } catch {
-            # If creation fails, try to use any existing listing for the tenant
-            Write-Host "WARN: Listing creation failed, trying to find any existing listing..." -ForegroundColor Yellow
-            $allListingsUrl = "${pazarBaseUrl}/api/v1/listings?status=all"
-            try {
-                $allListings = Invoke-RestMethod -Uri $allListingsUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
-                $anyListing = $allListings | Where-Object { $_.tenant_id -eq $tenantId } | Select-Object -First 1
-                if ($anyListing) {
-                    $listingId = $anyListing.id
-                    Write-Host "PASS: Using existing listing: $listingId" -ForegroundColor Green
-                    Write-Host "  Title: $($anyListing.title)" -ForegroundColor Gray
-                } else {
-                    Write-Host "FAIL: Cannot find any listing for tenant. Create one manually." -ForegroundColor Red
-                    $hasFailures = $true
-                }
-            } catch {
-                Write-Host "FAIL: Could not get listings: $($_.Exception.Message)" -ForegroundColor Red
-                $hasFailures = $true
-            }
-        }
+    $listingHeaders = @{
+        "Content-Type" = "application/json"
+        "Authorization" = $authToken
+        "X-Active-Tenant-Id" = $tenantId
+    }
+
+    $listingResponse = Invoke-RestMethod -Uri $createListingUrl -Method Post -Body $listingBody -Headers $listingHeaders -TimeoutSec 10 -ErrorAction Stop
+    if ($listingResponse.id -and $listingResponse.status -eq "draft") {
+        $listingId = $listingResponse.id
+        Write-Host "PASS: Draft listing created successfully" -ForegroundColor Green
+        Write-Host "  Listing ID: $listingId" -ForegroundColor Gray
+        Write-Host "  Status: $($listingResponse.status)" -ForegroundColor Gray
+    } else {
+        Write-Host "FAIL: Listing creation returned invalid response" -ForegroundColor Red
+        $hasFailures = $true
     }
 } catch {
-    Write-Host "FAIL: Could not get listings: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "FAIL: Could not create listing: $($_.Exception.Message)" -ForegroundColor Red
     $hasFailures = $true
 }
 
@@ -156,6 +190,7 @@ if ($listingId -and -not $hasFailures) {
     $offerHeaders = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $idempotencyKey
+        "Authorization" = $authToken
         "X-Active-Tenant-Id" = $tenantId
     }
     
@@ -208,6 +243,7 @@ if ($offerId -and -not $hasFailures) {
     $offerHeaders = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = $idempotencyKey # Same key
+        "Authorization" = $authToken
         "X-Active-Tenant-Id" = $tenantId
     }
     
@@ -274,6 +310,7 @@ if ($offerId -and -not $hasFailures) {
     
     $deactivateOfferUrl = "${pazarBaseUrl}/api/v1/offers/${offerId}/deactivate"
     $deactivateHeaders = @{
+        "Authorization" = $authToken
         "X-Active-Tenant-Id" = $tenantId
     }
     
@@ -346,6 +383,7 @@ if ($listingId -and -not $hasFailures) {
     
     $invalidHeaders = @{
         "Content-Type" = "application/json"
+        "Authorization" = $authToken
         "Idempotency-Key" = "test-offer-no-tenant-" + $now.ToString("yyyyMMddHHmmss")
         # No X-Active-Tenant-Id header
     }
@@ -388,6 +426,7 @@ if ($listingId -and -not $hasFailures) {
     $invalidBillingHeaders = @{
         "Content-Type" = "application/json"
         "Idempotency-Key" = "test-offer-invalid-billing-" + $now.ToString("yyyyMMddHHmmss")
+        "Authorization" = $authToken
         "X-Active-Tenant-Id" = $tenantId
     }
     

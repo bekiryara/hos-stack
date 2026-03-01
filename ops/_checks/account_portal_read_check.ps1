@@ -17,7 +17,52 @@ Write-Host ""
 
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
-$tenantId = "951ba4eb-9062-40c4-9228-f8d2cfc2f426" # Deterministic UUID for tenant-demo
+$hosBaseUrl = "http://localhost:3000"
+$tenantId = $null
+
+if (Test-Path "${scriptDir}\_lib\test_auth.ps1") {
+    . "${scriptDir}\_lib\test_auth.ps1"
+}
+
+function Get-TenantIdFromMemberships {
+    param([object]$Memberships)
+
+    if (-not $Memberships) {
+        return $null
+    }
+
+    $membershipsArray = $null
+    if ($Memberships -is [Array]) {
+        $membershipsArray = $Memberships
+    } elseif ($Memberships -is [PSCustomObject]) {
+        if ($Memberships.PSObject.Properties['items'] -and $Memberships.items -is [Array]) {
+            $membershipsArray = $Memberships.items
+        } elseif ($Memberships.PSObject.Properties['data'] -and $Memberships.data -is [Array]) {
+            $membershipsArray = $Memberships.data
+        }
+    } elseif ($Memberships.items -is [Array]) {
+        $membershipsArray = $Memberships.items
+    } elseif ($Memberships.data -is [Array]) {
+        $membershipsArray = $Memberships.data
+    }
+
+    if (-not $membershipsArray) {
+        $membershipsArray = @()
+    }
+
+    foreach ($membership in $membershipsArray) {
+        $candidate = $membership.tenant_id
+        if (-not $candidate -and $membership.tenant -and $membership.tenant.id) { $candidate = $membership.tenant.id }
+        if (-not $candidate -and $membership.tenantId) { $candidate = $membership.tenantId }
+        if (-not $candidate -and $membership.store_tenant_id) { $candidate = $membership.store_tenant_id }
+        $parsed = [System.Guid]::Empty
+        if ($candidate -and [System.Guid]::TryParse([string]$candidate, [ref]$parsed)) {
+            return [string]$candidate
+        }
+    }
+
+    return $null
+}
 
 # A) Get auth token from env (PRODUCT_TEST_AUTH or HOS_TEST_AUTH)
 $authHeader = $env:PRODUCT_TEST_AUTH
@@ -25,10 +70,19 @@ if (-not $authHeader) {
     $authHeader = $env:HOS_TEST_AUTH
 }
 if (-not $authHeader) {
-    Write-Host "FAIL: Auth token not found in environment" -ForegroundColor Red
-    Write-Host "  Set `$env:PRODUCT_TEST_AUTH='Bearer <token>'" -ForegroundColor Yellow
-    Write-Host "  Or run: .\ops\ensure_product_test_auth.ps1" -ForegroundColor Yellow
-    exit 1
+    try {
+        $apiKey = $env:HOS_API_KEY
+        if (-not $apiKey) { $apiKey = "dev-api-key" }
+        $jwtToken = Get-DevTestJwtToken -HosBaseUrl $hosBaseUrl -HosApiKey $apiKey
+        if (-not $jwtToken) { throw "Failed to obtain JWT token" }
+        $authHeader = "Bearer $jwtToken"
+        $env:PRODUCT_TEST_AUTH = $authHeader
+        $env:HOS_TEST_AUTH = $authHeader
+    } catch {
+        Write-Host "FAIL: Auth token not found in environment and bootstrap failed" -ForegroundColor Red
+        Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 # Extract token (remove "Bearer " prefix if present)
@@ -76,6 +130,18 @@ if (-not $userId) {
 }
 
 Write-Host "Using user ID from token: $userId" -ForegroundColor Gray
+try {
+    $membershipsResponse = Invoke-RestMethod -Uri "$hosBaseUrl/v1/me/memberships" -Headers @{ "Authorization" = $authHeader } -TimeoutSec 10 -ErrorAction Stop
+    $tenantId = Get-TenantIdFromMemberships -Memberships $membershipsResponse
+} catch {
+    Write-Host "FAIL: Could not fetch memberships: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
+if (-not $tenantId) {
+    Write-Host "FAIL: Could not resolve tenant_id from memberships" -ForegroundColor Red
+    exit 1
+}
+Write-Host "Using tenant ID from memberships: $tenantId" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "Testing 7 Account Portal read endpoints:" -ForegroundColor Yellow
@@ -132,7 +198,7 @@ try {
 Write-Host "[2] Testing GET /v1/orders?seller_tenant_id=${tenantId} (with X-Active-Tenant-Id)..." -ForegroundColor Yellow
 try {
     $url = "${pazarBaseUrl}/api/v1/orders?seller_tenant_id=${tenantId}"
-    $headers = @{ "X-Active-Tenant-Id" = $tenantId }
+    $headers = @{ "Authorization" = $authHeader; "X-Active-Tenant-Id" = $tenantId }
     $response = Invoke-RestMethod -Uri $url -Method Get -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     
     # D) Response shape validation: accept both array and {data, meta} envelope
@@ -212,7 +278,7 @@ try {
 Write-Host "[4] Testing GET /v1/rentals?provider_tenant_id=${tenantId} (with X-Active-Tenant-Id)..." -ForegroundColor Yellow
 try {
     $url = "${pazarBaseUrl}/api/v1/rentals?provider_tenant_id=${tenantId}"
-    $headers = @{ "X-Active-Tenant-Id" = $tenantId }
+    $headers = @{ "Authorization" = $authHeader; "X-Active-Tenant-Id" = $tenantId }
     $response = Invoke-RestMethod -Uri $url -Method Get -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     
     # D) Response shape validation: accept both array and {data, meta} envelope
@@ -292,7 +358,7 @@ try {
 Write-Host "[6] Testing GET /v1/reservations?provider_tenant_id=${tenantId} (with X-Active-Tenant-Id)..." -ForegroundColor Yellow
 try {
     $url = "${pazarBaseUrl}/api/v1/reservations?provider_tenant_id=${tenantId}"
-    $headers = @{ "X-Active-Tenant-Id" = $tenantId }
+    $headers = @{ "Authorization" = $authHeader; "X-Active-Tenant-Id" = $tenantId }
     $response = Invoke-RestMethod -Uri $url -Method Get -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     
     # D) Response shape validation: accept both array and {data, meta} envelope
@@ -333,7 +399,7 @@ Write-Host "[7] Testing GET /v1/listings?tenant_id=${tenantId} (with X-Active-Te
 try {
     # D) Add X-Active-Tenant-Id header (required for store scope)
     $url = "${pazarBaseUrl}/api/v1/listings?tenant_id=${tenantId}"
-    $headers = @{ "X-Active-Tenant-Id" = $tenantId }
+    $headers = @{ "Authorization" = $authHeader; "X-Active-Tenant-Id" = $tenantId }
     $response = Invoke-RestMethod -Uri $url -Method Get -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     
     # D) Response shape validation: accept both array and {data, meta} envelope
@@ -378,10 +444,18 @@ Write-Host ""
 if ($hasFailures) {
     Write-Host "=== ACCOUNT PORTAL READ CHECK: FAIL ===" -ForegroundColor Red
     Write-Host "One or more endpoint checks failed." -ForegroundColor Red
-    exit 1
+    if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+        Invoke-OpsExit -ExitCode 1
+    } else {
+        exit 1
+    }
 } else {
     Write-Host "=== ACCOUNT PORTAL READ CHECK: PASS ===" -ForegroundColor Green
     Write-Host "All 7 Account Portal read endpoints are working correctly." -ForegroundColor Green
-    exit 0
+    if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {
+        Invoke-OpsExit -ExitCode 0
+    } else {
+        exit 0
+    }
 }
 

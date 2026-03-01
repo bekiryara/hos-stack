@@ -22,7 +22,11 @@ Write-Host "  3. Catalog Integrity Check (WP-74)" -ForegroundColor Gray
 Write-Host "  4. Trendyol Category Coverage Check" -ForegroundColor Gray
 Write-Host "  5. Listing Contract Check (WP-3)" -ForegroundColor Gray
 Write-Host "  6. Category Flow Policy Check" -ForegroundColor Gray
-Write-Host "  7. Reservation Contract Check (WP-4)" -ForegroundColor Gray
+Write-Host "  7. Offer Contract Check (WP-9)" -ForegroundColor Gray
+Write-Host "  8. Order Contract Check (WP-6)" -ForegroundColor Gray
+Write-Host "  9. Rental Contract Check (WP-7)" -ForegroundColor Gray
+Write-Host " 10. Reservation Contract Check (WP-4)" -ForegroundColor Gray
+Write-Host " 11. Account Portal Read Check (WP-12)" -ForegroundColor Gray
 Write-Host ""
 
 $checks = @(
@@ -32,7 +36,11 @@ $checks = @(
     @{ Name = "Trendyol Category Coverage"; Script = "catalog_trendyol_coverage_check.ps1"; WP = "Trendyol Coverage" },
     @{ Name = "Listing Contract Check"; Script = "listing_contract_check.ps1"; WP = "WP-3" },
     @{ Name = "Category Flow Policy Check"; Script = "category_flow_policy_check.ps1"; WP = "Category Flow Policy" },
-    @{ Name = "Reservation Contract Check"; Script = "reservation_contract_check.ps1"; WP = "WP-4" }
+    @{ Name = "Offer Contract Check"; Script = "offer_contract_check.ps1"; WP = "WP-9" },
+    @{ Name = "Order Contract Check"; Script = "order_contract_check.ps1"; WP = "WP-6" },
+    @{ Name = "Rental Contract Check"; Script = "rental_contract_check.ps1"; WP = "WP-7" },
+    @{ Name = "Reservation Contract Check"; Script = "reservation_contract_check.ps1"; WP = "WP-4" },
+    @{ Name = "Account Portal Read Check"; Script = "account_portal_read_check.ps1"; WP = "WP-12" }
 )
 
 $results = @()

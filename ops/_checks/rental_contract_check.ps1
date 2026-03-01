@@ -19,6 +19,7 @@ Write-Host ""
 $hasFailures = $false
 $pazarBaseUrl = "http://localhost:8080"
 $hosBaseUrl = "http://localhost:3000"
+$providerTenantId = $null
  
 # Load test_auth helper
 if (Test-Path "${scriptDir}\_lib\test_auth.ps1") {
@@ -150,6 +151,7 @@ try {
     $resp = Invoke-RestMethod -Uri $createRentalUrl -Method Post -Body $rentalBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     if ($resp.id -and $resp.status -eq "requested") {
         $rentalId = $resp.id
+        $providerTenantId = $resp.provider_tenant_id
         Write-Host "PASS: Rental created successfully" -ForegroundColor Green
         Write-Host "  Rental ID: $rentalId" -ForegroundColor Gray
         Write-Host "  Status: $($resp.status)" -ForegroundColor Gray
@@ -242,9 +244,6 @@ Write-Host ""
 if ($rentalId -and -not $hasFailures) {
     Write-Host "[4] Testing POST /api/v1/rentals/{id}/accept (accept rental)..." -ForegroundColor Yellow
     try {
-        # Get rental to find provider_tenant_id
-        $getRental = Invoke-RestMethod -Uri "$pazarBaseUrl/api/v1/rentals/$rentalId" -Method Get -TimeoutSec 10 -ErrorAction Stop
-        $providerTenantId = $getRental.provider_tenant_id
         if (-not $providerTenantId) {
             Write-Host "FAIL: provider_tenant_id not found on rental" -ForegroundColor Red
             $hasFailures = $true
