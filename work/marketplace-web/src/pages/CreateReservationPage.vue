@@ -28,6 +28,9 @@
       <br />
       Status: {{ success.status }}
       <br />
+      Price: {{ formatPrice(success.price_amount, success.price_currency) }}
+      <span v-if="success.billing_model"> • {{ success.billing_model }}</span>
+      <br />
       <div class="success-actions">
         <router-link :to="{ path: '/account', query: { tab: 'reservations' } }" class="action-link">Go to Account</router-link>
         <router-link v-if="success.listing_id" :to="`/listing/${success.listing_id}`" class="action-link">View Listing</router-link>
@@ -220,6 +223,16 @@ export default {
         });
       }
     },
+    formatPrice(amount, currency) {
+      const numeric = Number(amount);
+      if (!Number.isFinite(numeric)) return '—';
+      const c = currency || 'TRY';
+      try {
+        return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: c, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(numeric);
+      } catch {
+        return `${numeric} ${c}`;
+      }
+    },
   },
 };
 </script>
@@ -342,5 +355,4 @@ export default {
   font-weight: 500;
 }
 </style>
-
 

@@ -53,6 +53,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     // - must belong to the same listing
     // - must be active
     $offerId = $validated['offer_id'] ?? null;
+    $offer = null;
     if ($offerId) {
         $offer = DB::table('listing_offers')->where('id', $offerId)->first();
         if (!$offer) {
@@ -73,6 +74,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
                 'message' => 'offer_id must be active'
             ], 422);
         }
+    }
+
+    try {
+        $pricing = pazar_resolve_transaction_pricing($listing, $offer);
+    } catch (\InvalidArgumentException $e) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => $e->getMessage()
+        ], 422);
     }
     
     // Idempotency check (MUST be before overlap check to avoid false conflicts)
@@ -149,6 +159,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'id' => $reservationId,
         'listing_id' => $validated['listing_id'],
         'offer_id' => $offerId,
+        'pricing_source' => $pricing['pricing_source'],
+        'price_amount' => $pricing['price_amount'],
+        'price_currency' => $pricing['price_currency'],
+        'billing_model' => $pricing['billing_model'],
         'provider_tenant_id' => $providerTenantId,
         'requester_user_id' => $requesterUserId,
         'slot_start' => $slotStart->format('Y-m-d H:i:s'),
@@ -163,6 +177,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'id' => $reservationId,
         'listing_id' => $validated['listing_id'],
         'offer_id' => $offerId,
+        'pricing_source' => $pricing['pricing_source'],
+        'price_amount' => $pricing['price_amount'],
+        'price_currency' => $pricing['price_currency'],
+        'billing_model' => $pricing['billing_model'],
         'provider_tenant_id' => $providerTenantId,
         'requester_user_id' => $requesterUserId,
         'slot_start' => $slotStart->format('Y-m-d\TH:i:s\Z'),
@@ -287,6 +305,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
         'id' => $reservation->id,
         'listing_id' => $reservation->listing_id,
         'offer_id' => $reservation->offer_id ?? null,
+        'pricing_source' => $reservation->pricing_source ?? null,
+        'price_amount' => $reservation->price_amount ?? null,
+        'price_currency' => $reservation->price_currency ?? null,
+        'billing_model' => $reservation->billing_model ?? null,
         'provider_tenant_id' => $reservation->provider_tenant_id,
         'requester_user_id' => $reservation->requester_user_id,
         'slot_start' => $reservation->slot_start,
@@ -341,6 +363,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
         'id' => $reservation->id,
         'listing_id' => $reservation->listing_id,
         'offer_id' => $reservation->offer_id ?? null,
+        'pricing_source' => $reservation->pricing_source ?? null,
+        'price_amount' => $reservation->price_amount ?? null,
+        'price_currency' => $reservation->price_currency ?? null,
+        'billing_model' => $reservation->billing_model ?? null,
         'provider_tenant_id' => $reservation->provider_tenant_id,
         'requester_user_id' => $reservation->requester_user_id,
         'slot_start' => $reservation->slot_start,
@@ -396,5 +422,4 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     $row = DB::table('reservations')->where('id', $id)->first();
     return response()->json(['id' => $row->id, 'status' => $row->status, 'updated_at' => $row->updated_at], 200);
 });
-
 

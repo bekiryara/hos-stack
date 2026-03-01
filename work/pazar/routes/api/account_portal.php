@@ -315,6 +315,11 @@ Route::middleware('auth.ctx')->get('/v1/reservations', function (\Illuminate\Htt
                 return [
                     'id' => $reservation->id,
                     'listing_id' => $reservation->listing_id,
+                    'offer_id' => $reservation->offer_id ?? null,
+                    'pricing_source' => $reservation->pricing_source ?? null,
+                    'price_amount' => $reservation->price_amount ?? null,
+                    'price_currency' => $reservation->price_currency ?? null,
+                    'billing_model' => $reservation->billing_model ?? null,
                     'provider_tenant_id' => $reservation->provider_tenant_id,
                     'requester_user_id' => $reservation->requester_user_id,
                     'slot_start' => $reservation->slot_start,
@@ -490,6 +495,11 @@ Route::middleware('auth.ctx')->get('/v1/reservations/{id}', function ($id, \Illu
     $mapped = [
         'id' => $reservation->id,
         'listing_id' => $reservation->listing_id,
+        'offer_id' => $reservation->offer_id ?? null,
+        'pricing_source' => $reservation->pricing_source ?? null,
+        'price_amount' => $reservation->price_amount ?? null,
+        'price_currency' => $reservation->price_currency ?? null,
+        'billing_model' => $reservation->billing_model ?? null,
         'provider_tenant_id' => $reservation->provider_tenant_id,
         'requester_user_id' => $reservation->requester_user_id,
         'slot_start' => $reservation->slot_start,
@@ -501,4 +511,3 @@ Route::middleware('auth.ctx')->get('/v1/reservations/{id}', function ($id, \Illu
     ];
     return response()->json(['data' => $mapped]);
 });
-

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 // Load helpers first (WP-17 v2)
 require_once __DIR__.'/_helpers.php';
+require_once __DIR__.'/pricing_resolver.php';
 
 // Load route modules in deterministic order (WP-17 v2: numbered files for explicit ordering)
 // Order: metrics -> ping -> world_status -> catalog -> listings -> reservations -> orders -> rentals

@@ -16,6 +16,7 @@
             <th>ID</th>
             <th>{{ scope === 'firm' ? 'Listing ID' : 'Listing ID' }}</th>
             <th v-if="kind === 'orders'">{{ scope === 'firm' ? 'Toplam' : 'Total' }}</th>
+            <th v-if="kind === 'reservations'">{{ scope === 'firm' ? 'Fiyat' : 'Price' }}</th>
             <th>{{ scope === 'firm' ? 'Durum' : 'Status' }}</th>
             <th>{{ scope === 'firm' ? 'Oluşturulma' : 'Created' }}</th>
             <th v-if="scope === 'firm'">İşlem</th>
@@ -31,6 +32,7 @@
             </td>
             <td>{{ safe(row.listing_id) }}</td>
             <td v-if="kind === 'orders'">{{ formatOrderTotal(row) }}</td>
+            <td v-if="kind === 'reservations'">{{ formatReservationPrice(row) }}</td>
             <td>{{ safe(row.status) }}</td>
             <td>{{ scope === 'firm' ? formatDate(row.created_at) : safe(row.created_at) }}</td>
             <td v-if="scope === 'firm'" class="actions-cell">
@@ -186,6 +188,10 @@ export default {
       const totals = row?.totals;
       if (!totals || typeof totals !== 'object') return '—';
       return this.formatPrice(totals.subtotal, totals.currency);
+    },
+    formatReservationPrice(row) {
+      if (!row || row.price_amount == null) return '—';
+      return this.formatPrice(row.price_amount, row.price_currency);
     },
     detailLink(row) {
       const fns = { orders: buildOrderDetailLink, rentals: buildRentalDetailLink, reservations: buildReservationDetailLink };

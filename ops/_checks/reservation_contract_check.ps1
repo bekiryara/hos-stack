@@ -296,31 +296,44 @@ if ($hasFailures) {
 $searchUrl = "${pazarBaseUrl}/api/v1/listings?category_id=${weddingHallCategoryId}&status=published"
 try {
     $listingsResponse = Invoke-RestMethod -Uri $searchUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
-    
+    $createFreshListing = $true
+
     if ($listingsResponse -is [Array] -and $listingsResponse.Count -gt 0) {
         # Prefer a listing owned by our active tenant so we can attach offers/packages.
-        $owned = $listingsResponse | Where-Object { $_.tenant_id -eq $tenantId } | Select-Object -First 1
+        $owned = $listingsResponse | Where-Object { $_.tenant_id -eq $tenantId -and [double]($_.price) -gt 0 } | Select-Object -First 1
         $picked = $owned
-        if (-not $picked) { $picked = $listingsResponse[0] }
-        $listingId = $picked.id
-        Write-Host "PASS: Found existing published listing: $listingId" -ForegroundColor Green
-        Write-Host "  Title: $($picked.title)" -ForegroundColor Gray
-        Write-Host "  Capacity Max: $($picked.attributes.capacity_max)" -ForegroundColor Gray
-        if ($picked.tenant_id -ne $tenantId) {
-            Write-Host "  WARN: Picked listing is not owned by active tenant; offer (package) create may fail. Will create our own listing if needed." -ForegroundColor Yellow
+        if (-not $picked) {
+            $picked = $listingsResponse | Where-Object { [double]($_.price) -gt 0 } | Select-Object -First 1
         }
-    } else {
+        if ($picked) {
+            $createFreshListing = $false
+            $listingId = $picked.id
+            Write-Host "PASS: Found existing published canonical-priced listing: $listingId" -ForegroundColor Green
+            Write-Host "  Title: $($picked.title)" -ForegroundColor Gray
+            Write-Host "  Price: $($picked.price) $($picked.price_currency)" -ForegroundColor Gray
+            Write-Host "  Capacity Max: $($picked.attributes.capacity_max)" -ForegroundColor Gray
+            if ($picked.tenant_id -ne $tenantId) {
+                Write-Host "  WARN: Picked listing is not owned by active tenant; offer (package) create may fail. Will create our own listing if needed." -ForegroundColor Yellow
+            }
+        }
+    }
+
+    if ($createFreshListing) {
         # Create a new listing if none exists
-        Write-Host "  No published listing found. Creating new listing..." -ForegroundColor Yellow
+        Write-Host "  No suitable canonical-priced listing found. Creating new listing..." -ForegroundColor Yellow
         $createListingUrl = "${pazarBaseUrl}/api/v1/listings"
         $listingBody = @{
             category_id = $weddingHallCategoryId
             title = "Test Wedding Hall Listing (WP-4.1)"
             description = "Deterministic test listing for reservation contract check"
+            price_amount = 50000
+            currency = "TRY"
             transaction_modes = @("reservation")
             attributes = @{
                 capacity_max = 500
                 city = "Istanbul"
+                offer_variant = "reservation"
+                interaction_mode = "flow"
             }
         } | ConvertTo-Json -Compress
         
@@ -507,12 +520,26 @@ try {
         Write-Host "  Expected: $offerId" -ForegroundColor Yellow
         Write-Host "  Got: $($createResponse.offer_id)" -ForegroundColor Yellow
         $hasFailures = $true
+    } elseif (-not $createResponse.price_amount) {
+        Write-Host "FAIL: Create reservation response missing price_amount snapshot" -ForegroundColor Red
+        $hasFailures = $true
+    } elseif (-not $createResponse.price_currency) {
+        Write-Host "FAIL: Create reservation response missing price_currency snapshot" -ForegroundColor Red
+        $hasFailures = $true
+    } elseif ($offerId -and $createResponse.pricing_source -ne 'offer') {
+        Write-Host "FAIL: Expected pricing_source='offer' when offer_id is used" -ForegroundColor Red
+        $hasFailures = $true
+    } elseif ((-not $offerId) -and $createResponse.pricing_source -ne 'listing') {
+        Write-Host "FAIL: Expected pricing_source='listing' when no offer_id is used" -ForegroundColor Red
+        $hasFailures = $true
     } else {
         $reservationId = $createResponse.id
         Write-Host "PASS: Reservation created successfully" -ForegroundColor Green
         Write-Host "  Reservation ID: $reservationId" -ForegroundColor Gray
         Write-Host "  Status: $($createResponse.status)" -ForegroundColor Gray
         Write-Host "  Party Size: $($createResponse.party_size)" -ForegroundColor Gray
+        Write-Host "  Price: $($createResponse.price_amount) $($createResponse.price_currency)" -ForegroundColor Gray
+        Write-Host "  Pricing Source: $($createResponse.pricing_source)" -ForegroundColor Gray
         if ($offerId) {
             Write-Host "  Offer ID: $($createResponse.offer_id)" -ForegroundColor Gray
         }
