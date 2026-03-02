@@ -1,31 +1,64 @@
-<template>
+﻿<template>
   <div class="transaction-detail">
     <div class="detail-header">
-      <router-link :to="{ path: '/account', query: { tab: 'rentals' } }" class="back-link">← Back to Account</router-link>
-      <h2>Rental {{ safe(item.id) }}</h2>
+      <router-link :to="{ path: '/account', query: { tab: 'rentals' } }" class="back-link">Hesaba don</router-link>
+      <h2>Kiralama Detayi</h2>
     </div>
-    <div v-if="limitedMode" class="limited-banner">
-      {{ loadError ? `Limited view — API fetch failed: ${loadError}` : 'Limited view (no detail endpoint)' }}
+
+    <div v-if="loadError" class="limited-banner">
+      {{ `Sinirli gorunum - API erisimi basarisiz: ${loadError}` }}
     </div>
+
     <SectionShell
-      title="Details"
+      title="Kiralama Ozeti"
       :status="loading ? 'loading' : (loadError ? 'error' : 'ready')"
       :error-message="loadError || ''"
       :empty="!loading && !item.id"
-      empty-text="No data"
+      empty-text="Veri yok"
       @retry="load"
     >
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span class="summary-label">Ilan</span>
+          <span class="summary-value">{{ listingDisplay }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Durum</span>
+          <span class="summary-value"><span class="status-pill">{{ statusLabel(item.status) }}</span></span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Baslangic</span>
+          <span class="summary-value">{{ formatDate(item.start_at) }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Bitis</span>
+          <span class="summary-value">{{ formatDate(item.end_at) }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Fiyat</span>
+          <span class="summary-value">{{ formatPrice(item.price_amount, item.price_currency) }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Talep Tarihi</span>
+          <span class="summary-value">{{ formatDate(item.created_at) }}</span>
+        </div>
+      </div>
+    </SectionShell>
+
+    <SectionShell
+      title="Teknik Bilgiler"
+      :status="loading ? 'loading' : 'ready'"
+      :error-message="''"
+      :empty="false"
+      empty-text=""
+    >
       <ul class="detail-list">
-        <li><strong>id:</strong> {{ safe(item.id) }}</li>
-        <li><strong>listing_id:</strong> {{ safe(item.listing_id) }}</li>
-        <li><strong>pricing_source:</strong> {{ safe(item.pricing_source) }}</li>
-        <li><strong>price_amount:</strong> {{ formatPrice(item.price_amount, item.price_currency) }}</li>
-        <li><strong>billing_model:</strong> {{ safe(item.billing_model) }}</li>
-        <li><strong>start_at:</strong> {{ safe(item.start_at) }}</li>
-        <li><strong>end_at:</strong> {{ safe(item.end_at) }}</li>
-        <li><strong>status:</strong> {{ safe(item.status) }}</li>
-        <li><strong>created_at:</strong> {{ safe(item.created_at) }}</li>
-        <li><strong>updated_at:</strong> {{ safe(item.updated_at) }}</li>
+        <li><strong>Islem Referansi:</strong> {{ safe(item.id) }}</li>
+        <li><strong>Ilan Referansi:</strong> {{ safe(item.listing_id) }}</li>
+        <li><strong>Fiyat Kaynagi:</strong> {{ safe(item.pricing_source) }}</li>
+        <li><strong>Ucretlendirme Modeli:</strong> {{ safe(item.billing_model) }}</li>
+        <li><strong>Olusturulma Tarihi:</strong> {{ formatDate(item.created_at) }}</li>
+        <li><strong>Son Guncellenme Tarihi:</strong> {{ formatDate(item.updated_at) }}</li>
       </ul>
     </SectionShell>
   </div>
@@ -34,6 +67,8 @@
 <script>
 import SectionShell from '../components/portal/SectionShell.vue';
 import { api } from '../api/client.js';
+import { getStatusLabel } from '../lib/displayLabels.js';
+import { formatDisplayDate, formatDisplayPrice } from '../lib/displayFormatters.js';
 
 export default {
   name: 'RentalDetailPage',
@@ -44,7 +79,20 @@ export default {
       loading: false,
       loadError: null,
       fetched: null,
-      limited: { id: this.id, listing_id: null, start_at: null, end_at: null, status: null, created_at: null, updated_at: null },
+      limited: {
+        id: this.id,
+        listing_id: null,
+        listing_title: null,
+        pricing_source: null,
+        price_amount: null,
+        price_currency: null,
+        billing_model: null,
+        start_at: null,
+        end_at: null,
+        status: null,
+        created_at: null,
+        updated_at: null,
+      },
     };
   },
   computed: {
@@ -52,8 +100,8 @@ export default {
       if (this.fetched) return { ...this.fetched, id: this.id };
       return this.limited;
     },
-    limitedMode() {
-      return !this.fetched;
+    listingDisplay() {
+      return this.item?.listing_title || this.safe(this.item?.listing_id);
     },
   },
   mounted() {
@@ -65,11 +113,15 @@ export default {
       if (val == null || val === '') return '—';
       return val;
     },
+    statusLabel(status) {
+      return getStatusLabel(status);
+    },
     buildLimitedFromQuery() {
       const q = this.$route.query;
       this.limited = {
         id: this.id,
         listing_id: q.listing_id ?? null,
+        listing_title: q.listing_title ?? null,
         pricing_source: q.pricing_source ?? null,
         price_amount: q.price_amount ?? null,
         price_currency: q.price_currency ?? null,
@@ -93,26 +145,90 @@ export default {
         this.loading = false;
       }
     },
+    formatDate(dateStr) {
+      return formatDisplayDate(dateStr);
+    },
     formatPrice(amount, currency) {
-      const numeric = Number(amount);
-      if (!Number.isFinite(numeric)) return '—';
-      const c = currency || 'TRY';
-      try {
-        return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: c, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(numeric);
-      } catch {
-        return `${numeric} ${c}`;
-      }
+      return formatDisplayPrice(amount, currency);
     },
   },
 };
 </script>
 
 <style scoped>
-.transaction-detail { max-width: 600px; margin: 0 auto; padding: 1.5rem; }
-.detail-header { margin-bottom: 1rem; }
-.back-link { font-size: 0.9rem; color: #0066cc; text-decoration: none; }
-.back-link:hover { text-decoration: underline; }
-.limited-banner { padding: 0.5rem 1rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 1rem; font-size: 0.9rem; }
-.detail-list { list-style: none; padding: 0; margin: 0; }
-.detail-list li { margin-bottom: 0.35rem; }
+.transaction-detail {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.detail-header {
+  margin-bottom: 1rem;
+}
+
+.back-link {
+  font-size: 0.9rem;
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.limited-banner {
+  padding: 0.5rem 1rem;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.summary-item {
+  padding: 0.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.summary-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.summary-value {
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.detail-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.detail-list li {
+  margin-bottom: 0.45rem;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
 </style>
