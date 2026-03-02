@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 
-// WP-NEXT: Store-scope authz hardening — require Authorization + HOS membership for tenant-bound reads.
+// WP-NEXT: Store-scope authz hardening â€” require Authorization + HOS membership for tenant-bound reads.
 /**
  * Enforce store-scope authz: X-Active-Tenant-Id + Authorization + HOS membership (me).
  * Returns a JSON response to return (4xx/5xx) or null if authorized.
@@ -71,7 +71,8 @@ Route::middleware('auth.ctx')->get('/v1/orders', function (\Illuminate\Http\Requ
             ], 422);
         }
         
-        $query = DB::table('orders');
+        $query = DB::table('orders')
+            ->leftJoin('listings', 'orders.listing_id', '=', 'listings.id');
         
         // Personal scope: Filter by buyer_user_id (WP-13: requires Authorization token)
         if ($request->has('buyer_user_id')) {
@@ -95,7 +96,7 @@ Route::middleware('auth.ctx')->get('/v1/orders', function (\Illuminate\Http\Requ
                 ], 403);
             }
             
-            $query->where('buyer_user_id', $buyerUserId);
+            $query->where('orders.buyer_user_id', $buyerUserId);
         }
         
         // Store scope: Filter by seller_tenant_id (WP-NEXT: auth + HOS membership required)
@@ -106,7 +107,7 @@ Route::middleware('auth.ctx')->get('/v1/orders', function (\Illuminate\Http\Requ
             if ($err !== null) {
                 return $err;
             }
-            $query->where('seller_tenant_id', $sellerTenantId);
+            $query->where('orders.seller_tenant_id', $sellerTenantId);
         }
         
         // Pagination (WP-12.1: per_page default 20, max 50)
@@ -117,7 +118,8 @@ Route::middleware('auth.ctx')->get('/v1/orders', function (\Illuminate\Http\Requ
         // Get total count before pagination
         $total = $query->count();
         
-        $orders = $query->orderBy('created_at', 'desc')
+        $orders = $query->select('orders.*', 'listings.title as listing_title')
+            ->orderBy('orders.created_at', 'desc')
             ->offset($offset)
             ->limit($perPage)
             ->get()
@@ -125,6 +127,7 @@ Route::middleware('auth.ctx')->get('/v1/orders', function (\Illuminate\Http\Requ
                 return [
                     'id' => $order->id,
                     'listing_id' => $order->listing_id,
+                    'listing_title' => $order->listing_title ?? null,
                     'buyer_user_id' => $order->buyer_user_id,
                     'seller_tenant_id' => $order->seller_tenant_id,
                     'quantity' => $order->quantity,
@@ -166,7 +169,8 @@ Route::middleware('auth.ctx')->get('/v1/rentals', function (\Illuminate\Http\Req
             ], 422);
         }
         
-        $query = DB::table('rentals');
+        $query = DB::table('rentals')
+            ->leftJoin('listings', 'rentals.listing_id', '=', 'listings.id');
         
         // Personal scope: Filter by renter_user_id (WP-13: requires Authorization token)
         if ($request->has('renter_user_id')) {
@@ -190,7 +194,7 @@ Route::middleware('auth.ctx')->get('/v1/rentals', function (\Illuminate\Http\Req
                 ], 403);
             }
             
-            $query->where('renter_user_id', $renterUserId);
+            $query->where('rentals.renter_user_id', $renterUserId);
         }
         
         // Store scope: Filter by provider_tenant_id (WP-NEXT: auth + HOS membership required)
@@ -201,7 +205,7 @@ Route::middleware('auth.ctx')->get('/v1/rentals', function (\Illuminate\Http\Req
             if ($err !== null) {
                 return $err;
             }
-            $query->where('provider_tenant_id', $providerTenantId);
+            $query->where('rentals.provider_tenant_id', $providerTenantId);
         }
         
         // Pagination (WP-12.1: per_page default 20, max 50)
@@ -212,7 +216,8 @@ Route::middleware('auth.ctx')->get('/v1/rentals', function (\Illuminate\Http\Req
         // Get total count before pagination
         $total = $query->count();
         
-        $rentals = $query->orderBy('created_at', 'desc')
+        $rentals = $query->select('rentals.*', 'listings.title as listing_title')
+            ->orderBy('rentals.created_at', 'desc')
             ->offset($offset)
             ->limit($perPage)
             ->get()
@@ -220,6 +225,7 @@ Route::middleware('auth.ctx')->get('/v1/rentals', function (\Illuminate\Http\Req
                 return [
                     'id' => $rental->id,
                     'listing_id' => $rental->listing_id,
+                    'listing_title' => $rental->listing_title ?? null,
                     'renter_user_id' => $rental->renter_user_id,
                     'provider_tenant_id' => $rental->provider_tenant_id,
                     'pricing_source' => $rental->pricing_source ?? null,
@@ -265,7 +271,8 @@ Route::middleware('auth.ctx')->get('/v1/reservations', function (\Illuminate\Htt
             ], 422);
         }
         
-        $query = DB::table('reservations');
+        $query = DB::table('reservations')
+            ->leftJoin('listings', 'reservations.listing_id', '=', 'listings.id');
         
         // Personal scope: Filter by requester_user_id (WP-13: requires Authorization token)
         if ($request->has('requester_user_id')) {
@@ -289,7 +296,7 @@ Route::middleware('auth.ctx')->get('/v1/reservations', function (\Illuminate\Htt
                 ], 403);
             }
             
-            $query->where('requester_user_id', $requesterUserId);
+            $query->where('reservations.requester_user_id', $requesterUserId);
         }
         
         // Store scope: Filter by provider_tenant_id (WP-NEXT: auth + HOS membership required)
@@ -300,7 +307,7 @@ Route::middleware('auth.ctx')->get('/v1/reservations', function (\Illuminate\Htt
             if ($err !== null) {
                 return $err;
             }
-            $query->where('provider_tenant_id', $providerTenantId);
+            $query->where('reservations.provider_tenant_id', $providerTenantId);
         }
         
         // Pagination (WP-12.1: per_page default 20, max 50)
@@ -311,7 +318,8 @@ Route::middleware('auth.ctx')->get('/v1/reservations', function (\Illuminate\Htt
         // Get total count before pagination
         $total = $query->count();
         
-        $reservations = $query->orderBy('created_at', 'desc')
+        $reservations = $query->select('reservations.*', 'listings.title as listing_title')
+            ->orderBy('reservations.created_at', 'desc')
             ->offset($offset)
             ->limit($perPage)
             ->get()
@@ -319,6 +327,7 @@ Route::middleware('auth.ctx')->get('/v1/reservations', function (\Illuminate\Htt
                 return [
                     'id' => $reservation->id,
                     'listing_id' => $reservation->listing_id,
+                    'listing_title' => $reservation->listing_title ?? null,
                     'offer_id' => $reservation->offer_id ?? null,
                     'pricing_source' => $reservation->pricing_source ?? null,
                     'price_amount' => $reservation->price_amount ?? null,
@@ -354,7 +363,7 @@ Route::middleware('auth.ctx')->get('/v1/reservations', function (\Illuminate\Htt
     }
 });
 
-// WP-NEXT: Transactions getById — GET /v1/orders/{id} (read-only, personal or store scope)
+// WP-NEXT: Transactions getById â€” GET /v1/orders/{id} (read-only, personal or store scope)
 Route::middleware('auth.ctx')->get('/v1/orders/{id}', function ($id, \Illuminate\Http\Request $request) {
     if (!\Illuminate\Support\Str::isUuid($id)) {
         return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Invalid id format'], 422);
@@ -365,7 +374,9 @@ Route::middleware('auth.ctx')->get('/v1/orders/{id}', function ($id, \Illuminate
             'message' => 'Either buyer_user_id or seller_tenant_id parameter is required'
         ], 422);
     }
-    $query = DB::table('orders')->where('id', $id);
+    $query = DB::table('orders')
+        ->leftJoin('listings', 'orders.listing_id', '=', 'listings.id')
+        ->where('orders.id', $id);
     if ($request->has('buyer_user_id')) {
         $tokenUserId = $request->attributes->get('requester_user_id');
         $buyerUserId = $request->input('buyer_user_id');
@@ -375,7 +386,7 @@ Route::middleware('auth.ctx')->get('/v1/orders/{id}', function ($id, \Illuminate
         if ($tokenUserId !== $buyerUserId) {
             return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Cannot query orders for other users (token user_id must match buyer_user_id)'], 403);
         }
-        $query->where('buyer_user_id', $buyerUserId);
+        $query->where('orders.buyer_user_id', $buyerUserId);
     }
     if ($request->has('seller_tenant_id')) {
         $sellerTenantId = $request->input('seller_tenant_id');
@@ -390,15 +401,16 @@ Route::middleware('auth.ctx')->get('/v1/orders/{id}', function ($id, \Illuminate
         if ($tenantIdHeader !== $sellerTenantId) {
             return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'X-Active-Tenant-Id header must match seller_tenant_id parameter'], 403);
         }
-        $query->where('seller_tenant_id', $sellerTenantId);
+        $query->where('orders.seller_tenant_id', $sellerTenantId);
     }
-    $order = $query->first();
+    $order = $query->select('orders.*', 'listings.title as listing_title')->first();
     if (!$order) {
         return response()->json(['error' => 'order_not_found', 'message' => "Order with id {$id} not found"], 404);
     }
     $mapped = [
         'id' => $order->id,
         'listing_id' => $order->listing_id,
+        'listing_title' => $order->listing_title ?? null,
         'buyer_user_id' => $order->buyer_user_id,
         'seller_tenant_id' => $order->seller_tenant_id,
         'quantity' => $order->quantity,
@@ -410,7 +422,7 @@ Route::middleware('auth.ctx')->get('/v1/orders/{id}', function ($id, \Illuminate
     return response()->json(['data' => $mapped]);
 });
 
-// WP-NEXT: Transactions getById — GET /v1/rentals/{id} (read-only, personal or store scope)
+// WP-NEXT: Transactions getById â€” GET /v1/rentals/{id} (read-only, personal or store scope)
 Route::middleware('auth.ctx')->get('/v1/rentals/{id}', function ($id, \Illuminate\Http\Request $request) {
     if (!\Illuminate\Support\Str::isUuid($id)) {
         return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Invalid id format'], 422);
@@ -421,7 +433,9 @@ Route::middleware('auth.ctx')->get('/v1/rentals/{id}', function ($id, \Illuminat
             'message' => 'Either renter_user_id or provider_tenant_id parameter is required'
         ], 422);
     }
-    $query = DB::table('rentals')->where('id', $id);
+    $query = DB::table('rentals')
+        ->leftJoin('listings', 'rentals.listing_id', '=', 'listings.id')
+        ->where('rentals.id', $id);
     if ($request->has('renter_user_id')) {
         $tokenUserId = $request->attributes->get('requester_user_id');
         $renterUserId = $request->input('renter_user_id');
@@ -431,7 +445,7 @@ Route::middleware('auth.ctx')->get('/v1/rentals/{id}', function ($id, \Illuminat
         if ($tokenUserId !== $renterUserId) {
             return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Cannot query rentals for other users (token user_id must match renter_user_id)'], 403);
         }
-        $query->where('renter_user_id', $renterUserId);
+        $query->where('rentals.renter_user_id', $renterUserId);
     }
     if ($request->has('provider_tenant_id')) {
         $providerTenantId = $request->input('provider_tenant_id');
@@ -440,15 +454,16 @@ Route::middleware('auth.ctx')->get('/v1/rentals/{id}', function ($id, \Illuminat
         if ($err !== null) {
             return $err;
         }
-        $query->where('provider_tenant_id', $providerTenantId);
+        $query->where('rentals.provider_tenant_id', $providerTenantId);
     }
-    $rental = $query->first();
+    $rental = $query->select('rentals.*', 'listings.title as listing_title')->first();
     if (!$rental) {
         return response()->json(['error' => 'rental_not_found', 'message' => "Rental with id {$id} not found"], 404);
     }
     $mapped = [
         'id' => $rental->id,
         'listing_id' => $rental->listing_id,
+        'listing_title' => $rental->listing_title ?? null,
         'renter_user_id' => $rental->renter_user_id,
         'provider_tenant_id' => $rental->provider_tenant_id,
         'pricing_source' => $rental->pricing_source ?? null,
@@ -464,7 +479,7 @@ Route::middleware('auth.ctx')->get('/v1/rentals/{id}', function ($id, \Illuminat
     return response()->json(['data' => $mapped]);
 });
 
-// WP-NEXT: Transactions getById — GET /v1/reservations/{id} (read-only, personal or store scope)
+// WP-NEXT: Transactions getById â€” GET /v1/reservations/{id} (read-only, personal or store scope)
 Route::middleware('auth.ctx')->get('/v1/reservations/{id}', function ($id, \Illuminate\Http\Request $request) {
     if (!\Illuminate\Support\Str::isUuid($id)) {
         return response()->json(['error' => 'VALIDATION_ERROR', 'message' => 'Invalid id format'], 422);
@@ -475,7 +490,9 @@ Route::middleware('auth.ctx')->get('/v1/reservations/{id}', function ($id, \Illu
             'message' => 'Either requester_user_id or provider_tenant_id parameter is required'
         ], 422);
     }
-    $query = DB::table('reservations')->where('id', $id);
+    $query = DB::table('reservations')
+        ->leftJoin('listings', 'reservations.listing_id', '=', 'listings.id')
+        ->where('reservations.id', $id);
     if ($request->has('requester_user_id')) {
         $tokenUserId = $request->attributes->get('requester_user_id');
         $requesterUserId = $request->input('requester_user_id');
@@ -485,7 +502,7 @@ Route::middleware('auth.ctx')->get('/v1/reservations/{id}', function ($id, \Illu
         if ($tokenUserId !== $requesterUserId) {
             return response()->json(['error' => 'FORBIDDEN_SCOPE', 'message' => 'Cannot query reservations for other users (token user_id must match requester_user_id)'], 403);
         }
-        $query->where('requester_user_id', $requesterUserId);
+        $query->where('reservations.requester_user_id', $requesterUserId);
     }
     if ($request->has('provider_tenant_id')) {
         $providerTenantId = $request->input('provider_tenant_id');
@@ -494,15 +511,16 @@ Route::middleware('auth.ctx')->get('/v1/reservations/{id}', function ($id, \Illu
         if ($err !== null) {
             return $err;
         }
-        $query->where('provider_tenant_id', $providerTenantId);
+        $query->where('reservations.provider_tenant_id', $providerTenantId);
     }
-    $reservation = $query->first();
+    $reservation = $query->select('reservations.*', 'listings.title as listing_title')->first();
     if (!$reservation) {
         return response()->json(['error' => 'reservation_not_found', 'message' => "Reservation with id {$id} not found"], 404);
     }
     $mapped = [
         'id' => $reservation->id,
         'listing_id' => $reservation->listing_id,
+        'listing_title' => $reservation->listing_title ?? null,
         'offer_id' => $reservation->offer_id ?? null,
         'pricing_source' => $reservation->pricing_source ?? null,
         'price_amount' => $reservation->price_amount ?? null,
@@ -519,3 +537,5 @@ Route::middleware('auth.ctx')->get('/v1/reservations/{id}', function ($id, \Illu
     ];
     return response()->json(['data' => $mapped]);
 });
+
+

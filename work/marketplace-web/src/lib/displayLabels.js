@@ -1,4 +1,4 @@
-const STATUS_LABELS = {
+﻿const STATUS_LABELS = {
   placed: 'Siparis alindi',
   requested: 'Talep geldi',
   accepted: 'Onaylandi',
@@ -12,13 +12,14 @@ const ACTION_LABELS = {
   reject: 'Reddet',
   working: 'Calisiyor...',
   view: 'Gor',
+  detail: 'Detay',
   messages: 'Mesajlar',
   edit: 'Duzenle',
 };
 
 export function getStatusLabel(status) {
   const key = String(status || '').trim().toLowerCase();
-  return STATUS_LABELS[key] || (status || '�');
+  return STATUS_LABELS[key] || (status || '—');
 }
 
 export function getActionLabel(key) {

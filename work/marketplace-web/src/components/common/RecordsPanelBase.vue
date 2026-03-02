@@ -1,4 +1,4 @@
-<template>
+ï»¿<template>
   <section class="records-panel-base">
     <h3 class="panel-title">{{ titleDisplay }}</h3>
     <p v-if="scope === 'firm'" class="section-hint">{{ hintDisplay }}</p>
@@ -13,30 +13,31 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>Ref</th>
             <th>Ilan</th>
             <th v-if="kind === 'orders'">Toplam</th>
             <th v-if="kind === 'reservations'">Fiyat</th>
             <th v-if="kind === 'rentals'">Fiyat</th>
             <th>Durum</th>
             <th>Tarih</th>
+            <th>Detay</th>
             <th v-if="scope === 'firm'">Islem</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in items" :key="row.id">
-            <td class="mono-cell" :title="safe(row.id)">
-              <template v-if="scope === 'customer'">
-                <router-link :to="detailLink(row)" class="id-link">{{ shortId(row.id) }}</router-link>
-              </template>
-              <template v-else>{{ shortId(row.id) }}</template>
+            <td class="mono-cell" :title="safe(row.id)">{{ shortId(row.id) }}</td>
+            <td :class="titleClass(row)" :title="safe(row.listing_id)">
+              <router-link :to="listingLink(row)" class="title-link">{{ listingDisplay(row) }}</router-link>
             </td>
-            <td :class="titleClass(row)" :title="safe(row.listing_id)">{{ listingDisplay(row) }}</td>
             <td v-if="kind === 'orders'">{{ formatOrderTotal(row) }}</td>
             <td v-if="kind === 'reservations'">{{ formatReservationPrice(row) }}</td>
             <td v-if="kind === 'rentals'">{{ formatRentalPrice(row) }}</td>
             <td><span class="status-pill">{{ statusLabel(row.status) }}</span></td>
             <td>{{ formatDate(row.created_at) }}</td>
+            <td>
+              <router-link :to="detailLink(row)" class="btn-action btn-detail">{{ actionLabel('detail') }}</router-link>
+            </td>
             <td v-if="scope === 'firm'" class="actions-cell">
               <button
                 type="button"
@@ -107,7 +108,6 @@ export default {
       loading: false,
       errorMsg: null,
       items: [],
-      listingTitlesById: {},
       transitioning: {},
       loadedOnce: false,
     };
@@ -152,7 +152,6 @@ export default {
           const resp = await fn(this.activeTenantId);
           this.items = extractFirmItems(resp);
         }
-        await this.loadListingTitles();
       } catch (err) {
         this.errorMsg = err?.message || (typeof err === 'string' ? err : null) || LOAD_ERRORS[this.kind];
         if (this.scope === 'customer') this.items = [];
@@ -164,43 +163,8 @@ export default {
     retry() {
       return this.load();
     },
-    async loadListingTitles() {
-      const listingIds = [...new Set((this.items || []).map((row) => row?.listing_id).filter(Boolean))];
-      if (!listingIds.length) {
-        this.listingTitlesById = {};
-        return;
-      }
-
-      if (this.scope === 'firm' && this.activeTenantId) {
-        try {
-          const resp = await api.getStoreListings(this.activeTenantId);
-          const rows = extractFirmItems(resp);
-          this.listingTitlesById = rows.reduce((acc, item) => {
-            if (item?.id && item?.title) acc[item.id] = item.title;
-            return acc;
-          }, {});
-          return;
-        } catch {
-          this.listingTitlesById = {};
-          return;
-        }
-      }
-
-      const pairs = await Promise.all(listingIds.map(async (listingId) => {
-        try {
-          const listing = await api.getListing(listingId);
-          return [listingId, listing?.title || null];
-        } catch {
-          return [listingId, null];
-        }
-      }));
-      this.listingTitlesById = pairs.reduce((acc, [listingId, title]) => {
-        if (listingId && title) acc[listingId] = title;
-        return acc;
-      }, {});
-    },
     safe(val) {
-      if (val == null || val === '') return '—';
+      if (val == null || val === '') return 'â€”';
       return val;
     },
     formatDate(dateStr) {
@@ -219,27 +183,30 @@ export default {
       return getActionLabel(key);
     },
     titleClass(row) {
-      return this.listingTitlesById[row?.listing_id] ? '' : 'mono-cell';
+      return row?.listing_title ? '' : 'mono-cell';
     },
     listingDisplay(row) {
-      return this.listingTitlesById[row?.listing_id] || this.shortId(row?.listing_id);
+      return row?.listing_title || this.shortId(row?.listing_id);
     },
     formatOrderTotal(row) {
       const totals = row?.totals;
-      if (!totals || typeof totals !== 'object') return '—';
+      if (!totals || typeof totals !== 'object') return 'â€”';
       return this.formatPrice(totals.subtotal, totals.currency);
     },
     formatReservationPrice(row) {
-      if (!row || row.price_amount == null) return '—';
+      if (!row || row.price_amount == null) return 'â€”';
       return this.formatPrice(row.price_amount, row.price_currency);
     },
     formatRentalPrice(row) {
-      if (!row || row.price_amount == null) return '—';
+      if (!row || row.price_amount == null) return 'â€”';
       return this.formatPrice(row.price_amount, row.price_currency);
     },
     detailLink(row) {
       const fns = { orders: buildOrderDetailLink, rentals: buildRentalDetailLink, reservations: buildReservationDetailLink };
       return fns[this.kind](row);
+    },
+    listingLink(row) {
+      return `/listing/${row.listing_id}`;
     },
     canApprove(row) {
       if (this.kind === 'orders') return row && row.status === 'placed';
@@ -350,9 +317,25 @@ export default {
   background: #dc2626;
 }
 
+.title-link,
 .id-link {
   color: #2563eb;
   text-decoration: none;
+}
+
+.title-link:hover,
+.id-link:hover {
+  text-decoration: underline;
+}
+
+.btn-detail {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-color: #2563eb;
+  background: #2563eb;
+  border-radius: 4px;
+  text-decoration: none;
+  line-height: 1.2;
 }
 
 .mono-cell {
@@ -370,3 +353,5 @@ export default {
   font-weight: 600;
 }
 </style>
+
+
