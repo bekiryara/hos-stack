@@ -124,3 +124,31 @@ export function findCategoryById(categoriesTree, targetId) {
   return walk(categoriesTree);
 }
 
+/**
+ * Find a category node by canonical category id anywhere in the tree.
+ * Menu trees may use path-based virtual ids while exposing the real DB id as
+ * `canonical_category_id`. Canonical trees may only have `id`.
+ */
+export function findCategoryByCanonicalId(categoriesTree, targetId) {
+  const wanted = targetId !== null && targetId !== undefined ? Number(targetId) : null;
+  if (!wanted) return null;
+
+  const walk = (nodes) => {
+    for (const node of safeArray(nodes)) {
+      if (!node) continue;
+      const canonicalId = node.canonical_category_id !== null && node.canonical_category_id !== undefined
+        ? Number(node.canonical_category_id)
+        : null;
+      if (Number.isFinite(canonicalId) && canonicalId === wanted) return node;
+      if (!Number.isFinite(canonicalId) && Number(node.id) === wanted) return node;
+      const children = safeArray(node.children);
+      if (children.length > 0) {
+        const found = walk(children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  return walk(categoriesTree);
+}

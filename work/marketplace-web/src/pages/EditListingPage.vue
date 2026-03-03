@@ -72,7 +72,7 @@
 import { api } from '../api/client';
 import FilterField from '../components/common/FilterField.vue';
 import { getCategoriesTree, getFilterSchemaForCategory } from '../lib/catalogSpine';
-import { categoryLabel, findCategoryById } from '../lib/categoryTree';
+import { categoryLabel, findCategoryByCanonicalId } from '../lib/categoryTree';
 import { normalizeApiError } from '../lib/errors/api_error.js';
 import { notifyApiError, notifyApiSuccess } from '../lib/toast/notify_api.js';
 import { getActiveTenantId } from '../lib/session.js';
@@ -166,7 +166,7 @@ export default {
         this.form.currency = listing.price_currency || 'TRY';
         this.form.attributes = this.sanitizeAttributes(listing.attributes);
 
-        const found = findCategoryById(Array.isArray(categoriesTree) ? categoriesTree : [], listing.category_id);
+        const found = findCategoryByCanonicalId(Array.isArray(categoriesTree) ? categoriesTree : [], listing.category_id);
         this.categoryLabelText = found ? (categoryLabel(found) || String(found.id)) : String(listing.category_id);
         this.ready = true;
       } catch (err) {

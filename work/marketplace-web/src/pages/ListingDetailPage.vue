@@ -1,38 +1,77 @@
-<template>
+﻿<template>
   <div class="listing-detail-page">
     <div v-if="loading" class="loading">Loading listing...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="listing" class="listing-detail">
-      <h2>{{ listing.title || 'Untitled Listing' }}</h2>
+    <div v-else-if="listing && projection" class="listing-detail">
+      <h2>{{ projection.hero.title }}</h2>
 
-      <div v-if="listing.price" class="price-banner">
-        {{ formatPrice(listing.price, listing.price_currency) }}
+      <div v-if="projection.hero.primaryContextLine" class="context-line">
+        {{ projection.hero.primaryContextLine }}
       </div>
 
-      <div class="detail-meta">
-        <span v-if="categoryName" class="meta-tag">{{ categoryName }}</span>
-        <span class="meta-tag meta-status" :class="`meta-status-${listing.status}`">{{ listing.status }}</span>
-        <span
-          v-for="mode in (listing.transaction_modes || [])"
-          :key="mode"
-          class="transaction-badge"
-          :class="`transaction-badge-${mode}`"
-        >
-          {{ modeLabel(mode) }}
-        </span>
+      <div v-if="projection.hero.price" class="price-banner">
+        {{ formatPrice(projection.hero.price, projection.hero.priceCurrency) }}
+      </div>
+
+      <div v-if="projection.hero.status && projection.hero.status !== 'published'" class="detail-meta">
+        <span class="meta-tag meta-status" :class="`meta-status-${projection.hero.status}`">{{ projection.hero.status }}</span>
+      </div>
+
+      <div v-if="projection.summaryRows.length" class="detail-section">
+        <h3>Ozet</h3>
+        <ul class="attributes-list">
+          <li v-for="row in projection.summaryRows" :key="row.key">
+            <strong>{{ row.label }}:</strong> {{ row.value }}
+          </li>
+        </ul>
+      </div>
+
+      <div v-if="projection.description" class="detail-section">
+        <h3>Aciklama</h3>
+        <p>{{ projection.description }}</p>
       </div>
 
       <div class="detail-section">
-        <h3>Detaylar</h3>
-        <p v-if="!sortedAttributeKeys.length">No attributes</p>
+        <h3>Ilan Ozellikleri</h3>
+        <p v-if="!projection.featureRows.length">Gosterilecek ilan ozelligi yok</p>
         <ul v-else class="attributes-list">
-          <li v-for="key in sortedAttributeKeys" :key="key"><strong>{{ key }}:</strong> {{ renderAttributeValue(normalizedAttributes[key]) }}</li>
+          <li v-for="row in projection.featureRows" :key="row.key">
+            <strong>{{ row.label }}:</strong> {{ row.value }}
+          </li>
         </ul>
       </div>
+
+      <div v-if="projection.contextRows.length" class="detail-section">
+        <h3>Ilan Baglami</h3>
+        <ul class="attributes-list">
+          <li v-for="row in projection.contextRows" :key="row.key">
+            <strong>{{ row.label }}:</strong> {{ row.value }}
+          </li>
+        </ul>
+      </div>
+
+      <div v-if="projection.policyRows.length" class="detail-section">
+        <h3>Islem Bilgisi</h3>
+        <ul class="attributes-list">
+          <li v-for="row in projection.policyRows" :key="row.key">
+            <strong>{{ row.label }}:</strong> {{ row.value }}
+          </li>
+        </ul>
+      </div>
+
+      <div v-if="projection.extraRows.length" class="detail-section">
+        <h3>Ek Bilgiler</h3>
+        <ul class="attributes-list">
+          <li v-for="row in projection.extraRows" :key="row.key">
+            <strong>{{ row.label }}:</strong> {{ row.value }}
+          </li>
+        </ul>
+      </div>
+
       <div v-if="listing.supports_packages" class="detail-section">
         <h3>Paketler (Offers)</h3>
         <p class="muted">
-          Bu bölüm sadece tıklayınca yüklenir (sistemi zorlamaz).
+          Bu bolum sadece tiklayinca yuklenir (sistemi zorlamaz).
         </p>
         <div class="offers-actions">
           <button
@@ -41,14 +80,14 @@
             :disabled="offersLoading || offersLoaded"
             @click="loadOffers"
           >
-            <template v-if="offersLoaded">Paketler yüklendi</template>
-            <template v-else-if="offersLoading">Yükleniyor...</template>
-            <template v-else>Paketleri Göster</template>
+            <template v-if="offersLoaded">Paketler yuklendi</template>
+            <template v-else-if="offersLoading">Yukleniyor...</template>
+            <template v-else>Paketleri Goster</template>
           </button>
         </div>
         <div v-if="offersError" class="error">{{ offersError }}</div>
         <div v-else-if="offersLoaded">
-          <p v-if="!offers || offers.length === 0">Bu ilan için paket yok</p>
+          <p v-if="!offers || offers.length === 0">Bu ilan icin paket yok</p>
           <ul v-else class="offers-list">
             <li v-for="o in offers" :key="o.id" class="offer-item">
               <div class="offer-title">
@@ -56,7 +95,7 @@
                 <span class="muted">({{ o.code }})</span>
               </div>
               <div class="muted">
-                {{ o.price_amount }} {{ o.price_currency }} • {{ o.billing_model }}
+                {{ o.price_amount }} {{ o.price_currency }} - {{ o.billing_model }}
               </div>
               <div v-if="o.attributes && o.attributes.includes">
                 <strong>Dahil:</strong> {{ Array.isArray(o.attributes.includes) ? o.attributes.includes.join(', ') : o.attributes.includes }}
@@ -69,6 +108,7 @@
           </ul>
         </div>
       </div>
+
       <div class="actions">
         <button
           v-for="a in resolvedActions"
@@ -80,10 +120,19 @@
           {{ a.label }}
         </button>
       </div>
-      
+
       <div v-if="listing && listing.status === 'draft'" class="publish-section">
         <h3>Publish Listing</h3>
         <PublishListingAction :listing-id="listing.id" @published="handlePublished" />
+      </div>
+
+      <div v-if="projection.technicalRows.length" class="detail-section">
+        <h3>Teknik Bilgiler</h3>
+        <ul class="attributes-list">
+          <li v-for="row in projection.technicalRows" :key="row.key">
+            <strong>{{ row.label }}:</strong> {{ row.value }}
+          </li>
+        </ul>
       </div>
     </div>
   </div>
@@ -91,9 +140,10 @@
 
 <script>
 import { api } from '../api/client';
-import { getCategoriesTree } from '../lib/catalogSpine';
+import { getCategoriesTree, getFilterSchemaForCategory, getIntentSchemaForCategory } from '../lib/catalogSpine';
 import { resolveListingActions } from '../lib/listingActions';
-import { categoryLabel, findCategoryById } from '../lib/categoryTree';
+import { findCategoryByCanonicalId } from '../lib/categoryTree';
+import { buildListingDetailProjection } from '../lib/listingDetailProjection';
 import PublishListingAction from '../components/PublishListingAction.vue';
 
 export default {
@@ -108,16 +158,6 @@ export default {
     },
   },
   computed: {
-    normalizedAttributes() {
-      const listing = this.listing;
-      const attrs = (listing && listing.attributes && typeof listing.attributes === 'object')
-        ? listing.attributes
-        : {};
-      return attrs;
-    },
-    sortedAttributeKeys() {
-      return Object.keys(this.normalizedAttributes).sort();
-    },
     resolvedActions() {
       if (!this.listing) return [];
       return resolveListingActions(this.listing, { context: 'detail' });
@@ -126,9 +166,9 @@ export default {
   data() {
     return {
       listing: null,
+      projection: null,
       loading: true,
       error: null,
-      categoryName: null,
       offers: [],
       offersLoading: false,
       offersLoaded: false,
@@ -139,37 +179,43 @@ export default {
     await this.loadListing();
   },
   methods: {
-    renderAttributeValue(value) {
-      if (value === null || value === undefined || value === '') return '—';
-      if (value === 0 || value === false) return value;
-      if (Array.isArray(value)) {
-        return value.map((v) => (v != null && typeof v === 'object' ? JSON.stringify(v) : v)).join(', ');
-      }
-      if (typeof value === 'object') {
-        try {
-          return JSON.stringify(value);
-        } catch {
-          return '[object]';
-        }
-      }
-      return value;
-    },
     async loadListing() {
       try {
         this.listing = await api.getListing(this.id);
-        if (this.listing?.category_id) {
+        const listing = this.listing;
+        if (listing?.category_id) {
           try {
-            const tree = await getCategoriesTree();
+            const [tree, filterSchema, intentSchema] = await Promise.all([
+              getCategoriesTree(),
+              getFilterSchemaForCategory(listing.category_id),
+              getIntentSchemaForCategory(listing.category_id),
+            ]);
             const nodes = Array.isArray(tree) ? tree : (tree?.items ?? []);
-            const found = findCategoryById(nodes, this.listing.category_id);
-            this.categoryName = found ? (categoryLabel(found) || String(found.id)) : null;
+            const categoryNode = findCategoryByCanonicalId(nodes, listing.category_id);
+            this.projection = buildListingDetailProjection({
+              listing,
+              categoryNode,
+              filterSchema,
+              intentSchema,
+            });
           } catch {
-            this.categoryName = null;
+            this.projection = buildListingDetailProjection({
+              listing,
+              categoryNode: null,
+              filterSchema: null,
+              intentSchema: null,
+            });
           }
+        } else {
+          this.projection = buildListingDetailProjection({
+            listing,
+            categoryNode: null,
+            filterSchema: null,
+            intentSchema: null,
+          });
         }
         this.loading = false;
       } catch (err) {
-        // WP-62: Better error handling for 404 and other errors
         if (err.status === 404) {
           this.error = `Listing not found (ID: ${this.id})`;
         } else if (err.status) {
@@ -181,7 +227,6 @@ export default {
       }
     },
     async loadOffers() {
-      // Avoid background load; only fetch on user action.
       if (this.offersLoading || this.offersLoaded) return;
       try {
         this.offersLoading = true;
@@ -192,13 +237,16 @@ export default {
       } catch (err) {
         const msg = err?.message || 'Failed to load offers';
         this.offersError = msg;
-        this.offersLoaded = true; // loaded (but failed) prevents retry loops; user can refresh page if needed
+        this.offersLoaded = true;
       } finally {
         this.offersLoading = false;
       }
     },
     handlePublished(updatedListing) {
       this.listing = updatedListing;
+      if (this.projection) {
+        this.projection.hero.status = updatedListing?.status || this.projection.hero.status;
+      }
     },
     runAction(action) {
       if (!action || !action.to) return;
@@ -214,7 +262,7 @@ export default {
       }
     },
     modeLabel(mode) {
-      const labels = { sale: 'Satılık', rental: 'Kiralık', reservation: 'Rezervasyon' };
+      const labels = { sale: 'Satilik', rental: 'Kiralik', reservation: 'Rezervasyon' };
       return labels[mode] || mode;
     },
   },
@@ -227,8 +275,15 @@ export default {
 }
 
 .listing-detail h2 {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
   font-size: 2rem;
+}
+
+.context-line {
+  margin-bottom: 0.75rem;
+  color: #475569;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .price-banner {
@@ -315,7 +370,6 @@ export default {
   margin-bottom: 0.25rem;
 }
 
-.attributes-json,
 .full-json {
   background: #f5f5f5;
   padding: 1rem;
@@ -365,22 +419,6 @@ export default {
   margin-bottom: 1rem;
 }
 
-.transaction-modes {
-  margin-top: 1rem;
-}
-
-.transaction-modes strong {
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.transaction-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
 .transaction-badge {
   display: inline-block;
   padding: 0.4rem 0.8rem;
@@ -405,4 +443,3 @@ export default {
   color: #388e3c;
 }
 </style>
-
