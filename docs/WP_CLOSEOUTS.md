@@ -341,3 +341,20 @@ If a WP entry has a wrong WP number/title/date or a proof link mistake:
 ## WP-68C: OPS Entrypoints Runbook (2026-01-26)
 - **Proof:** `docs/PROOFS/wp68c_ops_entrypoints_pass.md`
 - **Outcome:** “Golden 4 Commands” ops entrypoints documented.
+---
+
+## WP-NEXT: Tenant Address Spine (Firm Register + HOS Options + Persist Verify) (2026-03-05)
+- **Outcome:**
+  - Firm register formunda `Il/Ilce/Mahalle` alanlar� text yerine select-cascade olarak calisacak sekilde duzenlendi.
+  - Location options kaynagi marketplace proxy yerine HOS `/v1/options/*` endpointlerine alinip deterministik hale getirildi.
+  - Yeni kullanici/firma akisinda secim listelerinin bos gelme problemi giderildi.
+  - Firma adresi DB persist dogrulandi (`tenant_addresses` kaydi mevcut ve dolu).
+- **Key files:**
+  - `work/marketplace-web/src/pages/FirmRegisterPage.vue`
+  - `work/marketplace-web/src/api/domains/catalog.js`
+- **Verification:**
+  - UI: Firma Olustur ekraninda `Il -> Ilce -> Mahalle` zinciri calisiyor.
+  - DB: `hos.tenant_addresses` tablosunda ilgili tenant icin city/district/neighborhood/street/building_no/door_no kayitli.
+- **Gates:**
+  - `docker compose up -d --build hos-web` PASS
+

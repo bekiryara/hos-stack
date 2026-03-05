@@ -1,6 +1,6 @@
 // Catalog domain: public guest browsing
 // WP-NEXT: Extracted from client.js (NO BEHAVIOR CHANGE)
-import { apiRequest, toStableQueryString } from '../request.js';
+import { apiRequest, hosApiRequest, toStableQueryString } from '../request.js';
 
 // GUEST persona: No headers required (SPEC §5.3)
 // WP-68: Public calls use skipAuth to avoid attaching token
@@ -23,18 +23,18 @@ export function getIntentSchema(categoryId) {
 }
 
 export function getCityOptions() {
-  return apiRequest('/api/v1/options/cities', {}, true);
+  return hosApiRequest('/v1/options/cities', {}, true);
 }
 
 export function getDistrictOptions(city) {
   const c = encodeURIComponent(String(city || '').trim());
-  return apiRequest(`/api/v1/options/districts?city=${c}`, {}, true);
+  return hosApiRequest(`/v1/options/districts?city=${c}`, {}, true);
 }
 
 export function getNeighborhoodOptions(city, district) {
   const c = encodeURIComponent(String(city || '').trim());
   const d = encodeURIComponent(String(district || '').trim());
-  return apiRequest(`/api/v1/options/neighborhoods?city=${c}&district=${d}`, {}, true);
+  return hosApiRequest(`/v1/options/neighborhoods?city=${c}&district=${d}`, {}, true);
 }
 
 export function searchListings(params) {
