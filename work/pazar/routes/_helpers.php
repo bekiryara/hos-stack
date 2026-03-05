@@ -129,6 +129,10 @@ if (!function_exists('pazar_category_intent_schema')) {
         $default = [
             'allowed_transaction_modes' => ['sale'],
             'default_offer_variant' => 'sale',
+            'fulfillment_mode' => 'provider_location',
+            'location_scope' => 'point',
+            'service_time_model' => 'none',
+            'offer_requirement' => 'no_offer',
             'offer_variants' => [
                 ['key' => 'sale', 'label' => 'Satılık', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only'],
             ],
@@ -190,6 +194,22 @@ if (!function_exists('pazar_category_intent_schema')) {
         if ($defaultOfferVariant === '') $defaultOfferVariant = $default['default_offer_variant'];
 
         $supportsPackages = isset($schema['supports_packages']) ? (bool) $schema['supports_packages'] : false;
+        $validFulfillmentModes = ['provider_location' => true, 'customer_location' => true, 'remote' => true, 'hybrid' => true];
+        $validLocationScopes = ['none' => true, 'city' => true, 'point' => true, 'service_area' => true];
+        $validServiceTimeModels = ['none' => true, 'date_range' => true, 'slot' => true, 'session' => true];
+        $validOfferRequirements = ['no_offer' => true, 'optional_offer' => true, 'required_offer' => true];
+
+        $fulfillmentMode = isset($schema['fulfillment_mode']) ? (string) $schema['fulfillment_mode'] : $default['fulfillment_mode'];
+        if (!isset($validFulfillmentModes[$fulfillmentMode])) $fulfillmentMode = $default['fulfillment_mode'];
+
+        $locationScope = isset($schema['location_scope']) ? (string) $schema['location_scope'] : $default['location_scope'];
+        if (!isset($validLocationScopes[$locationScope])) $locationScope = $default['location_scope'];
+
+        $serviceTimeModel = isset($schema['service_time_model']) ? (string) $schema['service_time_model'] : $default['service_time_model'];
+        if (!isset($validServiceTimeModels[$serviceTimeModel])) $serviceTimeModel = $default['service_time_model'];
+
+        $offerRequirement = isset($schema['offer_requirement']) ? (string) $schema['offer_requirement'] : $default['offer_requirement'];
+        if (!isset($validOfferRequirements[$offerRequirement])) $offerRequirement = $default['offer_requirement'];
 
         return [
             'category_id' => (int) $categoryId,
@@ -201,6 +221,10 @@ if (!function_exists('pazar_category_intent_schema')) {
             'default_offer_variant' => $defaultOfferVariant,
             'offer_variants' => $variants,
             'supports_packages' => $supportsPackages,
+            'fulfillment_mode' => $fulfillmentMode,
+            'location_scope' => $locationScope,
+            'service_time_model' => $serviceTimeModel,
+            'offer_requirement' => $offerRequirement,
         ];
     }
 }
@@ -248,8 +272,15 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         $requiredAttributes = [];
 
         // Attributes must be schema-driven (whitelist by category_filter_schema).
-        // Always allow policy meta keys (offer_variant, interaction_mode).
-        $policyKeys = ['offer_variant' => true, 'interaction_mode' => true];
+        // Always allow policy meta keys.
+        $policyKeys = [
+            'offer_variant' => true,
+            'interaction_mode' => true,
+            'fulfillment_mode' => true,
+            'location_scope' => true,
+            'service_time_model' => true,
+            'offer_requirement' => true,
+        ];
         $allowedKeys = \Illuminate\Support\Facades\DB::table('category_filter_schema')
             ->where('category_id', $categoryId)
             ->where('status', 'active')
@@ -282,6 +313,11 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         $allowedModes = isset($intentSchema['allowed_transaction_modes']) && is_array($intentSchema['allowed_transaction_modes'])
             ? $intentSchema['allowed_transaction_modes']
             : pazar_canonical_transaction_modes();
+        // Deterministic policy primitives: listing payload cannot override these values.
+        $attributes['fulfillment_mode'] = (string) ($intentSchema['fulfillment_mode'] ?? 'provider_location');
+        $attributes['location_scope'] = (string) ($intentSchema['location_scope'] ?? 'point');
+        $attributes['service_time_model'] = (string) ($intentSchema['service_time_model'] ?? 'none');
+        $attributes['offer_requirement'] = (string) ($intentSchema['offer_requirement'] ?? 'no_offer');
 
         $requestedModes = is_array($transactionModes)
             ? array_values(array_filter(array_map('strval', $transactionModes)))
@@ -403,7 +439,7 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         }
 
         foreach (array_keys($attributes) as $k) {
-            if ($k === 'offer_variant' || $k === 'interaction_mode') continue;
+            if (in_array($k, ['offer_variant', 'interaction_mode', 'fulfillment_mode', 'location_scope', 'service_time_model', 'offer_requirement'], true)) continue;
             if (!array_key_exists($k, $appliesMap)) continue;
             $applies = $appliesMap[$k];
             if (is_array($applies) && !in_array($effectiveMode, $applies, true)) {
@@ -544,6 +580,10 @@ if (!function_exists('pazar_normalize_listing_policy_fields')) {
                 $listing['transaction_modes'] = [$impliedMode];
             }
         }
+        $attrs['fulfillment_mode'] = (string) ($intent['fulfillment_mode'] ?? 'provider_location');
+        $attrs['location_scope'] = (string) ($intent['location_scope'] ?? 'point');
+        $attrs['service_time_model'] = (string) ($intent['service_time_model'] ?? 'none');
+        $attrs['offer_requirement'] = (string) ($intent['offer_requirement'] ?? 'no_offer');
 
         $listing['attributes'] = $attrs;
         $listing['supports_packages'] = isset($intent['supports_packages']) ? (bool) $intent['supports_packages'] : false;

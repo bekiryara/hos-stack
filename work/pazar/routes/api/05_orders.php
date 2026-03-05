@@ -45,6 +45,27 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         ], 422);
     }
 
+    // Policy-derived service primitives (deterministic).
+    // Order flow is intended for immediate sale-like models (service_time_model=none).
+    $intent = pazar_category_intent_schema((int) $listing->category_id);
+    $serviceTimeModel = isset($intent['service_time_model']) ? (string) $intent['service_time_model'] : 'none';
+    if (!in_array($serviceTimeModel, ['none'], true)) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => "Order flow is not allowed for service_time_model '{$serviceTimeModel}'"
+        ], 422);
+    }
+
+    // Offer requirement policy:
+    // Order v1 does not support explicit offer selection in create payload.
+    $offerRequirement = isset($intent['offer_requirement']) ? (string) $intent['offer_requirement'] : 'no_offer';
+    if ($offerRequirement === 'required_offer') {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'order create requires offer selection, but offer-based order is not supported in v1'
+        ], 422);
+    }
+
     try {
         $pricing = pazar_resolve_transaction_pricing($listing, null);
     } catch (\InvalidArgumentException $e) {

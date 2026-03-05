@@ -48,6 +48,34 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         ], 422);
     }
 
+    // Policy-derived service primitives (deterministic).
+    // Reservation flow currently supports slot/session service time models.
+    $intent = pazar_category_intent_schema((int) $listing->category_id);
+    $serviceTimeModel = isset($intent['service_time_model']) ? (string) $intent['service_time_model'] : 'none';
+    if (!in_array($serviceTimeModel, ['slot', 'session'], true)) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => "Reservation flow is not allowed for service_time_model '{$serviceTimeModel}'"
+        ], 422);
+    }
+
+    // Offer requirement policy:
+    // - required_offer: offer_id must be provided
+    // - no_offer: offer_id must not be provided
+    $offerRequirement = isset($intent['offer_requirement']) ? (string) $intent['offer_requirement'] : 'no_offer';
+    if ($offerRequirement === 'required_offer' && empty($validated['offer_id'])) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'offer_id is required for this service model'
+        ], 422);
+    }
+    if ($offerRequirement === 'no_offer' && !empty($validated['offer_id'])) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'offer_id is not allowed for this service model'
+        ], 422);
+    }
+
     // Validate offer_id (package) if provided:
     // - must exist
     // - must belong to the same listing
@@ -422,4 +450,3 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     $row = DB::table('reservations')->where('id', $id)->first();
     return response()->json(['id' => $row->id, 'status' => $row->status, 'updated_at' => $row->updated_at], 200);
 });
-

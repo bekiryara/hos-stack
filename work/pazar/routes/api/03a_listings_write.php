@@ -41,6 +41,115 @@ if (!function_exists('pazar_listing_write_response')) {
     }
 }
 
+if (!function_exists('pazar_listing_validate_location_by_scope')) {
+    function pazar_listing_validate_location_by_scope(int $categoryId, $locationRaw) {
+        $intent = pazar_category_intent_schema($categoryId);
+        $scope = isset($intent['location_scope']) ? (string) $intent['location_scope'] : 'point';
+        $location = is_array($locationRaw) ? $locationRaw : [];
+        $trim = static function ($v): string {
+            return is_string($v) ? trim($v) : '';
+        };
+
+        if ($scope === 'none') {
+            return null;
+        }
+
+        if ($scope === 'city') {
+            $city = $trim($location['city'] ?? '');
+            if ($city === '') {
+                return response()->json([
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => 'location.city is required for location_scope=city'
+                ], 422);
+            }
+            return ['city' => $city];
+        }
+
+        if ($scope === 'point') {
+            $city = $trim($location['city'] ?? '');
+            $district = $trim($location['district'] ?? '');
+            $neighborhood = $trim($location['neighborhood'] ?? '');
+            if ($city === '' || $district === '' || $neighborhood === '') {
+                return response()->json([
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => 'location.city, location.district and location.neighborhood are required for location_scope=point'
+                ], 422);
+            }
+            $normalized = [
+                'city' => $city,
+                'district' => $district,
+                'neighborhood' => $neighborhood,
+            ];
+            $street = $trim($location['street'] ?? '');
+            if ($street !== '') $normalized['street'] = $street;
+            $buildingNo = $trim($location['building_no'] ?? '');
+            if ($buildingNo !== '') $normalized['building_no'] = $buildingNo;
+            $doorNo = $trim($location['door_no'] ?? '');
+            if ($doorNo !== '') $normalized['door_no'] = $doorNo;
+            $address = $trim($location['address_line'] ?? '');
+            if ($address !== '') $normalized['address_line'] = $address;
+
+            $lat = $location['lat'] ?? null;
+            $lng = $location['lng'] ?? null;
+            if ($lat !== null && $lng !== null && is_numeric($lat) && is_numeric($lng)) {
+                $normalized['lat'] = (float) $lat;
+                $normalized['lng'] = (float) $lng;
+            }
+            return $normalized;
+        }
+
+        if ($scope === 'service_area') {
+            $rows = [];
+            $serviceArea = $location['service_area'] ?? null;
+            if (!is_array($serviceArea) || count($serviceArea) === 0) {
+                return response()->json([
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => 'location.service_area must include at least one city for location_scope=service_area'
+                ], 422);
+            }
+
+            foreach ($serviceArea as $row) {
+                if (!is_array($row)) continue;
+                $city = $trim($row['city'] ?? '');
+                if ($city === '') continue;
+                $allDistricts = (bool) ($row['all_districts'] ?? false);
+                $districts = [];
+                if (!$allDistricts) {
+                    $rawDistricts = $row['districts'] ?? [];
+                    if (is_array($rawDistricts)) {
+                        foreach ($rawDistricts as $d) {
+                            $v = $trim($d);
+                            if ($v !== '') $districts[] = $v;
+                        }
+                    }
+                    if (count($districts) === 0) {
+                        return response()->json([
+                            'error' => 'VALIDATION_ERROR',
+                            'message' => "location.service_area city '{$city}' requires non-empty districts when all_districts=false"
+                        ], 422);
+                    }
+                }
+                $rows[] = [
+                    'city' => $city,
+                    'all_districts' => $allDistricts,
+                    'districts' => $allDistricts ? [] : array_values(array_unique($districts)),
+                ];
+            }
+
+            if (count($rows) === 0) {
+                return response()->json([
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => 'location.service_area must include at least one valid city'
+                ], 422);
+            }
+
+            return ['service_area' => $rows];
+        }
+
+        return is_array($locationRaw) ? $locationRaw : null;
+    }
+}
+
 if (!function_exists('pazar_listing_write_owned_listing_or_error')) {
     function pazar_listing_write_owned_listing_or_error(string $listingId, string $tenantId) {
         $listing = DB::table('listings')->where('id', $listingId)->first();
@@ -101,6 +210,10 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
     }
     $attributes = $guard['attributes'] ?? [];
     $requestedModes = $guard['transaction_modes'];
+    $normalizedLocation = pazar_listing_validate_location_by_scope($categoryId, $validated['location'] ?? null);
+    if ($normalizedLocation instanceof \Illuminate\Http\JsonResponse) {
+        return $normalizedLocation;
+    }
     
     // listings.world is the H-OS world key for Pazar listings.
     // Pazar is the Marketplace world, so listings in this service are always marketplace-scoped.
@@ -122,7 +235,7 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
         'currency' => $currency,
         'transaction_modes_json' => json_encode($requestedModes),
         'attributes_json' => !empty($attributes) ? json_encode($attributes) : null,
-        'location_json' => isset($validated['location']) ? json_encode($validated['location']) : null,
+        'location_json' => $normalizedLocation !== null ? json_encode($normalizedLocation) : null,
         'status' => 'draft',
         'created_at' => now(),
         'updated_at' => now()

@@ -43,6 +43,27 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         ], 422);
     }
 
+    // Policy-derived service primitives (deterministic).
+    // Rental flow supports date_range model; legacy 'none' is allowed for backward compatibility.
+    $intent = pazar_category_intent_schema((int) $listing->category_id);
+    $serviceTimeModel = isset($intent['service_time_model']) ? (string) $intent['service_time_model'] : 'none';
+    if (!in_array($serviceTimeModel, ['date_range', 'none'], true)) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => "Rental flow is not allowed for service_time_model '{$serviceTimeModel}'"
+        ], 422);
+    }
+
+    // Offer requirement policy:
+    // Rental v1 does not support selecting offer_id in create payload.
+    $offerRequirement = isset($intent['offer_requirement']) ? (string) $intent['offer_requirement'] : 'no_offer';
+    if ($offerRequirement === 'required_offer') {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'rental create requires offer selection, but offer-based rental is not supported in v1'
+        ], 422);
+    }
+
     try {
         $pricing = pazar_resolve_transaction_pricing($listing, null);
     } catch (\InvalidArgumentException $e) {
@@ -317,4 +338,3 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':store', 'auth.an
     $row = DB::table('rentals')->where('id', $id)->first();
     return response()->json(['id' => $row->id, 'status' => $row->status, 'updated_at' => $row->updated_at], 200);
 });
-
