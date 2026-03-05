@@ -358,3 +358,19 @@ If a WP entry has a wrong WP number/title/date or a proof link mistake:
 - **Gates:**
   - `docker compose up -d --build hos-web` PASS
 
+
+---
+
+## WP-NEXT: Repo Hygiene - remove temporary root artifacts - PASS (2026-03-06)
+
+- **Outcome:** Removed temporary tracked root artifacts (`tmp_*.sql`, `tmp_*.psv`, `tmp_*.tsv`) from repository root to reduce drift noise.
+- **Commit:** `88aa944`
+- **Scope:** Repo hygiene only (no runtime behavior change).
+
+---
+
+## WP-NEXT: Firm Settings + Tenant Address Spine stabilization - PASS (2026-03-05)
+
+- **Outcome:** Firm management boundary clarified with `/firm/settings`; tenant address select-cascade and Create Listing tenant-address autofill stabilized.
+- **Commits:** `32fe2d6`, `b0f6afa`, `5c57e67`, `839fde1`, `070f6b3`, `920c6aa`
+- **Scope:** Marketplace web + docs alignment; no destructive schema change.

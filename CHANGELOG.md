@@ -4,6 +4,15 @@
 
 **Rule:** Only edit this top `[Unreleased]` section. Any lower legacy blocks are historical artifacts and must not be appended to.
 
+### marketplace: firm settings + tenant address spine stabilization (2026-03-05)
+- Added firm settings separation and stabilized tenant address flows between firm settings and listing create.
+- Fixed tenant-address preload/autofill edge cases for district and neighborhood preservation.
+- Commits: `32fe2d6`, `b0f6afa`, `5c57e67`, `839fde1`, `070f6b3`, `920c6aa`
+
+### repo: remove temporary root artifacts (2026-03-06)
+- Removed tracked temporary root files (`tmp_*.sql`, `tmp_*.psv`, `tmp_*.tsv`) to keep root clean.
+- Commit: `88aa944`
+
 ### auth: Google-first OAuth handoff (2026-02-08)
 - HOS Google OAuth callback now redirects back to Marketplace for token handoff; Marketplace `/oauth/complete` persists the session and redirects to `/account`.
 - Login UX: Google login defaults to public customer mode; optional tenant slug is hidden under advanced options.
@@ -611,5 +620,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/bekiryara/stack/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/bekiryara/stack/releases/tag/v0.1.0
-
 

@@ -1,7 +1,19 @@
 # CURRENT - Single Source of Truth
 
-**Last Updated:** 2026-03-04  
+**Last Updated:** 2026-03-06  
 **Baseline:** RELEASE-GRADE BASELINE RESET v1
+
+## Recent Updates (2026-03-05 to 2026-03-06)
+
+- Tenant Address Spine stabilized in Marketplace:
+  - Firm register and firm settings use city/district/neighborhood select-cascade.
+  - Options source is HOS (`/v1/options/*`) and tenant address persists in HOS `tenant_addresses`.
+  - Create Listing tenant-address preload and "Firma adresini kullan" autofill fixes shipped.
+- Firm UX boundary tightened:
+  - Firm settings moved to `/firm/settings`.
+  - Account portal kept focused on account-level information.
+- Repo hygiene:
+  - Temporary tracked root artifacts (`tmp_*`) removed in commit `88aa944`.
 
 ## What is the Stack?
 
