@@ -1,12 +1,12 @@
 ﻿<template>
   <div class="account-portal">
-    <h2>HesabÄ±m</h2>
+    <h2>Hesabim</h2>
     
     <!-- Logged-out view -->
     <div v-if="!isAuthenticated" class="logged-out-view">
       <div class="login-cta">
-        <p>HesabÄ±nÄ±zÄ± gÃ¶rÃ¼ntÃ¼lemek iÃ§in giriÅŸ yapÄ±n.</p>
-        <router-link to="/login" class="login-button">GiriÅŸ Yap</router-link>
+        <p>Hesabinizi goruntulemek icin giris yapin.</p>
+        <router-link to="/login" class="login-button">Giris Yap</router-link>
       </div>
     </div>
     
@@ -14,11 +14,11 @@
     <div v-else>
       <!-- User Summary Card -->
       <div class="user-summary-card">
-        <h3>KullanÄ±cÄ± Bilgileri</h3>
+        <h3>Kullanici Bilgileri</h3>
         <div class="user-info">
           <div v-if="userInfo.email"><strong>Email:</strong> {{ userInfo.email }}</div>
           <div v-if="userInfo.display_name"><strong>Ad:</strong> {{ userInfo.display_name }}</div>
-          <div v-if="userInfo.memberships_count !== undefined"><strong>Firma SayÄ±sÄ±:</strong> {{ userInfo.memberships_count }}</div>
+          <div v-if="userInfo.memberships_count !== undefined"><strong>Firma Sayisi:</strong> {{ userInfo.memberships_count }}</div>
         </div>
       </div>
       
@@ -26,28 +26,28 @@
       <div class="firm-status-card">
         <h3>Firma Durumu</h3>
         <div v-if="membershipsLoading" class="loading-firm-state">
-          <p>Firma bilgileri yÃ¼kleniyor...</p>
+          <p>Firma bilgileri yukleniyor...</p>
         </div>
         <div v-else-if="memberships.length === 0" class="no-firm-state">
-          <p>HenÃ¼z bir firmanÄ±z yok. Firma oluÅŸturarak ilan verebilirsiniz.</p>
-          <router-link to="/firm/register" class="firm-register-btn-primary">Firma OluÅŸtur</router-link>
+          <p>Henuz bir firmaniz yok. Firma olusturarak ilan verebilirsiniz.</p>
+          <router-link to="/firm/register" class="firm-register-btn-primary">Firma Olustur</router-link>
         </div>
         <div v-else class="has-firm-state">
           <div class="firm-info">
-            <p><strong>Aktif Firma:</strong> {{ activeTenantName || 'SeÃ§ilmemiÅŸ' }}</p>
+            <p><strong>Aktif Firma:</strong> {{ activeTenantName || 'Secilmemis' }}</p>
             <p v-if="activeTenantId"><strong>Firma ID:</strong> {{ activeTenantId.substring(0, 8) }}...</p>
-            <p v-if="activeTenantId"><strong>Durum:</strong> <span class="status-active">AKTÄ°F</span></p>
+            <p v-if="activeTenantId"><strong>Durum:</strong> <span class="status-active">AKTIF</span></p>
           </div>
           <div class="firm-actions">
             <router-link v-if="activeTenantId" to="/firm" class="firm-panel-link">Firma Paneli</router-link>
-            <span v-else class="firm-panel-disabled">Firma paneli iÃ§in aktif firma seÃ§in.</span>
+            <span v-else class="firm-panel-disabled">Firma paneli icin aktif firma secin.</span>
           </div>
         </div>
       </div>
       
       <!-- WP-68: Active Tenant Selection -->
       <div v-if="memberships.length > 0" class="tenant-selection-card">
-        <h3>FirmalarÄ±m</h3>
+        <h3>Firmalarim</h3>
         <div class="memberships-list">
           <div v-for="membership in memberships" :key="membership.tenant_id" class="membership-item" :class="{ active: membership.tenant_id === activeTenantId }">
             <div class="membership-info">
@@ -68,13 +68,13 @@
       <!-- Refresh Button (WP-NEXT: panel isolation â€” refresh all) -->
       <div class="button-group">
         <button @click="refreshAll" :disabled="refreshing">
-          {{ refreshing ? 'YÃ¼kleniyor...' : 'Yenile' }}
+          {{ refreshing ? 'Yukleniyor...' : 'Yenile' }}
         </button>
       </div>
 
       <!-- Customer Records: tabs + lazy-load panels (account/) -->
       <section class="customer-records-section">
-        <h3 class="customer-records-title">KayÄ±tlar</h3>
+        <h3 class="customer-records-title">Kayitlar</h3>
         <div class="tabs-row">
           <button
             type="button"
