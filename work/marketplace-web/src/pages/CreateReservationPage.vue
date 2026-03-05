@@ -99,6 +99,7 @@
 <script>
 import { api } from '../api/client.js';
 import { getUserId } from '../lib/session.js';
+import { modeGuardReasonForListing } from '../lib/servicePolicyGuard.js';
 
 export default {
   name: 'CreateReservationPage',
@@ -145,6 +146,17 @@ export default {
         console.warn('Ilan kategorisi yuklenemedi:', err);
       }
     },
+    async validateListingPolicy(listingId) {
+      try {
+        const listing = await api.getListing(listingId);
+        if (listing && listing.category_id) {
+          this.listingCategoryId = listing.category_id;
+        }
+        return modeGuardReasonForListing(listing, 'reservation');
+      } catch {
+        return null;
+      }
+    },
     async handleSubmit() {
       // Get userId from session token (token auto-attached by API)
       const userId = getUserId();
@@ -156,6 +168,12 @@ export default {
       
       if (!this.formData.listing_id || !this.formData.slot_start || !this.formData.slot_end || !this.formData.party_size) {
         this.error = { message: 'Lutfen zorunlu alanlari doldurun', status: 400 };
+        return;
+      }
+
+      const policyReason = await this.validateListingPolicy(this.formData.listing_id);
+      if (policyReason) {
+        this.error = { message: policyReason, status: 422, errorCode: 'POLICY_MISMATCH' };
         return;
       }
       

@@ -38,6 +38,8 @@
             type="button"
             class="action-btn"
             :class="a.uiClass"
+            :disabled="a.disabled"
+            :title="a.disabledReason || ''"
             @click="runAction(a)"
           >
             {{ a.label }}
@@ -65,6 +67,7 @@ export default {
       return resolveListingActions(listing, { context: 'grid' });
     },
     runAction(action) {
+      if (action?.disabled) return;
       if (!action || !action.to) return;
       this.$router.push(action.to);
     },
@@ -202,6 +205,13 @@ export default {
   border-color: #cbd5e1;
 }
 
+.action-btn:disabled {
+  background: #f8fafc;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+}
+
 .view-btn {
   background: var(--btn-neutral, #111827);
   color: white;
@@ -281,5 +291,4 @@ export default {
   font-size: 1.1rem;
 }
 </style>
-
 

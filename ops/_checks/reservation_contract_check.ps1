@@ -329,6 +329,12 @@ try {
             price_amount = 50000
             currency = "TRY"
             transaction_modes = @("reservation")
+            location = @{
+                city = "Istanbul"
+                district = "Besiktas"
+                neighborhood = "Levent Mah."
+                address_line = "Test Mahallesi 1"
+            }
             attributes = @{
                 capacity_max = 500
                 city = "Istanbul"
@@ -444,6 +450,12 @@ try {
                 title = "Test Wedding Hall Listing (WP-4.1 Owned)"
                 description = "Owned listing for reservation+offer linking"
                 transaction_modes = @("reservation")
+                location = @{
+                    city = "Istanbul"
+                    district = "Besiktas"
+                    neighborhood = "Levent Mah."
+                    address_line = "Test Mahallesi 1"
+                }
                 attributes = @{
                     capacity_max = 500
                     city = "Istanbul"

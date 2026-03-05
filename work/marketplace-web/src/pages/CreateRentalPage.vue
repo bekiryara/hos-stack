@@ -86,6 +86,7 @@
 <script>
 import { api } from '../api/client.js';
 import { getUserId } from '../lib/session.js';
+import { modeGuardReasonForListing } from '../lib/servicePolicyGuard.js';
 
 export default {
   name: 'CreateRentalPage',
@@ -131,6 +132,17 @@ export default {
         console.warn('Ilan kategorisi yuklenemedi:', err);
       }
     },
+    async validateListingPolicy(listingId) {
+      try {
+        const listing = await api.getListing(listingId);
+        if (listing && listing.category_id) {
+          this.listingCategoryId = listing.category_id;
+        }
+        return modeGuardReasonForListing(listing, 'rental');
+      } catch {
+        return null;
+      }
+    },
     async handleSubmit() {
       // Get userId from session token (token auto-attached by API)
       const userId = getUserId();
@@ -142,6 +154,12 @@ export default {
       
       if (!this.formData.listing_id || !this.formData.start_at || !this.formData.end_at) {
         this.error = { message: 'Lutfen zorunlu alanlari doldurun', status: 400 };
+        return;
+      }
+
+      const policyReason = await this.validateListingPolicy(this.formData.listing_id);
+      if (policyReason) {
+        this.error = { message: policyReason, status: 422, errorCode: 'POLICY_MISMATCH' };
         return;
       }
       

@@ -118,6 +118,123 @@
       </label>
     </div>
 
+    <div v-if="intentSchema" class="form-group">
+      <label>Hizmet Modeli</label>
+      <div class="primitive-grid">
+        <div class="primitive-item">
+          <strong>Fulfillment:</strong> {{ primitiveLabel('fulfillment_mode', intentSchema.fulfillment_mode) }}
+        </div>
+        <div class="primitive-item">
+          <strong>Location Scope:</strong> {{ primitiveLabel('location_scope', intentSchema.location_scope) }}
+        </div>
+        <div class="primitive-item">
+          <strong>Time Model:</strong> {{ primitiveLabel('service_time_model', intentSchema.service_time_model) }}
+        </div>
+        <div class="primitive-item">
+          <strong>Offer Rule:</strong> {{ primitiveLabel('offer_requirement', intentSchema.offer_requirement) }}
+        </div>
+      </div>
+      <small class="hint">Bu alanlar kategori policy'sinden gelir ve backend tarafinda zorlanir.</small>
+    </div>
+
+    <div v-if="intentSchema" class="form-group">
+      <label>Konum Bilgisi</label>
+      <div v-if="policyLocationScope === 'none'" class="hint-box">
+        Bu kategoride konum gerekli degil.
+      </div>
+
+      <div v-else-if="policyLocationScope === 'city'" class="location-grid">
+        <label>
+          Il <span class="required">*</span>
+          <select v-if="hasCityOptions" v-model="local.location.city" class="form-input">
+            <option value="" disabled>Il seciniz...</option>
+            <option v-for="c in cityOptions" :key="c" :value="c">{{ c }}</option>
+          </select>
+          <input v-else v-model.trim="local.location.city" type="text" class="form-input" placeholder="Orn: Izmir" />
+        </label>
+      </div>
+
+      <div v-else-if="policyLocationScope === 'point'" class="location-grid">
+        <label>
+          Il <span class="required">*</span>
+          <select v-if="hasCityOptions" v-model="local.location.city" class="form-input">
+            <option value="" disabled>Il seciniz...</option>
+            <option v-for="c in cityOptions" :key="c" :value="c">{{ c }}</option>
+          </select>
+          <input v-else v-model.trim="local.location.city" type="text" class="form-input" placeholder="Orn: Izmir" />
+        </label>
+        <label>
+          Ilce <span class="required">*</span>
+          <select v-if="hasDistrictOptions" v-model="local.location.district" class="form-input">
+            <option value="" disabled>Ilce seciniz...</option>
+            <option v-for="d in districtOptions" :key="d" :value="d">{{ d }}</option>
+          </select>
+          <input v-else v-model.trim="local.location.district" type="text" class="form-input" placeholder="Orn: Bornova" />
+        </label>
+        <label>
+          Mahalle <span class="required">*</span>
+          <select v-if="hasNeighborhoodOptions" v-model="local.location.neighborhood" class="form-input">
+            <option value="" disabled>Mahalle seciniz...</option>
+            <option v-for="n in neighborhoodOptions" :key="n" :value="n">{{ n }}</option>
+          </select>
+          <input v-else v-model.trim="local.location.neighborhood" type="text" class="form-input" placeholder="Orn: Kazimdirik Mah." />
+        </label>
+        <label>
+          Sokak / Cadde
+          <input v-model.trim="local.location.street" type="text" class="form-input" placeholder="Orn: 372. Sokak" />
+        </label>
+        <label>
+          Dis Kapi No
+          <input v-model.trim="local.location.building_no" type="text" class="form-input" placeholder="Orn: 12A" />
+        </label>
+        <label>
+          Ic Kapi No
+          <input v-model.trim="local.location.door_no" type="text" class="form-input" placeholder="Orn: 5" />
+        </label>
+        <label class="full-width">
+          Acik Adres
+          <input v-model.trim="local.location.address_line" type="text" class="form-input" placeholder="Mahalle, sokak, no..." />
+        </label>
+        <label>
+          Enlem
+          <input v-model.trim="local.location.lat" type="number" step="any" class="form-input" placeholder="38.4237" />
+        </label>
+        <label>
+          Boylam
+          <input v-model.trim="local.location.lng" type="number" step="any" class="form-input" placeholder="27.1428" />
+        </label>
+      </div>
+
+      <div v-else-if="policyLocationScope === 'service_area'" class="service-area-editor">
+        <div
+          v-for="(row, idx) in local.location.service_area"
+          :key="idx"
+          class="service-area-row"
+        >
+          <div class="location-grid">
+            <label>
+              Il <span class="required">*</span>
+              <select v-if="hasCityOptions" v-model="row.city" class="form-input">
+                <option value="" disabled>Il seciniz...</option>
+                <option v-for="c in cityOptions" :key="c" :value="c">{{ c }}</option>
+              </select>
+              <input v-else v-model.trim="row.city" type="text" class="form-input" placeholder="Orn: Manisa" />
+            </label>
+            <label class="checkbox-inline">
+              <input v-model="row.all_districts" type="checkbox" />
+              Tum il
+            </label>
+            <label v-if="!row.all_districts" class="full-width">
+              Ilceler (virgulle ayir)
+              <input v-model.trim="row.districts_text" type="text" class="form-input" placeholder="Turgutlu, Salihli" />
+            </label>
+          </div>
+          <button type="button" class="minor-btn danger" @click="removeServiceAreaRow(idx)">Bolgeyi Sil</button>
+        </div>
+        <button type="button" class="minor-btn" @click="addServiceAreaRow">+ Il Ekle</button>
+      </div>
+    </div>
+
     <div v-if="filterSchema && filterSchema.filters" class="form-group">
       <h3>Attributes (from filter-schema)</h3>
       <small v-if="hiddenFiltersCount > 0" class="hint">
@@ -134,6 +251,10 @@
           v-model="local.attributes[filter.attribute_key]"
         />
       </div>
+    </div>
+
+    <div v-if="submitAttempted && submitErrors.length > 0" class="submit-errors">
+      <div v-for="(msg, idx) in submitErrors" :key="idx">{{ msg }}</div>
     </div>
 
     <button type="submit" :disabled="loading || !tenantId" class="submit-button">
@@ -157,11 +278,14 @@ export default {
     categoriesTree: { type: Array, default: () => [] },
     filterSchema: { type: Object, default: null },
     intentSchema: { type: Object, default: null },
+    cityOptions: { type: Array, default: () => [] },
+    districtOptions: { type: Array, default: () => [] },
+    neighborhoodOptions: { type: Array, default: () => [] },
     tenantId: { type: String, default: '' },
     tenantIdLoadError: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
   },
-  emits: ['category-change', 'submit'],
+  emits: ['category-change', 'location-city-change', 'location-district-change', 'submit'],
   data() {
     return {
       local: {
@@ -173,7 +297,20 @@ export default {
         transaction_modes: [],
         offer_variant: '',
         attributes: {},
+        location: {
+          city: '',
+          district: '',
+          neighborhood: '',
+          street: '',
+          building_no: '',
+          door_no: '',
+          address_line: '',
+          lat: '',
+          lng: '',
+          service_area: [{ city: '', all_districts: false, districts_text: '' }],
+        },
       },
+      submitAttempted: false,
     };
   },
   computed: {
@@ -193,17 +330,47 @@ export default {
     visibleFilters() {
       const schema = this.filterSchema;
       const list = schema && Array.isArray(schema.filters) ? schema.filters : [];
-      return list.filter((f) => this.isApplicableForMode(f, this.currentTransactionMode) && !isLegacyPriceAttributeKey(f?.attribute_key));
+      return list.filter((f) => {
+        if (!this.isApplicableForMode(f, this.currentTransactionMode)) return false;
+        if (isLegacyPriceAttributeKey(f?.attribute_key)) return false;
+        if (this.shouldHideLegacyCityFilter && String(f?.attribute_key || '') === 'city') return false;
+        return true;
+      });
     },
     hiddenFiltersCount() {
       const schema = this.filterSchema;
       const list = schema && Array.isArray(schema.filters) ? schema.filters : [];
       return list.length - this.visibleFilters.length;
     },
+    policyTimeModel() {
+      return String(this.intentSchema?.service_time_model || '');
+    },
+    policyLocationScope() {
+      return String(this.intentSchema?.location_scope || '');
+    },
+    policyOfferRule() {
+      return String(this.intentSchema?.offer_requirement || '');
+    },
+    shouldHideLegacyCityFilter() {
+      return ['city', 'point', 'service_area'].includes(this.policyLocationScope);
+    },
+    hasCityOptions() {
+      return Array.isArray(this.cityOptions) && this.cityOptions.length > 0;
+    },
+    hasDistrictOptions() {
+      return Array.isArray(this.districtOptions) && this.districtOptions.length > 0;
+    },
+    hasNeighborhoodOptions() {
+      return Array.isArray(this.neighborhoodOptions) && this.neighborhoodOptions.length > 0;
+    },
+    submitErrors() {
+      return this.validateIntentCompatibility();
+    },
   },
   watch: {
     intentSchema: {
       handler(newSchema) {
+        this.submitAttempted = false;
         const list = newSchema && Array.isArray(newSchema.offer_variants) ? newSchema.offer_variants : [];
         if (list.length === 0) return;
         if (this.local.offer_variant) return;
@@ -214,8 +381,53 @@ export default {
       },
       immediate: true,
     },
+    'local.location.city'(value, oldValue) {
+      if (String(value || '') === String(oldValue || '')) return;
+      this.local.location.district = '';
+      this.local.location.neighborhood = '';
+      this.$emit('location-city-change', value || '');
+      this.$emit('location-district-change', { city: value || '', district: '' });
+    },
+    'local.location.district'(value, oldValue) {
+      if (String(value || '') === String(oldValue || '')) return;
+      this.local.location.neighborhood = '';
+      this.$emit('location-district-change', {
+        city: this.local.location.city || '',
+        district: value || '',
+      });
+    },
   },
   methods: {
+    primitiveLabel(kind, value) {
+      const raw = String(value || '');
+      const dict = {
+        fulfillment_mode: {
+          provider_location: 'Saglayici lokasyonunda',
+          customer_location: 'Musteri lokasyonunda',
+          remote: 'Uzaktan',
+          hybrid: 'Hibrit',
+        },
+        location_scope: {
+          none: 'Konum gerekmiyor',
+          city: 'Sehir seviyesi',
+          point: 'Nokta adres',
+          service_area: 'Servis bolgesi',
+        },
+        service_time_model: {
+          none: 'Zaman modeli yok',
+          date_range: 'Tarih araligi',
+          slot: 'Randevu slotu',
+          session: 'Seans',
+        },
+        offer_requirement: {
+          no_offer: 'Paket gerekmiyor',
+          optional_offer: 'Paket opsiyonel',
+          required_offer: 'Paket zorunlu',
+        },
+      };
+      const map = dict[kind] || {};
+      return map[raw] || raw || '-';
+    },
     // Faz-2: schema-driven applicability (hardcode yok).
     // Semantics: applies_to_transaction_modes is null/empty => applies to all modes.
     isApplicableForMode(filter, mode) {
@@ -228,8 +440,21 @@ export default {
       return raw.map(String).includes(m);
     },
     emitCategoryChange() {
+      this.submitAttempted = false;
       this.local.offer_variant = '';
       this.local.transaction_modes = [];
+      this.local.location = {
+        city: '',
+        district: '',
+        neighborhood: '',
+        street: '',
+        building_no: '',
+        door_no: '',
+        address_line: '',
+        lat: '',
+        lng: '',
+        service_area: [{ city: '', all_districts: false, districts_text: '' }],
+      };
       if (this.local.attributes) {
         delete this.local.attributes.offer_variant;
         delete this.local.attributes.interaction_mode;
@@ -256,7 +481,136 @@ export default {
       this.local.attributes.offer_variant = v.key;
       this.local.attributes.interaction_mode = (v.interaction_mode === 'flow') ? 'flow' : 'contact_only';
     },
+    validateIntentCompatibility() {
+      const errors = [];
+      const mode = this.currentTransactionMode;
+      const timeModel = this.policyTimeModel;
+      const offerRule = this.policyOfferRule;
+
+      if (mode === 'reservation' && !['slot', 'session'].includes(timeModel)) {
+        errors.push('Bu kategoride reservation icin Time Model slot veya session olmalidir.');
+      }
+      if (mode === 'rental' && !['none', 'date_range'].includes(timeModel)) {
+        errors.push('Bu kategoride rental icin Time Model none veya date_range olmalidir.');
+      }
+      if (mode === 'sale' && timeModel !== 'none') {
+        errors.push('Bu kategoride sale icin Time Model none olmalidir.');
+      }
+      if ((mode === 'sale' || mode === 'rental') && offerRule === 'required_offer') {
+        errors.push('Bu kategoride required_offer su anda sale/rental akisinda desteklenmiyor.');
+      }
+
+      errors.push(...this.validateLocationInputs());
+      return errors;
+    },
+    parseDistricts(text) {
+      return String(text || '')
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0);
+    },
+    validateLocationInputs() {
+      const errors = [];
+      const scope = this.policyLocationScope;
+      const loc = this.local.location || {};
+      if (scope === 'none') return errors;
+
+      if (scope === 'city') {
+        if (!String(loc.city || '').trim()) {
+          errors.push('Bu kategoride il bilgisi zorunludur.');
+        }
+      }
+
+      if (scope === 'point') {
+        if (!String(loc.city || '').trim()) errors.push('Bu kategoride il bilgisi zorunludur.');
+        if (!String(loc.district || '').trim()) errors.push('Bu kategoride ilce bilgisi zorunludur.');
+        if (!String(loc.neighborhood || '').trim()) errors.push('Bu kategoride mahalle bilgisi zorunludur.');
+      }
+
+      if (scope === 'service_area') {
+        const rows = Array.isArray(loc.service_area) ? loc.service_area : [];
+        if (rows.length === 0) {
+          errors.push('En az bir hizmet bolgesi girilmelidir.');
+        } else {
+          const validRows = rows.filter((r) => String(r?.city || '').trim().length > 0);
+          if (validRows.length === 0) {
+            errors.push('Service area icin en az bir il zorunludur.');
+          }
+          validRows.forEach((r) => {
+            if (!r.all_districts && this.parseDistricts(r.districts_text).length === 0) {
+              errors.push(`"${r.city}" icin tum il secili degilse en az bir ilce girilmelidir.`);
+            }
+          });
+        }
+      }
+      return errors;
+    },
+    buildLocationPayload() {
+      const scope = this.policyLocationScope;
+      const loc = this.local.location || {};
+      if (scope === 'none') return null;
+
+      if (scope === 'city') {
+        return { city: String(loc.city || '').trim() };
+      }
+
+      if (scope === 'point') {
+        const payload = {
+          city: String(loc.city || '').trim(),
+          district: String(loc.district || '').trim(),
+          neighborhood: String(loc.neighborhood || '').trim(),
+        };
+        const street = String(loc.street || '').trim();
+        if (street) payload.street = street;
+        const buildingNo = String(loc.building_no || '').trim();
+        if (buildingNo) payload.building_no = buildingNo;
+        const doorNo = String(loc.door_no || '').trim();
+        if (doorNo) payload.door_no = doorNo;
+        const addressLine = String(loc.address_line || '').trim();
+        if (addressLine) payload.address_line = addressLine;
+        const lat = String(loc.lat || '').trim();
+        const lng = String(loc.lng || '').trim();
+        if (lat && lng && Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
+          payload.lat = Number(lat);
+          payload.lng = Number(lng);
+        }
+        return payload;
+      }
+
+      if (scope === 'service_area') {
+        const rows = Array.isArray(loc.service_area) ? loc.service_area : [];
+        return {
+          service_area: rows
+            .map((r) => ({
+              city: String(r?.city || '').trim(),
+              all_districts: Boolean(r?.all_districts),
+              districts: Boolean(r?.all_districts) ? [] : this.parseDistricts(r?.districts_text),
+            }))
+            .filter((r) => r.city),
+        };
+      }
+      return null;
+    },
+    addServiceAreaRow() {
+      if (!Array.isArray(this.local.location.service_area)) {
+        this.local.location.service_area = [];
+      }
+      this.local.location.service_area.push({ city: '', all_districts: false, districts_text: '' });
+    },
+    removeServiceAreaRow(index) {
+      const rows = this.local.location.service_area || [];
+      if (!Array.isArray(rows)) return;
+      if (rows.length <= 1) {
+        rows[0] = { city: '', all_districts: false, districts_text: '' };
+        return;
+      }
+      rows.splice(index, 1);
+    },
     onSubmit() {
+      this.submitAttempted = true;
+      if (this.submitErrors.length > 0) {
+        return;
+      }
       const visibleKeys = new Set((this.visibleFilters || []).map((f) => String(f.attribute_key)));
       visibleKeys.add('offer_variant');
       visibleKeys.add('interaction_mode');
@@ -269,6 +623,7 @@ export default {
           filteredAttrs[k] = rawAttrs[k];
         }
       });
+      const locationPayload = this.buildLocationPayload();
 
       const snapshot = {
         category_id: this.local.category_id,
@@ -277,6 +632,7 @@ export default {
         price_amount: this.local.price_amount,
         currency: this.local.currency || 'TRY',
         transaction_modes: [...(this.local.transaction_modes || [])],
+        location: locationPayload,
         // Submit only visible attrs (do not delete hidden values from local state).
         attributes: filteredAttrs,
       };
@@ -377,6 +733,87 @@ export default {
   padding: 1rem;
   background: #f9f9f9;
   border-radius: 4px;
+}
+
+.location-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.hint-box {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #dbeafe;
+  border-left: 3px solid #2563eb;
+  background: #eff6ff;
+  border-radius: 4px;
+  color: #1e3a8a;
+  font-size: 0.9rem;
+}
+
+.service-area-editor {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.service-area-row {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.75rem;
+  background: #fafafa;
+}
+
+.checkbox-inline {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.minor-btn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #111827;
+  padding: 0.45rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.minor-btn.danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.submit-errors {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: #b71c1c;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-left: 3px solid #c62828;
+  border-radius: 4px;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.primitive-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.primitive-item {
+  background: #f5f7fa;
+  border: 1px solid #e1e5ea;
+  border-radius: 4px;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.92rem;
 }
 
 .submit-button {

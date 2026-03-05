@@ -95,6 +95,7 @@
 <script>
 import { api } from '../api/client.js';
 import { getUserId, clearSession } from '../lib/session.js';
+import { modeGuardReasonForListing } from '../lib/servicePolicyGuard.js';
 
 export default {
   name: 'CreateOrderPage',
@@ -154,6 +155,21 @@ export default {
         this.error = { message: 'Tüm alanları doldurunuz', status: 400 };
         return;
       }
+      let listing = this.listingPreview;
+      if (!listing) {
+        try {
+          listing = await api.getListing(this.formData.listing_id);
+          this.listingPreview = listing;
+        } catch {
+          listing = null;
+        }
+      }
+      const policyReason = modeGuardReasonForListing(listing, 'sale');
+      if (policyReason) {
+        this.error = { message: policyReason, status: 422, errorCode: 'POLICY_MISMATCH' };
+        return;
+      }
+
       this.loading = true;
       this.error = null;
       try {
@@ -264,4 +280,3 @@ export default {
 .submit-button:hover:not(:disabled) { background: #16a34a; }
 .submit-button:disabled { background: #94a3b8; cursor: not-allowed; }
 </style>
-

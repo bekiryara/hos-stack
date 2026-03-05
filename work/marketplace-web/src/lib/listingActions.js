@@ -1,3 +1,5 @@
+import { modeGuardReasonForListing } from './servicePolicyGuard';
+
 /**
  * Listing actions resolver (single source of truth).
  *
@@ -87,11 +89,14 @@ export function resolveListingActions(listing, opts = {}) {
   for (const mode of modes) {
     const cta = MODE_CTA[mode];
     if (!cta) continue;
+    const blockedReason = modeGuardReasonForListing(listing, mode);
     actions.push({
       key: cta.key,
       label: context === 'detail' ? cta.labelDetail : cta.labelGrid,
       to: { path: cta.path, query: { listing_id: listingId } },
       uiClass: context === 'grid' ? cta.uiClassGrid : 'action-button',
+      disabled: Boolean(blockedReason),
+      disabledReason: blockedReason || null,
     });
   }
 

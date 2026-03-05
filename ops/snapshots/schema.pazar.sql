@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Y73mFmsgZ2SWPred6TxnapHQ5aQy8PIisXW5b6AmSbsX5mb4cehEaXTzicdQPZY
+\restrict avCSLDB2AblYhod4HRNftYbekz6hJMbwDk3mz8Y9PdBelzcDfwaDr6dI5nJaxSn
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -271,7 +271,11 @@ CREATE TABLE public.rentals (
     end_at timestamp(0) without time zone NOT NULL,
     status character varying(20) DEFAULT 'requested'::character varying NOT NULL,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    pricing_source character varying(20),
+    price_amount integer,
+    price_currency character varying(3),
+    billing_model character varying(30)
 );
 
 
@@ -290,7 +294,11 @@ CREATE TABLE public.reservations (
     status character varying(20) DEFAULT 'requested'::character varying NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    offer_id uuid
+    offer_id uuid,
+    pricing_source character varying(20),
+    price_amount integer,
+    price_currency character varying(3),
+    billing_model character varying(30)
 );
 
 
@@ -779,5 +787,5 @@ ALTER TABLE ONLY public.reservations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Y73mFmsgZ2SWPred6TxnapHQ5aQy8PIisXW5b6AmSbsX5mb4cehEaXTzicdQPZY
+\unrestrict avCSLDB2AblYhod4HRNftYbekz6hJMbwDk3mz8Y9PdBelzcDfwaDr6dI5nJaxSn
 

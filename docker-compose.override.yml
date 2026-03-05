@@ -5,6 +5,9 @@ services:
     environment:
       HOS_OIDC_ISSUER: http://localhost:3000
       HOS_OIDC_WORLD: pazar
+      # Address options are served from HOS only.
+      HOS_API_BASE_URL: http://hos-api:3000
+      HOS_API_TIMEOUT: 3
       # Optional: allow importing manifests from an external dataset/artifact mount.
       # Default inside container remains /var/www/html/catalog/manifests (base_path('catalog/manifests')).
       CATALOG_MANIFESTS_PATH: /var/www/html/catalog/manifests
@@ -12,7 +15,6 @@ services:
       - ./work/pazar/database:/var/www/html/database:ro
       - ./work/pazar/config:/var/www/html/config:ro
       # Manifests change frequently; mount to avoid rebuilds (prevents heavy vendor copy on Windows)
-      # Override host path if you want to mount an external artifact, e.g.:
-      #   set CATALOG_MANIFESTS_HOST_PATH=D:\stack-data\catalog-dataset\out\manifests_current
-      # Default is a tiny in-repo CI/dev manifests set (keeps repo lean).
-      - ${CATALOG_MANIFESTS_HOST_PATH:-./work/pazar/catalog/manifests_ci}:/var/www/html/catalog/manifests:ro
+      # Override host path if needed (env: CATALOG_MANIFESTS_HOST_PATH).
+      # Default points to external canonical dataset manifests.
+      - ${CATALOG_MANIFESTS_HOST_PATH:-../stack-data/catalog-dataset/out/manifests}:/var/www/html/catalog/manifests:ro

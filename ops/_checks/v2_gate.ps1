@@ -168,6 +168,8 @@ Write-Host ""
 # Metric 2: schema drift (unknown attribute keys)
 # -------------------------
 Write-Host "[2] Schema drift: unknown attribute keys..." -ForegroundColor Yellow
+# Policy/meta keys are deterministic and may not exist in category_filter_schema.
+# Keep this allowlist in sync with listing policy normalization in routes/_helpers.php.
 $unknownKeysCountSql = @"
 WITH l AS (
   SELECT
@@ -194,7 +196,14 @@ bad AS (
     k.key AS attr_key
   FROM m
   CROSS JOIN LATERAL jsonb_object_keys(m.attrs) AS k(key)
-  WHERE k.key NOT IN ('offer_variant','interaction_mode')
+  WHERE k.key NOT IN (
+    'offer_variant',
+    'interaction_mode',
+    'fulfillment_mode',
+    'location_scope',
+    'service_time_model',
+    'offer_requirement'
+  )
     AND NOT EXISTS (
       SELECT 1
       FROM category_filter_schema s

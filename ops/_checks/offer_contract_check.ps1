@@ -145,6 +145,12 @@ try {
         title = "Test Wedding Hall Listing for WP-9 Offers $(Get-Date -Format 'yyyyMMddHHmmss')"
         description = "Test listing for offers contract check"
         transaction_modes = @("reservation")
+        location = @{
+            city = "Istanbul"
+            district = "Besiktas"
+            neighborhood = "Levent Mah."
+            address_line = "Test Mahallesi 1"
+        }
         attributes = @{
             capacity_max = 100
         }

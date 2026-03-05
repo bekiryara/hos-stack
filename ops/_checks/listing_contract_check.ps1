@@ -252,6 +252,12 @@ if (-not $weddingHallId) {
         category_id = $weddingHallId
         title = $test2Title
         transaction_modes = @("reservation")
+        location = @{
+            city = "Istanbul"
+            district = "Besiktas"
+            neighborhood = "Levent Mah."
+            address_line = "Test Mahallesi 1"
+        }
         # wedding-hall requires capacity_max (catalog filter-schema required=true)
         # Include it so this test validates ONLY the auth rule (GENESIS_ALLOW_UNAUTH_STORE), not schema validation.
         attributes = @{
@@ -321,6 +327,11 @@ if (-not $weddingHallId) {
         category_id = $weddingHallId
         title = "Test Without Tenant Header"
         transaction_modes = @("reservation")
+        location = @{
+            city = "Istanbul"
+            district = "Besiktas"
+            neighborhood = "Levent Mah."
+        }
     } | ConvertTo-Json
 
     try {
@@ -376,6 +387,12 @@ if (-not $weddingHallId) {
         title = $test4Title
         description = "A test wedding hall listing for WP-3"
         transaction_modes = @("reservation")
+        location = @{
+            city = "Istanbul"
+            district = "Besiktas"
+            neighborhood = "Levent Mah."
+            address_line = "Test Mahallesi 1"
+        }
         attributes = @{
             capacity_max = 500
         }

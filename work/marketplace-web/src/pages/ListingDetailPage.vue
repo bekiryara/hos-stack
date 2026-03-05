@@ -115,10 +115,15 @@
           :key="a.key"
           type="button"
           class="action-button"
+          :disabled="a.disabled"
+          :title="a.disabledReason || ''"
           @click="runAction(a)"
         >
           {{ a.label }}
         </button>
+      </div>
+      <div v-if="blockedActionReasons.length" class="policy-note">
+        <div v-for="(reason, idx) in blockedActionReasons" :key="idx">{{ reason }}</div>
       </div>
 
       <div v-if="listing && listing.status === 'draft'" class="publish-section">
@@ -161,6 +166,12 @@ export default {
     resolvedActions() {
       if (!this.listing) return [];
       return resolveListingActions(this.listing, { context: 'detail' });
+    },
+    blockedActionReasons() {
+      const reasons = this.resolvedActions
+        .filter((a) => a && a.disabled && a.disabledReason)
+        .map((a) => String(a.disabledReason));
+      return Array.from(new Set(reasons));
     },
   },
   data() {
@@ -249,6 +260,7 @@ export default {
       }
     },
     runAction(action) {
+      if (action?.disabled) return;
       if (!action || !action.to) return;
       this.$router.push(action.to);
     },
@@ -417,6 +429,17 @@ export default {
 
 .publish-section h3 {
   margin-bottom: 1rem;
+}
+
+.policy-note {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #ffe0b2;
+  border-left: 3px solid #ef6c00;
+  background: #fff8e1;
+  border-radius: 6px;
+  color: #8a4b08;
+  font-size: 0.9rem;
 }
 
 .transaction-badge {

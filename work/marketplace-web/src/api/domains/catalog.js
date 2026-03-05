@@ -22,6 +22,21 @@ export function getIntentSchema(categoryId) {
   return apiRequest(`/api/v1/categories/${categoryId}/intent-schema`, {}, true);
 }
 
+export function getCityOptions() {
+  return apiRequest('/api/v1/options/cities', {}, true);
+}
+
+export function getDistrictOptions(city) {
+  const c = encodeURIComponent(String(city || '').trim());
+  return apiRequest(`/api/v1/options/districts?city=${c}`, {}, true);
+}
+
+export function getNeighborhoodOptions(city, district) {
+  const c = encodeURIComponent(String(city || '').trim());
+  const d = encodeURIComponent(String(district || '').trim());
+  return apiRequest(`/api/v1/options/neighborhoods?city=${c}&district=${d}`, {}, true);
+}
+
 export function searchListings(params) {
   const queryString = toStableQueryString(params);
   return apiRequest(`/api/v1/listings?${queryString}`, {}, true);

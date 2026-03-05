@@ -23,10 +23,15 @@
       :categories-tree="categoriesTree"
       :filter-schema="filterSchema"
       :intent-schema="intentSchema"
+      :city-options="cityOptions"
+      :district-options="districtOptions"
+      :neighborhood-options="neighborhoodOptions"
       :tenant-id="tenantId"
       :tenant-id-load-error="tenantIdLoadError"
       :loading="loading"
       @category-change="onCategoryChange"
+      @location-city-change="onLocationCityChange"
+      @location-district-change="onLocationDistrictChange"
       @submit="onFormSubmit"
     />
   </div>
@@ -34,7 +39,7 @@
 
 <script>
 import { api } from '../api/client';
-import { getCategoriesTree, getFilterSchemaForCategory, getIntentSchemaForCategory } from '../lib/catalogSpine';
+import { getCategoriesTree, getFilterSchemaForCategory, getIntentSchemaForCategory, getCityOptions, getDistrictOptions, getNeighborhoodOptions } from '../lib/catalogSpine';
 import { isLoggedIn, getActiveTenantId, setActiveTenantId } from '../lib/session.js';
 import { normalizeApiError } from '../lib/errors/api_error.js';
 import { notifyApiSuccess, notifyApiError } from '../lib/toast/notify_api.js';
@@ -62,6 +67,9 @@ export default {
       intentSchema: null,
       tenantId: '',
       tenantIdLoadError: false,
+      cityOptions: [],
+      districtOptions: [],
+      neighborhoodOptions: [],
       loading: false,
       error: null,
       success: null,
@@ -71,7 +79,12 @@ export default {
   },
   async mounted() {
     try {
-      this.categoriesTree = await getCategoriesTree();
+      const [categoriesTree, cityOptions] = await Promise.all([
+        getCategoriesTree(),
+        getCityOptions().catch(() => []),
+      ]);
+      this.categoriesTree = categoriesTree;
+      this.cityOptions = Array.isArray(cityOptions) ? cityOptions : [];
 
       if (!this.tenantId) {
         const activeTenantId = getActiveTenantId();
@@ -113,6 +126,8 @@ export default {
       if (!categoryId) {
         this.filterSchema = null;
         this.intentSchema = null;
+        this.districtOptions = [];
+        this.neighborhoodOptions = [];
         return;
       }
       try {
@@ -126,6 +141,34 @@ export default {
         console.error('Failed to load filter schema:', err);
         this.filterSchema = null;
         this.intentSchema = null;
+        this.districtOptions = [];
+        this.neighborhoodOptions = [];
+      }
+    },
+    async onLocationCityChange(city) {
+      this.neighborhoodOptions = [];
+      const c = String(city || '').trim();
+      if (!c) {
+        this.districtOptions = [];
+        return;
+      }
+      try {
+        this.districtOptions = await getDistrictOptions(c);
+      } catch {
+        this.districtOptions = [];
+      }
+    },
+    async onLocationDistrictChange(payload) {
+      const city = String(payload?.city || '').trim();
+      const district = String(payload?.district || '').trim();
+      if (!city || !district) {
+        this.neighborhoodOptions = [];
+        return;
+      }
+      try {
+        this.neighborhoodOptions = await getNeighborhoodOptions(city, district);
+      } catch {
+        this.neighborhoodOptions = [];
       }
     },
     clearSubmitError() {
@@ -158,6 +201,7 @@ export default {
         currency: (typeof formSnapshot.currency === 'string' && formSnapshot.currency.trim()) ? formSnapshot.currency.trim().toUpperCase() : 'TRY',
         transaction_modes: formSnapshot.transaction_modes || [],
         attributes: Object.keys(attributes).length > 0 ? attributes : null,
+        location: formSnapshot.location || null,
       };
 
       const activeTenantId = this.tenantId || getActiveTenantId();

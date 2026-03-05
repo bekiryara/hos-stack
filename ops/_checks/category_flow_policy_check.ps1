@@ -45,6 +45,60 @@ if ($policy.rules) {
     }
 }
 
+# 1.1) Validate service primitive enums (if present in rules)
+$validFulfillmentModes = @("provider_location", "customer_location", "remote", "hybrid")
+$validLocationScopes = @("none", "city", "point", "service_area")
+$validServiceTimeModels = @("none", "date_range", "slot", "session")
+$validOfferRequirements = @("no_offer", "optional_offer", "required_offer")
+$primitiveViolations = @()
+
+foreach ($ruleKey in $rules.Keys) {
+    $rule = $rules[$ruleKey]
+    if (-not $rule) { continue }
+
+    if ($rule.PSObject.Properties['fulfillment_mode']) {
+        $v = [string]$rule.fulfillment_mode
+        if ($validFulfillmentModes -notcontains $v) {
+            $primitiveViolations += "rules.$ruleKey.fulfillment_mode invalid: $v"
+        }
+    }
+    if ($rule.PSObject.Properties['location_scope']) {
+        $v = [string]$rule.location_scope
+        if ($validLocationScopes -notcontains $v) {
+            $primitiveViolations += "rules.$ruleKey.location_scope invalid: $v"
+        }
+    }
+    if ($rule.PSObject.Properties['service_time_model']) {
+        $v = [string]$rule.service_time_model
+        if ($validServiceTimeModels -notcontains $v) {
+            $primitiveViolations += "rules.$ruleKey.service_time_model invalid: $v"
+        }
+    }
+    if ($rule.PSObject.Properties['offer_requirement']) {
+        $v = [string]$rule.offer_requirement
+        if ($validOfferRequirements -notcontains $v) {
+            $primitiveViolations += "rules.$ruleKey.offer_requirement invalid: $v"
+        }
+        if ($v -eq "required_offer") {
+            $supportsPackages = $false
+            if ($rule.PSObject.Properties['supports_packages']) {
+                $supportsPackages = [bool]$rule.supports_packages
+            }
+            if (-not $supportsPackages) {
+                $primitiveViolations += "rules.$ruleKey.offer_requirement=required_offer requires supports_packages=true"
+            }
+        }
+    }
+}
+
+if ($primitiveViolations.Count -gt 0) {
+    Write-Host "FAIL: Service primitive policy violations detected:" -ForegroundColor Red
+    foreach ($v in $primitiveViolations) {
+        Write-Host "  - $v" -ForegroundColor Yellow
+    }
+    exit 1
+}
+
 # 2) DB connection
 $dbHost = $env:DB_HOST
 if (-not $dbHost) { $dbHost = "localhost" }
