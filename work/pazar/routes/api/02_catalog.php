@@ -2,8 +2,83 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
-// Catalog Spine Endpoints (SPEC §6.2, WP-2)
+if (!function_exists('pazar_catalog_hos_fetch_options')) {
+    function pazar_catalog_hos_fetch_options(string $path, array $query = []): ?array {
+        $base = trim((string) getenv('HOS_API_BASE_URL'));
+        if ($base === '') $base = 'http://hos-api:3000';
+        $timeout = (int) getenv('HOS_API_TIMEOUT');
+        if ($timeout <= 0) $timeout = 2;
+
+        try {
+            $resp = Http::timeout($timeout)->acceptJson()->get(rtrim($base, "\\/") . $path, $query);
+            if (!$resp->successful()) return null;
+            $options = $resp->json('options');
+            if (!is_array($options)) return [];
+            return array_values(array_filter(array_map(function ($v) {
+                return is_string($v) ? trim($v) : '';
+            }, $options), function ($v) { return $v !== ''; }));
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+}
+
+// GET /v1/options/cities
+// Canonical source: HOS API /v1/options/cities
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/options/cities', function () {
+    $hos = pazar_catalog_hos_fetch_options('/v1/options/cities');
+    if ($hos !== null) return response()->json(['options' => $hos]);
+
+    return response()->json([
+        'error' => 'options_source_unavailable',
+        'message' => 'HOS options source unavailable'
+    ], 503);
+});
+
+// GET /v1/options/districts?city=...
+// Canonical source: HOS API /v1/options/districts
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/options/districts', function (\Illuminate\Http\Request $request) {
+    $city = trim((string) $request->query('city', ''));
+    if ($city === '') {
+        return response()->json([
+            'error' => 'missing_city',
+            'message' => 'city query parameter is required'
+        ], 422);
+    }
+
+    $hos = pazar_catalog_hos_fetch_options('/v1/options/districts', ['city' => $city]);
+    if ($hos !== null) return response()->json(['options' => $hos]);
+
+    return response()->json([
+        'error' => 'options_source_unavailable',
+        'message' => 'HOS options source unavailable'
+    ], 503);
+});
+
+// GET /v1/options/neighborhoods?city=...&district=...
+// Canonical source: HOS API /v1/options/neighborhoods
+Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/options/neighborhoods', function (\Illuminate\Http\Request $request) {
+    $city = trim((string) $request->query('city', ''));
+    $district = trim((string) $request->query('district', ''));
+    if ($city === '' || $district === '') {
+        return response()->json([
+            'error' => 'missing_city_or_district',
+            'message' => 'city and district query parameters are required'
+        ], 422);
+    }
+
+    $hos = pazar_catalog_hos_fetch_options('/v1/options/neighborhoods', ['city' => $city, 'district' => $district]);
+    if ($hos !== null) return response()->json(['options' => $hos]);
+
+    return response()->json([
+        'error' => 'options_source_unavailable',
+        'message' => 'HOS options source unavailable'
+    ], 503);
+});
+
+// Catalog Spine Endpoints (SPEC Â§6.2, WP-2)
 // GET /v1/categories (tree format)
 // WP-8: GUEST+ persona (no headers required)
 Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/categories', function () {
@@ -105,7 +180,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
     };
 
     $desiredGenForPath = function (array $pathSlugs): int {
-        // Heuristic: under "Kadın" prefer g1, under "Erkek" prefer g2.
+        // Heuristic: under "KadÄ±n" prefer g1, under "Erkek" prefer g2.
         foreach ($pathSlugs as $ps) {
             if ((string) $ps === 'service-product-kadin') return 1;
             if ((string) $ps === 'service-product-erkek') return 2;
@@ -198,7 +273,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
             // full_root_override replaces DB children with nav-only children for
             // virtual nav containers (service-product-kadin, ...-erkek, etc.) and
             // nav-placement nodes (-nav-). Canonical DB parents (-ty-c\d+) get MERGE
-            // so their deeper DB children (e.g. Mangal under Bahçe Ürünleri) remain navigable.
+            // so their deeper DB children (e.g. Mangal under BahÃ§e ÃœrÃ¼nleri) remain navigable.
             $isServiceProductScope = $fullRootOverrideServiceProduct && str_starts_with($p, 'service-product');
             $isCanonicalParent = (bool) preg_match('/-ty-c\\d+$/', $p);
             if ($isServiceProductScope && !empty($uniq) && !$isCanonicalParent) {
@@ -285,7 +360,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
             }
         }
 
-        // Explicit wc field is the strongest signal — always prefer it when present.
+        // Explicit wc field is the strongest signal â€” always prefer it when present.
         // This bridges nav nodes (e.g. service-product-ev-yasam) to their Trendyol
         // WC category (e.g. service-product-ty-c145704), enabling DB child merge.
         if (isset($edgeWcByChildSlug[$slug])) {
@@ -332,8 +407,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 break;
             }
         }
-        // Kadın/Erkek: block nav-placement BRANCH nodes (curated children only)
-        // Anne & Çocuk: block ALL nav-placement nodes (prevent adult content under children)
+        // KadÄ±n/Erkek: block nav-placement BRANCH nodes (curated children only)
+        // Anne & Ã‡ocuk: block ALL nav-placement nodes (prevent adult content under children)
         $blockDbMerge = $isNavPlacement && (
             (!empty($childSlugs) && $isGenderPath) || $isChildPath
         );
