@@ -1,6 +1,6 @@
 # CURRENT - Single Source of Truth
 
-**Last Updated:** 2026-02-09  
+**Last Updated:** 2026-03-04  
 **Baseline:** RELEASE-GRADE BASELINE RESET v1
 
 ## What is the Stack?
@@ -269,3 +269,39 @@ This ensures baseline remains stable and prevents breaking changes.
 - **Onboarding:** `docs/ONBOARDING.md` (quick start for newcomers)
 - **Start Here:** `docs/START_HERE.md` (7 rule set)
 - **Rules:** `docs/RULES.md` (fundamental rules)
+## Listing Detail Read/Projection Status
+
+**Current state (confirmed):**
+- Listing detail no longer relies on raw `attributes` dump as its primary read model.
+- Marketplace frontend now uses a shared listing detail projection layer to separate:
+  - listing base
+  - category context
+  - schema-backed attributes
+  - policy / transaction info
+  - technical meta
+- Canonical category lookup is fixed for detail/edit surfaces: listing `category_id` must resolve against `canonical_category_id` in menu trees, not only menu node `id`.
+
+**Confirmed frontend files involved:**
+- `work/marketplace-web/src/lib/listingDetailProjection.js`
+- `work/marketplace-web/src/lib/categoryTree.js`
+- `work/marketplace-web/src/pages/ListingDetailPage.vue`
+- `work/marketplace-web/src/pages/EditListingPage.vue`
+
+**Behavior now expected on listing detail:**
+- Hero reads as: `Transaction Type / Category Name`
+- Product/listing features, listing context, transaction info, and technical info are separated into distinct sections.
+- `published` is no longer treated as primary customer-facing hero context.
+
+**Validation note:**
+- This read/projection correction was validated on multiple families:
+  - `vehicle`
+  - `real-estate`
+  - `service-product`
+  - `events`
+
+## Full Gate Status Note (2026-03-04)
+
+- `verify`, `openapi_contract`, `conformance`, `v2_gate`, and `messaging_contract_check` pass.
+- `pazar_spine_check` currently fails at `Trendyol Category Coverage` with `98.3%` coverage (`4747 / 4828`, `81` unreachable).
+- That Trendyol coverage failure is currently a known/accepted open item, not a surprise regression.
+- `ops.ps1 full` currently prints a final PASS even when `pazar_spine_check` fails; treat this as an ops wrapper reporting inconsistency, not as proof that all gates are green.

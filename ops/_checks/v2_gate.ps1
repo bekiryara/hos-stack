@@ -1,17 +1,16 @@
 #!/usr/bin/env pwsh
-# V2 Gate (pre-V2 discipline lock)
-# Enforces "0 targets" before bulk catalog changes.
-#
-# Metrics (minimum set):
+# V2 Gate (runtime + basic alignment)
+# Lightweight 6-metric gate:
 #  1) Listings linked to inactive categories
-#  2) Listings containing attribute keys not allowed by category schema (incl. applies_to_transaction_modes)
+#  2) Listings containing schema-unknown attribute keys
 #  3) Published listings missing interaction_mode
-#
-# Exit codes:
-#  0 PASS (all metrics are 0)
-#  1 FAIL (any metric > 0 or query error)
-#
-# PowerShell 5.1 compatible.
+#  4) Categories count parity (SSOT/Manifest/DB)
+#  5) Attributes count parity (SSOT/Manifest/DB)
+#  6) Active schema pair count parity (SSOT/Manifest/DB)
+
+param(
+  [string]$DatasetRoot = "D:\stack-data\catalog-dataset"
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -25,9 +24,34 @@ if (-not (Get-Command Invoke-OpsExit -ErrorAction SilentlyContinue)) {
   function Invoke-OpsExit { param([int]$Code = 1) exit $Code }
 }
 
-Write-Host "=== V2 GATE (0-targets) ===" -ForegroundColor Cyan
+Write-Host "=== V2 GATE (6 metrics) ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host ""
+
+$resolvedDatasetRoot = $DatasetRoot
+if (-not (Test-Path $resolvedDatasetRoot)) {
+  $candidate = Join-Path $repoRoot "..\stack-data\catalog-dataset"
+  if (Test-Path $candidate) { $resolvedDatasetRoot = $candidate }
+}
+$resolvedDatasetRoot = (Resolve-Path $resolvedDatasetRoot -ErrorAction SilentlyContinue).Path
+if (-not $resolvedDatasetRoot) {
+  Write-Host "FAIL: Dataset root not found (expected: $DatasetRoot)" -ForegroundColor Red
+  Invoke-OpsExit 1
+  return
+}
+
+$csvDir = Join-Path $resolvedDatasetRoot "csv"
+$manifestDir = Join-Path $resolvedDatasetRoot "out\manifests"
+if (-not (Test-Path $csvDir)) {
+  Write-Host "FAIL: SSOT csv directory missing: $csvDir" -ForegroundColor Red
+  Invoke-OpsExit 1
+  return
+}
+if (-not (Test-Path $manifestDir)) {
+  Write-Host "FAIL: Canonical manifest directory missing: $manifestDir" -ForegroundColor Red
+  Invoke-OpsExit 1
+  return
+}
 
 # DB connection defaults (match other ops scripts)
 $dbHost = $env:DB_HOST; if (-not $dbHost) { $dbHost = "localhost" }
@@ -82,6 +106,39 @@ function Parse-IntOrNull {
   return $null
 }
 
+function Read-JsonFile {
+  param([string]$Path)
+  $raw = Get-Content -Path $Path -Raw -Encoding UTF8
+  return ($raw | ConvertFrom-Json)
+}
+
+function Get-SsotSchemaRows {
+  param([string]$CsvRoot)
+  $rows = @()
+  $main = Join-Path $CsvRoot "schema.csv"
+  if (Test-Path $main) { $rows += @(Import-Csv $main) }
+  $schemaDir = Join-Path $CsvRoot "schema"
+  if (Test-Path $schemaDir) {
+    Get-ChildItem $schemaDir -Filter *.csv | Sort-Object FullName | ForEach-Object {
+      $rows += @(Import-Csv $_.FullName)
+    }
+  }
+  return $rows
+}
+
+function Get-ManifestSchemaPairCount {
+  param([string]$Dir)
+  $p = Join-Path $Dir "schema\catalog.csv.json"
+  $blocks = @(Read-JsonFile $p)
+  $count = 0
+  foreach ($b in $blocks) {
+    $slugCount = @($b.category_slugs).Count
+    $fieldCount = @($b.fields).Count
+    $count += ($slugCount * $fieldCount)
+  }
+  return $count
+}
+
 $hasFailures = $false
 
 # -------------------------
@@ -104,19 +161,6 @@ if ($inactiveCount -eq 0) {
 } else {
   $hasFailures = $true
   Write-Host "FAIL: $inactiveCount listings linked to inactive categories" -ForegroundColor Red
-  $inactiveSampleSql = @"
-SELECT l.id, c.slug, c.status, l.status
-FROM listings l
-JOIN categories c ON c.id = l.category_id
-WHERE c.status <> 'active'
-ORDER BY l.created_at DESC
-LIMIT 10;
-"@
-  $inactiveSample = Invoke-PostgresQuery -Query $inactiveSampleSql -Description "Sample inactive-category listings"
-  if ($inactiveSample) {
-    Write-Host "  Sample (listing_id|category_slug|category_status|listing_status):" -ForegroundColor Gray
-    ($inactiveSample -split "`n" | Where-Object { $_.Trim().Length -gt 0 }) | ForEach-Object { Write-Host ("  - " + $_) -ForegroundColor Gray }
-  }
 }
 Write-Host ""
 
@@ -177,56 +221,6 @@ if ($unknownListingsCount -eq 0) {
 } else {
   $hasFailures = $true
   Write-Host "FAIL: $unknownListingsCount listings contain unknown attribute keys" -ForegroundColor Red
-  $unknownSampleSql = @"
-WITH l AS (
-  SELECT
-    id,
-    category_id,
-    COALESCE(attributes_json::jsonb, '{}'::jsonb) AS attrs,
-    COALESCE(transaction_modes_json::jsonb, '[]'::jsonb) AS modes
-  FROM listings
-),
-m AS (
-  SELECT
-    l.*,
-    CASE
-      WHEN jsonb_typeof(modes) = 'array' AND jsonb_array_length(modes) > 0 THEN (modes->>0)
-      ELSE NULL
-    END AS mode
-  FROM l
-),
-bad AS (
-  SELECT
-    m.id,
-    m.category_id,
-    m.mode,
-    k.key AS attr_key
-  FROM m
-  CROSS JOIN LATERAL jsonb_object_keys(m.attrs) AS k(key)
-  WHERE k.key NOT IN ('offer_variant','interaction_mode')
-    AND NOT EXISTS (
-      SELECT 1
-      FROM category_filter_schema s
-      WHERE s.category_id = m.category_id
-        AND s.status = 'active'
-        AND s.attribute_key = k.key
-        AND (
-          s.applies_to_transaction_modes IS NULL
-          OR (jsonb_typeof(s.applies_to_transaction_modes::jsonb) = 'array' AND jsonb_array_length(s.applies_to_transaction_modes::jsonb) = 0)
-          OR (m.mode IS NOT NULL AND (s.applies_to_transaction_modes::jsonb ? m.mode))
-        )
-    )
-)
-SELECT id, category_id, COALESCE(mode,'-') AS mode, attr_key
-FROM bad
-ORDER BY id
-LIMIT 10;
-"@
-  $unknownSample = Invoke-PostgresQuery -Query $unknownSampleSql -Description "Sample schema drift keys"
-  if ($unknownSample) {
-    Write-Host "  Sample (listing_id|category_id|mode|unknown_attr_key):" -ForegroundColor Gray
-    ($unknownSample -split "`n" | Where-Object { $_.Trim().Length -gt 0 }) | ForEach-Object { Write-Host ("  - " + $_) -ForegroundColor Gray }
-  }
 }
 Write-Host ""
 
@@ -254,33 +248,91 @@ if ($missingInteractionCount -eq 0) {
 } else {
   $hasFailures = $true
   Write-Host "FAIL: $missingInteractionCount published listings missing interaction_mode" -ForegroundColor Red
-  $missingInteractionSampleSql = @"
-SELECT id, category_id, created_at
-FROM listings
-WHERE status = 'published'
-  AND (
-    attributes_json IS NULL
-    OR NOT (attributes_json::jsonb ? 'interaction_mode')
-    OR COALESCE(attributes_json::jsonb->>'interaction_mode','') = ''
-  )
-ORDER BY created_at DESC
-LIMIT 10;
-"@
-  $missingInteractionSample = Invoke-PostgresQuery -Query $missingInteractionSampleSql -Description "Sample missing interaction_mode listings"
-  if ($missingInteractionSample) {
-    Write-Host "  Sample (listing_id|category_id|created_at):" -ForegroundColor Gray
-    ($missingInteractionSample -split "`n" | Where-Object { $_.Trim().Length -gt 0 }) | ForEach-Object { Write-Host ("  - " + $_) -ForegroundColor Gray }
+}
+Write-Host ""
+
+# -------------------------
+# Metric 4: categories count parity
+# -------------------------
+Write-Host "[4] Categories count parity (SSOT/Manifest/DB)..." -ForegroundColor Yellow
+try {
+  $ssotCategoriesCount = @(Import-Csv (Join-Path $csvDir "categories.csv")).Count
+  $manifestCategoriesCount = @(Read-JsonFile (Join-Path $manifestDir "categories\catalog.csv.json")).Count
+  $dbCategoriesRaw = Invoke-PostgresQuery -Query "SELECT count(*) FROM categories;" -Description "Count DB categories"
+  if ($null -eq $dbCategoriesRaw) { Invoke-OpsExit 1; return }
+  $dbCategoriesCount = Parse-IntOrNull ($dbCategoriesRaw | Select-Object -First 1)
+  if ($dbCategoriesCount -eq $null) { throw "Could not parse DB categories count" }
+
+  if ($ssotCategoriesCount -eq $manifestCategoriesCount -and $manifestCategoriesCount -eq $dbCategoriesCount) {
+    Write-Host "PASS: Categories counts aligned" -ForegroundColor Green
+  } else {
+    $hasFailures = $true
+    Write-Host "FAIL: Categories count mismatch" -ForegroundColor Red
   }
+  Write-Host "  ssot=$ssotCategoriesCount manifest=$manifestCategoriesCount db=$dbCategoriesCount" -ForegroundColor Gray
+} catch {
+  $hasFailures = $true
+  Write-Host "FAIL: Categories parity check failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+Write-Host ""
+
+# -------------------------
+# Metric 5: attributes count parity
+# -------------------------
+Write-Host "[5] Attributes count parity (SSOT/Manifest/DB)..." -ForegroundColor Yellow
+try {
+  $ssotAttributesCount = @(Import-Csv (Join-Path $csvDir "attributes.csv")).Count
+  $manifestAttributesCount = @(Read-JsonFile (Join-Path $manifestDir "attributes.json")).Count
+  $dbAttributesRaw = Invoke-PostgresQuery -Query "SELECT count(*) FROM attributes;" -Description "Count DB attributes"
+  if ($null -eq $dbAttributesRaw) { Invoke-OpsExit 1; return }
+  $dbAttributesCount = Parse-IntOrNull ($dbAttributesRaw | Select-Object -First 1)
+  if ($dbAttributesCount -eq $null) { throw "Could not parse DB attributes count" }
+
+  if ($ssotAttributesCount -eq $manifestAttributesCount -and $manifestAttributesCount -eq $dbAttributesCount) {
+    Write-Host "PASS: Attributes counts aligned" -ForegroundColor Green
+  } else {
+    $hasFailures = $true
+    Write-Host "FAIL: Attributes count mismatch" -ForegroundColor Red
+  }
+  Write-Host "  ssot=$ssotAttributesCount manifest=$manifestAttributesCount db=$dbAttributesCount" -ForegroundColor Gray
+} catch {
+  $hasFailures = $true
+  Write-Host "FAIL: Attributes parity check failed: $($_.Exception.Message)" -ForegroundColor Red
+}
+Write-Host ""
+
+# -------------------------
+# Metric 6: active schema pair count parity
+# -------------------------
+Write-Host "[6] Active schema pair count parity (SSOT/Manifest/DB)..." -ForegroundColor Yellow
+try {
+  $ssotSchemaRows = Get-SsotSchemaRows -CsvRoot $csvDir
+  $ssotSchemaCount = @($ssotSchemaRows | Where-Object { $_.category_slug -and $_.attribute_key }).Count
+  $manifestSchemaCount = Get-ManifestSchemaPairCount -Dir $manifestDir
+  $dbSchemaRaw = Invoke-PostgresQuery -Query "SELECT count(*) FROM category_filter_schema WHERE status = 'active';" -Description "Count DB active schema pairs"
+  if ($null -eq $dbSchemaRaw) { Invoke-OpsExit 1; return }
+  $dbSchemaCount = Parse-IntOrNull ($dbSchemaRaw | Select-Object -First 1)
+  if ($dbSchemaCount -eq $null) { throw "Could not parse DB schema count" }
+
+  if ($ssotSchemaCount -eq $manifestSchemaCount -and $manifestSchemaCount -eq $dbSchemaCount) {
+    Write-Host "PASS: Active schema pair counts aligned" -ForegroundColor Green
+  } else {
+    $hasFailures = $true
+    Write-Host "FAIL: Active schema pair count mismatch" -ForegroundColor Red
+  }
+  Write-Host "  ssot=$ssotSchemaCount manifest=$manifestSchemaCount db_active=$dbSchemaCount" -ForegroundColor Gray
+} catch {
+  $hasFailures = $true
+  Write-Host "FAIL: Schema parity check failed: $($_.Exception.Message)" -ForegroundColor Red
 }
 Write-Host ""
 
 # Summary
 Write-Host "=== V2 GATE SUMMARY ===" -ForegroundColor Cyan
 if ($hasFailures) {
-  Write-Host "FAIL: One or more metrics are non-zero." -ForegroundColor Red
+  Write-Host "FAIL: One or more runtime/alignment checks failed." -ForegroundColor Red
   Invoke-OpsExit 1
 } else {
-  Write-Host "PASS: All metrics are 0." -ForegroundColor Green
+  Write-Host "PASS: 6/6 checks passed." -ForegroundColor Green
   Invoke-OpsExit 0
 }
-

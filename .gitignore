@@ -77,3 +77,10 @@ work/marketplace-web/dist/
 
 # Editor / workspace settings (local)
 .vscode/
+
+# Local Codex proxy / debug artifacts (local only)
+.codex-proxy-home/
+.codex-proxy-test/
+codex-proxy.cmd
+codex-proxy.ps1
+debug.log

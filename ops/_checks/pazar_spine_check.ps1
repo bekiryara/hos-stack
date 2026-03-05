@@ -19,20 +19,22 @@ Write-Host "Running all Marketplace spine contract checks in order:" -Foreground
 Write-Host "  1. World Status Check (WP-1.2)" -ForegroundColor Gray
 Write-Host "  2. Catalog Contract Check (WP-2)" -ForegroundColor Gray
 Write-Host "  3. Catalog Integrity Check (WP-74)" -ForegroundColor Gray
-Write-Host "  4. Trendyol Category Coverage Check" -ForegroundColor Gray
-Write-Host "  5. Listing Contract Check (WP-3)" -ForegroundColor Gray
-Write-Host "  6. Category Flow Policy Check" -ForegroundColor Gray
-Write-Host "  7. Offer Contract Check (WP-9)" -ForegroundColor Gray
-Write-Host "  8. Order Contract Check (WP-6)" -ForegroundColor Gray
-Write-Host "  9. Rental Contract Check (WP-7)" -ForegroundColor Gray
-Write-Host " 10. Reservation Contract Check (WP-4)" -ForegroundColor Gray
-Write-Host " 11. Account Portal Read Check (WP-12)" -ForegroundColor Gray
+Write-Host "  4. V2 Gate (Runtime + SSOT/Manifest/DB alignment)" -ForegroundColor Gray
+Write-Host "  5. Trendyol Category Coverage Check" -ForegroundColor Gray
+Write-Host "  6. Listing Contract Check (WP-3)" -ForegroundColor Gray
+Write-Host "  7. Category Flow Policy Check" -ForegroundColor Gray
+Write-Host "  8. Offer Contract Check (WP-9)" -ForegroundColor Gray
+Write-Host "  9. Order Contract Check (WP-6)" -ForegroundColor Gray
+Write-Host " 10. Rental Contract Check (WP-7)" -ForegroundColor Gray
+Write-Host " 11. Reservation Contract Check (WP-4)" -ForegroundColor Gray
+Write-Host " 12. Account Portal Read Check (WP-12)" -ForegroundColor Gray
 Write-Host ""
 
 $checks = @(
     @{ Name = "World Status Check"; Script = "world_status_check.ps1"; WP = "WP-1.2" },
     @{ Name = "Catalog Contract Check"; Script = "catalog_contract_check.ps1"; WP = "WP-2" },
     @{ Name = "Catalog Integrity Check"; Script = "catalog_integrity_check.ps1"; WP = "WP-74" },
+    @{ Name = "V2 Gate"; Script = "v2_gate.ps1"; WP = "V2 0-targets + alignment" },
     @{ Name = "Trendyol Category Coverage"; Script = "catalog_trendyol_coverage_check.ps1"; WP = "Trendyol Coverage" },
     @{ Name = "Listing Contract Check"; Script = "listing_contract_check.ps1"; WP = "WP-3" },
     @{ Name = "Category Flow Policy Check"; Script = "category_flow_policy_check.ps1"; WP = "Category Flow Policy" },

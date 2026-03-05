@@ -1,0 +1,850 @@
+﻿capacity_max|Maximum capacity (number of people)|number|person|2026-02-24 03:52:56
+city|????ehir|string||2026-03-04 14:52:19
+cuisine|Cuisine type|enum||2026-02-24 03:52:56
+offer_variant|Offer/policy variant (e.g., Sat????l????k, Kiral????k, Turistik G????nl????k Kiral????k, Devren). Not a category; used as listing policy.|enum||2026-03-04 14:52:19
+product_brand|Marka|string||2026-02-24 03:52:56
+product_condition|????r????n durumu|enum||2026-03-04 14:52:19
+product_ty_attr_1|Bel|enum||2026-02-24 03:52:56
+product_ty_attr_10|Kasa ?????ap????|enum||2026-03-04 14:52:19
+product_ty_attr_1003|Trendyol ?????zellik 1003|enum||2026-03-04 14:52:19
+product_ty_attr_1004|Trendyol ?????zellik 1004|enum||2026-03-04 14:52:19
+product_ty_attr_1005|Trendyol ?????zellik 1005|enum||2026-03-04 14:52:19
+product_ty_attr_1006|Trendyol ?????zellik 1006|enum||2026-03-04 14:52:19
+product_ty_attr_1007|Trendyol ?????zellik 1007|enum||2026-03-04 14:52:19
+product_ty_attr_1008|Trendyol ?????zellik 1008|enum||2026-03-04 14:52:19
+product_ty_attr_101|Cep|enum||2026-02-24 03:52:56
+product_ty_attr_1014|Trendyol ?????zellik 1014|enum||2026-03-04 14:52:19
+product_ty_attr_1016|K????s????rla????t????r????lm????????|enum||2026-03-04 14:52:19
+product_ty_attr_1017|Tane ????ekli|enum||2026-03-04 14:52:19
+product_ty_attr_1018|Kum T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_1019|Koku Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_1020|Trendyol ?????zellik 1020|enum||2026-03-04 14:52:19
+product_ty_attr_1024|H????z Endeksi|enum||2026-03-04 14:52:19
+product_ty_attr_1025|Y????k Endeksi|enum||2026-03-04 14:52:19
+product_ty_attr_1029|Trendyol ?????zellik 1029|enum||2026-03-04 14:52:19
+product_ty_attr_103|Cihaz A????????rl????????????|enum||2026-03-04 14:52:19
+product_ty_attr_1030|Trendyol ?????zellik 1030|enum||2026-03-04 14:52:19
+product_ty_attr_1032|RGB Ayd????nlatma|enum||2026-03-04 14:52:19
+product_ty_attr_1034|Batarya Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_1035|Switch T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_1036|????r????n ????????eri????i|enum||2026-03-04 14:52:19
+product_ty_attr_1037|Trendyol ?????zellik 1037|enum||2026-03-04 14:52:19
+product_ty_attr_1038|Trendyol ?????zellik 1038|enum||2026-03-04 14:52:19
+product_ty_attr_1039|Trendyol ?????zellik 1039|enum||2026-03-04 14:52:19
+product_ty_attr_104|Cihaz Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_1040|Trendyol ?????zellik 1040|enum||2026-03-04 14:52:19
+product_ty_attr_1041|Trendyol ?????zellik 1041|enum||2026-03-04 14:52:19
+product_ty_attr_1042|Trendyol ?????zellik 1042|enum||2026-03-04 14:52:19
+product_ty_attr_1044|Trendyol ?????zellik 1044|enum||2026-03-04 14:52:19
+product_ty_attr_1046|Trendyol ?????zellik 1046|enum||2026-03-04 14:52:19
+product_ty_attr_1047|Trendyol ?????zellik 1047|enum||2026-03-04 14:52:19
+product_ty_attr_1048|Trendyol ?????zellik 1048|enum||2026-03-04 14:52:19
+product_ty_attr_1049|Trendyol ?????zellik 1049|enum||2026-03-04 14:52:19
+product_ty_attr_1051|Trendyol ?????zellik 1051|enum||2026-03-04 14:52:19
+product_ty_attr_1052|Kablosuz ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_1053|Trendyol ?????zellik 1053|enum||2026-03-04 14:52:19
+product_ty_attr_1054|Trendyol ?????zellik 1054|enum||2026-03-04 14:52:19
+product_ty_attr_1055|Trendyol ?????zellik 1055|enum||2026-03-04 14:52:19
+product_ty_attr_1056|Trendyol ?????zellik 1056|enum||2026-03-04 14:52:19
+product_ty_attr_1058|K????l????f Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_1059|Uyumlu Marka|enum||2026-02-24 03:52:56
+product_ty_attr_106|?????ekmece Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_1063|Uyumlu Model|enum||2026-02-24 03:52:56
+product_ty_attr_1064|USB ?????????k???????? Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_1065|H????zl???? ????arj|enum||2026-03-04 14:52:19
+product_ty_attr_1066|Uyumlu Telefon Modeli|enum||2026-02-24 03:52:56
+product_ty_attr_1067|Dinleme S????resi|enum||2026-03-04 14:52:19
+product_ty_attr_1068|Trendyol ?????zellik 1068|enum||2026-03-04 14:52:19
+product_ty_attr_1069|Sim Kart T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_107|?????er????eve Formu|enum||2026-03-04 14:52:19
+product_ty_attr_1071|Setli/Tekil|enum||2026-02-24 03:52:56
+product_ty_attr_1073|?????????k???????? Ucu Uzunlu????u|enum||2026-03-04 14:52:19
+product_ty_attr_1074|Spiral Durumu|enum||2026-02-24 03:52:56
+product_ty_attr_1075|Ya????lanma Kar????????t????|enum||2026-03-04 14:52:19
+product_ty_attr_1078|Trendyol ?????zellik 1078|enum||2026-03-04 14:52:19
+product_ty_attr_1079|Kapatma Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_108|?????er????eve Materyali|enum||2026-03-04 14:52:19
+product_ty_attr_1080|Trendyol ?????zellik 1080|enum||2026-03-04 14:52:19
+product_ty_attr_1081|Ta????????ma ?????antas????|enum||2026-03-04 14:52:19
+product_ty_attr_1083|Trendyol ?????zellik 1083|enum||2026-03-04 14:52:19
+product_ty_attr_1084|Trendyol ?????zellik 1084|enum||2026-03-04 14:52:19
+product_ty_attr_1085|Trendyol ?????zellik 1085|enum||2026-03-04 14:52:19
+product_ty_attr_1086|Trendyol ?????zellik 1086|enum||2026-03-04 14:52:19
+product_ty_attr_1087|Trendyol ?????zellik 1087|enum||2026-03-04 14:52:19
+product_ty_attr_1088|Kesme Geni????li????i|enum||2026-03-04 14:52:19
+product_ty_attr_1089|Trendyol ?????zellik 1089|enum||2026-03-04 14:52:19
+product_ty_attr_109|?????ivi Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_1090|Trendyol ?????zellik 1090|enum||2026-03-04 14:52:19
+product_ty_attr_1091|Ders|enum||2026-02-24 03:52:56
+product_ty_attr_1093|Kullan????m T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_1094|Adet|enum||2026-02-24 03:52:56
+product_ty_attr_1095|?????i????ek T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_1096|Trendyol ?????zellik 1096|enum||2026-03-04 14:52:19
+product_ty_attr_1097|Hav Y????ksekli????i|enum||2026-03-04 14:52:19
+product_ty_attr_1098|Aksesuar Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_1099|I????????k Ge????irgenli????i|enum||2026-03-04 14:52:19
+product_ty_attr_11|Kasa Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_110|?????????z????n????rl????k|enum||2026-03-04 14:52:19
+product_ty_attr_1100|Trendyol ?????zellik 1100|enum||2026-03-04 14:52:19
+product_ty_attr_1101|Pile|enum||2026-02-24 03:52:56
+product_ty_attr_1102|Sa????ak Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_1103|Yerden Y????ksekli????i|enum||2026-03-04 14:52:19
+product_ty_attr_1104|Trendyol ?????zellik 1104|enum||2026-03-04 14:52:19
+product_ty_attr_1105|G????r????lt???? Seviyesi|enum||2026-03-04 14:52:19
+product_ty_attr_1106|???????? Materyal|enum||2026-03-04 14:52:19
+product_ty_attr_1107|Koku Aromas????|enum||2026-03-04 14:52:19
+product_ty_attr_1108|Sezon|enum||2026-02-24 03:52:56
+product_ty_attr_111|?????????z????n????rl????k Teknolojisi|enum||2026-03-04 14:52:19
+product_ty_attr_1110|Koku T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_1111|Kozmetik Durum|enum||2026-02-24 03:52:56
+product_ty_attr_1118|Trendyol ?????zellik 1118|enum||2026-03-04 14:52:19
+product_ty_attr_112|Trendyol ?????zellik 112|enum||2026-03-04 14:52:19
+product_ty_attr_1120|Trendyol ?????zellik 1120|enum||2026-03-04 14:52:19
+product_ty_attr_1121|Servis|enum||2026-02-24 03:52:56
+product_ty_attr_1123|Ak????m Koruma|enum||2026-03-04 14:52:19
+product_ty_attr_1124|Trendyol ?????zellik 1124|enum||2026-03-04 14:52:19
+product_ty_attr_1125|Silinebilirlik|enum||2026-02-24 03:52:56
+product_ty_attr_1126|Trendyol ?????zellik 1126|enum||2026-03-04 14:52:19
+product_ty_attr_1127|Trendyol ?????zellik 1127|enum||2026-03-04 14:52:19
+product_ty_attr_1128|Parlakl????k|enum||2026-03-04 14:52:19
+product_ty_attr_1129|Trendyol ?????zellik 1129|enum||2026-03-04 14:52:19
+product_ty_attr_113|Davlumbaz ????ekli|enum||2026-03-04 14:52:19
+product_ty_attr_1130|Trendyol ?????zellik 1130|enum||2026-03-04 14:52:19
+product_ty_attr_1132|Trendyol ?????zellik 1132|enum||2026-03-04 14:52:19
+product_ty_attr_1136|Trendyol ?????zellik 1136|enum||2026-03-04 14:52:19
+product_ty_attr_1137|Trendyol ?????zellik 1137|enum||2026-03-04 14:52:19
+product_ty_attr_1138|Trendyol ?????zellik 1138|enum||2026-03-04 14:52:19
+product_ty_attr_1139|Kat Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_1140|Rulo Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_1141|Voltaj|enum||2026-02-24 03:52:56
+product_ty_attr_1142|Frekans|enum||2026-02-24 03:52:56
+product_ty_attr_1143|Priz Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_1144|Trendyol ?????zellik 1144|enum||2026-03-04 14:52:19
+product_ty_attr_1145|Kuma???? Cinsi/Rengi|enum||2026-03-04 14:52:19
+product_ty_attr_1146|Suya Dayan????kl????l????k|enum||2026-03-04 14:52:19
+product_ty_attr_1147|Trendyol ?????zellik 1147|enum||2026-03-04 14:52:19
+product_ty_attr_115|Derinlik|enum||2026-02-24 03:52:56
+product_ty_attr_1150|Ekran Kart???? G????c????|enum||2026-03-04 14:52:19
+product_ty_attr_1151|Delikler Aras???? Mesafe|enum||2026-03-04 14:52:19
+product_ty_attr_1152|Yapay Zeka|enum||2026-02-24 03:52:56
+product_ty_attr_1153|Trendyol ?????zellik 1153|enum||2026-03-04 14:52:19
+product_ty_attr_1154|Trendyol ?????zellik 1154|enum||2026-03-04 14:52:19
+product_ty_attr_1155|Dil|enum||2026-02-24 03:52:56
+product_ty_attr_1156|Trendyol ?????zellik 1156|enum||2026-03-04 14:52:19
+product_ty_attr_1157|Ayarlanabilir Ba???? Deste????i|enum||2026-03-04 14:52:19
+product_ty_attr_1158|Ara Kat|enum||2026-02-24 03:52:56
+product_ty_attr_1159|Ayak ?????rt????s????|enum||2026-03-04 14:52:19
+product_ty_attr_116|D???????? Materyal|enum||2026-03-04 14:52:19
+product_ty_attr_1160|Alt A????ma ????nitesi|enum||2026-03-04 14:52:19
+product_ty_attr_1161|360 Derece D????nebilme|enum||2026-03-04 14:52:19
+product_ty_attr_1162|5 Noktal???? Emniyet Kemeri Sistemi|enum||2026-03-04 14:52:19
+product_ty_attr_1163|?????ift Y????nl???? Kullan????m|enum||2026-03-04 14:52:19
+product_ty_attr_1165|?????n Bar|enum||2026-03-04 14:52:19
+product_ty_attr_1166|S????rt Ayar????|enum||2026-03-04 14:52:19
+product_ty_attr_1167|Tek Elle Kapama|enum||2026-02-24 03:52:56
+product_ty_attr_1168|Tutma Sap????|enum||2026-03-04 14:52:19
+product_ty_attr_1169|Ya????murluk|enum||2026-03-04 14:52:19
+product_ty_attr_117|Dokuma Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_1173|Sineklik|enum||2026-02-24 03:52:56
+product_ty_attr_1174|Trendyol ?????zellik 1174|enum||2026-03-04 14:52:19
+product_ty_attr_1175|Isofix ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_1177|Trendyol ?????zellik 1177|enum||2026-03-04 14:52:19
+product_ty_attr_1178|Tekerlek|enum||2026-02-24 03:52:56
+product_ty_attr_1179|Maksimum Ta????????ma Kapasitesi|enum||2026-03-04 14:52:19
+product_ty_attr_118|Dolgu Materyali|enum||2026-02-24 03:52:56
+product_ty_attr_1180|Trendyol ?????zellik 1180|enum||2026-03-04 14:52:19
+product_ty_attr_1181|Trendyol ?????zellik 1181|enum||2026-03-04 14:52:19
+product_ty_attr_1186|Kutu Durumu|enum||2026-02-24 03:52:56
+product_ty_attr_1187|Type-C|enum||2026-02-24 03:52:56
+product_ty_attr_119|Dondurucu ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_1190|Burun Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_1191|Oturak Derinli????i|enum||2026-03-04 14:52:19
+product_ty_attr_1192|Men????ei|enum||2026-03-04 14:52:19
+product_ty_attr_1195|Kalemle Not Alma|enum||2026-02-24 03:52:56
+product_ty_attr_1196|Grafik ????????lemcisi|enum||2026-03-04 14:52:19
+product_ty_attr_1197|?????ip Seti|enum||2026-03-04 14:52:19
+product_ty_attr_1199|Batarya T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_12|Kol Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_120|Dondurucu Yeri|enum||2026-02-24 03:52:56
+product_ty_attr_1201|Trendyol ?????zellik 1201|enum||2026-03-04 14:52:19
+product_ty_attr_1203|Batarya Boyutu|enum||2026-02-24 03:52:56
+product_ty_attr_1205|????r????n G????venli????i Bilgisi|enum||2026-03-04 14:52:19
+product_ty_attr_1206|Bak????m Talimatlar???? (G????da Temas)|enum||2026-03-04 14:52:19
+product_ty_attr_1208|Trendyol ?????zellik 1208|enum||2026-03-04 14:52:19
+product_ty_attr_121|Dosya Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_1214|Enerji ve Besin De????erleri|enum||2026-03-04 14:52:19
+product_ty_attr_1217|Filtre T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_1218|????nverter|enum||2026-03-04 14:52:19
+product_ty_attr_1223|Filtre Se????ene????i|enum||2026-03-04 14:52:19
+product_ty_attr_1225|Turbo Ba????l????k|enum||2026-03-04 14:52:19
+product_ty_attr_1226|Yar????m Y????k|enum||2026-03-04 14:52:19
+product_ty_attr_1227|S????cak So????uk Kullan????m????|enum||2026-03-04 14:52:19
+product_ty_attr_1228|?????ift ????nite|enum||2026-03-04 14:52:19
+product_ty_attr_1229|Dara Almak|enum||2026-02-24 03:52:56
+product_ty_attr_123|Ebat|enum||2026-02-24 03:52:56
+product_ty_attr_1230|Hareket Se????ene????i|enum||2026-03-04 14:52:19
+product_ty_attr_1231|Trendyol ?????zellik 1231|enum||2026-03-04 14:52:19
+product_ty_attr_1232|Kir Alg????lama|enum||2026-03-04 14:52:19
+product_ty_attr_1234|Trendyol ?????zellik 1234|enum||2026-03-04 14:52:19
+product_ty_attr_1236|Buharl????|enum||2026-03-04 14:52:19
+product_ty_attr_1237|Bask????l????|enum||2026-03-04 14:52:19
+product_ty_attr_1238|Maksimum A????????rl????k|enum||2026-03-04 14:52:19
+product_ty_attr_124|Ek ?????zellik|enum||2026-03-04 14:52:19
+product_ty_attr_1240|?????????p ????stasyonu|enum||2026-03-04 14:52:19
+product_ty_attr_1243|Kart De????eri|enum||2026-03-04 14:52:19
+product_ty_attr_1246|Is????tma Tekni????i|enum||2026-03-04 14:52:19
+product_ty_attr_1247|Kol Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_125|Ek ?????zellikler|enum||2026-03-04 14:52:19
+product_ty_attr_126|Trendyol ?????zellik 126|enum||2026-03-04 14:52:19
+product_ty_attr_1262|Paket Derinlik|enum||2026-02-24 03:52:56
+product_ty_attr_1263|Paket Geni????lik|enum||2026-03-04 14:52:19
+product_ty_attr_1264|Paket Y????kseklik|enum||2026-03-04 14:52:19
+product_ty_attr_127|Ekmek Dilim Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_1270|Switch Rengi|enum||2026-02-24 03:52:56
+product_ty_attr_128|Ekran Boyutu (in????)|enum||2026-03-04 14:52:19
+product_ty_attr_1281|Refill|enum||2026-02-24 03:52:56
+product_ty_attr_1283|Overclock|enum||2026-02-24 03:52:56
+product_ty_attr_1284|Kulakl????k Modeli|enum||2026-03-04 14:52:19
+product_ty_attr_1288|Trendyol ?????zellik 1288|enum||2026-03-04 14:52:19
+product_ty_attr_1289|Trendyol ?????zellik 1289|enum||2026-03-04 14:52:19
+product_ty_attr_1290|Trendyol ?????zellik 1290|enum||2026-03-04 14:52:19
+product_ty_attr_1291|Trendyol ?????zellik 1291|enum||2026-03-04 14:52:19
+product_ty_attr_1292|Trendyol ?????zellik 1292|enum||2026-03-04 14:52:19
+product_ty_attr_1293|Trendyol ?????zellik 1293|enum||2026-03-04 14:52:19
+product_ty_attr_1308|Trendyol ?????zellik 1308|enum||2026-03-04 14:52:19
+product_ty_attr_131|Ekran Kart???? Haf????zas????|enum||2026-03-04 14:52:19
+product_ty_attr_1311|Kadran Renk|enum||2026-02-24 03:52:56
+product_ty_attr_1312|Emzik U???? Materyali|enum||2026-03-04 14:52:19
+product_ty_attr_1313|Emzik U???? Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_1315|Biberon U???? Materyali|enum||2026-03-04 14:52:19
+product_ty_attr_133|G????r????nt????leme Teknolojisi|enum||2026-03-04 14:52:19
+product_ty_attr_134|Enerji S????n????f????|enum||2026-03-04 14:52:19
+product_ty_attr_135|Enerji S????n????f???? - Is????tma|enum||2026-03-04 14:52:19
+product_ty_attr_136|Enerji S????n????f???? - So????utma|enum||2026-03-04 14:52:19
+product_ty_attr_137|E????anj????r Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_138|Trendyol ?????zellik 138|enum||2026-03-04 14:52:19
+product_ty_attr_139|Trendyol ?????zellik 139|enum||2026-03-04 14:52:19
+product_ty_attr_14|Materyal|enum||2026-02-24 03:52:56
+product_ty_attr_140|Filtre Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_141|Filtre Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_142|Fonksiyon|enum||2026-02-24 03:52:56
+product_ty_attr_143|Format|enum||2026-02-24 03:52:56
+product_ty_attr_144|Foto????raf ?????????z????n????rl????k|enum||2026-03-04 14:52:19
+product_ty_attr_145|Trendyol ?????zellik 145|enum||2026-03-04 14:52:19
+product_ty_attr_146|Geni????lik|enum||2026-03-04 14:52:19
+product_ty_attr_148|Giri????/?????????k???????? Portlar????|enum||2026-03-04 14:52:19
+product_ty_attr_149|G????r????nt???? Kalitesi|enum||2026-03-04 14:52:19
+product_ty_attr_15|Mekanizma|enum||2026-02-24 03:52:56
+product_ty_attr_151|Trendyol ?????zellik 151|enum||2026-03-04 14:52:19
+product_ty_attr_153|Ses Seviyesi|enum||2026-02-24 03:52:56
+product_ty_attr_154|Trendyol ?????zellik 154|enum||2026-03-04 14:52:19
+product_ty_attr_155|Haf????za Kart???? Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_157|HDMI Giri???? Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_158|Hedef|enum||2026-02-24 03:52:56
+product_ty_attr_159|H????z Ayar????|enum||2026-03-04 14:52:19
+product_ty_attr_160|Hoparl????r / Kulakl????k /?????????k???????? Fi????i|enum||2026-03-04 14:52:19
+product_ty_attr_163|Is????tma G????c????|enum||2026-03-04 14:52:19
+product_ty_attr_164|Is????tma Kapasitesi|enum||2026-03-04 14:52:19
+product_ty_attr_165|Trendyol ?????zellik 165|enum||2026-03-04 14:52:19
+product_ty_attr_168|????????lemci Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_169|Temel ????????lemci H????z???? (GHz)|enum||2026-03-04 14:52:19
+product_ty_attr_17|Pa????a Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_171|Jant|enum||2026-02-24 03:52:56
+product_ty_attr_174|Ka????????t Boyutu|enum||2026-03-04 14:52:19
+product_ty_attr_176|Ka????????t Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_177|Kalem Ucu Boyutu|enum||2026-02-24 03:52:56
+product_ty_attr_178|Kal????nl????k|enum||2026-03-04 14:52:19
+product_ty_attr_179|Kal????p|enum||2026-03-04 14:52:19
+product_ty_attr_18|Par????a Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_180|Trendyol ?????zellik 180|enum||2026-03-04 14:52:19
+product_ty_attr_181|Kapak T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_182|Kapak Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_183|Kapama ????ekli|enum||2026-03-04 14:52:19
+product_ty_attr_184|Kapasite|enum||2026-02-24 03:52:56
+product_ty_attr_185|Karat|enum||2026-02-24 03:52:56
+product_ty_attr_186|Kasa Materyali|enum||2026-02-24 03:52:56
+product_ty_attr_187|Kay????t Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_188|Kesim|enum||2026-02-24 03:52:56
+product_ty_attr_189|Ki????i Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_191|Kol Boyu|enum||2026-02-24 03:52:56
+product_ty_attr_193|Kordon Materyali|enum||2026-02-24 03:52:56
+product_ty_attr_194|Trendyol ?????zellik 194|enum||2026-03-04 14:52:19
+product_ty_attr_196|Kullan????m Alan????|enum||2026-03-04 14:52:19
+product_ty_attr_197|Kullan????m ????ekli|enum||2026-03-04 14:52:19
+product_ty_attr_198|Kullan????m Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_199|Kuma???? ?????zellik|enum||2026-03-04 14:52:19
+product_ty_attr_2|Boy / ?????l????????|enum||2026-03-04 14:52:19
+product_ty_attr_20|Tema / Stil|enum||2026-02-24 03:52:56
+product_ty_attr_200|Kuma???? Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_201|Kurutma Teknolojisi|enum||2026-02-24 03:52:56
+product_ty_attr_203|Trendyol ?????zellik 203|enum||2026-03-04 14:52:19
+product_ty_attr_204|Maksimum Is????l G????????|enum||2026-03-04 14:52:19
+product_ty_attr_205|Maksimum Kurutma Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_206|Maksimum S????kma Devri|enum||2026-03-04 14:52:19
+product_ty_attr_208|Mama Cinsi|enum||2026-02-24 03:52:56
+product_ty_attr_21|Topuk Boyu|enum||2026-02-24 03:52:56
+product_ty_attr_210|Dokunmatik Ekran|enum||2026-02-24 03:52:56
+product_ty_attr_211|Trendyol ?????zellik 211|enum||2026-03-04 14:52:19
+product_ty_attr_212|Mouse Hassasiyeti (Dpi)|enum||2026-02-24 03:52:56
+product_ty_attr_213|Trendyol ?????zellik 213|enum||2026-03-04 14:52:19
+product_ty_attr_214|Ocak Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_215|Ocak Y????zeyi|enum||2026-03-04 14:52:19
+product_ty_attr_216|Okuma H????z????|enum||2026-03-04 14:52:19
+product_ty_attr_218|Optik Zoom|enum||2026-02-24 03:52:56
+product_ty_attr_219|Oturum Yumu????akl????????????|enum||2026-03-04 14:52:19
+product_ty_attr_22|Yaka Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_221|?????l????????|enum||2026-03-04 14:52:19
+product_ty_attr_222|?????zel Filtreler|enum||2026-03-04 14:52:19
+product_ty_attr_223|Pa????a Boyu|enum||2026-03-04 14:52:19
+product_ty_attr_226|Pil G????c???? (mAh)|enum||2026-03-04 14:52:19
+product_ty_attr_227|Pi????irme Fonksiyon Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_228|Power Supply|enum||2026-02-24 03:52:56
+product_ty_attr_229|Program Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_23|Ekran Boyutu|enum||2026-02-24 03:52:56
+product_ty_attr_231|Raf Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_232|Ram (Sistem Belle????i)|enum||2026-03-04 14:52:19
+product_ty_attr_234|Renk s????cakl????????????|enum||2026-03-04 14:52:19
+product_ty_attr_236|Saat Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_238|Sayfa Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_239|Sayfa Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_24|Dahili Haf????za|enum||2026-03-04 14:52:19
+product_ty_attr_240|Sertlik|enum||2026-02-24 03:52:56
+product_ty_attr_244|S????rt Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_245|So????utma Kapasitesi|enum||2026-03-04 14:52:19
+product_ty_attr_246|Trendyol ?????zellik 246|enum||2026-03-04 14:52:19
+product_ty_attr_247|So????utucu Tipleri|enum||2026-03-04 14:52:19
+product_ty_attr_249|SSD Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_25|Kamera ?????????z????n????rl????????????|enum||2026-03-04 14:52:19
+product_ty_attr_250|Stil|enum||2026-02-24 03:52:56
+product_ty_attr_251|Su Ge????irmezlik|enum||2026-03-04 14:52:19
+product_ty_attr_253|Su T????ketimi|enum||2026-03-04 14:52:19
+product_ty_attr_255|Taban|enum||2026-02-24 03:52:56
+product_ty_attr_256|Taban Teknolojisi|enum||2026-02-24 03:52:56
+product_ty_attr_257|Taban Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_258|Takma ????ekli|enum||2026-03-04 14:52:19
+product_ty_attr_259|Tasar????m|enum||2026-03-04 14:52:19
+product_ty_attr_26|Trendyol ?????zellik 26|enum||2026-03-04 14:52:19
+product_ty_attr_260|Ta???? Cinsi|enum||2026-03-04 14:52:19
+product_ty_attr_261|Ta????????ma Kapasitesi|enum||2026-03-04 14:52:19
+product_ty_attr_263|Tekerlek Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_264|Tel Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_265|Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_266|Toplam Hacim|enum||2026-02-24 03:52:56
+product_ty_attr_267|Topuk Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_268|Tu???? D????zeni|enum||2026-03-04 14:52:19
+product_ty_attr_270|T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_271|Uzunluk|enum||2026-02-24 03:52:56
+product_ty_attr_274|Trendyol ?????zellik 274|enum||2026-03-04 14:52:19
+product_ty_attr_277|Yak????t Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_279|Ya????|enum||2026-03-04 14:52:19
+product_ty_attr_28|????????letim Sistemi|enum||2026-03-04 14:52:19
+product_ty_attr_281|Yatak Cinsi|enum||2026-02-24 03:52:56
+product_ty_attr_282|Trendyol ?????zellik 282|enum||2026-03-04 14:52:19
+product_ty_attr_283|Yazma H????z????|enum||2026-03-04 14:52:19
+product_ty_attr_284|Y????kama Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_286|Y????kseklik|enum||2026-03-04 14:52:19
+product_ty_attr_29|G????r????nt???? Teknolojisi|enum||2026-03-04 14:52:19
+product_ty_attr_290|Garanti Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_292|Cep Telefonu Modeli|enum||2026-02-24 03:52:56
+product_ty_attr_293|Cam Renk|enum||2026-02-24 03:52:56
+product_ty_attr_294|Bez Bedeni|enum||2026-02-24 03:52:56
+product_ty_attr_298|?????er????eve Renk|enum||2026-03-04 14:52:19
+product_ty_attr_3|Cam Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_30|Trendyol ?????zellik 30|enum||2026-03-04 14:52:19
+product_ty_attr_301|Ekran Kart????|enum||2026-03-04 14:52:19
+product_ty_attr_302|Kasa Renk|enum||2026-02-24 03:52:56
+product_ty_attr_303|Kordon Renk|enum||2026-02-24 03:52:56
+product_ty_attr_305|RAM H????z????|enum||2026-03-04 14:52:19
+product_ty_attr_306|Ekran Kart???? Bellek Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_307|Soket Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_308|Uyumlu Sistemler|enum||2026-02-24 03:52:56
+product_ty_attr_31|Trendyol ?????zellik 31|enum||2026-03-04 14:52:19
+product_ty_attr_310|Artt????r????labilir Azami Bellek|enum||2026-03-04 14:52:19
+product_ty_attr_311|Ram (Sistem Belle????i) Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_314|?????anta Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_315|?????????z????n????rl????k Standart????|enum||2026-03-04 14:52:19
+product_ty_attr_316|Ekran Yenilenme H????z????|enum||2026-03-04 14:52:19
+product_ty_attr_317|Eldiven Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_318|????????lemci ?????ekirdek Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_32|Model|enum||2026-02-24 03:52:56
+product_ty_attr_320|????????lemci Nesli|enum||2026-03-04 14:52:19
+product_ty_attr_321|Trendyol ?????zellik 321|enum||2026-03-04 14:52:19
+product_ty_attr_322|Kask Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_324|Kontrol Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_325|Trendyol ?????zellik 325|enum||2026-03-04 14:52:19
+product_ty_attr_327|Mont Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_329|Optik S????r????c???? Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_33|Desen|enum||2026-02-24 03:52:56
+product_ty_attr_330|Panel Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_332|????arjl???? Kullan????m S????resi|enum||2026-03-04 14:52:19
+product_ty_attr_334|Trendyol ?????zellik 334|enum||2026-03-04 14:52:19
+product_ty_attr_335|T????ra???? B????lgesi|enum||2026-03-04 14:52:19
+product_ty_attr_336|Yedek Par????a Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_337|Trendyol ?????zellik 337|enum||2026-03-04 14:52:19
+product_ty_attr_338|Beden|enum||2026-02-24 03:52:56
+product_ty_attr_339|Trendyol ?????zellik 339|enum||2026-03-04 14:52:19
+product_ty_attr_34|Tip|enum||2026-02-24 03:52:56
+product_ty_attr_340|Trendyol ?????zellik 340|enum||2026-03-04 14:52:19
+product_ty_attr_341|Tutuculuk / Sertlik|enum||2026-02-24 03:52:56
+product_ty_attr_342|????r????n Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_344|Yazar|enum||2026-02-24 03:52:56
+product_ty_attr_348|Renk|enum||2026-02-24 03:52:56
+product_ty_attr_349|Trendyol ?????zellik 349|enum||2026-03-04 14:52:19
+product_ty_attr_351|Jant ?????ap????|enum||2026-03-04 14:52:19
+product_ty_attr_352|Trendyol ?????zellik 352|enum||2026-03-04 14:52:19
+product_ty_attr_353|Kesit Oran????|enum||2026-03-04 14:52:19
+product_ty_attr_355|Mevsim|enum||2026-02-24 03:52:56
+product_ty_attr_356|Taban Geni????li????i|enum||2026-03-04 14:52:19
+product_ty_attr_357|Sabit Disk|enum||2026-02-24 03:52:56
+product_ty_attr_358|?????????z????n????rl????k (Piksel)|enum||2026-03-04 14:52:19
+product_ty_attr_359|Curved (Kavisli)|enum||2026-02-24 03:52:56
+product_ty_attr_36|Trendyol ?????zellik 36|enum||2026-03-04 14:52:19
+product_ty_attr_360|Ekran Teknolojisi|enum||2026-02-24 03:52:56
+product_ty_attr_361|HDR|enum||2026-02-24 03:52:56
+product_ty_attr_362|Smart TV|enum||2026-02-24 03:52:56
+product_ty_attr_364|Dahili Uydu Al????c????|enum||2026-03-04 14:52:19
+product_ty_attr_365|Wi-Fi ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_366|Havlu Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_369|Y????l|enum||2026-03-04 14:52:19
+product_ty_attr_37|?????e????it|enum||2026-03-04 14:52:19
+product_ty_attr_370|Ara???? Marka ve Model|enum||2026-03-04 14:52:19
+product_ty_attr_371|At????m Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_372|Uygulama Alan????|enum||2026-03-04 14:52:19
+product_ty_attr_373|Su Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_374|Damlama Emniyeti|enum||2026-02-24 03:52:56
+product_ty_attr_375|Otomatik Kapanma|enum||2026-02-24 03:52:56
+product_ty_attr_376|Mama Numaras????|enum||2026-03-04 14:52:19
+product_ty_attr_377|Spor Bran????????|enum||2026-03-04 14:52:19
+product_ty_attr_378|Kurutma ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_379|Sesli ????kaz|enum||2026-03-04 14:52:19
+product_ty_attr_380|Ta????ma Emniyeti|enum||2026-03-04 14:52:19
+product_ty_attr_382|Hazne Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_4|Cilt Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_40|Form|enum||2026-02-24 03:52:56
+product_ty_attr_41|F????r????a K????l???? Sertli????i|enum||2026-03-04 14:52:19
+product_ty_attr_42|Kullan????m Amac????|enum||2026-03-04 14:52:19
+product_ty_attr_424|Amp????l Ba????l????k Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_425|Baca Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_426|????????lemci Modeli|enum||2026-03-04 14:52:19
+product_ty_attr_427|Sync Teknolojisi|enum||2026-02-24 03:52:56
+product_ty_attr_428|Tepki S????resi|enum||2026-03-04 14:52:19
+product_ty_attr_43|Hacim|enum||2026-02-24 03:52:56
+product_ty_attr_430|Pi????irme ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_432|Trendyol ?????zellik 432|enum||2026-03-04 14:52:19
+product_ty_attr_433|Garanti S????resi|enum||2026-03-04 14:52:19
+product_ty_attr_434|????cretsiz Kurulum/Montaj|enum||2026-03-04 14:52:19
+product_ty_attr_437|Gitar Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_438|Matkap T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_439|Piyano Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_44|A????????rl????k|enum||2026-03-04 14:52:19
+product_ty_attr_440|Kuma???? Teknolojisi|enum||2026-03-04 14:52:19
+product_ty_attr_445|Trendyol ?????zellik 445|enum||2026-03-04 14:52:19
+product_ty_attr_449|Davlumbaz Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_45|Paket Adedi|enum||2026-02-24 03:52:56
+product_ty_attr_450|Maksimum Emi???? G????c????|enum||2026-03-04 14:52:19
+product_ty_attr_452|S????n????f|enum||2026-03-04 14:52:19
+product_ty_attr_453|Uzunluk / ?????ap|enum||2026-03-04 14:52:19
+product_ty_attr_454|En|enum||2026-02-24 03:52:56
+product_ty_attr_457|S????nav Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_458|Bas????m Dili|enum||2026-03-04 14:52:19
+product_ty_attr_46|Etki|enum||2026-02-24 03:52:56
+product_ty_attr_461|Is???? Ayar????|enum||2026-03-04 14:52:19
+product_ty_attr_463|Ma????a ?????ap????|enum||2026-03-04 14:52:19
+product_ty_attr_466|Trendyol ?????zellik 466|enum||2026-03-04 14:52:19
+product_ty_attr_467|Hard Disk Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_47|Renk|enum||2026-02-24 03:52:56
+product_ty_attr_472|Top Bedeni|enum||2026-02-24 03:52:56
+product_ty_attr_473|Astar Durumu|enum||2026-02-24 03:52:56
+product_ty_attr_474|Fincan Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_478|?????al????????ma Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_48|Boy|enum||2026-02-24 03:52:56
+product_ty_attr_487|H????z Aral????????????|enum||2026-03-04 14:52:19
+product_ty_attr_488|Katlanabilme|enum||2026-02-24 03:52:56
+product_ty_attr_49|?????zellik|enum||2026-03-04 14:52:19
+product_ty_attr_491|Defter Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_492|Trendyol ?????zellik 492|enum||2026-03-04 14:52:19
+product_ty_attr_493|Yap????????t????r????c???? Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_494|Trendyol ?????zellik 494|enum||2026-03-04 14:52:19
+product_ty_attr_495|Klas????r Formu|enum||2026-03-04 14:52:19
+product_ty_attr_5|?????er????eve Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_50|SPF|enum||2026-02-24 03:52:56
+product_ty_attr_503|Trendyol ?????zellik 503|enum||2026-03-04 14:52:19
+product_ty_attr_504|HDMI|enum||2026-02-24 03:52:56
+product_ty_attr_505|DVI-I|enum||2026-02-24 03:52:56
+product_ty_attr_506|DVI-D|enum||2026-02-24 03:52:56
+product_ty_attr_508|HDCP|enum||2026-02-24 03:52:56
+product_ty_attr_509|Mini DisplayPort|enum||2026-02-24 03:52:56
+product_ty_attr_51|Kullanma Amac????|enum||2026-03-04 14:52:19
+product_ty_attr_511|Dahili Hoparl????r|enum||2026-03-04 14:52:19
+product_ty_attr_516|Menzil|enum||2026-02-24 03:52:56
+product_ty_attr_517|Max. H????z (km/h)|enum||2026-03-04 14:52:19
+product_ty_attr_518|Trendyol ?????zellik 518|enum||2026-03-04 14:52:19
+product_ty_attr_519|Trendyol ?????zellik 519|enum||2026-03-04 14:52:19
+product_ty_attr_523|RAM Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_524|Trendyol ?????zellik 524|enum||2026-03-04 14:52:19
+product_ty_attr_525|Trendyol ?????zellik 525|enum||2026-03-04 14:52:19
+product_ty_attr_526|?????ift Hat|enum||2026-03-04 14:52:19
+product_ty_attr_53|Kullan????m|enum||2026-03-04 14:52:19
+product_ty_attr_530|M????zik T????rleri|enum||2026-03-04 14:52:19
+product_ty_attr_531|Sanat????????|enum||2026-03-04 14:52:19
+product_ty_attr_532|Ebatlar|enum||2026-02-24 03:52:56
+product_ty_attr_534|Trendyol ?????zellik 534|enum||2026-03-04 14:52:19
+product_ty_attr_538|Islak Zeminde Frenleme|enum||2026-02-24 03:52:56
+product_ty_attr_539|Yak????t Verimlili????i|enum||2026-03-04 14:52:19
+product_ty_attr_54|G????r????n????m|enum||2026-03-04 14:52:19
+product_ty_attr_540|Ara???? Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_541|A????ma / Kapama|enum||2026-03-04 14:52:19
+product_ty_attr_546|Bilek Deste????i|enum||2026-03-04 14:52:19
+product_ty_attr_547|Trendyol ?????zellik 547|enum||2026-03-04 14:52:19
+product_ty_attr_55|F????r????a Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_556|????????erik|enum||2026-03-04 14:52:19
+product_ty_attr_557|Gramaj|enum||2026-02-24 03:52:56
+product_ty_attr_56|K????l Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_560|Metraj|enum||2026-02-24 03:52:56
+product_ty_attr_561|Set ????????erik Adeti|enum||2026-03-04 14:52:19
+product_ty_attr_57|Kapat????c????l????k|enum||2026-03-04 14:52:19
+product_ty_attr_574|Seri|enum||2026-02-24 03:52:56
+product_ty_attr_58|????ekil|enum||2026-03-04 14:52:19
+product_ty_attr_59|Sa???? Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_6|Duy Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_60|G????????|enum||2026-03-04 14:52:19
+product_ty_attr_605|?????ar????af T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_609|Litre|enum||2026-02-24 03:52:56
+product_ty_attr_61|B????????ak Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_63|Plaka Materyali|enum||2026-02-24 03:52:56
+product_ty_attr_631|A????a???? Boyu|enum||2026-03-04 14:52:19
+product_ty_attr_633|Viskozite|enum||2026-02-24 03:52:56
+product_ty_attr_635|????r????n Detay????|enum||2026-03-04 14:52:19
+product_ty_attr_636|Teknik|enum||2026-02-24 03:52:56
+product_ty_attr_638|Ak???? Volt|enum||2026-03-04 14:52:19
+product_ty_attr_639|Trendyol ?????zellik 639|enum||2026-03-04 14:52:19
+product_ty_attr_64|Maksimum S????cakl????k|enum||2026-03-04 14:52:19
+product_ty_attr_641|????retim ????ekli|enum||2026-03-04 14:52:19
+product_ty_attr_643|Yak????t|enum||2026-03-04 14:52:19
+product_ty_attr_644|Trendyol ?????zellik 644|enum||2026-03-04 14:52:19
+product_ty_attr_647|Aktif G????r????lt???? ?????nleme (ANC)|enum||2026-03-04 14:52:19
+product_ty_attr_648|Model Y????l????|enum||2026-03-04 14:52:19
+product_ty_attr_649|Ethernet|enum||2026-02-24 03:52:56
+product_ty_attr_65|Trendyol ?????zellik 65|enum||2026-03-04 14:52:19
+product_ty_attr_650|USB|enum||2026-02-24 03:52:56
+product_ty_attr_651|Kanal Yap????s????|enum||2026-03-04 14:52:19
+product_ty_attr_652|Bluetooth|enum||2026-02-24 03:52:56
+product_ty_attr_653|Suya/Tere Dayan????kl????l????k|enum||2026-03-04 14:52:19
+product_ty_attr_655|Mikrofon|enum||2026-02-24 03:52:56
+product_ty_attr_658|Oyun T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_66|Paket ????????eri????i|enum||2026-03-04 14:52:19
+product_ty_attr_661|Trendyol ?????zellik 661|enum||2026-03-04 14:52:19
+product_ty_attr_662|Uyumlu Cihaz|enum||2026-02-24 03:52:56
+product_ty_attr_663|????r????n T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_665|Ampul ?????mr???? (Eco Mod)|enum||2026-03-04 14:52:19
+product_ty_attr_666|Parlakl????k (Ansil????men)|enum||2026-03-04 14:52:19
+product_ty_attr_668|G????vde Materyali|enum||2026-03-04 14:52:19
+product_ty_attr_669|Paspas T????rleri|enum||2026-03-04 14:52:19
+product_ty_attr_67|A????????rl????k / Hacim|enum||2026-03-04 14:52:19
+product_ty_attr_671|Trendyol ?????zellik 671|enum||2026-03-04 14:52:19
+product_ty_attr_672|Trendyol ?????zellik 672|enum||2026-03-04 14:52:19
+product_ty_attr_676|Trendyol ?????zellik 676|enum||2026-03-04 14:52:19
+product_ty_attr_677|?????n Kamera Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_678|?????n Kamera ?????????z????n????rl????k Aral????????????|enum||2026-03-04 14:52:19
+product_ty_attr_681|Trendyol ?????zellik 681|enum||2026-03-04 14:52:19
+product_ty_attr_684|Trendyol ?????zellik 684|enum||2026-03-04 14:52:19
+product_ty_attr_685|Trendyol ?????zellik 685|enum||2026-03-04 14:52:19
+product_ty_attr_686|Trendyol ?????zellik 686|enum||2026-03-04 14:52:19
+product_ty_attr_688|Trendyol ?????zellik 688|enum||2026-03-04 14:52:19
+product_ty_attr_689|Trendyol ?????zellik 689|enum||2026-03-04 14:52:19
+product_ty_attr_69|Alt????n Ayar|enum||2026-03-04 14:52:19
+product_ty_attr_691|Mobil Ba????lant???? H????z????|enum||2026-03-04 14:52:19
+product_ty_attr_692|GPS|enum||2026-02-24 03:52:56
+product_ty_attr_693|NFC|enum||2026-02-24 03:52:56
+product_ty_attr_694|Radio|enum||2026-02-24 03:52:56
+product_ty_attr_695|Parmak ????zi Okuyucu|enum||2026-03-04 14:52:19
+product_ty_attr_696|Trendyol ?????zellik 696|enum||2026-03-04 14:52:19
+product_ty_attr_697|Suya/Toza Dayan????kl????l????k|enum||2026-03-04 14:52:19
+product_ty_attr_698|Ekran Yenileme H????z????|enum||2026-03-04 14:52:19
+product_ty_attr_7|Ekartman|enum||2026-02-24 03:52:56
+product_ty_attr_70|Ampul Teknolojisi|enum||2026-02-24 03:52:56
+product_ty_attr_700|Trendyol ?????zellik 700|enum||2026-03-04 14:52:19
+product_ty_attr_704|Kap|enum||2026-02-24 03:52:56
+product_ty_attr_705|Koltuk Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_706|Kuma????|enum||2026-03-04 14:52:19
+product_ty_attr_707|Ayak Malzemesi|enum||2026-02-24 03:52:56
+product_ty_attr_708|Tak????m ????????eri????i|enum||2026-03-04 14:52:19
+product_ty_attr_709|Telefon Tutucu ?????zellikleri|enum||2026-03-04 14:52:19
+product_ty_attr_71|Araba A????????rl????????????|enum||2026-03-04 14:52:19
+product_ty_attr_710|Koleksiyon|enum||2026-02-24 03:52:56
+product_ty_attr_712|Trendyol ?????zellik 712|enum||2026-03-04 14:52:19
+product_ty_attr_713|Far (Ampul) Tipleri|enum||2026-02-24 03:52:56
+product_ty_attr_714|Tekne|enum||2026-02-24 03:52:56
+product_ty_attr_716|Ak???? Kapasitesi|enum||2026-03-04 14:52:19
+product_ty_attr_718|Trendyol ?????zellik 718|enum||2026-03-04 14:52:19
+product_ty_attr_719|Ekran Boyut (in????)|enum||2026-03-04 14:52:19
+product_ty_attr_72|Aroma|enum||2026-02-24 03:52:56
+product_ty_attr_720|Teyp ?????zellikleri|enum||2026-03-04 14:52:19
+product_ty_attr_721|Hoparl????r ????ekli|enum||2026-03-04 14:52:19
+product_ty_attr_722|Hoparl????r T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_723|Hoparl????r Boyut (?????ap)|enum||2026-03-04 14:52:19
+product_ty_attr_724|Trendyol ?????zellik 724|enum||2026-03-04 14:52:19
+product_ty_attr_725|Ba????lant???? T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_726|Kablo Uzunlu????u|enum||2026-03-04 14:52:19
+product_ty_attr_727|Trendyol ?????zellik 727|enum||2026-03-04 14:52:19
+product_ty_attr_729|Trendyol ?????zellik 729|enum||2026-03-04 14:52:19
+product_ty_attr_730|Kanal Say????s???? (Amfi)|enum||2026-03-04 14:52:19
+product_ty_attr_731|Trendyol ?????zellik 731|enum||2026-03-04 14:52:19
+product_ty_attr_732|Bas????n????|enum||2026-03-04 14:52:19
+product_ty_attr_735|Trendyol ?????zellik 735|enum||2026-03-04 14:52:19
+product_ty_attr_736|Masa Fonksiyonu|enum||2026-02-24 03:52:56
+product_ty_attr_737|Sandalye ve Bank Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_738|Sandalye Rengi|enum||2026-02-24 03:52:56
+product_ty_attr_739|Sandalye Kuma????????|enum||2026-03-04 14:52:19
+product_ty_attr_740|Masa ?????l????????s????|enum||2026-03-04 14:52:19
+product_ty_attr_744|Ayna Fonksiyonu|enum||2026-02-24 03:52:56
+product_ty_attr_745|Trendyol ?????zellik 745|enum||2026-03-04 14:52:19
+product_ty_attr_747|Trendyol ?????zellik 747|enum||2026-03-04 14:52:19
+product_ty_attr_748|Trendyol ?????zellik 748|enum||2026-03-04 14:52:19
+product_ty_attr_749|Trendyol ?????zellik 749|enum||2026-03-04 14:52:19
+product_ty_attr_751|Kol Deste????i|enum||2026-03-04 14:52:19
+product_ty_attr_752|S????rt Mekanizmas????|enum||2026-03-04 14:52:19
+product_ty_attr_753|Trendyol ?????zellik 753|enum||2026-03-04 14:52:19
+product_ty_attr_756|Dolap ?????l????????s????|enum||2026-03-04 14:52:19
+product_ty_attr_757|Alt Mod????l ?????l????????s????|enum||2026-03-04 14:52:19
+product_ty_attr_758|????st Mod????l ?????l????????s????|enum||2026-03-04 14:52:19
+product_ty_attr_76|Ayak Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_760|Titre????im|enum||2026-03-04 14:52:19
+product_ty_attr_762|Sesli G????r????????me|enum||2026-03-04 14:52:19
+product_ty_attr_769|Oyuncu Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_774|Tak????m Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_776|Mandren Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_777|Port Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_778|Trendyol ?????zellik 778|enum||2026-03-04 14:52:19
+product_ty_attr_779|Trendyol ?????zellik 779|enum||2026-03-04 14:52:19
+product_ty_attr_78|Ayar|enum||2026-02-24 03:52:56
+product_ty_attr_780|Trendyol ?????zellik 780|enum||2026-03-04 14:52:19
+product_ty_attr_784|Trendyol ?????zellik 784|enum||2026-03-04 14:52:19
+product_ty_attr_787|Trendyol ?????zellik 787|enum||2026-03-04 14:52:19
+product_ty_attr_789|Trendyol ?????zellik 789|enum||2026-03-04 14:52:19
+product_ty_attr_79|Ba????lama ????ekli|enum||2026-03-04 14:52:19
+product_ty_attr_790|Touchpad|enum||2026-02-24 03:52:56
+product_ty_attr_791|Numerik Tu????lar|enum||2026-03-04 14:52:19
+product_ty_attr_793|Klavye Dili|enum||2026-02-24 03:52:56
+product_ty_attr_794|Enerji S????n????f Aral????????????|enum||2026-03-04 14:52:19
+product_ty_attr_796|Watt Aral????????????|enum||2026-03-04 14:52:19
+product_ty_attr_797|Trendyol ?????zellik 797|enum||2026-03-04 14:52:19
+product_ty_attr_799|U????u???? S????resi|enum||2026-03-04 14:52:19
+product_ty_attr_80|Ba????lant????|enum||2026-03-04 14:52:19
+product_ty_attr_800|U????u???? Mesafesi|enum||2026-03-04 14:52:19
+product_ty_attr_802|Kamera ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_803|Beni Takip Et Modu|enum||2026-02-24 03:52:56
+product_ty_attr_804|Sivil Havac????l????k ????zni|enum||2026-03-04 14:52:19
+product_ty_attr_805|Yedek Batarya|enum||2026-02-24 03:52:56
+product_ty_attr_806|Trendyol ?????zellik 806|enum||2026-03-04 14:52:19
+product_ty_attr_807|Trendyol ?????zellik 807|enum||2026-03-04 14:52:19
+product_ty_attr_808|Trendyol ?????zellik 808|enum||2026-03-04 14:52:19
+product_ty_attr_813|Parti Konsepti|enum||2026-02-24 03:52:56
+product_ty_attr_814|Balon ?????e????idi|enum||2026-03-04 14:52:19
+product_ty_attr_816|Trendyol ?????zellik 816|enum||2026-03-04 14:52:19
+product_ty_attr_819|Trendyol ?????zellik 819|enum||2026-03-04 14:52:19
+product_ty_attr_82|Ba????lant???? Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_820|????r????n ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_821|Yavrulu Yatak|enum||2026-02-24 03:52:56
+product_ty_attr_822|Sandalye Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_823|Alt Mod????l Y????kseklik|enum||2026-03-04 14:52:19
+product_ty_attr_824|Alt Mod????l Geni????lik|enum||2026-03-04 14:52:19
+product_ty_attr_825|????st Mod????l Y????kseklik|enum||2026-03-04 14:52:19
+product_ty_attr_826|????st Mod????l Geni????lik|enum||2026-03-04 14:52:19
+product_ty_attr_829|Trendyol ?????zellik 829|enum||2026-03-04 14:52:19
+product_ty_attr_83|Ba????lant????lar|enum||2026-03-04 14:52:19
+product_ty_attr_830|Ask????l????k Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_834|Trendyol ?????zellik 834|enum||2026-03-04 14:52:19
+product_ty_attr_835|Trendyol ?????zellik 835|enum||2026-03-04 14:52:19
+product_ty_attr_836|Trendyol ?????zellik 836|enum||2026-03-04 14:52:19
+product_ty_attr_837|Set ????????eri????i|enum||2026-03-04 14:52:19
+product_ty_attr_838|Trendyol ?????zellik 838|enum||2026-03-04 14:52:19
+product_ty_attr_840|Trendyol ?????zellik 840|enum||2026-03-04 14:52:19
+product_ty_attr_841|Kanat Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_842|Trendyol ?????zellik 842|enum||2026-03-04 14:52:19
+product_ty_attr_844|Roman T????r????|enum||2026-03-04 14:52:19
+product_ty_attr_845|Trendyol ?????zellik 845|enum||2026-03-04 14:52:19
+product_ty_attr_846|Pompa Durumu|enum||2026-02-24 03:52:56
+product_ty_attr_847|Trendyol ?????zellik 847|enum||2026-03-04 14:52:19
+product_ty_attr_848|Trendyol ?????zellik 848|enum||2026-03-04 14:52:19
+product_ty_attr_85|Trendyol ?????zellik 85|enum||2026-03-04 14:52:19
+product_ty_attr_857|Sallanma Fonksiyonu|enum||2026-02-24 03:52:56
+product_ty_attr_858|???????? Yatak ?????l????????s????|enum||2026-03-04 14:52:19
+product_ty_attr_859|Maksimum ????????lemci H????z???? (GHz)|enum||2026-03-04 14:52:19
+product_ty_attr_86|Bellek Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_865|????????ne Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_866|????????ne Kal????nl????????????|enum||2026-03-04 14:52:19
+product_ty_attr_869|Kal????c????l????k|enum||2026-03-04 14:52:19
+product_ty_attr_87|Bellek Kart???? Tipi|enum||2026-03-04 14:52:19
+product_ty_attr_870|Persona|enum||2026-02-24 03:52:56
+product_ty_attr_872|Cilt Bilgisi|enum||2026-02-24 03:52:56
+product_ty_attr_874|Kitap ????????eri????i|enum||2026-03-04 14:52:19
+product_ty_attr_875|Bas????m Y????l????|enum||2026-03-04 14:52:19
+product_ty_attr_877|Y????kseklik Ayar????|enum||2026-03-04 14:52:19
+product_ty_attr_878|Sim Kart Uyumu|enum||2026-02-24 03:52:56
+product_ty_attr_88|Berrakl????k|enum||2026-03-04 14:52:19
+product_ty_attr_880|Siluet|enum||2026-02-24 03:52:56
+product_ty_attr_881|Ortam|enum||2026-02-24 03:52:56
+product_ty_attr_882|Trendyol ?????zellik 882|enum||2026-03-04 14:52:19
+product_ty_attr_885|Ayak Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_886|Y????n|enum||2026-03-04 14:52:19
+product_ty_attr_887|B????lme Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_888|Trendyol ?????zellik 888|enum||2026-03-04 14:52:19
+product_ty_attr_889|Haritaland????rma|enum||2026-03-04 14:52:19
+product_ty_attr_89|Bilek Stili|enum||2026-02-24 03:52:56
+product_ty_attr_891|Bask????/Nak???????? Tekni????i|enum||2026-03-04 14:52:19
+product_ty_attr_892|S????rd????r????lebilirlik Detay????|enum||2026-03-04 14:52:19
+product_ty_attr_893|Kemer/Ku????ak Durumu|enum||2026-03-04 14:52:19
+product_ty_attr_896|Deri Kalitesi|enum||2026-02-24 03:52:56
+product_ty_attr_897|Alt Siluet|enum||2026-02-24 03:52:56
+product_ty_attr_898|Trendyol ?????zellik 898|enum||2026-03-04 14:52:19
+product_ty_attr_899|Astar Materyali|enum||2026-02-24 03:52:56
+product_ty_attr_9|G???????? (Watt)|enum||2026-03-04 14:52:19
+product_ty_attr_902|Dolgu Tekni????i|enum||2026-03-04 14:52:19
+product_ty_attr_903|???????? Taban Materyali|enum||2026-03-04 14:52:19
+product_ty_attr_905|Trendyol ?????zellik 905|enum||2026-03-04 14:52:19
+product_ty_attr_906|Saya Materyali|enum||2026-02-24 03:52:56
+product_ty_attr_907|Taban Materyali|enum||2026-02-24 03:52:56
+product_ty_attr_908|????st Siluet|enum||2026-03-04 14:52:19
+product_ty_attr_909|A????????labilir Engel Seviyesi|enum||2026-03-04 14:52:19
+product_ty_attr_91|Boyut|enum||2026-02-24 03:52:56
+product_ty_attr_910|Ayarlanabilir Pi????irme Derecesi|enum||2026-03-04 14:52:19
+product_ty_attr_911|Trendyol ?????zellik 911|enum||2026-03-04 14:52:19
+product_ty_attr_912|Ba????l????k Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_913|Trendyol ?????zellik 913|enum||2026-03-04 14:52:19
+product_ty_attr_914|V????cut Kitle ????ndeksi ?????l????????m????|enum||2026-03-04 14:52:19
+product_ty_attr_915|Bazal Metabolizma H????z???? ?????l????????m????|enum||2026-03-04 14:52:19
+product_ty_attr_917|Cezve Malzemesi|enum||2026-02-24 03:52:56
+product_ty_attr_918|Cilt Tonu Sens????r????|enum||2026-03-04 14:52:19
+product_ty_attr_92|Boyut/Ebat|enum||2026-02-24 03:52:56
+product_ty_attr_920|?????????kar????labilir Plaka|enum||2026-03-04 14:52:19
+product_ty_attr_921|?????????rp????c????|enum||2026-03-04 14:52:19
+product_ty_attr_922|Demlik Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_923|Demlik Malzemesi|enum||2026-02-24 03:52:56
+product_ty_attr_924|Dif????z????r|enum||2026-03-04 14:52:19
+product_ty_attr_925|Dijital Ekran|enum||2026-02-24 03:52:56
+product_ty_attr_926|Hazne Malzemesi|enum||2026-02-24 03:52:56
+product_ty_attr_927|Do????ray????c????|enum||2026-03-04 14:52:19
+product_ty_attr_929|Trendyol ?????zellik 929|enum||2026-03-04 14:52:19
+product_ty_attr_930|Trendyol ?????zellik 930|enum||2026-03-04 14:52:19
+product_ty_attr_932|Trendyol ?????zellik 932|enum||2026-03-04 14:52:19
+product_ty_attr_933|G???????? Kontrol????|enum||2026-03-04 14:52:19
+product_ty_attr_934|Hepa Filtre|enum||2026-02-24 03:52:56
+product_ty_attr_935|Izgara ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_936|????yon ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_938|Kademe Ayar????|enum||2026-03-04 14:52:19
+product_ty_attr_939|Karaf Malzemesi|enum||2026-02-24 03:52:56
+product_ty_attr_941|Trendyol ?????zellik 941|enum||2026-03-04 14:52:19
+product_ty_attr_942|Kire???? ?????nleme|enum||2026-03-04 14:52:19
+product_ty_attr_943|LCD Ekran|enum||2026-02-24 03:52:56
+product_ty_attr_944|Motor Teknolojisi|enum||2026-02-24 03:52:56
+product_ty_attr_945|Motor Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_946|Otomatik Kire???? Temizleme Alarm????|enum||2026-03-04 14:52:19
+product_ty_attr_947|Otomatik Su Al????m????|enum||2026-03-04 14:52:19
+product_ty_attr_948|?????????????tme Ayar????|enum||2026-03-04 14:52:19
+product_ty_attr_95|Buzluk Tipi|enum||2026-02-24 03:52:56
+product_ty_attr_950|Pi????irme Kapasitesi|enum||2026-03-04 14:52:19
+product_ty_attr_951|Plaka Kullan????m????|enum||2026-03-04 14:52:19
+product_ty_attr_952|Trendyol ?????zellik 952|enum||2026-03-04 14:52:19
+product_ty_attr_953|Rendeleme ve Dilimleme Diski|enum||2026-02-24 03:52:56
+product_ty_attr_954|Sesli Uyar????|enum||2026-03-04 14:52:19
+product_ty_attr_957|Trendyol ?????zellik 957|enum||2026-03-04 14:52:19
+product_ty_attr_958|Trendyol ?????zellik 958|enum||2026-03-04 14:52:19
+product_ty_attr_959|S????rekli Buhar|enum||2026-03-04 14:52:19
+product_ty_attr_96|Cam Materyali|enum||2026-02-24 03:52:56
+product_ty_attr_960|S????t K????p????rt????c????|enum||2026-03-04 14:52:19
+product_ty_attr_961|????arj Stand????|enum||2026-03-04 14:52:19
+product_ty_attr_962|????ok Buhar|enum||2026-03-04 14:52:19
+product_ty_attr_964|Uygulama ????zerinden Kontrol|enum||2026-03-04 14:52:19
+product_ty_attr_965|V????cut Su Oran???? ?????l????????m????|enum||2026-03-04 14:52:19
+product_ty_attr_967|Trendyol ?????zellik 967|enum||2026-03-04 14:52:19
+product_ty_attr_968|Trendyol ?????zellik 968|enum||2026-03-04 14:52:19
+product_ty_attr_969|Trendyol ?????zellik 969|enum||2026-03-04 14:52:19
+product_ty_attr_97|Cam ????ekli|enum||2026-03-04 14:52:19
+product_ty_attr_970|Yer Silme ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_971|Yumurta Kapasitesi|enum||2026-02-24 03:52:56
+product_ty_attr_972|Zamanlay????c????|enum||2026-03-04 14:52:19
+product_ty_attr_973|Priz Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_974|Hamur Kancas????|enum||2026-03-04 14:52:19
+product_ty_attr_975|Damlama Haznesi|enum||2026-02-24 03:52:56
+product_ty_attr_976|El S????p????rgesi Kullan????m????|enum||2026-03-04 14:52:19
+product_ty_attr_977|Buz K????rabilme|enum||2026-03-04 14:52:19
+product_ty_attr_978|Ayn???? Anda Haz????rlama Kapasitesi|enum||2026-03-04 14:52:19
+product_ty_attr_979|Kahve ?????ekirde????i ?????????????tebilme|enum||2026-03-04 14:52:19
+product_ty_attr_981|Burun ve Kulak Temizleme Ba????l????????????|enum||2026-03-04 14:52:19
+product_ty_attr_982|Dim ?????zelli????i|enum||2026-03-04 14:52:19
+product_ty_attr_983|Ak???? Say????s????|enum||2026-03-04 14:52:19
+product_ty_attr_984|Trendyol ?????zellik 984|enum||2026-03-04 14:52:19
+product_ty_attr_987|Materyal Bile????eni|enum||2026-03-04 14:52:19
+product_ty_attr_989|Dil Seviyesi|enum||2026-02-24 03:52:56
+product_ty_attr_990|Trendyol ?????zellik 990|enum||2026-03-04 14:52:19
+product_ty_attr_991|Trendyol ?????zellik 991|enum||2026-03-04 14:52:19
+product_ty_attr_992|Trendyol ?????zellik 992|enum||2026-03-04 14:52:19
+product_ty_attr_993|Trendyol ?????zellik 993|enum||2026-03-04 14:52:19
+product_ty_attr_994|Enerji Tasarrufu|enum||2026-02-24 03:52:56
+product_ty_attr_995|Miktar|enum||2026-02-24 03:52:56
+product_ty_attr_997|Trendyol ?????zellik 997|enum||2026-03-04 14:52:19
+real_estate_balcony|Balkon|boolean||2026-02-24 03:52:56
+real_estate_bathroom_count|Banyo say????s????|enum||2026-03-04 14:52:19
+real_estate_building_age|Bina ya????????|enum||2026-03-04 14:52:19
+real_estate_elevator|Asans????r|boolean||2026-03-04 14:52:19
+real_estate_face|Cephe|enum||2026-02-24 03:52:56
+real_estate_floor|Bulundu????u kat|enum||2026-03-04 14:52:19
+real_estate_floor_count|Bina kat say????s????|enum||2026-03-04 14:52:19
+real_estate_furnished|E????yal????|boolean||2026-03-04 14:52:19
+real_estate_garden|Bah????e|boolean||2026-03-04 14:52:19
+real_estate_heating|Is????tma|enum||2026-03-04 14:52:19
+real_estate_house_proprietorship|Tapu durumu|enum||2026-02-24 03:52:56
+real_estate_listing_date|????lan tarihi|enum||2026-03-04 14:52:19
+real_estate_multimedia|Medya|enum||2026-02-24 03:52:56
+real_estate_parking|Otopark|boolean||2026-02-24 03:52:56
+real_estate_room_type|Oda say????s????|enum||2026-03-04 14:52:19
+real_estate_seller_type|????lan veren|enum||2026-03-04 14:52:19
+real_estate_sqm_gross|Br????t m????|number|m2|2026-03-04 14:52:19
+real_estate_sqm_net|Net m????|number|m2|2026-03-04 14:52:19
+real_estate_usage_status|Kullan????m durumu|enum||2026-03-04 14:52:19
+real_estate_wifi|Wi-Fi|boolean||2026-02-24 03:52:56
+real_estate_within_housing_estate|Site i????erisinde|boolean||2026-03-04 14:52:19
+spicy_level|Spicy level (0-10)|number||2026-02-24 03:52:56
+vehicle_bed_capacity|Yatak kapasitesi|enum||2026-02-24 03:52:56
+vehicle_body_type|Kasa tipi|enum||2026-02-24 03:52:56
+vehicle_brand|Marka|string||2026-02-24 03:52:56
+vehicle_caravan_type|Karavan tipi|enum||2026-02-24 03:52:56
+vehicle_chassis_type|????asi tipi|enum||2026-03-04 14:52:19
+vehicle_color|Renk|enum||2026-02-24 03:52:56
+vehicle_condition|Ara???? durumu|enum||2026-03-04 14:52:19
+vehicle_cylinder_count|Silindir say????s????|enum||2026-03-04 14:52:19
+vehicle_damage_status|Boya/de????i????en/par????a durumu|enum||2026-03-04 14:52:19
+vehicle_drive_type|?????eki????|enum||2026-03-04 14:52:19
+vehicle_engine_displacement_bucket|Motor hacmi (aral????k)|enum||2026-03-04 14:52:19
+vehicle_engine_displacement_cc|Motor hacmi|number|cc|2026-02-24 03:52:56
+vehicle_engine_power_bucket|Motor g????c???? (aral????k)|enum||2026-03-04 14:52:19
+vehicle_engine_power_hp|Motor g????c????|number|hp|2026-03-04 14:52:19
+vehicle_equipment|Donan????m|enum||2026-03-04 14:52:19
+vehicle_fuel_type|Yak????t t????r????|enum||2026-03-04 14:52:19
+vehicle_heavy_damage_record|A????????r hasar kay????tl????|boolean||2026-03-04 14:52:19
+vehicle_heavy_damage_record_status|A????????r hasar kay????tl???? (se????im)|enum||2026-03-04 14:52:19
+vehicle_km|Kilometre|number|km|2026-02-24 03:52:56
+vehicle_km_bucket|Kilometre (aral????k)|enum||2026-03-04 14:52:19
+vehicle_listing_age|????lan tarihi (son X g????n)|enum||2026-03-04 14:52:19
+vehicle_min_rent_days|Minimum kiralama g????n????|number|day|2026-03-04 14:52:19
+vehicle_model|Model|string||2026-02-24 03:52:56
+vehicle_motorcycle_type|Motosiklet tipi|enum||2026-02-24 03:52:56
+vehicle_panelvan_body_type|Minivan/panelvan kasa tipi|enum||2026-02-24 03:52:56
+vehicle_plate_status|Plaka|enum||2026-02-24 03:52:56
+vehicle_registration_type|Ara???? cinsi (ruhsat)|enum||2026-03-04 14:52:19
+vehicle_seat_count|Koltuk say????s????|enum||2026-03-04 14:52:19
+vehicle_seller_type|????lan sahibi|enum||2026-03-04 14:52:19
+vehicle_share_status|Hisseli|enum||2026-02-24 03:52:56
+vehicle_special_listing|?????zel ilanlar|enum||2026-03-04 14:52:19
+vehicle_station_bound|Dura????a ba????l????|enum||2026-03-04 14:52:19
+vehicle_swap|Takasa uygun|boolean||2026-02-24 03:52:56
+vehicle_swap_status|Takasa uygun (Evet/Hay????r)|enum||2026-03-04 14:52:19
+vehicle_timing_type|Zamanlama tipi|enum||2026-02-24 03:52:56
+vehicle_tractor_cabin|Kabin|enum||2026-02-24 03:52:56
+vehicle_tractor_type|Trakt????r tipi|enum||2026-03-04 14:52:19
+vehicle_transmission|Vites|enum||2026-02-24 03:52:56
+vehicle_upper_body|????st yap????|enum||2026-03-04 14:52:19
+vehicle_with_vehicle|Ara????la birlikte|enum||2026-03-04 14:52:19
+vehicle_working_hours|?????al????????ma saati|number|hour|2026-03-04 14:52:19
+vehicle_year|Model y????l????|number||2026-03-04 14:52:19
