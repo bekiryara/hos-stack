@@ -318,6 +318,7 @@ export default {
         },
       },
       submitAttempted: false,
+      applyingTenantAddress: false,
     };
   },
   computed: {
@@ -402,6 +403,7 @@ export default {
     },
     'local.location.city'(value, oldValue) {
       if (String(value || '') === String(oldValue || '')) return;
+      if (this.applyingTenantAddress) return;
       this.local.location.district = '';
       this.local.location.neighborhood = '';
       this.$emit('location-city-change', value || '');
@@ -409,6 +411,7 @@ export default {
     },
     'local.location.district'(value, oldValue) {
       if (String(value || '') === String(oldValue || '')) return;
+      if (this.applyingTenantAddress) return;
       this.local.location.neighborhood = '';
       this.$emit('location-district-change', {
         city: this.local.location.city || '',
@@ -625,9 +628,10 @@ export default {
       }
       rows.splice(index, 1);
     },
-    applyTenantAddress() {
+    async applyTenantAddress() {
       if (!this.hasTenantAddress) return;
       const a = this.tenantAddress || {};
+      this.applyingTenantAddress = true;
       this.local.location.city = String(a.city || '').trim();
       this.local.location.district = String(a.district || '').trim();
       this.local.location.neighborhood = String(a.neighborhood || '').trim();
@@ -640,10 +644,12 @@ export default {
         this.local.location.lng = String(a.lng);
       }
       this.$emit('location-city-change', this.local.location.city || '');
+      await this.$nextTick();
       this.$emit('location-district-change', {
         city: this.local.location.city || '',
         district: this.local.location.district || '',
       });
+      this.applyingTenantAddress = false;
     },
     onSubmit() {
       this.submitAttempted = true;
