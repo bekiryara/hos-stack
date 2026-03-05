@@ -92,6 +92,7 @@ export default {
         const activeTenantId = getActiveTenantId();
         if (activeTenantId) {
           this.tenantId = activeTenantId;
+          await this.loadTenantAddress();
         } else {
           if (isLoggedIn()) {
             try {
