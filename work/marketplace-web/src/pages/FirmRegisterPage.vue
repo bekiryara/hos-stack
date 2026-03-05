@@ -1,36 +1,36 @@
 <template>
   <div class="firm-register-page">
-    <h2>Firma Oluştur</h2>
+    <h2>Firma OluÅŸtur</h2>
     
     <!-- Not logged in -->
     <div v-if="!isAuthenticated" class="not-logged-in">
-      <p>Firma oluşturmak için giriş yapmanız gerekiyor.</p>
-      <router-link to="/login" class="login-link">Giriş Yap</router-link>
+      <p>Firma oluÅŸturmak iÃ§in giriÅŸ yapmanÄ±z gerekiyor.</p>
+      <router-link to="/login" class="login-link">GiriÅŸ Yap</router-link>
     </div>
     
     <!-- Logged in - Registration form -->
     <div v-else>
       <div v-if="loading" class="loading-message">
         <p>Hesap bilgileri kontrol ediliyor...</p>
-        <p class="muted">Mevcut bir firmanız varsa otomatik yönlendirileceksiniz.</p>
+        <p class="muted">Mevcut bir firmanÄ±z varsa otomatik yÃ¶nlendirileceksiniz.</p>
       </div>
 
       <div v-else>
         <!-- Deterministic redirect reasons (no silent redirects) -->
         <div v-if="gateState === 'already_active'" class="info-message">
           <p><strong>Bu hesapta zaten aktif bir firma var.</strong></p>
-          <p class="muted">Yeni firma oluşturmana gerek yok. İstersen firma paneline geçebilirsin.</p>
+          <p class="muted">Yeni firma oluÅŸturmana gerek yok. Ä°stersen firma paneline geÃ§ebilirsin.</p>
           <div class="cta-row">
-            <router-link to="/account" class="secondary-link">Hesabım</router-link>
-            <button type="button" class="primary-btn" @click="goToListingCreate">İlan Oluştur</button>
+            <router-link to="/account" class="secondary-link">HesabÄ±m</router-link>
+            <button type="button" class="primary-btn" @click="goToListingCreate">Ä°lan OluÅŸtur</button>
           </div>
         </div>
 
         <div v-else-if="gateState === 'has_memberships'" class="info-message">
-          <p><strong>Bu hesapta mevcut firma üyeliği var.</strong></p>
-          <p class="muted">Firma seçimini netleştirmek için önce Hesabım sayfasına gidebilirsin.</p>
+          <p><strong>Bu hesapta mevcut firma Ã¼yeliÄŸi var.</strong></p>
+          <p class="muted">Firma seÃ§imini netleÅŸtirmek iÃ§in Ã¶nce HesabÄ±m sayfasÄ±na gidebilirsin.</p>
           <div class="cta-row">
-            <router-link to="/account" class="secondary-link">Hesabım (firma seç)</router-link>
+            <router-link to="/account" class="secondary-link">HesabÄ±m (firma seÃ§)</router-link>
             <button
               v-if="preferredTenantId"
               type="button"
@@ -54,29 +54,62 @@
         <div v-else class="registration-form">
           <form @submit.prevent="handleSubmit">
             <div class="form-group">
-              <label for="firm-name">Firma Adı *</label>
+              <label for="firm-name">Firma AdÄ± *</label>
               <input
                 id="firm-name"
                 v-model="formData.firm_name"
                 type="text"
                 required
-                placeholder="Örn: ABC Teknoloji"
+                placeholder="Ã–rn: ABC Teknoloji"
                 maxlength="100"
               />
-              <small>Firma adı, URL'de slug olarak kullanılacaktır.</small>
+              <small>Firma adÄ±, URL'de slug olarak kullanÄ±lacaktÄ±r.</small>
             </div>
             
             <div class="form-group">
-              <label for="firm-owner-name">Firma Sahibi Adı</label>
+              <label for="firm-owner-name">Firma Sahibi AdÄ±</label>
               <input
                 id="firm-owner-name"
                 v-model="formData.firm_owner_name"
                 type="text"
-                placeholder="İsteğe bağlı"
+                placeholder="Ä°steÄŸe baÄŸlÄ±"
                 maxlength="100"
               />
             </div>
-            
+            <div class="form-group">
+              <label for="firm-city">Il</label>
+              <input id="firm-city" v-model.trim="formData.address.city" type="text" placeholder="Orn: Istanbul" maxlength="100" />
+            </div>
+
+            <div class="form-group">
+              <label for="firm-district">Ilce</label>
+              <input id="firm-district" v-model.trim="formData.address.district" type="text" placeholder="Orn: Besiktas" maxlength="100" />
+            </div>
+
+            <div class="form-group">
+              <label for="firm-neighborhood">Mahalle</label>
+              <input id="firm-neighborhood" v-model.trim="formData.address.neighborhood" type="text" placeholder="Orn: Abbasaga" maxlength="100" />
+            </div>
+
+            <div class="form-group">
+              <label for="firm-street">Sokak / Cadde</label>
+              <input id="firm-street" v-model.trim="formData.address.street" type="text" placeholder="Orn: Ihlamurdere Cd." maxlength="120" />
+            </div>
+
+            <div class="form-group">
+              <label for="firm-building-no">Dis Kapi No</label>
+              <input id="firm-building-no" v-model.trim="formData.address.building_no" type="text" placeholder="Orn: 14" maxlength="30" />
+            </div>
+
+            <div class="form-group">
+              <label for="firm-door-no">Ic Kapi No</label>
+              <input id="firm-door-no" v-model.trim="formData.address.door_no" type="text" placeholder="Orn: 5" maxlength="30" />
+            </div>
+
+            <div class="form-group">
+              <label for="firm-address-line">Acik Adres</label>
+              <input id="firm-address-line" v-model.trim="formData.address.address_line" type="text" placeholder="Detayli adres" maxlength="220" />
+            </div>
             <ActionResultBox
               :loading="submitting"
               :error="error"
@@ -87,9 +120,9 @@
             
             <div class="form-actions">
               <button type="submit" :disabled="loading || submitting" class="submit-btn">
-                {{ submitting ? 'Oluşturuluyor...' : 'Firma Oluştur' }}
+                {{ submitting ? 'OluÅŸturuluyor...' : 'Firma OluÅŸtur' }}
               </button>
-              <router-link to="/account" class="cancel-link">İptal</router-link>
+              <router-link to="/account" class="cancel-link">Ä°ptal</router-link>
             </div>
           </form>
         </div>
@@ -113,6 +146,15 @@ export default {
       formData: {
         firm_name: '',
         firm_owner_name: '',
+        address: {
+          city: '',
+          district: '',
+          neighborhood: '',
+          street: '',
+          building_no: '',
+          door_no: '',
+          address_line: '',
+        },
       },
       loading: false,
       submitting: false,
@@ -183,9 +225,18 @@ export default {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
     },
+    buildAddressPayload() {
+      const a = this.formData.address || {};
+      const payload = {};
+      ['city', 'district', 'neighborhood', 'street', 'building_no', 'door_no', 'address_line'].forEach((k) => {
+        const v = typeof a[k] === 'string' ? a[k].trim() : '';
+        if (v) payload[k] = v;
+      });
+      return payload;
+    },
     async handleSubmit() {
       if (!this.formData.firm_name.trim()) {
-        this.error = 'Firma adı gereklidir.';
+        this.error = 'Firma adÄ± gereklidir.';
         return;
       }
       
@@ -196,7 +247,7 @@ export default {
       try {
         const slug = this.generateSlug(this.formData.firm_name);
         if (!slug || slug.length < 3) {
-          this.error = 'Firma adı slug üretilemedi. Lütfen sadece harf/rakam içeren bir firma adı girin (en az 3 karakter).';
+          this.error = 'Firma adÄ± slug Ã¼retilemedi. LÃ¼tfen sadece harf/rakam iÃ§eren bir firma adÄ± girin (en az 3 karakter).';
           this.submitting = false;
           return;
         }
@@ -209,27 +260,35 @@ export default {
         });
         
         if (response.tenant_id) {
+          const addressPayload = this.buildAddressPayload();
+          if (Object.keys(addressPayload).length > 0) {
+            try {
+              await api.hosUpsertTenantAddress(response.tenant_id, addressPayload);
+            } catch (addrErr) {
+              console.warn('Tenant address save failed during firm create:', addrErr);
+            }
+          }
           // WP-68: Set active tenant
           setActiveTenantId(response.tenant_id);
           
-          this.success = `Firma başarıyla oluşturuldu! (${response.slug})`;
+          this.success = `Firma baÅŸarÄ±yla oluÅŸturuldu! (${response.slug})`;
           notifyApiSuccess('Firm registered');
           
           // Redirect to listing creation (single firm->listing flow)
           await new Promise(resolve => setTimeout(resolve, 1500)); // Brief delay for UX
           this.$router.push('/listing/create');
         } else {
-          this.error = 'Firma oluşturulamadı. Lütfen tekrar deneyin.';
+          this.error = 'Firma oluÅŸturulamadÄ±. LÃ¼tfen tekrar deneyin.';
         }
       } catch (err) {
         const normalized = normalizeApiError(err);
         if (err.status === 401) {
-          this.error = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
+          this.error = 'Oturum sÃ¼reniz dolmuÅŸ. LÃ¼tfen tekrar giriÅŸ yapÄ±n.';
           setTimeout(() => {
             this.$router.push('/login?reason=expired');
           }, 2000);
         } else if (err.status === 409) {
-          this.error = 'Bu firma adı zaten kullanılıyor. Lütfen farklı bir ad seçin.';
+          this.error = 'Bu firma adÄ± zaten kullanÄ±lÄ±yor. LÃ¼tfen farklÄ± bir ad seÃ§in.';
         } else {
           this.error = normalized.message;
         }
@@ -422,4 +481,3 @@ export default {
   background: #e9ecef;
 }
 </style>
-

@@ -65,6 +65,43 @@
           </div>
         </div>
       </div>
+
+      <div v-if="activeTenantId" class="tenant-address-card">
+        <h3>Firma Adresi</h3>
+        <div v-if="tenantAddressLoading" class="loading-firm-state">
+          <p>Firma adresi yukleniyor...</p>
+        </div>
+        <div v-else class="address-form-grid">
+          <label>Il
+            <input v-model.trim="tenantAddress.city" type="text" class="form-input" />
+          </label>
+          <label>Ilce
+            <input v-model.trim="tenantAddress.district" type="text" class="form-input" />
+          </label>
+          <label>Mahalle
+            <input v-model.trim="tenantAddress.neighborhood" type="text" class="form-input" />
+          </label>
+          <label>Sokak / Cadde
+            <input v-model.trim="tenantAddress.street" type="text" class="form-input" />
+          </label>
+          <label>Dis Kapi No
+            <input v-model.trim="tenantAddress.building_no" type="text" class="form-input" />
+          </label>
+          <label>Ic Kapi No
+            <input v-model.trim="tenantAddress.door_no" type="text" class="form-input" />
+          </label>
+          <label class="full-width">Acik Adres
+            <input v-model.trim="tenantAddress.address_line" type="text" class="form-input" />
+          </label>
+        </div>
+        <div class="address-actions">
+          <button @click="saveTenantAddress" :disabled="tenantAddressSaving" class="set-active-btn">
+            {{ tenantAddressSaving ? 'Kaydediliyor...' : 'Firma Adresini Kaydet' }}
+          </button>
+          <small v-if="tenantAddressError" class="tenant-id-warning">{{ tenantAddressError }}</small>
+          <small v-if="tenantAddressSaved" class="status-active">Kaydedildi.</small>
+        </div>
+      </div>
       
       <!-- Refresh Button (WP-NEXT: panel isolation — refresh all) -->
       <div class="button-group">
@@ -135,6 +172,19 @@ export default {
       activeTenantIdValue: getActiveTenantId(),
       membershipsLoading: false,
       refreshing: false,
+      tenantAddress: {
+        city: '',
+        district: '',
+        neighborhood: '',
+        street: '',
+        building_no: '',
+        door_no: '',
+        address_line: '',
+      },
+      tenantAddressLoading: false,
+      tenantAddressSaving: false,
+      tenantAddressError: null,
+      tenantAddressSaved: false,
     };
   },
   computed: {
@@ -161,6 +211,9 @@ export default {
     if (this.isAuthenticated) {
       await this.loadUserInfo();
       await this.loadMemberships();
+      if (this.activeTenantId) {
+        await this.loadTenantAddress();
+      }
     }
   },
   methods: {
@@ -190,6 +243,9 @@ export default {
             this.activeTenantIdValue = first.tenant_id;
           }
         }
+        if (this.activeTenantIdValue) {
+          await this.loadTenantAddress();
+        }
       } catch (err) {
         console.error('[AccountPortalPage] Failed to load memberships:', err);
         if (err.status === 401) {
@@ -202,11 +258,56 @@ export default {
         this.membershipsLoading = false;
       }
     },
+    async loadTenantAddress() {
+      if (!this.activeTenantIdValue) return;
+      this.tenantAddressLoading = true;
+      this.tenantAddressError = null;
+      this.tenantAddressSaved = false;
+      try {
+        const resp = await api.hosGetTenantAddress(this.activeTenantIdValue);
+        const a = resp?.address || {};
+        this.tenantAddress = {
+          city: a.city || '',
+          district: a.district || '',
+          neighborhood: a.neighborhood || '',
+          street: a.street || '',
+          building_no: a.building_no || '',
+          door_no: a.door_no || '',
+          address_line: a.address_line || '',
+        };
+      } catch (err) {
+        this.tenantAddressError = err?.message || 'Firma adresi yuklenemedi.';
+      } finally {
+        this.tenantAddressLoading = false;
+      }
+    },
+    async saveTenantAddress() {
+      if (!this.activeTenantIdValue) return;
+      this.tenantAddressSaving = true;
+      this.tenantAddressError = null;
+      this.tenantAddressSaved = false;
+      try {
+        const payload = {};
+        ['city', 'district', 'neighborhood', 'street', 'building_no', 'door_no', 'address_line'].forEach((k) => {
+          const v = typeof this.tenantAddress[k] === 'string' ? this.tenantAddress[k].trim() : '';
+          if (v) payload[k] = v;
+        });
+        await api.hosUpsertTenantAddress(this.activeTenantIdValue, payload);
+        this.tenantAddressSaved = true;
+      } catch (err) {
+        this.tenantAddressError = err?.message || 'Firma adresi kaydedilemedi.';
+      } finally {
+        this.tenantAddressSaving = false;
+      }
+    },
     setActiveTenant(tenantId) {
       setActiveTenantId(tenantId);
       this.activeTenantIdValue = tenantId || null;
       notifyApiSuccess('Tenant selected');
-      if (this.isAuthenticated) this.refreshAll();
+      if (this.isAuthenticated) {
+        this.loadTenantAddress();
+        this.refreshAll();
+      }
     },
     setTab(tab) {
       if (!this.allowedTabs.includes(tab)) return;
@@ -456,6 +557,46 @@ export default {
 .status-active {
   color: #28a745;
   font-weight: 600;
+}
+
+.tenant-address-card {
+  margin: 1rem 0;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.address-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.address-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.address-form-grid .form-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.address-form-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.address-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
 }
 
 .customer-records-section {

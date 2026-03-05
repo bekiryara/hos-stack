@@ -15,6 +15,19 @@ export function hosCreateTenant({ slug, display_name }) {
   });
 }
 
+export function hosGetTenantAddress(tenantId) {
+  if (!tenantId) return Promise.reject(new Error('tenant_id required'));
+  return hosApiRequest(`/v1/tenants/${encodeURIComponent(tenantId)}/address`);
+}
+
+export function hosUpsertTenantAddress(tenantId, address) {
+  if (!tenantId) return Promise.reject(new Error('tenant_id required'));
+  return hosApiRequest(`/v1/tenants/${encodeURIComponent(tenantId)}/address`, {
+    method: 'PUT',
+    body: JSON.stringify(address || {}),
+  });
+}
+
 export function hosRegisterOwner({ tenantSlug, email, password }) {
   return hosApiRequest('/v1/auth/register', {
     method: 'POST',

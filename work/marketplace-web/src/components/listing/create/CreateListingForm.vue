@@ -155,6 +155,12 @@
       </div>
 
       <div v-else-if="policyLocationScope === 'point'" class="location-grid">
+        <div class="full-width tenant-address-use">
+          <button type="button" class="minor-btn" @click="applyTenantAddress" :disabled="!hasTenantAddress">
+            Firma adresini kullan
+          </button>
+          <small v-if="!hasTenantAddress" class="hint">Aktif firma icin kayitli adres bulunamadi.</small>
+        </div>
         <label>
           Il <span class="required">*</span>
           <select v-if="hasCityOptions" v-model="local.location.city" class="form-input">
@@ -281,6 +287,7 @@ export default {
     cityOptions: { type: Array, default: () => [] },
     districtOptions: { type: Array, default: () => [] },
     neighborhoodOptions: { type: Array, default: () => [] },
+    tenantAddress: { type: Object, default: null },
     tenantId: { type: String, default: '' },
     tenantIdLoadError: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
@@ -362,6 +369,18 @@ export default {
     },
     hasNeighborhoodOptions() {
       return Array.isArray(this.neighborhoodOptions) && this.neighborhoodOptions.length > 0;
+    },
+    hasTenantAddress() {
+      const a = this.tenantAddress || {};
+      return Boolean(
+        String(a.city || '').trim() ||
+        String(a.district || '').trim() ||
+        String(a.neighborhood || '').trim() ||
+        String(a.street || '').trim() ||
+        String(a.building_no || '').trim() ||
+        String(a.door_no || '').trim() ||
+        String(a.address_line || '').trim()
+      );
     },
     submitErrors() {
       return this.validateIntentCompatibility();
@@ -605,6 +624,26 @@ export default {
         return;
       }
       rows.splice(index, 1);
+    },
+    applyTenantAddress() {
+      if (!this.hasTenantAddress) return;
+      const a = this.tenantAddress || {};
+      this.local.location.city = String(a.city || '').trim();
+      this.local.location.district = String(a.district || '').trim();
+      this.local.location.neighborhood = String(a.neighborhood || '').trim();
+      this.local.location.street = String(a.street || '').trim();
+      this.local.location.building_no = String(a.building_no || '').trim();
+      this.local.location.door_no = String(a.door_no || '').trim();
+      this.local.location.address_line = String(a.address_line || '').trim();
+      if (a.lat != null && a.lng != null && Number.isFinite(Number(a.lat)) && Number.isFinite(Number(a.lng))) {
+        this.local.location.lat = String(a.lat);
+        this.local.location.lng = String(a.lng);
+      }
+      this.$emit('location-city-change', this.local.location.city || '');
+      this.$emit('location-district-change', {
+        city: this.local.location.city || '',
+        district: this.local.location.district || '',
+      });
     },
     onSubmit() {
       this.submitAttempted = true;

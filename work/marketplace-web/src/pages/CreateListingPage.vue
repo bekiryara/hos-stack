@@ -26,6 +26,7 @@
       :city-options="cityOptions"
       :district-options="districtOptions"
       :neighborhood-options="neighborhoodOptions"
+      :tenant-address="tenantAddress"
       :tenant-id="tenantId"
       :tenant-id-load-error="tenantIdLoadError"
       :loading="loading"
@@ -70,6 +71,7 @@ export default {
       cityOptions: [],
       districtOptions: [],
       neighborhoodOptions: [],
+      tenantAddress: null,
       loading: false,
       error: null,
       success: null,
@@ -102,6 +104,7 @@ export default {
                 if (tid) {
                   setActiveTenantId(tid);
                   this.tenantId = tid;
+                  await this.loadTenantAddress();
                 } else {
                   this.tenantIdLoadError = true;
                 }
@@ -116,12 +119,26 @@ export default {
             this.tenantIdLoadError = true;
           }
         }
+      } else {
+        await this.loadTenantAddress();
       }
     } catch (err) {
       this.error = err;
     }
   },
   methods: {
+    async loadTenantAddress() {
+      if (!this.tenantId) {
+        this.tenantAddress = null;
+        return;
+      }
+      try {
+        const resp = await api.hosGetTenantAddress(this.tenantId);
+        this.tenantAddress = resp?.address || null;
+      } catch {
+        this.tenantAddress = null;
+      }
+    },
     async onCategoryChange(categoryId) {
       if (!categoryId) {
         this.filterSchema = null;
