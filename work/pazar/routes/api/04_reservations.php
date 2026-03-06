@@ -178,6 +178,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     $providerTenantId = $listing->tenant_id;
     $requesterUserId = $request->attributes->get('requester_user_id');
     
+    $totals = [
+        'unit_price' => $pricing['unit_price_amount'] ?? $pricing['price_amount'],
+        'multiplier' => $pricing['multiplier'] ?? 1,
+        'subtotal' => $pricing['total_amount'] ?? $pricing['price_amount'],
+        'currency' => $pricing['price_currency'],
+        'billing_model' => $pricing['billing_model'],
+        'pricing_source' => $pricing['pricing_source'],
+    ];
+
     DB::table('reservations')->insert([
         'id' => $reservationId,
         'listing_id' => $validated['listing_id'],
@@ -186,6 +195,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'price_amount' => $pricing['price_amount'],
         'price_currency' => $pricing['price_currency'],
         'billing_model' => $pricing['billing_model'],
+        'totals_json' => json_encode($totals),
         'provider_tenant_id' => $providerTenantId,
         'requester_user_id' => $requesterUserId,
         'slot_start' => $slotStart->format('Y-m-d H:i:s'),
@@ -204,12 +214,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'price_amount' => $pricing['price_amount'],
         'price_currency' => $pricing['price_currency'],
         'billing_model' => $pricing['billing_model'],
-        'totals' => [
-            'unit_price' => $pricing['unit_price_amount'] ?? $pricing['price_amount'],
-            'multiplier' => $pricing['multiplier'] ?? 1,
-            'subtotal' => $pricing['total_amount'] ?? $pricing['price_amount'],
-            'currency' => $pricing['price_currency'],
-        ],
+        'totals' => $totals,
         'provider_tenant_id' => $providerTenantId,
         'requester_user_id' => $requesterUserId,
         'slot_start' => $slotStart->format('Y-m-d\TH:i:s\Z'),

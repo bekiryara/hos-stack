@@ -68,6 +68,20 @@
     - `ops/_checks/order_contract_check.ps1` -> PASS
     - `ops/_checks/rental_contract_check.ps1` -> PASS
     - `ops/_checks/reservation_contract_check.ps1` -> PASS
+- Rental/Reservation pricing snapshot persistence (backend, 2026-03-06):
+  - New migration: `2026_03_06_190000_add_totals_json_to_rentals_and_reservations.php`.
+  - Create endpoints now persist deterministic totals snapshot into `totals_json`:
+    - `routes/api/06_rentals.php`
+    - `routes/api/04_reservations.php`
+  - Account portal read endpoints now consume `totals_json` directly (no synthetic multiplier=1 fallback):
+    - `routes/api/account_portal.php`
+  - Legacy rows without `totals_json` cleaned from local DB:
+    - `rentals`: 8 deleted
+    - `reservations`: 54 deleted
+  - Validation after persistence switch:
+    - `ops/_checks/rental_contract_check.ps1` -> PASS
+    - `ops/_checks/reservation_contract_check.ps1` -> PASS
+    - `ops/_checks/account_portal_read_check.ps1` -> PASS
 
 ## What is the Stack?
 

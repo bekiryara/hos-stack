@@ -132,6 +132,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         ], 422);
     }
     
+    $totals = [
+        'unit_price' => $pricing['unit_price_amount'] ?? $pricing['price_amount'],
+        'multiplier' => $pricing['multiplier'] ?? 1,
+        'subtotal' => $pricing['total_amount'] ?? $pricing['price_amount'],
+        'currency' => $pricing['price_currency'],
+        'billing_model' => $pricing['billing_model'],
+        'pricing_source' => $pricing['pricing_source'],
+    ];
+
     DB::table('rentals')->insert([
         'id' => $rentalId,
         'listing_id' => $validated['listing_id'],
@@ -141,6 +150,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'price_amount' => $pricing['price_amount'],
         'price_currency' => $pricing['price_currency'],
         'billing_model' => $pricing['billing_model'],
+        'totals_json' => json_encode($totals),
         'start_at' => $startAt->format('Y-m-d H:i:s'),
         'end_at' => $endAt->format('Y-m-d H:i:s'),
         'status' => 'requested',
@@ -157,12 +167,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'price_amount' => $pricing['price_amount'],
         'price_currency' => $pricing['price_currency'],
         'billing_model' => $pricing['billing_model'],
-        'totals' => [
-            'unit_price' => $pricing['unit_price_amount'] ?? $pricing['price_amount'],
-            'multiplier' => $pricing['multiplier'] ?? 1,
-            'subtotal' => $pricing['total_amount'] ?? $pricing['price_amount'],
-            'currency' => $pricing['price_currency'],
-        ],
+        'totals' => $totals,
         'start_at' => $startAt->format('Y-m-d\TH:i:s\Z'),
         'end_at' => $endAt->format('Y-m-d\TH:i:s\Z'),
         'status' => 'requested',
