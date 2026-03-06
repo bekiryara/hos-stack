@@ -1,6 +1,62 @@
-import { adminAudit, adminMemberships, adminOverview, adminUsers, hosLogin, hosMe } from '../../../lib/api';
+import {
+  adminAudit as apiAdminAudit,
+  adminMemberships as apiAdminMemberships,
+  adminOverview as apiAdminOverview,
+  adminUsers as apiAdminUsers,
+  hosLogin,
+  hosMe as apiHosMe
+} from '../../../lib/api';
+import { clearAdminSession } from '../session';
 
-export { adminAudit, adminMemberships, adminOverview, adminUsers, hosLogin, hosMe };
+export { hosLogin };
+
+function rethrowWithAuthHandling(error: any): never {
+  if (error?.status === 401) {
+    clearAdminSession();
+    window.location.href = '/admin';
+  }
+  throw error;
+}
+
+export async function hosMe(token: string) {
+  try {
+    return await apiHosMe(token);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminUsers(token: string) {
+  try {
+    return await apiAdminUsers(token);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminMemberships(token: string) {
+  try {
+    return await apiAdminMemberships(token);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminAudit(token: string, limit?: number) {
+  try {
+    return await apiAdminAudit(token, limit);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminOverview(token: string) {
+  try {
+    return await apiAdminOverview(token);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
 
 export async function adminUpdateUserRole(token: string, userId: string, role: 'member' | 'admin' | 'owner') {
   const resp = await fetch(`/api/v1/admin/platform/users/${encodeURIComponent(userId)}/role`, {
@@ -26,7 +82,7 @@ export async function adminUpdateUserRole(token: string, userId: string, role: '
     const err: any = new Error(`PATCH /api/v1/admin/platform/users/:id/role failed: ${resp.status}`);
     err.status = resp.status;
     err.body = json;
-    throw err;
+    rethrowWithAuthHandling(err);
   }
   return json;
 }

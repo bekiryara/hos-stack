@@ -1,5 +1,6 @@
 import React from 'react';
 import { AdminSidebar } from './AdminSidebar';
+import { clearAdminSession, getAdminEmail, hasAdminToken } from '../session';
 
 type AdminLayoutProps = {
   title: string;
@@ -7,6 +8,14 @@ type AdminLayoutProps = {
 };
 
 export function AdminLayout({ title, children }: AdminLayoutProps) {
+  const loggedIn = hasAdminToken();
+  const adminEmail = getAdminEmail();
+
+  function handleLogout() {
+    clearAdminSession();
+    window.location.href = '/admin';
+  }
+
   return (
     <div className="page" data-marker="hos-admin-layout">
       <header className="top">
@@ -14,9 +23,15 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
           H-OS Yonetim <span style={{ fontSize: '0.7rem', color: '#ff6b6b', fontWeight: 'normal' }}>(DEV)</span>
         </div>
         <div className="actions">
+          {loggedIn ? <span style={{ color: '#9ca3af', fontSize: '0.85rem' }}>Oturum: {adminEmail || 'admin'}</span> : null}
           <a href="/" style={{ marginRight: '0.75rem' }}>
             Ana Sayfa
           </a>
+          {loggedIn ? (
+            <button onClick={handleLogout} style={{ marginRight: '0.25rem' }}>
+              Cikis Yap
+            </button>
+          ) : null}
         </div>
       </header>
 

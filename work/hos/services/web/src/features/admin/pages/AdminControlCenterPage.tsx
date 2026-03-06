@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { hosLogin, hosMe } from '../api/adminClient';
 import { AdminLayout } from '../layout/AdminLayout';
+import { clearAdminSession, getAdminToken, setAdminSession } from '../session';
 
 export function AdminControlCenterPage() {
-  const tokenStorageKey = 'hos_admin_token';
-  const [token, setToken] = useState<string>(() => localStorage.getItem(tokenStorageKey) || '');
+  const [token, setToken] = useState<string>(() => getAdminToken());
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [authBusy, setAuthBusy] = useState(false);
@@ -12,10 +12,8 @@ export function AdminControlCenterPage() {
   const [adminErr, setAdminErr] = useState<any>(null);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(tokenStorageKey, token || '');
-    } catch {}
-  }, [token]);
+    setAdminSession(token, email || undefined);
+  }, [token, email]);
 
   useEffect(() => {
     if (!token) {
@@ -46,8 +44,11 @@ export function AdminControlCenterPage() {
       const resp = await hosLogin({ admin: true, email, password });
       const t = resp?.token || resp?.access_token || resp?.jwt;
       if (!t) throw new Error('Giris basarili ama token donmedi');
-      setToken(String(t));
+      const tokenValue = String(t);
+      setToken(tokenValue);
+      setAdminSession(tokenValue, email);
       setPassword('');
+      window.location.href = '/admin/dashboard';
     } catch (e: any) {
       setAdminErr(e);
     } finally {
@@ -56,9 +57,11 @@ export function AdminControlCenterPage() {
   }
 
   function logout() {
+    clearAdminSession();
     setToken('');
     setMe(null);
     setAdminErr(null);
+    window.location.href = '/admin';
   }
 
   return (
@@ -100,7 +103,7 @@ export function AdminControlCenterPage() {
             <div style={{ fontSize: '0.9rem', color: '#9ca3af' }}>Aktif admin oturumu yok.</div>
           )}
           <div style={{ fontSize: '0.82rem', color: '#9ca3af' }}>
-            Oturum tokeni <code>{tokenStorageKey}</code> anahtarinda tutulur.
+            Oturum tokeni <code>hos_admin_token</code> anahtarinda tutulur.
           </div>
           {adminErr ? (
             <div className="card error" style={{ marginTop: '0.75rem' }}>
@@ -116,6 +119,7 @@ export function AdminControlCenterPage() {
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <a href="/admin/dashboard">Sistem Durumu</a>
           <a href="/admin/users">Kullanicilar</a>
+          <a href="/admin/memberships">Uyelikler</a>
           <a href="/admin/audit">Denetim</a>
         </div>
       </div>
