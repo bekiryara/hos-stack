@@ -1,1 +1,1 @@
-export type AdminRouteKey = 'control-center' | 'dashboard' | 'tenants' | 'users' | 'memberships' | 'audit';
+export type AdminRouteKey = 'control-center' | 'dashboard' | 'users' | 'audit';

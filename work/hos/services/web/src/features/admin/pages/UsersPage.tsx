@@ -76,7 +76,7 @@ export function UsersPage() {
             <pre>{String(error)}</pre>
           </div>
         ) : null}
-        {!error && items.length === 0 ? <p>No users found for this tenant scope.</p> : null}
+        {!error && items.length === 0 ? <p>Kullanici kaydi bulunamadi.</p> : null}
         {items.length > 0 ? (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -96,6 +96,7 @@ export function UsersPage() {
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                       <select
                         value={nextRoleByUserId[row.id] || (row.role || 'member')}
+                        style={{ background: '#111b2e', color: '#e5e7eb', border: '1px solid rgba(255,255,255,.2)', borderRadius: '6px' }}
                         onChange={(e) =>
                           setNextRoleByUserId((prev) => ({
                             ...prev,

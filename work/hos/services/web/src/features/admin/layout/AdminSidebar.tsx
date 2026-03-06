@@ -3,9 +3,7 @@ import React from 'react';
 const links = [
   { href: '/admin', label: 'Kontrol Merkezi' },
   { href: '/admin/dashboard', label: 'Pano' },
-  { href: '/admin/tenants', label: 'Tenantlar' },
   { href: '/admin/users', label: 'Kullanicilar' },
-  { href: '/admin/memberships', label: 'Uyelikler' },
   { href: '/admin/audit', label: 'Denetim' },
 ];
 

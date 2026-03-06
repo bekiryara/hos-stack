@@ -1,0 +1,38 @@
+H-OS ADMIN RECOVERY PLAN (PLATFORM ONLY)
+Date: 2026-03-06
+
+1) Target Architecture
+- Single admin surface: /admin
+- Scope: platform owner management for H-OS, Pazar, Messaging, Social worlds
+- No tenant-admin UI surface
+
+2) What We Cleaned
+- Removed tenant-oriented admin routes from web admin navigation and resolver.
+- Removed tenant/membership pages from frontend admin feature.
+- Simplified admin login UI by removing tenant slug input from control center.
+- Kept core admin pages: Control Center, Dashboard, Users, Audit.
+- Dashboard now shows system/world status to support platform-level operations.
+
+3) Current State (After Cleanup)
+- Canonical entry: /admin
+- Sidebar pages:
+  - /admin (Control Center)
+  - /admin/dashboard (System Pano)
+  - /admin/users
+  - /admin/audit
+- Build status: PASS (hos web)
+
+4) Next Mandatory Step (Backend Contract)
+- Current /api/v1/admin/* endpoints are still tenant-scoped by token tenantId.
+- To fully match "platform admin", add explicit platform endpoints:
+  - /api/v1/admin/platform/worlds
+  - /api/v1/admin/platform/users
+  - /api/v1/admin/platform/audit
+  - /api/v1/admin/platform/worlds/:key/status (PATCH)
+- Gate with strict platform-admin identity check.
+
+5) Git Cleanup Procedure
+- Commit only admin cleanup files (exclude unrelated files).
+- Push to main after remote sync (fetch/rebase) from a network-enabled shell.
+- Optional: tag this stabilization point (example: admin-platform-phase1).
+
