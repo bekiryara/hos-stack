@@ -1,18 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { adminMemberships, adminUpdateMembership } from '../api/adminClient';
 import { AdminLayout } from '../layout/AdminLayout';
+import { confirmRiskyAction, trAdminError } from '../utils/opsSafety';
 
 type MembershipRole = 'member' | 'admin' | 'owner';
 type MembershipStatus = 'active' | 'inactive' | 'suspended';
-
-function trError(input: any): string {
-  const raw = String(input || '');
-  if (raw.includes('cannot_remove_last_owner')) return 'Bu firmada en az 1 aktif sahip kalmalidir.';
-  if (raw.includes('membership_not_found')) return 'Uyelik kaydi bulunamadi.';
-  if (raw.includes('invalid_user_id')) return 'Gecersiz kullanici kimligi.';
-  if (raw.includes('invalid_tenant_id')) return 'Gecersiz firma kimligi.';
-  return raw;
-}
+type UndoMembership = {
+  tenantId: string;
+  userId: string;
+  role: MembershipRole;
+  status: MembershipStatus;
+};
 
 export function MembershipsPage() {
   const [loading, setLoading] = useState(false);
@@ -21,6 +19,7 @@ export function MembershipsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [nextByKey, setNextByKey] = useState<Record<string, { role: MembershipRole; status: MembershipStatus }>>({});
+  const [undoMembership, setUndoMembership] = useState<UndoMembership | null>(null);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -49,7 +48,7 @@ export function MembershipsPage() {
         )
       );
     } catch (e: any) {
-      setError(trError(e?.body?.error || e?.message || 'Uyelikler yuklenemedi'));
+      setError(trAdminError(e?.body?.error || e?.message, 'Uyelikler yuklenemedi'));
       setItems([]);
       setNextByKey({});
     } finally {
@@ -76,9 +75,17 @@ export function MembershipsPage() {
     const currentStatus = (row.status || 'active') as MembershipStatus;
     if (patch.role === currentRole && patch.status === currentStatus) return;
 
-    const ok = window.confirm(
-      `Bu uyelik guncellenecek.\nKullanici: ${row.user_email || row.user_id}\nFirma: ${row.tenant_slug || row.tenant_id}\nRol: ${currentRole} -> ${patch.role}\nDurum: ${currentStatus} -> ${patch.status}\n\nDevam edilsin mi?`
-    );
+    const risk: 'low' | 'medium' | 'critical' =
+      currentRole === 'owner' && patch.role !== 'owner'
+        ? 'critical'
+        : patch.status !== 'active'
+          ? 'medium'
+          : 'low';
+    const ok = confirmRiskyAction({
+      title: 'Bu uyelik guncellenecek.',
+      summary: `Kullanici: ${row.user_email || row.user_id}\nFirma: ${row.tenant_slug || row.tenant_id}\nRol: ${currentRole} -> ${patch.role}\nDurum: ${currentStatus} -> ${patch.status}`,
+      risk,
+    });
     if (!ok) return;
 
     setSavingKey(key);
@@ -86,12 +93,40 @@ export function MembershipsPage() {
     setMessage(null);
     try {
       await adminUpdateMembership(token, String(row.tenant_id), String(row.user_id), patch);
-      setMessage('Uyelik guncellendi.');
+      setUndoMembership({
+        tenantId: String(row.tenant_id),
+        userId: String(row.user_id),
+        role: currentRole,
+        status: currentStatus,
+      });
+      setMessage('Uyelik guncellendi. Gerekirse geri alabilirsiniz.');
       await load();
     } catch (e: any) {
-      setError(trError(e?.body?.error || e?.message || 'Uyelik guncellenemedi'));
+      setError(trAdminError(e?.body?.error || e?.message, 'Uyelik guncellenemedi'));
     } finally {
       setSavingKey(null);
+    }
+  }
+
+  async function handleUndoMembership() {
+    if (!undoMembership) return;
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    setError(null);
+    setMessage(null);
+    try {
+      await adminUpdateMembership(token, undoMembership.tenantId, undoMembership.userId, {
+        role: undoMembership.role,
+        status: undoMembership.status,
+      });
+      setUndoMembership(null);
+      setMessage('Son degisiklik geri alindi.');
+      await load();
+    } catch (e: any) {
+      setError(trAdminError(e?.body?.error || e?.message, 'Geri alma islemi basarisiz oldu'));
     }
   }
 
@@ -112,7 +147,14 @@ export function MembershipsPage() {
         ) : null}
         {message ? (
           <div className="card" style={{ marginBottom: '0.75rem' }}>
-            <pre>{message}</pre>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <pre style={{ margin: 0 }}>{message}</pre>
+              {undoMembership ? (
+                <button onClick={handleUndoMembership}>
+                  Geri Al
+                </button>
+              ) : null}
+            </div>
           </div>
         ) : null}
         {!error && items.length === 0 ? <p>Membership kaydi bulunamadi.</p> : null}
