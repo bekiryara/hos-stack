@@ -34,6 +34,14 @@
   - New policy and planning runbooks:
     - `docs/runbooks/policy_extension.md`
     - `docs/runbooks/service_area_phase2_plan.md`
+- Transaction policy enforce hardening (2026-03-06):
+  - Commit `cd8347d`: transaction offer/policy validation centralized in shared resolver helpers
+    (`pricing_strategy`, `offer_requirement`, unsupported-flow guardrail).
+  - Reservations/Orders/Rentals now consume same effective policy path before pricing resolve.
+  - Re-validated with elevated docker access:
+    - `ops/_checks/policy_variant_matrix_check.ps1` -> PASS
+    - `ops/_checks/category_flow_policy_check.ps1` -> PASS
+    - `ops/_checks/listing_contract_check.ps1` -> PASS
 
 ## What is the Stack?
 
