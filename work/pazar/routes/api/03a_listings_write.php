@@ -150,6 +150,102 @@ if (!function_exists('pazar_listing_validate_location_by_scope')) {
     }
 }
 
+if (!function_exists('pazar_listing_location_column_updates')) {
+    function pazar_listing_location_column_updates(int $categoryId, $normalizedLocation): array {
+        if (!Schema::hasColumn('listings', 'location_scope')) {
+            return [];
+        }
+
+        $intent = pazar_category_intent_schema($categoryId);
+        $scope = isset($intent['location_scope']) ? (string) $intent['location_scope'] : 'point';
+
+        $updates = [
+            'location_scope' => $scope,
+            'location_city' => null,
+            'location_district' => null,
+            'location_neighborhood' => null,
+            'location_street' => null,
+            'location_building_no' => null,
+            'location_door_no' => null,
+            'location_address_line' => null,
+            'location_lat' => null,
+            'location_lng' => null,
+        ];
+
+        if (!is_array($normalizedLocation)) {
+            return $updates;
+        }
+
+        $trim = static function ($v): string {
+            return is_string($v) ? trim($v) : '';
+        };
+
+        if ($scope === 'city' || $scope === 'point') {
+            $updates['location_city'] = $trim($normalizedLocation['city'] ?? '') ?: null;
+        }
+        if ($scope === 'point') {
+            $updates['location_district'] = $trim($normalizedLocation['district'] ?? '') ?: null;
+            $updates['location_neighborhood'] = $trim($normalizedLocation['neighborhood'] ?? '') ?: null;
+            $updates['location_street'] = $trim($normalizedLocation['street'] ?? '') ?: null;
+            $updates['location_building_no'] = $trim($normalizedLocation['building_no'] ?? '') ?: null;
+            $updates['location_door_no'] = $trim($normalizedLocation['door_no'] ?? '') ?: null;
+            $updates['location_address_line'] = $trim($normalizedLocation['address_line'] ?? '') ?: null;
+
+            $lat = $normalizedLocation['lat'] ?? null;
+            $lng = $normalizedLocation['lng'] ?? null;
+            if ($lat !== null && $lng !== null && is_numeric($lat) && is_numeric($lng)) {
+                $updates['location_lat'] = (float) $lat;
+                $updates['location_lng'] = (float) $lng;
+            }
+        }
+
+        return $updates;
+    }
+}
+
+if (!function_exists('pazar_listing_sync_service_areas')) {
+    function pazar_listing_sync_service_areas(string $listingId, $normalizedLocation): void {
+        if (!Schema::hasTable('listing_service_areas')) return;
+
+        DB::table('listing_service_areas')->where('listing_id', $listingId)->delete();
+
+        if (!is_array($normalizedLocation) || !isset($normalizedLocation['service_area']) || !is_array($normalizedLocation['service_area'])) {
+            return;
+        }
+
+        $rows = [];
+        foreach ($normalizedLocation['service_area'] as $row) {
+            if (!is_array($row)) continue;
+            $city = isset($row['city']) && is_string($row['city']) ? trim($row['city']) : '';
+            if ($city === '') continue;
+            $allDistricts = (bool) ($row['all_districts'] ?? false);
+            $districts = [];
+            if (!$allDistricts) {
+                $rawDistricts = $row['districts'] ?? [];
+                if (is_array($rawDistricts)) {
+                    foreach ($rawDistricts as $d) {
+                        if (!is_string($d)) continue;
+                        $v = trim($d);
+                        if ($v !== '') $districts[] = $v;
+                    }
+                }
+            }
+            $rows[] = [
+                'listing_id' => $listingId,
+                'city' => $city,
+                'all_districts' => $allDistricts,
+                'districts_json' => $allDistricts ? json_encode([]) : json_encode(array_values(array_unique($districts))),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (!empty($rows)) {
+            DB::table('listing_service_areas')->insert($rows);
+        }
+    }
+}
+
 if (!function_exists('pazar_listing_write_owned_listing_or_error')) {
     function pazar_listing_write_owned_listing_or_error(string $listingId, string $tenantId) {
         $listing = DB::table('listings')->where('id', $listingId)->first();
@@ -224,7 +320,7 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
     $priceAmount = array_key_exists('price_amount', $validated) ? $validated['price_amount'] : null;
     $currency = pazar_listing_write_normalize_currency($validated['currency'] ?? null);
     
-    DB::table('listings')->insert([
+    $insert = [
         'id' => $listingId,
         'tenant_id' => $tenantId,
         'world' => $world,
@@ -235,11 +331,20 @@ Route::middleware($createListingMiddleware)->post('/v1/listings', function (\Ill
         'currency' => $currency,
         'transaction_modes_json' => json_encode($requestedModes),
         'attributes_json' => !empty($attributes) ? json_encode($attributes) : null,
-        'location_json' => $normalizedLocation !== null ? json_encode($normalizedLocation) : null,
         'status' => 'draft',
         'created_at' => now(),
         'updated_at' => now()
-    ]);
+    ];
+
+    $locationUpdates = pazar_listing_location_column_updates($categoryId, $normalizedLocation);
+    foreach ($locationUpdates as $k => $v) {
+        $insert[$k] = $v;
+    }
+
+    DB::transaction(function () use ($insert, $listingId, $normalizedLocation) {
+        DB::table('listings')->insert($insert);
+        pazar_listing_sync_service_areas($listingId, $normalizedLocation);
+    });
     
     $created = DB::table('listings')->where('id', $listingId)->first();
     return response()->json(pazar_listing_write_response($created), 201);
@@ -263,6 +368,7 @@ Route::middleware($updateListingMiddleware)->patch('/v1/listings/{id}', function
         'price_amount' => 'sometimes|nullable|integer|min:0',
         'currency' => 'sometimes|nullable|string|size:3',
         'attributes' => 'sometimes|nullable|array',
+        'location' => 'sometimes|nullable|array',
     ]);
 
     if (empty($validated)) {
@@ -299,12 +405,28 @@ Route::middleware($updateListingMiddleware)->patch('/v1/listings/{id}', function
         }
         $updates['attributes_json'] = !empty($guard['attributes']) ? json_encode($guard['attributes']) : null;
     }
+    $normalizedLocation = null;
+    if (array_key_exists('location', $validated)) {
+        $normalizedLocation = pazar_listing_validate_location_by_scope((int) $listing->category_id, $validated['location']);
+        if ($normalizedLocation instanceof \Illuminate\Http\JsonResponse) {
+            return $normalizedLocation;
+        }
+        $locationUpdates = pazar_listing_location_column_updates((int) $listing->category_id, $normalizedLocation);
+        foreach ($locationUpdates as $k => $v) {
+            $updates[$k] = $v;
+        }
+    }
 
     $updates['updated_at'] = now();
 
-    DB::table('listings')
-        ->where('id', $listing->id)
-        ->update($updates);
+    DB::transaction(function () use ($listing, $updates, $validated, $normalizedLocation) {
+        DB::table('listings')
+            ->where('id', $listing->id)
+            ->update($updates);
+        if (array_key_exists('location', $validated)) {
+            pazar_listing_sync_service_areas((string) $listing->id, $normalizedLocation);
+        }
+    });
 
     $updated = DB::table('listings')->where('id', $listing->id)->first();
     return response()->json(pazar_listing_write_response($updated));

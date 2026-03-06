@@ -2,11 +2,87 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+if (!function_exists('pazar_listing_read_location')) {
+    function pazar_listing_read_location(object $listing): ?array {
+        if (!Schema::hasColumn('listings', 'location_scope')) return null;
+
+        $scope = is_string($listing->location_scope ?? null) ? trim((string) $listing->location_scope) : '';
+        if ($scope === '') return null;
+        if ($scope === 'none') return null;
+
+        if ($scope === 'city') {
+            $city = is_string($listing->location_city ?? null) ? trim((string) $listing->location_city) : '';
+            return $city !== '' ? ['city' => $city] : null;
+        }
+
+        if ($scope === 'point') {
+            $out = [];
+            foreach ([
+                'city' => 'location_city',
+                'district' => 'location_district',
+                'neighborhood' => 'location_neighborhood',
+                'street' => 'location_street',
+                'building_no' => 'location_building_no',
+                'door_no' => 'location_door_no',
+                'address_line' => 'location_address_line',
+            ] as $key => $col) {
+                $v = isset($listing->{$col}) && is_string($listing->{$col}) ? trim((string) $listing->{$col}) : '';
+                if ($v !== '') $out[$key] = $v;
+            }
+            if (isset($listing->location_lat) && isset($listing->location_lng) && $listing->location_lat !== null && $listing->location_lng !== null) {
+                $out['lat'] = (float) $listing->location_lat;
+                $out['lng'] = (float) $listing->location_lng;
+            }
+            return !empty($out) ? $out : null;
+        }
+
+        if ($scope === 'service_area') {
+            if (!Schema::hasTable('listing_service_areas')) return ['service_area' => []];
+            $rows = DB::table('listing_service_areas')
+                ->where('listing_id', $listing->id)
+                ->orderBy('id')
+                ->get()
+                ->map(function ($r) {
+                    $city = is_string($r->city ?? null) ? trim((string) $r->city) : '';
+                    if ($city === '') return null;
+                    $allDistricts = (bool) ($r->all_districts ?? false);
+                    $districts = [];
+                    if (!$allDistricts && isset($r->districts_json) && $r->districts_json) {
+                        $decoded = json_decode((string) $r->districts_json, true);
+                        if (is_array($decoded)) {
+                            foreach ($decoded as $d) {
+                                if (!is_string($d)) continue;
+                                $v = trim($d);
+                                if ($v !== '') $districts[] = $v;
+                            }
+                        }
+                    }
+                    return [
+                        'city' => $city,
+                        'all_districts' => $allDistricts,
+                        'districts' => $allDistricts ? [] : array_values(array_unique($districts)),
+                    ];
+                })
+                ->filter()
+                ->values()
+                ->all();
+            return ['service_area' => $rows];
+        }
+
+        return null;
+    }
+}
 
 // GET /v1/listings - Search listings
 // WP-8: GUEST+ persona (no headers required for basic search, store scope requires X-Active-Tenant-Id)
 Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/listings', function (\Illuminate\Http\Request $request) {
     $query = DB::table('listings');
+    $hasLocationColumns = Schema::hasColumn('listings', 'location_scope')
+        && Schema::hasColumn('listings', 'location_city')
+        && Schema::hasColumn('listings', 'location_district')
+        && Schema::hasColumn('listings', 'location_neighborhood');
     
     // WP-FINAL: Validate category_id if provided (fail-fast)
     if ($request->has('category_id')) {
@@ -153,7 +229,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                     }
                 } else {
                     if ($value === null || $value === '') continue;
-                    $query->whereRaw("attributes_json->>? = ?", [$key, $value]);
+                    if ($hasLocationColumns && $key === 'city') {
+                        $query->where('location_city', (string) $value);
+                    } elseif ($hasLocationColumns && $key === 'district') {
+                        $query->where('location_district', (string) $value);
+                    } elseif ($hasLocationColumns && $key === 'neighborhood') {
+                        $query->where('location_neighborhood', (string) $value);
+                    } else {
+                        $query->whereRaw("attributes_json->>? = ?", [$key, $value]);
+                    }
                 }
             }
         }
@@ -172,7 +256,15 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                         $query->whereRaw("CAST(attributes_json->>? AS INTEGER) <= ?", [$baseKey, (int) $value]);
                     }
                 } else {
-                    $query->whereRaw("attributes_json->>? = ?", [$key, $value]);
+                    if ($hasLocationColumns && $key === 'city') {
+                        $query->where('location_city', (string) $value);
+                    } elseif ($hasLocationColumns && $key === 'district') {
+                        $query->where('location_district', (string) $value);
+                    } elseif ($hasLocationColumns && $key === 'neighborhood') {
+                        $query->where('location_neighborhood', (string) $value);
+                    } else {
+                        $query->whereRaw("attributes_json->>? = ?", [$key, $value]);
+                    }
                 }
             }
         }
@@ -203,7 +295,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 'status' => $listing->status,
                 'transaction_modes' => $listing->transaction_modes_json ? json_decode($listing->transaction_modes_json, true) : [],
                 'attributes' => $listing->attributes_json ? json_decode($listing->attributes_json, true) : [],
-                'location' => $listing->location_json ? json_decode($listing->location_json, true) : null,
+                'location' => pazar_listing_read_location($listing),
                 'created_at' => $listing->created_at,
                 'updated_at' => $listing->updated_at
             ];
@@ -240,7 +332,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         'status' => $listing->status,
         'transaction_modes' => $listing->transaction_modes_json ? json_decode($listing->transaction_modes_json, true) : [],
         'attributes' => $listing->attributes_json ? json_decode($listing->attributes_json, true) : [],
-        'location' => $listing->location_json ? json_decode($listing->location_json, true) : null,
+        'location' => pazar_listing_read_location($listing),
         'created_at' => $listing->created_at,
         'updated_at' => $listing->updated_at
     ];
