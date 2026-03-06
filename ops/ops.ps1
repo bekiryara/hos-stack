@@ -74,6 +74,7 @@ function Show-Help {
   Write-Host "  release-check RC0 release checklist enforcement" -ForegroundColor White
   Write-Host "             Options: -Ci" -ForegroundColor Gray
   Write-Host "  policy-variant-matrix Variant policy matrix contract check" -ForegroundColor White
+  Write-Host "  service-area-phase2 Service area phase-2 prep contract check" -ForegroundColor White
   Write-Host ""
   Write-Host "Other commands (still supported):" -ForegroundColor Yellow
   Write-Host "  verify     Stack health (verify.ps1)" -ForegroundColor White
@@ -942,6 +943,7 @@ switch ($cmd) {
   { $_ -in @("category-flow-policy", "category_flow_policy") } { Invoke-TargetScript -RelPath "_checks\\category_flow_policy_check.ps1"; break }
   { $_ -in @("listing-contract", "listing_contract") } { Invoke-TargetScript -RelPath "_checks\\listing_contract_check.ps1"; break }
   { $_ -in @("policy-variant-matrix", "policy_variant_matrix", "variant-matrix") } { Invoke-TargetScript -RelPath "_checks\\policy_variant_matrix_check.ps1"; break }
+  { $_ -in @("service-area-phase2", "service_area_phase2", "service-area-check") } { Invoke-TargetScript -RelPath "_checks\\service_area_phase2_check.ps1"; break }
   { $_ -in @("create-edit-parity", "create_edit_parity", "parity-check") } { Invoke-TargetScript -RelPath "_checks\\create_edit_parity_check.ps1"; break }
   { $_ -in @("public-ready", "public_ready") } { Invoke-TargetScript -RelPath "_checks\\public_ready_check.ps1"; break }
   { $_ -in @("verify-wp-closeouts", "verify_wp_closeouts") } { Invoke-TargetScript -RelPath "_checks\\verify_wp_closeouts.ps1"; break }

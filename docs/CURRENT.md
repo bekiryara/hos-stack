@@ -83,6 +83,17 @@
     - `ops/_checks/order_contract_check.ps1` -> PASS
     - `ops/_checks/reservation_contract_check.ps1` -> PASS
     - `ops/_checks/rental_contract_check.ps1` -> FAIL (409 overlap on selected test listing; known data-state conflict, not UI/runtime regression)
+ - Service-area phase-2 prep guard (2026-03-06):
+  - New check: `ops/_checks/service_area_phase2_check.ps1`.
+  - Guard scope:
+    - Controlled policy activation (`food:sale` allowlist for `location_scope=service_area`)
+    - UI scaffold presence (`CreateListingForm` service-area editor)
+    - Write/read normalization hooks (`03a_listings_write.php`, `03b_listings_read.php`)
+    - Schema snapshot contract (`listing_service_areas`, `location_scope`)
+  - Ops command added:
+    - `ops.ps1 service-area-phase2`
+  - Validation:
+    - `ops.ps1 service-area-phase2` -> PASS
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.
