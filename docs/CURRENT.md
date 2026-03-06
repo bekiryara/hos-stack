@@ -3,6 +3,11 @@
 **Last Updated:** 2026-03-06  
 **Baseline:** RELEASE-GRADE BASELINE RESET v1
 
+## Authoritative Completion Index
+
+- Commit-certified completed works are tracked at:
+  - `docs/RELEASES/COMPLETED_WORKS_2026_03_06.md`
+
 ## Recent Updates (2026-03-05 to 2026-03-06)
 
 - Tenant Address Spine stabilized in Marketplace:
