@@ -89,6 +89,40 @@ foreach ($ruleKey in $rules.Keys) {
             }
         }
     }
+
+    if ($rule.PSObject.Properties['offer_variants'] -and $rule.offer_variants) {
+        foreach ($variant in $rule.offer_variants) {
+            if (-not $variant) { continue }
+            $variantKey = ""
+            if ($variant.PSObject.Properties['key']) { $variantKey = [string]$variant.key }
+            if ([string]::IsNullOrWhiteSpace($variantKey)) { $variantKey = "<missing-key>" }
+
+            if ($variant.PSObject.Properties['fulfillment_mode']) {
+                $v = [string]$variant.fulfillment_mode
+                if ($validFulfillmentModes -notcontains $v) {
+                    $primitiveViolations += "rules.$ruleKey.offer_variants[$variantKey].fulfillment_mode invalid: $v"
+                }
+            }
+            if ($variant.PSObject.Properties['location_scope']) {
+                $v = [string]$variant.location_scope
+                if ($validLocationScopes -notcontains $v) {
+                    $primitiveViolations += "rules.$ruleKey.offer_variants[$variantKey].location_scope invalid: $v"
+                }
+            }
+            if ($variant.PSObject.Properties['service_time_model']) {
+                $v = [string]$variant.service_time_model
+                if ($validServiceTimeModels -notcontains $v) {
+                    $primitiveViolations += "rules.$ruleKey.offer_variants[$variantKey].service_time_model invalid: $v"
+                }
+            }
+            if ($variant.PSObject.Properties['offer_requirement']) {
+                $v = [string]$variant.offer_requirement
+                if ($validOfferRequirements -notcontains $v) {
+                    $primitiveViolations += "rules.$ruleKey.offer_variants[$variantKey].offer_requirement invalid: $v"
+                }
+            }
+        }
+    }
 }
 
 if ($primitiveViolations.Count -gt 0) {

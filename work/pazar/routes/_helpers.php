@@ -119,6 +119,37 @@ if (!function_exists('pazar_category_descendant_cte_in_clause_sql')) {
     }
 }
 
+if (!function_exists('pazar_policy_primitive_defaults')) {
+    function pazar_policy_primitive_defaults(): array {
+        return [
+            'fulfillment_mode' => 'provider_location',
+            'location_scope' => 'point',
+            'service_time_model' => 'none',
+            'offer_requirement' => 'no_offer',
+        ];
+    }
+}
+
+if (!function_exists('pazar_policy_primitive_valid_sets')) {
+    function pazar_policy_primitive_valid_sets(): array {
+        return [
+            'fulfillment_mode' => ['provider_location' => true, 'customer_location' => true, 'remote' => true, 'hybrid' => true],
+            'location_scope' => ['none' => true, 'city' => true, 'point' => true, 'service_area' => true],
+            'service_time_model' => ['none' => true, 'date_range' => true, 'slot' => true, 'session' => true],
+            'offer_requirement' => ['no_offer' => true, 'optional_offer' => true, 'required_offer' => true],
+        ];
+    }
+}
+
+if (!function_exists('pazar_normalize_policy_primitive')) {
+    function pazar_normalize_policy_primitive(string $kind, $rawValue, string $fallback): string {
+        $validSets = pazar_policy_primitive_valid_sets();
+        $valid = isset($validSets[$kind]) && is_array($validSets[$kind]) ? $validSets[$kind] : [];
+        $value = is_string($rawValue) ? (string) $rawValue : '';
+        return isset($valid[$value]) ? $value : $fallback;
+    }
+}
+
 // Resolve category intent schema (CONTACT_ONLY vs FLOW) via config/category_flow_policy.php
 // Walks up ancestors and matches by slug; returns a deterministic response shape.
 if (!function_exists('pazar_category_intent_schema')) {
@@ -194,22 +225,42 @@ if (!function_exists('pazar_category_intent_schema')) {
         if ($defaultOfferVariant === '') $defaultOfferVariant = $default['default_offer_variant'];
 
         $supportsPackages = isset($schema['supports_packages']) ? (bool) $schema['supports_packages'] : false;
-        $validFulfillmentModes = ['provider_location' => true, 'customer_location' => true, 'remote' => true, 'hybrid' => true];
-        $validLocationScopes = ['none' => true, 'city' => true, 'point' => true, 'service_area' => true];
-        $validServiceTimeModels = ['none' => true, 'date_range' => true, 'slot' => true, 'session' => true];
-        $validOfferRequirements = ['no_offer' => true, 'optional_offer' => true, 'required_offer' => true];
+        $primitiveDefaults = pazar_policy_primitive_defaults();
 
-        $fulfillmentMode = isset($schema['fulfillment_mode']) ? (string) $schema['fulfillment_mode'] : $default['fulfillment_mode'];
-        if (!isset($validFulfillmentModes[$fulfillmentMode])) $fulfillmentMode = $default['fulfillment_mode'];
+        $fulfillmentMode = pazar_normalize_policy_primitive(
+            'fulfillment_mode',
+            $schema['fulfillment_mode'] ?? null,
+            $primitiveDefaults['fulfillment_mode']
+        );
+        $locationScope = pazar_normalize_policy_primitive(
+            'location_scope',
+            $schema['location_scope'] ?? null,
+            $primitiveDefaults['location_scope']
+        );
+        $serviceTimeModel = pazar_normalize_policy_primitive(
+            'service_time_model',
+            $schema['service_time_model'] ?? null,
+            $primitiveDefaults['service_time_model']
+        );
+        $offerRequirement = pazar_normalize_policy_primitive(
+            'offer_requirement',
+            $schema['offer_requirement'] ?? null,
+            $primitiveDefaults['offer_requirement']
+        );
 
-        $locationScope = isset($schema['location_scope']) ? (string) $schema['location_scope'] : $default['location_scope'];
-        if (!isset($validLocationScopes[$locationScope])) $locationScope = $default['location_scope'];
-
-        $serviceTimeModel = isset($schema['service_time_model']) ? (string) $schema['service_time_model'] : $default['service_time_model'];
-        if (!isset($validServiceTimeModels[$serviceTimeModel])) $serviceTimeModel = $default['service_time_model'];
-
-        $offerRequirement = isset($schema['offer_requirement']) ? (string) $schema['offer_requirement'] : $default['offer_requirement'];
-        if (!isset($validOfferRequirements[$offerRequirement])) $offerRequirement = $default['offer_requirement'];
+        $normalizedVariants = [];
+        foreach ($variants as $v) {
+            $normalizedVariants[] = [
+                'key' => (string) ($v['key'] ?? ''),
+                'label' => (string) ($v['label'] ?? ($v['key'] ?? '')),
+                'transaction_mode' => (string) ($v['transaction_mode'] ?? 'sale'),
+                'interaction_mode' => ((string) ($v['interaction_mode'] ?? 'contact_only')) === 'flow' ? 'flow' : 'contact_only',
+                'fulfillment_mode' => pazar_normalize_policy_primitive('fulfillment_mode', $v['fulfillment_mode'] ?? null, $fulfillmentMode),
+                'location_scope' => pazar_normalize_policy_primitive('location_scope', $v['location_scope'] ?? null, $locationScope),
+                'service_time_model' => pazar_normalize_policy_primitive('service_time_model', $v['service_time_model'] ?? null, $serviceTimeModel),
+                'offer_requirement' => pazar_normalize_policy_primitive('offer_requirement', $v['offer_requirement'] ?? null, $offerRequirement),
+            ];
+        }
 
         return [
             'category_id' => (int) $categoryId,
@@ -219,12 +270,51 @@ if (!function_exists('pazar_category_intent_schema')) {
             ] : null,
             'allowed_transaction_modes' => $allowedModes,
             'default_offer_variant' => $defaultOfferVariant,
-            'offer_variants' => $variants,
+            'offer_variants' => $normalizedVariants,
             'supports_packages' => $supportsPackages,
             'fulfillment_mode' => $fulfillmentMode,
             'location_scope' => $locationScope,
             'service_time_model' => $serviceTimeModel,
             'offer_requirement' => $offerRequirement,
+        ];
+    }
+}
+
+if (!function_exists('pazar_effective_intent_policy')) {
+    function pazar_effective_intent_policy(array $intentSchema, string $offerVariantKey = ''): array {
+        $variants = isset($intentSchema['offer_variants']) && is_array($intentSchema['offer_variants'])
+            ? $intentSchema['offer_variants']
+            : [];
+
+        $matchedVariant = null;
+        if ($offerVariantKey !== '') {
+            foreach ($variants as $v) {
+                if (is_array($v) && isset($v['key']) && (string) $v['key'] === $offerVariantKey) {
+                    $matchedVariant = $v;
+                    break;
+                }
+            }
+        }
+
+        if (!$matchedVariant && !empty($variants)) {
+            $defaultKey = isset($intentSchema['default_offer_variant']) ? (string) $intentSchema['default_offer_variant'] : '';
+            foreach ($variants as $v) {
+                if (is_array($v) && isset($v['key']) && (string) $v['key'] === $defaultKey) {
+                    $matchedVariant = $v;
+                    break;
+                }
+            }
+            if (!$matchedVariant) {
+                $matchedVariant = $variants[0];
+            }
+        }
+
+        return [
+            'offer_variant' => $matchedVariant,
+            'fulfillment_mode' => (string) ($matchedVariant['fulfillment_mode'] ?? ($intentSchema['fulfillment_mode'] ?? 'provider_location')),
+            'location_scope' => (string) ($matchedVariant['location_scope'] ?? ($intentSchema['location_scope'] ?? 'point')),
+            'service_time_model' => (string) ($matchedVariant['service_time_model'] ?? ($intentSchema['service_time_model'] ?? 'none')),
+            'offer_requirement' => (string) ($matchedVariant['offer_requirement'] ?? ($intentSchema['offer_requirement'] ?? 'no_offer')),
         ];
     }
 }
@@ -313,12 +403,6 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         $allowedModes = isset($intentSchema['allowed_transaction_modes']) && is_array($intentSchema['allowed_transaction_modes'])
             ? $intentSchema['allowed_transaction_modes']
             : pazar_canonical_transaction_modes();
-        // Deterministic policy primitives: listing payload cannot override these values.
-        $attributes['fulfillment_mode'] = (string) ($intentSchema['fulfillment_mode'] ?? 'provider_location');
-        $attributes['location_scope'] = (string) ($intentSchema['location_scope'] ?? 'point');
-        $attributes['service_time_model'] = (string) ($intentSchema['service_time_model'] ?? 'none');
-        $attributes['offer_requirement'] = (string) ($intentSchema['offer_requirement'] ?? 'no_offer');
-
         $requestedModes = is_array($transactionModes)
             ? array_values(array_filter(array_map('strval', $transactionModes)))
             : [];
@@ -373,10 +457,6 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
                 ], 422);
             }
 
-            // Normalize interaction_mode from policy
-            $interactionMode = isset($resolvedVariant['interaction_mode']) ? (string) $resolvedVariant['interaction_mode'] : '';
-            if ($interactionMode !== 'flow') $interactionMode = 'contact_only';
-            $attributes['interaction_mode'] = $interactionMode;
         } else {
             // If no offer_variant provided, still validate requested modes are allowed.
             foreach ($requestedModes as $m) {
@@ -391,11 +471,57 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
 
             // Normalize to a single mode (first) to keep listing semantics deterministic.
             $requestedModes = [$requestedModes[0]];
-
-            // Auto-fill offer_variant if it matches a default key (sale/rental/reservation)
-            $attributes['offer_variant'] = $requestedModes[0];
-            $attributes['interaction_mode'] = ($requestedModes[0] === 'reservation') ? 'flow' : 'contact_only';
+            $variants = isset($intentSchema['offer_variants']) && is_array($intentSchema['offer_variants']) ? $intentSchema['offer_variants'] : [];
+            $foundByMode = null;
+            foreach ($variants as $v) {
+                if (!is_array($v)) continue;
+                $vMode = isset($v['transaction_mode']) ? (string) $v['transaction_mode'] : '';
+                if ($vMode === (string) $requestedModes[0]) {
+                    $foundByMode = $v;
+                    break;
+                }
+            }
+            if ($foundByMode) {
+                $resolvedVariant = $foundByMode;
+                $attributes['offer_variant'] = (string) ($foundByMode['key'] ?? $requestedModes[0]);
+                $impliedMode = (string) ($foundByMode['transaction_mode'] ?? $requestedModes[0]);
+            } else {
+                $effective = pazar_effective_intent_policy($intentSchema);
+                $resolvedVariant = isset($effective['offer_variant']) && is_array($effective['offer_variant']) ? $effective['offer_variant'] : null;
+                if ($resolvedVariant) {
+                    $attributes['offer_variant'] = (string) ($resolvedVariant['key'] ?? $requestedModes[0]);
+                    $impliedMode = (string) ($resolvedVariant['transaction_mode'] ?? $requestedModes[0]);
+                    $requestedModes = [$impliedMode];
+                } else {
+                    $attributes['offer_variant'] = $requestedModes[0];
+                    $impliedMode = (string) $requestedModes[0];
+                }
+            }
         }
+
+        $effectiveIntent = pazar_effective_intent_policy($intentSchema, (string) ($attributes['offer_variant'] ?? ''));
+        $effectiveVariant = isset($effectiveIntent['offer_variant']) && is_array($effectiveIntent['offer_variant'])
+            ? $effectiveIntent['offer_variant']
+            : null;
+        if ($effectiveVariant) {
+            $attributes['offer_variant'] = (string) ($effectiveVariant['key'] ?? ($attributes['offer_variant'] ?? ''));
+            $interactionMode = isset($effectiveVariant['interaction_mode']) ? (string) $effectiveVariant['interaction_mode'] : '';
+            $attributes['interaction_mode'] = $interactionMode === 'flow' ? 'flow' : 'contact_only';
+            $effectiveMode = isset($effectiveVariant['transaction_mode']) ? (string) $effectiveVariant['transaction_mode'] : '';
+            if ($effectiveMode !== '') {
+                $requestedModes = [$effectiveMode];
+                $impliedMode = $effectiveMode;
+            }
+        } else {
+            $interactionMode = isset($attributes['interaction_mode']) ? (string) $attributes['interaction_mode'] : '';
+            $attributes['interaction_mode'] = $interactionMode === 'flow' ? 'flow' : 'contact_only';
+        }
+
+        // Deterministic policy primitives: listing payload cannot override these values.
+        $attributes['fulfillment_mode'] = (string) ($effectiveIntent['fulfillment_mode'] ?? ($intentSchema['fulfillment_mode'] ?? 'provider_location'));
+        $attributes['location_scope'] = (string) ($effectiveIntent['location_scope'] ?? ($intentSchema['location_scope'] ?? 'point'));
+        $attributes['service_time_model'] = (string) ($effectiveIntent['service_time_model'] ?? ($intentSchema['service_time_model'] ?? 'none'));
+        $attributes['offer_requirement'] = (string) ($effectiveIntent['offer_requirement'] ?? ($intentSchema['offer_requirement'] ?? 'no_offer'));
 
         // Determine effective transaction mode (after offer_variant normalization).
         $effectiveMode = '';
@@ -580,10 +706,11 @@ if (!function_exists('pazar_normalize_listing_policy_fields')) {
                 $listing['transaction_modes'] = [$impliedMode];
             }
         }
-        $attrs['fulfillment_mode'] = (string) ($intent['fulfillment_mode'] ?? 'provider_location');
-        $attrs['location_scope'] = (string) ($intent['location_scope'] ?? 'point');
-        $attrs['service_time_model'] = (string) ($intent['service_time_model'] ?? 'none');
-        $attrs['offer_requirement'] = (string) ($intent['offer_requirement'] ?? 'no_offer');
+        $effectiveIntent = pazar_effective_intent_policy($intent, (string) ($attrs['offer_variant'] ?? ''));
+        $attrs['fulfillment_mode'] = (string) ($effectiveIntent['fulfillment_mode'] ?? ($intent['fulfillment_mode'] ?? 'provider_location'));
+        $attrs['location_scope'] = (string) ($effectiveIntent['location_scope'] ?? ($intent['location_scope'] ?? 'point'));
+        $attrs['service_time_model'] = (string) ($effectiveIntent['service_time_model'] ?? ($intent['service_time_model'] ?? 'none'));
+        $attrs['offer_requirement'] = (string) ($effectiveIntent['offer_requirement'] ?? ($intent['offer_requirement'] ?? 'no_offer'));
 
         $listing['attributes'] = $attrs;
         $listing['supports_packages'] = isset($intent['supports_packages']) ? (bool) $intent['supports_packages'] : false;

@@ -122,16 +122,16 @@
       <label>Hizmet Modeli</label>
       <div class="primitive-grid">
         <div class="primitive-item">
-          <strong>Fulfillment:</strong> {{ primitiveLabel('fulfillment_mode', intentSchema.fulfillment_mode) }}
+          <strong>Fulfillment:</strong> {{ primitiveLabel('fulfillment_mode', effectiveIntentSchema.fulfillment_mode) }}
         </div>
         <div class="primitive-item">
-          <strong>Location Scope:</strong> {{ primitiveLabel('location_scope', intentSchema.location_scope) }}
+          <strong>Location Scope:</strong> {{ primitiveLabel('location_scope', effectiveIntentSchema.location_scope) }}
         </div>
         <div class="primitive-item">
-          <strong>Time Model:</strong> {{ primitiveLabel('service_time_model', intentSchema.service_time_model) }}
+          <strong>Time Model:</strong> {{ primitiveLabel('service_time_model', effectiveIntentSchema.service_time_model) }}
         </div>
         <div class="primitive-item">
-          <strong>Offer Rule:</strong> {{ primitiveLabel('offer_requirement', intentSchema.offer_requirement) }}
+          <strong>Offer Rule:</strong> {{ primitiveLabel('offer_requirement', effectiveIntentSchema.offer_requirement) }}
         </div>
       </div>
       <small class="hint">Bu alanlar kategori policy'sinden gelir ve backend tarafinda zorlanir.</small>
@@ -328,6 +328,16 @@ export default {
       const list = schema && Array.isArray(schema.offer_variants) ? schema.offer_variants : [];
       return list.find((v) => v && v.key === key) || null;
     },
+    effectiveIntentSchema() {
+      const schema = this.intentSchema || {};
+      const selected = this.selectedOfferVariant || {};
+      return {
+        fulfillment_mode: selected.fulfillment_mode || schema.fulfillment_mode || 'provider_location',
+        location_scope: selected.location_scope || schema.location_scope || 'point',
+        service_time_model: selected.service_time_model || schema.service_time_model || 'none',
+        offer_requirement: selected.offer_requirement || schema.offer_requirement || 'no_offer',
+      };
+    },
     currentTransactionMode() {
       const v = this.selectedOfferVariant;
       if (v && v.transaction_mode) return String(v.transaction_mode);
@@ -351,13 +361,13 @@ export default {
       return list.length - this.visibleFilters.length;
     },
     policyTimeModel() {
-      return String(this.intentSchema?.service_time_model || '');
+      return String(this.effectiveIntentSchema?.service_time_model || '');
     },
     policyLocationScope() {
-      return String(this.intentSchema?.location_scope || '');
+      return String(this.effectiveIntentSchema?.location_scope || '');
     },
     policyOfferRule() {
-      return String(this.intentSchema?.offer_requirement || '');
+      return String(this.effectiveIntentSchema?.offer_requirement || '');
     },
     shouldHideLegacyCityFilter() {
       return ['city', 'point', 'service_area'].includes(this.policyLocationScope);
@@ -502,6 +512,10 @@ export default {
       this.local.attributes = this.local.attributes || {};
       this.local.attributes.offer_variant = v.key;
       this.local.attributes.interaction_mode = (v.interaction_mode === 'flow') ? 'flow' : 'contact_only';
+      this.local.attributes.fulfillment_mode = v.fulfillment_mode || this.intentSchema?.fulfillment_mode || 'provider_location';
+      this.local.attributes.location_scope = v.location_scope || this.intentSchema?.location_scope || 'point';
+      this.local.attributes.service_time_model = v.service_time_model || this.intentSchema?.service_time_model || 'none';
+      this.local.attributes.offer_requirement = v.offer_requirement || this.intentSchema?.offer_requirement || 'no_offer';
     },
     validateIntentCompatibility() {
       const errors = [];
