@@ -32,8 +32,8 @@
         :totals="success.totals"
         :price-amount="success.price_amount"
         :price-currency="success.price_currency"
+        :billing-model="success.billing_model"
         :multiplier="success.totals?.multiplier || 1"
-        multiplier-label="Carpan"
       />
       <div class="success-actions">
         <router-link :to="{ path: '/account', query: { tab: 'rentals' } }" class="action-link">Hesaba Git</router-link>

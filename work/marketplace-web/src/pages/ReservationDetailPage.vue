@@ -43,8 +43,8 @@
             :totals="item.totals"
             :price-amount="item.price_amount"
             :price-currency="item.price_currency"
+            :billing-model="item.billing_model"
             :multiplier="item.totals?.multiplier || item.party_size || 1"
-            multiplier-label="Carpan"
           />
         </div>
       </div>

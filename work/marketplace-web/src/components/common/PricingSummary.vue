@@ -5,7 +5,7 @@
       <span class="pricing-value">{{ formatMoney(resolvedUnitPrice, resolvedCurrency) }}</span>
     </div>
     <div class="pricing-row">
-      <span class="pricing-label">{{ multiplierLabel }}</span>
+      <span class="pricing-label">{{ resolvedMultiplierLabel }}</span>
       <span class="pricing-value">{{ resolvedMultiplier }}</span>
     </div>
     <div class="pricing-row pricing-row-final">
@@ -25,8 +25,9 @@ export default {
     priceAmount: { type: [Number, String], default: null },
     priceCurrency: { type: String, default: 'TRY' },
     multiplier: { type: [Number, String], default: 1 },
+    billingModel: { type: String, default: '' },
     unitLabel: { type: String, default: 'Birim Fiyat' },
-    multiplierLabel: { type: String, default: 'Carpan' },
+    multiplierLabel: { type: String, default: '' },
   },
   computed: {
     resolvedCurrency() {
@@ -46,6 +47,28 @@ export default {
     resolvedMultiplier() {
       if (this.totals?.multiplier != null) return this.totals.multiplier;
       return this.multiplier ?? 1;
+    },
+    resolvedBillingModel() {
+      const fromTotals = this.totals?.billing_model;
+      if (typeof fromTotals === 'string' && fromTotals.trim() !== '') return fromTotals.trim();
+      if (typeof this.billingModel === 'string' && this.billingModel.trim() !== '') return this.billingModel.trim();
+      return '';
+    },
+    resolvedMultiplierLabel() {
+      if (typeof this.multiplierLabel === 'string' && this.multiplierLabel.trim() !== '') {
+        return this.multiplierLabel.trim();
+      }
+      const map = {
+        one_time: 'Adet',
+        per_day: 'Gun',
+        per_night: 'Gece',
+        per_month: 'Ay',
+        per_person: 'Kisi',
+        per_hour: 'Saat',
+        per_session: 'Seans',
+        per_visit: 'Ziyaret',
+      };
+      return map[this.resolvedBillingModel] || 'Carpan';
     },
   },
   methods: {
