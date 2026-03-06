@@ -29,7 +29,7 @@ export function AdminControlCenterPage() {
   async function adminRefreshMe() {
     setAdminErr(null);
     if (!token) {
-      setAdminErr(new Error('Missing token'));
+      setAdminErr(new Error('Token bulunamadi'));
       return;
     }
     try {
@@ -46,7 +46,7 @@ export function AdminControlCenterPage() {
     try {
       const resp = await hosLogin({ tenantSlug: tenantSlug || undefined, email, password });
       const t = resp?.token || resp?.access_token || resp?.jwt;
-      if (!t) throw new Error('Login succeeded but no token returned');
+      if (!t) throw new Error('Giris basarili ama token donmedi');
       setToken(String(t));
       setPassword('');
     } catch (e: any) {
@@ -63,24 +63,24 @@ export function AdminControlCenterPage() {
   }
 
   return (
-    <AdminLayout title="Admin Control Center">
+    <AdminLayout title="Yonetim Girisi">
       <p className="hint">
-        SSOT: Admin surface lives in H-OS only. Pazar must not expose <code>/admin</code>/<code>/panel</code>.
+        Admin yuzeyi H-OS altinda tek adresten yonetilir.
       </p>
 
       <div className="card">
-        <div className="title">Admin Login</div>
+        <div className="title">Giris</div>
         <div style={{ display: 'grid', gap: '0.5rem', maxWidth: 520 }}>
           <label>
-            Tenant slug (optional)
+            Tenant slug (opsiyonel)
             <input value={tenantSlug} onChange={(e) => setTenantSlug(e.target.value)} placeholder="acme" autoComplete="organization" />
           </label>
           <label>
-            Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@acme.com" autoComplete="username" />
+            E-posta
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@firma.com" autoComplete="username" />
           </label>
           <label>
-            Password
+            Sifre
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -91,28 +91,25 @@ export function AdminControlCenterPage() {
           </label>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <button onClick={adminDoLogin} disabled={authBusy || !email || !password}>
-              {authBusy ? 'Logging in...' : 'Login'}
-            </button>
-            <button onClick={adminRefreshMe} disabled={!token || authBusy}>
-              Refresh Session
+              {authBusy ? 'Giris yapiliyor...' : 'Giris Yap'}
             </button>
             <button onClick={logout} disabled={!token || authBusy}>
-              Logout
+              Cikis Yap
             </button>
           </div>
           {me ? (
             <div style={{ fontSize: '0.9rem', color: '#666' }}>
-              Logged in as: <code>{me?.email || me?.sub || 'unknown'}</code> ({me?.memberships_count ?? 0} memberships)
+              Giris yapan: <code>{me?.email || me?.sub || 'bilinmiyor'}</code> ({me?.memberships_count ?? 0} uyelik)
             </div>
           ) : (
-            <div style={{ fontSize: '0.9rem', color: '#9ca3af' }}>No active admin session.</div>
+            <div style={{ fontSize: '0.9rem', color: '#9ca3af' }}>Aktif admin oturumu yok.</div>
           )}
           <div style={{ fontSize: '0.82rem', color: '#9ca3af' }}>
-            Session token is stored in <code>{tokenStorageKey}</code>.
+            Oturum tokeni <code>{tokenStorageKey}</code> anahtarinda tutulur.
           </div>
           {adminErr ? (
             <div className="card error" style={{ marginTop: '0.75rem' }}>
-              <div className="title">Error</div>
+              <div className="title">Hata</div>
               <pre>{JSON.stringify({ message: adminErr?.message, status: adminErr?.status, body: adminErr?.body }, null, 2)}</pre>
             </div>
           ) : null}
@@ -120,12 +117,12 @@ export function AdminControlCenterPage() {
       </div>
 
       <div className="card">
-        <div className="title">Quick Access</div>
+        <div className="title">Hizli Erisim</div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <a href="/admin/tenants">Tenants</a>
-          <a href="/admin/users">Users</a>
-          <a href="/admin/memberships">Memberships</a>
-          <a href="/admin/audit">Audit</a>
+          <a href="/admin/tenants">Tenantlar</a>
+          <a href="/admin/users">Kullanicilar</a>
+          <a href="/admin/memberships">Uyelikler</a>
+          <a href="/admin/audit">Denetim</a>
         </div>
       </div>
     </AdminLayout>

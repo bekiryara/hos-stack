@@ -11,21 +11,18 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
     <div className="page" data-marker="hos-admin-layout">
       <header className="top">
         <div className="brand">
-          H-OS Admin <span style={{ fontSize: '0.7rem', color: '#ff6b6b', fontWeight: 'normal' }}>(DEV ONLY)</span>
+          H-OS Yonetim <span style={{ fontSize: '0.7rem', color: '#ff6b6b', fontWeight: 'normal' }}>(DEV)</span>
         </div>
         <div className="actions">
           <a href="/" style={{ marginRight: '0.75rem' }}>
-            Home
-          </a>
-          <a href="/api/v1/health" target="_blank" rel="noreferrer">
-            /api/v1/health
+            Ana Sayfa
           </a>
         </div>
       </header>
 
-      <main className="main">
+      <main className="main" style={{ maxWidth: '1400px' }}>
         <h1>{title}</h1>
-        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', gap: '1rem' }}>
           <AdminSidebar />
           <section>{children}</section>
         </div>
