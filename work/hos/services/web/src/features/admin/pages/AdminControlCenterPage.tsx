@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { adminAudit, adminTenants, adminUsers, hosLogin, hosMe } from '../api/adminClient';
+import { hosLogin, hosMe } from '../api/adminClient';
 import { AdminLayout } from '../layout/AdminLayout';
 
 export function AdminControlCenterPage() {
@@ -10,7 +10,6 @@ export function AdminControlCenterPage() {
   const [password, setPassword] = useState<string>('');
   const [authBusy, setAuthBusy] = useState(false);
   const [me, setMe] = useState<any>(null);
-  const [adminOut, setAdminOut] = useState<any>(null);
   const [adminErr, setAdminErr] = useState<any>(null);
 
   useEffect(() => {
@@ -19,9 +18,16 @@ export function AdminControlCenterPage() {
     } catch {}
   }, [token]);
 
+  useEffect(() => {
+    if (!token) {
+      setMe(null);
+      return;
+    }
+    void adminRefreshMe();
+  }, [token]);
+
   async function adminRefreshMe() {
     setAdminErr(null);
-    setAdminOut(null);
     if (!token) {
       setAdminErr(new Error('Missing token'));
       return;
@@ -29,7 +35,6 @@ export function AdminControlCenterPage() {
     try {
       const m = await hosMe(token);
       setMe(m);
-      setAdminOut(m);
     } catch (e: any) {
       setAdminErr(e);
     }
@@ -37,16 +42,13 @@ export function AdminControlCenterPage() {
 
   async function adminDoLogin() {
     setAdminErr(null);
-    setAdminOut(null);
     setAuthBusy(true);
     try {
       const resp = await hosLogin({ tenantSlug: tenantSlug || undefined, email, password });
       const t = resp?.token || resp?.access_token || resp?.jwt;
       if (!t) throw new Error('Login succeeded but no token returned');
       setToken(String(t));
-      const m = await hosMe(String(t));
-      setMe(m);
-      setAdminOut({ login: 'ok', me: m });
+      setPassword('');
     } catch (e: any) {
       setAdminErr(e);
     } finally {
@@ -54,34 +56,10 @@ export function AdminControlCenterPage() {
     }
   }
 
-  async function adminLoadTenants() {
+  function logout() {
+    setToken('');
+    setMe(null);
     setAdminErr(null);
-    setAdminOut(null);
-    try {
-      setAdminOut(await adminTenants(token));
-    } catch (e: any) {
-      setAdminErr(e);
-    }
-  }
-
-  async function adminLoadUsers() {
-    setAdminErr(null);
-    setAdminOut(null);
-    try {
-      setAdminOut(await adminUsers(token));
-    } catch (e: any) {
-      setAdminErr(e);
-    }
-  }
-
-  async function adminLoadAudit() {
-    setAdminErr(null);
-    setAdminOut(null);
-    try {
-      setAdminOut(await adminAudit(token, 50));
-    } catch (e: any) {
-      setAdminErr(e);
-    }
   }
 
   return (
@@ -91,15 +69,15 @@ export function AdminControlCenterPage() {
       </p>
 
       <div className="card">
-        <div className="title">Auth (JWT)</div>
+        <div className="title">Admin Login</div>
         <div style={{ display: 'grid', gap: '0.5rem', maxWidth: 520 }}>
           <label>
             Tenant slug (optional)
-            <input value={tenantSlug} onChange={(e) => setTenantSlug(e.target.value)} placeholder="acme" />
+            <input value={tenantSlug} onChange={(e) => setTenantSlug(e.target.value)} placeholder="acme" autoComplete="organization" />
           </label>
           <label>
             Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@acme.com" />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@acme.com" autoComplete="username" />
           </label>
           <label>
             Password
@@ -108,58 +86,47 @@ export function AdminControlCenterPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="********"
               type="password"
+              autoComplete="current-password"
             />
           </label>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <button onClick={adminDoLogin} disabled={authBusy || !email || !password}>
               {authBusy ? 'Logging in...' : 'Login'}
             </button>
-            <button onClick={adminRefreshMe} disabled={!token}>
-              /v1/me
+            <button onClick={adminRefreshMe} disabled={!token || authBusy}>
+              Refresh Session
+            </button>
+            <button onClick={logout} disabled={!token || authBusy}>
+              Logout
             </button>
           </div>
-          <label>
-            Token (stored in localStorage: <code>{tokenStorageKey}</code>)
-            <textarea
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="paste JWT here"
-              rows={4}
-              style={{ width: '100%' }}
-            />
-          </label>
           {me ? (
             <div style={{ fontSize: '0.9rem', color: '#666' }}>
-              Logged in as: <code>{me?.email || me?.sub || 'unknown'}</code>
+              Logged in as: <code>{me?.email || me?.sub || 'unknown'}</code> ({me?.memberships_count ?? 0} memberships)
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.9rem', color: '#9ca3af' }}>No active admin session.</div>
+          )}
+          <div style={{ fontSize: '0.82rem', color: '#9ca3af' }}>
+            Session token is stored in <code>{tokenStorageKey}</code>.
+          </div>
+          {adminErr ? (
+            <div className="card error" style={{ marginTop: '0.75rem' }}>
+              <div className="title">Error</div>
+              <pre>{JSON.stringify({ message: adminErr?.message, status: adminErr?.status, body: adminErr?.body }, null, 2)}</pre>
             </div>
           ) : null}
         </div>
       </div>
 
       <div className="card">
-        <div className="title">Admin APIs (HOS)</div>
+        <div className="title">Quick Access</div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button onClick={adminLoadTenants} disabled={!token}>
-            GET /v1/admin/tenants
-          </button>
-          <button onClick={adminLoadUsers} disabled={!token}>
-            GET /v1/admin/users
-          </button>
-          <button onClick={adminLoadAudit} disabled={!token}>
-            GET /v1/admin/audit
-          </button>
+          <a href="/admin/tenants">Tenants</a>
+          <a href="/admin/users">Users</a>
+          <a href="/admin/memberships">Memberships</a>
+          <a href="/admin/audit">Audit</a>
         </div>
-        {adminErr ? (
-          <div className="card error" style={{ marginTop: '0.75rem' }}>
-            <div className="title">Error</div>
-            <pre>{JSON.stringify({ message: adminErr?.message, status: adminErr?.status, body: adminErr?.body }, null, 2)}</pre>
-          </div>
-        ) : null}
-        {adminOut ? (
-          <div style={{ marginTop: '0.75rem' }}>
-            <pre>{JSON.stringify(adminOut, null, 2)}</pre>
-          </div>
-        ) : null}
       </div>
     </AdminLayout>
   );
