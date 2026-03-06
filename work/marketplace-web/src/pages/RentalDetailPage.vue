@@ -34,17 +34,14 @@
           <span class="summary-label">Bitis</span>
           <span class="summary-value">{{ formatDate(item.end_at) }}</span>
         </div>
-        <div class="summary-item">
-          <span class="summary-label">Birim Fiyat</span>
-          <span class="summary-value">{{ formatTotals('unit_price') }}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Carpan</span>
-          <span class="summary-value">{{ formatMultiplier() }}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Toplam</span>
-          <span class="summary-value">{{ formatTotals('subtotal') }}</span>
+        <div class="summary-item summary-item-pricing">
+          <PricingSummary
+            :totals="item.totals"
+            :price-amount="item.price_amount"
+            :price-currency="item.price_currency"
+            :multiplier="item.totals?.multiplier || 1"
+            multiplier-label="Carpan"
+          />
         </div>
         <div class="summary-item">
           <span class="summary-label">Talep Tarihi</span>
@@ -74,14 +71,15 @@
 
 <script>
 import SectionShell from '../components/portal/SectionShell.vue';
+import PricingSummary from '../components/common/PricingSummary.vue';
 import { api } from '../api/client.js';
 import { getStatusLabel } from '../lib/displayLabels.js';
-import { formatDisplayDate, formatDisplayPrice } from '../lib/displayFormatters.js';
+import { formatDisplayDate } from '../lib/displayFormatters.js';
 import { getActiveTenantId } from '../lib/session.js';
 
 export default {
   name: 'RentalDetailPage',
-  components: { SectionShell },
+  components: { SectionShell, PricingSummary },
   props: { id: { type: String, required: true } },
   data() {
     return {
@@ -171,26 +169,6 @@ export default {
     formatDate(dateStr) {
       return formatDisplayDate(dateStr);
     },
-    formatPrice(amount, currency) {
-      return formatDisplayPrice(amount, currency);
-    },
-    formatTotals(field) {
-      const totals = this.item?.totals;
-      if (totals && typeof totals === 'object' && totals[field] != null) {
-        return this.formatPrice(totals[field], totals.currency);
-      }
-      if (field === 'unit_price' || field === 'subtotal') {
-        return this.formatPrice(this.item?.price_amount, this.item?.price_currency);
-      }
-      return '—';
-    },
-    formatMultiplier() {
-      const totals = this.item?.totals;
-      if (totals && typeof totals === 'object' && totals.multiplier != null) {
-        return this.safe(totals.multiplier);
-      }
-      return '1';
-    },
   },
 };
 </script>
@@ -236,6 +214,10 @@ export default {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #fff;
+}
+
+.summary-item-pricing {
+  grid-column: span 2;
 }
 
 .summary-label {

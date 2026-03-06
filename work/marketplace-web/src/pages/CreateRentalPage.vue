@@ -1,7 +1,7 @@
 <template>
   <div class="create-rental-page">
     <h2>Kiralama Olustur</h2>
-    
+
     <div v-if="authError" class="error">
       <strong>Giris Gerekli</strong>
       <br />
@@ -9,7 +9,7 @@
       <br />
       <router-link to="/login" class="action-link">Girise Git</router-link>
     </div>
-    
+
     <div v-if="error && !authError" class="error">
       <strong>Error ({{ error.status || 'N/A' }}):</strong> {{ error.errorCode || 'unknown' }}
       <br />
@@ -21,23 +21,27 @@
         Cakisan Kiralama ID: {{ error.data.conflicting_rental_id }}
       </div>
     </div>
-    
+
     <div v-if="success" class="success">
       <strong>Basarili!</strong> Kiralama olusturuldu. ID: {{ success.id }}
       <button @click="copyRentalId(success.id, $event)" class="copy-id-btn" title="Kiralama ID kopyala">ID Kopyala</button>
       <br />
       Durum: {{ success.status }}
-      <br />
-      Fiyat: {{ formatPrice(success.price_amount, success.price_currency) }}
-      <span v-if="success.billing_model"> • {{ success.billing_model }}</span>
-      <br />
+      <PricingSummary
+        class="success-pricing"
+        :totals="success.totals"
+        :price-amount="success.price_amount"
+        :price-currency="success.price_currency"
+        :multiplier="success.totals?.multiplier || 1"
+        multiplier-label="Carpan"
+      />
       <div class="success-actions">
         <router-link :to="{ path: '/account', query: { tab: 'rentals' } }" class="action-link">Hesaba Git</router-link>
         <router-link v-if="success.listing_id" :to="`/listing/${success.listing_id}`" class="action-link">Ilani Gor</router-link>
         <router-link v-if="listingCategoryId" :to="`/search/${listingCategoryId}`" class="action-link">Aramaya Git</router-link>
       </div>
     </div>
-    
+
     <form v-if="!success && !authError" @submit.prevent="handleSubmit" class="rental-form">
       <div class="form-group">
         <label>
@@ -51,7 +55,7 @@
           />
         </label>
       </div>
-      
+
       <div class="form-group">
         <label>
           Baslangic Tarihi <span class="required">*</span>
@@ -63,7 +67,7 @@
           />
         </label>
       </div>
-      
+
       <div class="form-group">
         <label>
           Bitis Tarihi <span class="required">*</span>
@@ -75,7 +79,7 @@
           />
         </label>
       </div>
-      
+
       <button type="submit" :disabled="loading" class="submit-button">
         {{ loading ? 'Olusturuluyor...' : 'Kiralama Olustur' }}
       </button>
@@ -87,9 +91,11 @@
 import { api } from '../api/client.js';
 import { getUserId } from '../lib/session.js';
 import { modeGuardReasonForListing } from '../lib/servicePolicyGuard.js';
+import PricingSummary from '../components/common/PricingSummary.vue';
 
 export default {
   name: 'CreateRentalPage',
+  components: { PricingSummary },
   data() {
     return {
       formData: {
@@ -105,18 +111,15 @@ export default {
     };
   },
   mounted() {
-    // WP-68: Check authentication (userId from token)
     const userId = getUserId();
     if (!userId) {
       this.authError = 'Oturum bulunamadi. Lutfen once giris yapin.';
       return;
     }
-    
-    // Get listing_id from query params
+
     const listingId = this.$route.query.listing_id;
     if (listingId) {
       this.formData.listing_id = listingId;
-      // Try to load listing to get category_id for success screen
       this.loadListingCategory(listingId);
     }
   },
@@ -128,7 +131,6 @@ export default {
           this.listingCategoryId = listing.category_id;
         }
       } catch (err) {
-        // Non-fatal: just won't show category in success screen
         console.warn('Ilan kategorisi yuklenemedi:', err);
       }
     },
@@ -144,14 +146,13 @@ export default {
       }
     },
     async handleSubmit() {
-      // Get userId from session token (token auto-attached by API)
       const userId = getUserId();
-      
+
       if (!userId) {
         this.authError = 'Oturum bulunamadi. Lutfen once giris yapin.';
         return;
       }
-      
+
       if (!this.formData.listing_id || !this.formData.start_at || !this.formData.end_at) {
         this.error = { message: 'Lutfen zorunlu alanlari doldurun', status: 400 };
         return;
@@ -162,43 +163,36 @@ export default {
         this.error = { message: policyReason, status: 422, errorCode: 'POLICY_MISMATCH' };
         return;
       }
-      
-      // Convert datetime-local to ISO format
+
       const startAt = new Date(this.formData.start_at).toISOString();
       const endAt = new Date(this.formData.end_at).toISOString();
-      
+
       if (endAt <= startAt) {
         this.error = { message: 'Bitis tarihi baslangictan sonra olmalidir', status: 400 };
         return;
       }
-      
+
       this.loading = true;
       this.error = null;
       this.authError = null;
-      
+
       try {
         const payload = {
           listing_id: this.formData.listing_id,
           start_at: startAt,
           end_at: endAt,
         };
-        
-        // WP-68: Token auto-attached by API wrapper
-        const result = await api.createRental(
-          payload,
-          userId || null
-        );
+
+        const result = await api.createRental(payload, userId || null);
         this.success = result;
-        
-        // Load category if not already loaded
+
         if (result.listing_id && !this.listingCategoryId) {
           await this.loadListingCategory(result.listing_id);
         }
       } catch (err) {
-        // Improve error display with hint
-        const hint = err.status === 401 ? '401 → Token missing or invalid. Check Authorization Token.' : 
-                     err.status === 404 ? '404 → Listing not found. Check Listing ID.' :
-                     err.status === 422 ? '422 → Validation error. Check all required fields.' : null;
+        const hint = err.status === 401 ? '401 -> Token missing or invalid. Check Authorization Token.' :
+          err.status === 404 ? '404 -> Listing not found. Check Listing ID.' :
+            err.status === 422 ? '422 -> Validation error. Check all required fields.' : null;
         this.error = {
           ...err,
           hint: hint || (err.message || 'Bilinmeyen hata'),
@@ -216,19 +210,9 @@ export default {
           setTimeout(() => {
             btn.textContent = originalText;
           }, 1000);
-        }).catch(err => {
+        }).catch((err) => {
           console.error('Failed to copy:', err);
         });
-      }
-    },
-    formatPrice(amount, currency) {
-      const numeric = Number(amount);
-      if (!Number.isFinite(numeric)) return '—';
-      const c = currency || 'TRY';
-      try {
-        return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: c, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(numeric);
-      } catch {
-        return `${numeric} ${c}`;
       }
     },
   },
@@ -313,17 +297,6 @@ export default {
   text-decoration: underline;
 }
 
-.auto-fill-note {
-  font-size: 0.85rem;
-  color: #666;
-  font-style: italic;
-}
-
-.readonly {
-  background: #f5f5f5;
-  cursor: not-allowed;
-}
-
 .copy-id-btn {
   font-size: 0.85rem;
   padding: 0.3rem 0.6rem;
@@ -340,6 +313,10 @@ export default {
   background: #e5e5e5;
 }
 
+.success-pricing {
+  margin-top: 0.85rem;
+}
+
 .success-actions {
   margin-top: 1rem;
   display: flex;
@@ -353,5 +330,3 @@ export default {
   font-weight: 500;
 }
 </style>
-
-

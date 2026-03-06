@@ -56,6 +56,18 @@
     - `ops/_checks/order_contract_check.ps1` -> PASS
     - `ops/_checks/reservation_contract_check.ps1` -> PASS
     - `ops/_checks/rental_contract_check.ps1` -> FAIL (existing date-overlap conflict on chosen test listing; non-regression signal, not syntax/runtime crash).
+- Pricing UI standardization (frontend, 2026-03-06):
+  - New shared component: `work/marketplace-web/src/components/common/PricingSummary.vue`.
+  - Create success screens aligned:
+    - `CreateOrderPage.vue`
+    - `CreateRentalPage.vue`
+    - `CreateReservationPage.vue`
+  - Rental/Reservation detail summary now uses the same pricing card for totals-first rendering.
+  - Validation after UI refactor:
+    - `npm run build` -> PASS
+    - `ops/_checks/order_contract_check.ps1` -> PASS
+    - `ops/_checks/rental_contract_check.ps1` -> PASS
+    - `ops/_checks/reservation_contract_check.ps1` -> PASS
 
 ## What is the Stack?
 
