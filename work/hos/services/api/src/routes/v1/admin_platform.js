@@ -69,6 +69,16 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     return reply.send({ items: res.rows });
   });
 
+  app.get("/admin/platform/memberships", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const res = await db.query(
+      "select m.tenant_id, m.user_id, m.role, m.status, m.created_at, m.updated_at, u.email as user_email, u.display_name as user_display_name, t.slug as tenant_slug, t.display_name as tenant_name from memberships m inner join users u on u.id = m.user_id inner join tenants t on t.id = m.tenant_id order by m.created_at asc"
+    );
+    return reply.send({ items: res.rows });
+  });
+
   app.get("/admin/platform/audit", async (req, reply) => {
     const payload = requireRole(req, reply, ["owner", "admin"]);
     if (!payload) return;

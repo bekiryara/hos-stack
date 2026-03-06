@@ -1,6 +1,6 @@
-import { adminAudit, adminOverview, adminUsers, hosLogin, hosMe } from '../../../lib/api';
+import { adminAudit, adminMemberships, adminOverview, adminUsers, hosLogin, hosMe } from '../../../lib/api';
 
-export { adminAudit, adminOverview, adminUsers, hosLogin, hosMe };
+export { adminAudit, adminMemberships, adminOverview, adminUsers, hosLogin, hosMe };
 
 export async function adminUpdateUserRole(token: string, userId: string, role: 'member' | 'admin' | 'owner') {
   const resp = await fetch(`/api/v1/admin/platform/users/${encodeURIComponent(userId)}/role`, {
