@@ -94,6 +94,13 @@
     - `ops.ps1 service-area-phase2`
   - Validation:
     - `ops.ps1 service-area-phase2` -> PASS
+ - Create/Edit schedule classification hardening (2026-03-06):
+  - `CreateListingForm` now treats `filter_mode=availability` as canonical schedule split source (instead of pure heuristic).
+  - Added explicit warning box when `service_time_model != none` but no availability filters are configured in schema.
+  - Validation:
+    - `npm run build` -> PASS
+    - `ops/_checks/create_edit_parity_check.ps1` -> PASS
+    - `ops/_checks/listing_contract_check.ps1` -> PASS
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.

@@ -244,6 +244,9 @@
       <div class="hint-box">
         {{ timeModelGuidance }}
       </div>
+      <div v-if="showAvailabilityMissingNote" class="hint-box warning-box">
+        Bu kategori icin musaitlik alanlari henuz schema tarafinda tanimli degil.
+      </div>
       <div v-if="availabilityFilters.length > 0" class="schedule-grid">
         <div
           v-for="filter in availabilityFilters"
@@ -443,6 +446,9 @@ export default {
     showScheduleSection() {
       return this.policyTimeModel !== 'none' || this.availabilityFilters.length > 0;
     },
+    showAvailabilityMissingNote() {
+      return this.policyTimeModel !== 'none' && this.availabilityFilters.length === 0;
+    },
     timeModelGuidance() {
       if (this.policyTimeModel === 'slot') {
         return 'Randevu slotu modelinde musaitlik gun/saat bilgilerini bu bolumde tanimlayabilirsiniz.';
@@ -582,6 +588,10 @@ export default {
       return raw.map(String).includes(m);
     },
     isAvailabilityFilter(filter) {
+      const filterMode = String(filter?.filter_mode || '').trim().toLowerCase();
+      if (filterMode) {
+        return filterMode === 'availability';
+      }
       const key = String(filter?.attribute_key || '').toLowerCase();
       const label = String(filter?.label || '').toLowerCase();
       const haystack = `${key} ${label}`;
@@ -1058,6 +1068,14 @@ export default {
   cursor: pointer;
   font-size: 1rem;
   margin-top: 0;
+}
+
+.warning-box {
+  margin-top: 0.6rem;
+  border-color: #fde68a;
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
 }
 
 .submit-actions {
