@@ -22,6 +22,11 @@ export function getStoreRentals(tenantId, authToken) {
   return apiRequest(`/api/v1/rentals?provider_tenant_id=${tenantId}`, { headers });
 }
 
+export function getStoreRentalById(id, tenantId, authToken) {
+  const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId, authToken });
+  return apiRequest(`/api/v1/rentals/${id}?provider_tenant_id=${tenantId}`, { headers });
+}
+
 export function getStoreReservations(tenantId, authToken) {
   const headers = buildPersonaHeaders(PERSONA_MODES.STORE, { tenantId, authToken });
   return apiRequest(`/api/v1/reservations?provider_tenant_id=${tenantId}`, { headers });
