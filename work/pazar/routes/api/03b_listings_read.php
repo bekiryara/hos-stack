@@ -154,11 +154,20 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         }
     }
 
+    // Phase-2 cleanup: attrs[...] compatibility path is retired.
+    // Search contract is now filters[...] only.
+    if ($request->has('attrs')) {
+        return response()->json([
+            'error' => 'VALIDATION_ERROR',
+            'message' => 'attrs[...] is no longer supported. Use filters[...] query parameters.'
+        ], 422);
+    }
+
     // WP-FINAL: Category -> Catalog -> Listing separation (whitelist)
     // If category_id is provided, only allow filter keys that exist in category_filter_schema
     // for that category OR any of its descendants (same CTE used for listings category filter).
     $allowedFilterKeys = null;
-    if ($request->has('category_id') && ($request->has('filters') || $request->has('attrs'))) {
+    if ($request->has('category_id') && $request->has('filters')) {
         $rootCategoryId = (int) $request->input('category_id');
         $cteData = pazar_category_descendant_cte_in_clause_sql($rootCategoryId);
         $allowedFilterKeys = DB::table('category_filter_schema')
@@ -175,28 +184,18 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         
         $unknownKeys = [];
         
-        if ($request->has('filters')) {
-            $incoming = $request->input('filters');
-            if (is_array($incoming)) {
-                foreach ($incoming as $key => $value) {
-                    if (!is_string($key) || $key === '') continue;
-                    if (!isset($allowedSet[$key])) {
-                        $unknownKeys[] = $key;
-                    }
+        $incoming = $request->input('filters');
+        if (is_array($incoming)) {
+            foreach ($incoming as $key => $value) {
+                if (!is_string($key) || $key === '') continue;
+                if (!isset($allowedSet[$key])) {
+                    $unknownKeys[] = $key;
                 }
-            }
-        } elseif ($request->has('attrs')) {
-            $incoming = $request->input('attrs');
-            if (is_array($incoming)) {
-                foreach ($incoming as $key => $value) {
-                    if (!is_string($key) || $key === '') continue;
-                    // attrs supports *_min/*_max keys; whitelist is based on base key
-                    $baseKey = $key;
-                    if (preg_match('/^(.*)_(min|max)$/', $key, $m)) {
-                        $baseKey = $m[1];
-                    }
-                    if (!isset($allowedSet[$baseKey])) {
-                        $unknownKeys[] = $baseKey;
+                if (is_array($value)) {
+                    foreach (array_keys($value) as $rk) {
+                        if (!in_array((string) $rk, ['min', 'max'], true)) {
+                            $unknownKeys[] = $key;
+                        }
                     }
                 }
             }
@@ -212,9 +211,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
         }
     }
 
-    // WP-75: SPEC-aligned listing filters parsing
-    // Primary: filters[...] (SPEC) e.g. filters[capacity_max][min]=100, filters[city]=izmir
-    // Secondary: attrs[...] (backward compatible) e.g. attrs[capacity_max_min]=100, attrs[city]=izmir
+    // Listing filters parsing: filters[...] only
+    // Example: filters[capacity_max][min]=100, filters[city]=izmir
     if ($request->has('filters')) {
         $filters = $request->input('filters');
         if (is_array($filters)) {
@@ -229,33 +227,6 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                     }
                 } else {
                     if ($value === null || $value === '') continue;
-                    if ($hasLocationColumns && $key === 'city') {
-                        $query->where('location_city', (string) $value);
-                    } elseif ($hasLocationColumns && $key === 'district') {
-                        $query->where('location_district', (string) $value);
-                    } elseif ($hasLocationColumns && $key === 'neighborhood') {
-                        $query->where('location_neighborhood', (string) $value);
-                    } else {
-                        $query->whereRaw("attributes_json->>? = ?", [$key, $value]);
-                    }
-                }
-            }
-        }
-    } elseif ($request->has('attrs')) {
-        // Backward compatible attribute filtering (supports exact match + _min/_max numeric ranges)
-        $attrs = $request->input('attrs');
-        if (is_array($attrs)) {
-            foreach ($attrs as $key => $value) {
-                // Range helpers (schema-driven UI uses *_min/*_max keys)
-                if (is_string($key) && preg_match('/^(.*)_(min|max)$/', $key, $m)) {
-                    $baseKey = $m[1];
-                    $rangeType = $m[2]; // min|max
-                    if ($rangeType === 'min') {
-                        $query->whereRaw("CAST(attributes_json->>? AS INTEGER) >= ?", [$baseKey, (int) $value]);
-                    } else {
-                        $query->whereRaw("CAST(attributes_json->>? AS INTEGER) <= ?", [$baseKey, (int) $value]);
-                    }
-                } else {
                     if ($hasLocationColumns && $key === 'city') {
                         $query->where('location_city', (string) $value);
                     } elseif ($hasLocationColumns && $key === 'district') {

@@ -82,6 +82,13 @@
     - `ops/_checks/rental_contract_check.ps1` -> PASS
     - `ops/_checks/reservation_contract_check.ps1` -> PASS
     - `ops/_checks/account_portal_read_check.ps1` -> PASS
+- Listing search filters-only contract (backend, 2026-03-06):
+  - `GET /api/v1/listings` now accepts `filters[...]` only.
+  - Legacy `attrs[...]` query path is retired and now returns 422.
+  - Listing contract check updated accordingly:
+    - `ops/_checks/listing_contract_check.ps1` [12] now expects attrs retirement (422).
+  - Validation:
+    - `ops/_checks/listing_contract_check.ps1` -> PASS
 
 ## What is the Stack?
 

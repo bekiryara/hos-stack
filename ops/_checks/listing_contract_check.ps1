@@ -815,28 +815,37 @@ try {
 
 Write-Host ""
 
-# [12] Backward compat attrs test (legacy attrs[...])
+# [12] attrs[...] retired test (must return 422)
 if (-not $weddingHallId) {
-    Write-Host "[12] SKIP: Cannot test attrs compat (wedding-hall category ID not available)" -ForegroundColor Yellow
+    Write-Host "[12] SKIP: Cannot test attrs retirement (wedding-hall category ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
 } else {
-    Write-Host "[12] Testing backward compat attrs (attrs[capacity_max_min]=1)..." -ForegroundColor Yellow
+    Write-Host "[12] Testing attrs retirement (attrs[capacity_max_min]=1 -> 422)..." -ForegroundColor Yellow
     $attrsUrl = "${pazarBaseUrl}/api/v1/listings?category_id=$weddingHallId&attrs[capacity_max_min]=1"
     try {
-        $attrsResponse = Invoke-RestMethod -Uri $attrsUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
-        if (-not ($attrsResponse -is [Array])) {
-            Write-Host "FAIL: attrs compat returned non-array response" -ForegroundColor Red
-            $hasFailures = $true
-        } elseif ($listingId -and -not ($attrsResponse | Where-Object { $_.id -eq $listingId })) {
-            Write-Host "FAIL: Created listing not found in attrs compat results" -ForegroundColor Red
-            $hasFailures = $true
-        } else {
-            Write-Host "PASS: Backward compat attrs returns JSON array; listing present when applicable" -ForegroundColor Green
-            Write-Host "  Results count: $($attrsResponse.Count)" -ForegroundColor Gray
-        }
-    } catch {
-        Write-Host "FAIL: attrs compat request failed: $($_.Exception.Message)" -ForegroundColor Red
+        $null = Invoke-RestMethod -Uri $attrsUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+        Write-Host "FAIL: attrs request unexpectedly succeeded; expected 422" -ForegroundColor Red
         $hasFailures = $true
+    } catch {
+        $statusCode = $null
+        $errorResponse = $null
+        if ($_.Exception.Response) {
+            $statusCode = [int]$_.Exception.Response.StatusCode
+            try {
+                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                $errorBody = $reader.ReadToEnd()
+                $errorResponse = $errorBody | ConvertFrom-Json
+            } catch {}
+        }
+        if ($statusCode -eq 422) {
+            Write-Host "PASS: attrs request correctly rejected (422, filters-only contract)" -ForegroundColor Green
+        } else {
+            Write-Host "FAIL: attrs request failed with unexpected status: $statusCode" -ForegroundColor Red
+            if ($errorResponse) {
+                Write-Host "  Error: $($errorResponse.error) - $($errorResponse.message)" -ForegroundColor Gray
+            }
+            $hasFailures = $true
+        }
     }
 }
 
