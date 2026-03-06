@@ -90,6 +90,15 @@
     - `ops/_checks/listing_contract_check.ps1` [12] now expects attrs retirement (422).
   - Validation:
     - `ops/_checks/listing_contract_check.ps1` -> PASS
+- Error envelope cleanup (phase-3 step-1, 2026-03-06):
+  - Removed dead legacy conversion branch from `ErrorEnvelope` middleware (`error: { ... }` -> `ok:false` mapping).
+  - Middleware now focuses on request_id completion for already-standard `ok:false` envelopes.
+  - Validation:
+    - `php -l app/Http/Middleware/ErrorEnvelope.php` -> PASS
+    - `ops/_checks/listing_contract_check.ps1` -> PASS
+    - `ops/_checks/order_contract_check.ps1` -> PASS
+  - Test data hygiene:
+    - Removed contract-check generated order/idempotency leftovers after validation.
 
 ## What is the Stack?
 

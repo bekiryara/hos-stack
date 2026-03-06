@@ -8,8 +8,7 @@ use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Enforce standard error envelope for error responses (>= 400).
- * Normalizes legacy error format to standard envelope if needed.
+ * Enforce request_id presence for standard error envelopes (ok:false).
  */
 class ErrorEnvelope
 {
@@ -69,57 +68,6 @@ class ErrorEnvelope
             return $response; // Already in standard format with valid request_id
         }
 
-        // Check if has legacy "error" key and no "ok" key.
-        // IMPORTANT: only normalize legacy error objects/arrays.
-        // Many endpoints use { error: "SOME_CODE", message: "...", ... } and those must pass through unchanged.
-        if (isset($decoded['error']) && !isset($decoded['ok']) && is_array($decoded['error'])) {
-            $errorData = $decoded['error'];
-            $errorCode = 'HTTP_ERROR';
-            $message = 'Request failed.';
-            $details = null;
-
-            // Map error type to error_code
-            if (isset($errorData['type'])) {
-                $type = $errorData['type'];
-                $errorCode = match ($type) {
-                    'validation' => 'VALIDATION_ERROR',
-                    'authentication' => 'UNAUTHORIZED',
-                    'authorization' => 'FORBIDDEN',
-                    'not_found' => 'NOT_FOUND',
-                    default => 'HTTP_ERROR',
-                };
-            }
-
-            if (isset($errorData['message'])) {
-                $message = $errorData['message'];
-            }
-
-            // Extract details (fields for validation, status for HTTP errors)
-            if (isset($errorData['fields'])) {
-                $details = ['fields' => $errorData['fields']];
-            } elseif (isset($errorData['status'])) {
-                $details = ['status' => $errorData['status']];
-            }
-
-            // Get request_id (never null, generate if missing)
-            $requestId = $getRequestId();
-
-            // Build standard envelope
-            $envelope = [
-                'ok' => false,
-                'error_code' => $errorCode,
-                'message' => $message,
-                'request_id' => $requestId,
-            ];
-
-            if ($details !== null) {
-                $envelope['details'] = $details;
-            }
-
-            $response->setContent(json_encode($envelope, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-            $response->headers->set('Content-Type', 'application/json');
-        }
-
         // Debug headers: Prove ErrorEnvelope middleware ran (only in debug/local)
         if (config('app.debug') || config('app.env') === 'local') {
             $response->headers->set('X-ErrorEnvelope', '1');
@@ -144,4 +92,3 @@ class ErrorEnvelope
         return $response;
     }
 }
-
