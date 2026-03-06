@@ -18,33 +18,24 @@
       @retry="load"
     >
       <div class="summary-grid">
-        <div class="summary-item summary-item--group">
-          <div class="pricing-line">
-            <span class="summary-label">Ilan</span>
-            <span class="summary-value">{{ listingDisplay }}</span>
-          </div>
-          <div class="pricing-line">
-            <span class="summary-label">Durum</span>
-            <span class="summary-value"><span class="status-pill">{{ statusLabel(item.status) }}</span></span>
-          </div>
-          <div class="pricing-line">
-            <span class="summary-label">Siparis Tarihi</span>
-            <span class="summary-value">{{ formatDate(item.created_at) }}</span>
-          </div>
+        <div class="summary-item">
+          <span class="summary-label">Ilan</span>
+          <span class="summary-value">{{ listingDisplay }}</span>
         </div>
-        <div class="summary-item summary-item--group">
-          <div class="pricing-line">
-            <span class="summary-label">Birim Fiyat</span>
-            <span class="summary-value">{{ formatTotals(item.totals, 'unit_price') }}</span>
-          </div>
-          <div class="pricing-line">
-            <span class="summary-label">Adet</span>
-            <span class="summary-value">{{ safe(item.quantity) }}</span>
-          </div>
-          <div class="pricing-line">
-            <span class="summary-label">Toplam</span>
-            <span class="summary-value">{{ formatTotals(item.totals, 'subtotal') }}</span>
-          </div>
+        <div class="summary-item">
+          <span class="summary-label">Durum</span>
+          <span class="summary-value"><span class="status-pill">{{ statusLabel(item.status) }}</span></span>
+        </div>
+        <div class="summary-item summary-item-pricing">
+          <PricingSummary
+            :totals="item.totals"
+            :multiplier="item.totals?.multiplier || item.quantity || 1"
+            :billing-model="item.totals?.billing_model || ''"
+          />
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Siparis Tarihi</span>
+          <span class="summary-value">{{ formatDate(item.created_at) }}</span>
         </div>
       </div>
     </SectionShell>
@@ -70,14 +61,15 @@
 
 <script>
 import SectionShell from '../components/portal/SectionShell.vue';
+import PricingSummary from '../components/common/PricingSummary.vue';
 import { api } from '../api/client.js';
 import { getStatusLabel } from '../lib/displayLabels.js';
-import { formatDisplayDate, formatDisplayPrice } from '../lib/displayFormatters.js';
+import { formatDisplayDate } from '../lib/displayFormatters.js';
 import { getActiveTenantId } from '../lib/session.js';
 
 export default {
   name: 'OrderDetailPage',
-  components: { SectionShell },
+  components: { SectionShell, PricingSummary },
   props: { id: { type: String, required: true } },
   data() {
     return {
@@ -132,13 +124,6 @@ export default {
     },
     formatDate(dateStr) {
       return formatDisplayDate(dateStr);
-    },
-    formatPrice(amount, currency) {
-      return formatDisplayPrice(amount, currency);
-    },
-    formatTotals(totals, field) {
-      if (!totals || typeof totals !== 'object') return '—';
-      return this.formatPrice(totals[field], totals.currency);
     },
     formatTotalsValue(totals, field) {
       if (!totals || typeof totals !== 'object') return '—';
@@ -215,10 +200,8 @@ export default {
   background: #fff;
 }
 
-.summary-item--group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.summary-item-pricing {
+  grid-column: span 2;
 }
 
 .summary-label {
@@ -233,11 +216,6 @@ export default {
   color: #0f172a;
   font-size: 1rem;
   font-weight: 600;
-}
-
-.pricing-line + .pricing-line {
-  padding-top: 0.75rem;
-  border-top: 1px solid #e5e7eb;
 }
 
 .detail-list {

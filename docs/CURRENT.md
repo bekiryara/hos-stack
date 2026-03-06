@@ -65,6 +65,13 @@
     - `npm run build` -> PASS
     - `ops/_checks/order_contract_check.ps1` -> PASS
     - `ops/_checks/create_edit_parity_check.ps1` -> PASS
+ - Order detail pricing parity alignment (2026-03-06):
+  - `OrderDetailPage` now uses shared `PricingSummary` (same renderer as create/rental/reservation).
+  - Manual fixed `Adet`/price rows removed; multiplier/label derives from `totals.billing_model`.
+  - Validation:
+    - `npm run build` -> PASS
+    - `ops/_checks/order_contract_check.ps1` -> PASS
+    - `ops/_checks/account_portal_read_check.ps1` -> PASS
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.
