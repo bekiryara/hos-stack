@@ -121,6 +121,8 @@ return [
             'billing_model' => 'per_person',
             'offer_variants' => [
                 ['key' => 'reservation', 'label' => 'Rezervasyon', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'slot', 'offer_requirement' => 'optional_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'per_person'],
+                ['key' => 'reservation_hourly', 'label' => 'Saatlik Rezervasyon', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'slot', 'offer_requirement' => 'optional_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'per_hour'],
+                ['key' => 'reservation_session', 'label' => 'Seans Rezervasyon', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'session', 'offer_requirement' => 'optional_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'per_session'],
             ],
         ],
 

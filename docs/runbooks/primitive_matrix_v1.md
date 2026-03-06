@@ -36,6 +36,8 @@ Each `offer_variant` in `category_flow_policy.php` must map to one row here.
 | is-yeri | devren_kiralik | rental | contact_only | base_only | per_day | date_range | point | no_offer |
 | service-product | sale | sale | flow | base_only | one_time | none | point | no_offer |
 | events | reservation | reservation | flow | base_only | per_person | slot | point | optional_offer |
+| events | reservation_hourly | reservation | flow | base_only | per_hour | slot | point | optional_offer |
+| events | reservation_session | reservation | flow | base_only | per_session | session | point | optional_offer |
 | food | sale | sale | flow | base_only | one_time | none | service_area | no_offer |
 
 ## Governance
@@ -44,4 +46,3 @@ Each `offer_variant` in `category_flow_policy.php` must map to one row here.
 2. Then update `category_flow_policy.php`.
 3. `ops/_checks/policy_variant_matrix_check.ps1` must pass before merge.
 4. Create/Edit UI can only render behavior derived from effective policy.
-

@@ -18,6 +18,33 @@
     including `pricing_strategy` and `billing_model`.
   - Validation:
     - `ops/_checks/policy_variant_matrix_check.ps1` -> PASS
+- Create/Edit parity gate (2026-03-06):
+  - New check: `ops/_checks/create_edit_parity_check.ps1`.
+  - Ensures Edit reuses Create form behavior surface and policy billing/time primitives are covered.
+  - Wired into ops command surface:
+    - `ops.ps1 create-edit-parity`
+    - `ops_status` check registry (`create_edit_parity`, blocking)
+  - Validation:
+    - `ops/_checks/create_edit_parity_check.ps1` -> PASS
+    - `ops.ps1 create-edit-parity` -> PASS
+- Phase-2 hourly variant slice (2026-03-06):
+  - `events` rule gained `reservation_hourly` offer variant (`billing_model=per_hour`, `service_time_model=slot`).
+  - Matrix and gate updated accordingly:
+    - `docs/runbooks/primitive_matrix_v1.md`
+    - `ops/_checks/policy_variant_matrix_check.ps1`
+  - Validation:
+    - `npm run build` -> PASS
+    - `ops/_checks/policy_variant_matrix_check.ps1` -> PASS
+    - `ops/_checks/create_edit_parity_check.ps1` -> PASS
+- Phase-2 session variant slice (2026-03-06):
+  - `events` rule gained `reservation_session` offer variant (`billing_model=per_session`, `service_time_model=session`).
+  - Matrix and gate updated accordingly:
+    - `docs/runbooks/primitive_matrix_v1.md`
+    - `ops/_checks/policy_variant_matrix_check.ps1`
+  - Validation:
+    - `npm run build` -> PASS
+    - `ops/_checks/policy_variant_matrix_check.ps1` -> PASS
+    - `ops/_checks/create_edit_parity_check.ps1` -> PASS
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.

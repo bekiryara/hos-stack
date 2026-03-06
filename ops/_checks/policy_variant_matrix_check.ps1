@@ -61,6 +61,8 @@ $matrix = @(
 
     @{ Rule = "service-product"; Variant = "sale"; TransactionMode = "sale"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "one_time"; LocationScope = "point"; ServiceTimeModel = "none"; OfferRequirement = "no_offer" },
     @{ Rule = "events"; Variant = "reservation"; TransactionMode = "reservation"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "per_person"; LocationScope = "point"; ServiceTimeModel = "slot"; OfferRequirement = "optional_offer" },
+    @{ Rule = "events"; Variant = "reservation_hourly"; TransactionMode = "reservation"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "per_hour"; LocationScope = "point"; ServiceTimeModel = "slot"; OfferRequirement = "optional_offer" },
+    @{ Rule = "events"; Variant = "reservation_session"; TransactionMode = "reservation"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "per_session"; LocationScope = "point"; ServiceTimeModel = "session"; OfferRequirement = "optional_offer" },
     @{ Rule = "food"; Variant = "sale"; TransactionMode = "sale"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "one_time"; LocationScope = "service_area"; ServiceTimeModel = "none"; OfferRequirement = "no_offer" }
 )
 
