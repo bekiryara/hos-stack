@@ -64,7 +64,10 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     if ($offerPolicyError instanceof \Illuminate\Http\JsonResponse) return $offerPolicyError;
 
     try {
-        $pricing = pazar_resolve_transaction_pricing($listing, null, $effectivePolicy);
+        $pricing = pazar_resolve_transaction_pricing($listing, null, $effectivePolicy, [
+            'start_at' => $validated['start_at'],
+            'end_at' => $validated['end_at'],
+        ]);
     } catch (\InvalidArgumentException $e) {
         return response()->json([
             'error' => 'VALIDATION_ERROR',
@@ -154,6 +157,12 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'price_amount' => $pricing['price_amount'],
         'price_currency' => $pricing['price_currency'],
         'billing_model' => $pricing['billing_model'],
+        'totals' => [
+            'unit_price' => $pricing['unit_price_amount'] ?? $pricing['price_amount'],
+            'multiplier' => $pricing['multiplier'] ?? 1,
+            'subtotal' => $pricing['total_amount'] ?? $pricing['price_amount'],
+            'currency' => $pricing['price_currency'],
+        ],
         'start_at' => $startAt->format('Y-m-d\TH:i:s\Z'),
         'end_at' => $endAt->format('Y-m-d\TH:i:s\Z'),
         'status' => 'requested',

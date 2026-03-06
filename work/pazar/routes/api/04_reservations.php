@@ -96,7 +96,11 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     }
 
     try {
-        $pricing = pazar_resolve_transaction_pricing($listing, $offer, $effectivePolicy);
+        $pricing = pazar_resolve_transaction_pricing($listing, $offer, $effectivePolicy, [
+            'party_size' => $validated['party_size'],
+            'start_at' => $validated['slot_start'],
+            'end_at' => $validated['slot_end'],
+        ]);
     } catch (\InvalidArgumentException $e) {
         return response()->json([
             'error' => 'VALIDATION_ERROR',
@@ -200,6 +204,12 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'price_amount' => $pricing['price_amount'],
         'price_currency' => $pricing['price_currency'],
         'billing_model' => $pricing['billing_model'],
+        'totals' => [
+            'unit_price' => $pricing['unit_price_amount'] ?? $pricing['price_amount'],
+            'multiplier' => $pricing['multiplier'] ?? 1,
+            'subtotal' => $pricing['total_amount'] ?? $pricing['price_amount'],
+            'currency' => $pricing['price_currency'],
+        ],
         'provider_tenant_id' => $providerTenantId,
         'requester_user_id' => $requesterUserId,
         'slot_start' => $slotStart->format('Y-m-d\TH:i:s\Z'),

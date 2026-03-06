@@ -46,6 +46,16 @@
   - Canonical pricing field now binds to `pricing_strategy` + `billing_model` (dynamic label and offer-only disable path).
   - Time model guidance moved into explicit `Zaman ve Uygunluk` section.
   - Duplicate Pricing/Billing rows removed from service model summary to avoid UI repetition.
+- Pricing Engine v1 (backend, 2026-03-06):
+  - `pazar_resolve_transaction_pricing` now returns unit + multiplier + total snapshot deterministically from
+    `pricing_strategy`, `billing_model`, and transaction context (quantity/party_size/duration).
+  - Orders consume new snapshot fields in totals.
+  - Reservations/Rentals now return additive `totals` object in create response (`unit_price`, `multiplier`, `subtotal`, `currency`).
+  - Validation checks after change:
+    - `ops/_checks/listing_contract_check.ps1` -> PASS
+    - `ops/_checks/order_contract_check.ps1` -> PASS
+    - `ops/_checks/reservation_contract_check.ps1` -> PASS
+    - `ops/_checks/rental_contract_check.ps1` -> FAIL (existing date-overlap conflict on chosen test listing; non-regression signal, not syntax/runtime crash).
 
 ## What is the Stack?
 

@@ -66,7 +66,9 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     if ($offerPolicyError instanceof \Illuminate\Http\JsonResponse) return $offerPolicyError;
 
     try {
-        $pricing = pazar_resolve_transaction_pricing($listing, null, $effectivePolicy);
+        $pricing = pazar_resolve_transaction_pricing($listing, null, $effectivePolicy, [
+            'quantity' => $quantity,
+        ]);
     } catch (\InvalidArgumentException $e) {
         return response()->json([
             'error' => 'VALIDATION_ERROR',
@@ -99,13 +101,14 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     $sellerTenantId = $listing->tenant_id;
     $buyerUserId = $request->attributes->get('requester_user_id');
     
-    $unitPrice = (float) $pricing['price_amount'];
+    $unitPrice = (float) ($pricing['unit_price_amount'] ?? $pricing['price_amount']);
     $totals = [
         'pricing_source' => $pricing['pricing_source'],
         'billing_model' => $pricing['billing_model'],
         'unit_price' => $unitPrice,
+        'multiplier' => (int) ($pricing['multiplier'] ?? $quantity),
         'quantity' => $quantity,
-        'subtotal' => round($unitPrice * $quantity, 2),
+        'subtotal' => (float) ($pricing['total_amount'] ?? round($unitPrice * $quantity, 2)),
         'currency' => $pricing['price_currency'],
     ];
     
