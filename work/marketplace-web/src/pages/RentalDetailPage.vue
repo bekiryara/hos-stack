@@ -61,7 +61,7 @@
         <li><strong>Islem Referansi:</strong> {{ safe(item.id) }}</li>
         <li><strong>Ilan Referansi:</strong> {{ safe(item.listing_id) }}</li>
         <li><strong>Fiyat Kaynagi:</strong> {{ safe(item.pricing_source) }}</li>
-        <li><strong>Ucretlendirme Modeli:</strong> {{ safe(item.billing_model) }}</li>
+        <li><strong>Ucretlendirme Modeli:</strong> {{ billingModelLabel(item.billing_model) }}</li>
         <li><strong>Olusturulma Tarihi:</strong> {{ formatDate(item.created_at) }}</li>
         <li><strong>Son Guncellenme Tarihi:</strong> {{ formatDate(item.updated_at) }}</li>
       </ul>
@@ -73,7 +73,7 @@
 import SectionShell from '../components/portal/SectionShell.vue';
 import PricingSummary from '../components/common/PricingSummary.vue';
 import { api } from '../api/client.js';
-import { getStatusLabel } from '../lib/displayLabels.js';
+import { getBillingModelLabel, getStatusLabel } from '../lib/displayLabels.js';
 import { formatDisplayDate } from '../lib/displayFormatters.js';
 import { getActiveTenantId } from '../lib/session.js';
 
@@ -123,6 +123,9 @@ export default {
     },
     statusLabel(status) {
       return getStatusLabel(status);
+    },
+    billingModelLabel(value) {
+      return getBillingModelLabel(value);
     },
     buildLimitedFromQuery() {
       const q = this.$route.query;

@@ -72,6 +72,17 @@
     - `npm run build` -> PASS
     - `ops/_checks/order_contract_check.ps1` -> PASS
     - `ops/_checks/account_portal_read_check.ps1` -> PASS
+ - Transaction detail billing labels normalized (2026-03-06):
+  - Billing model labels in technical info are now user-friendly via shared mapping (`displayLabels.getBillingModelLabel`).
+  - Updated screens:
+    - `OrderDetailPage`
+    - `RentalDetailPage`
+    - `ReservationDetailPage`
+  - Validation:
+    - `npm run build` -> PASS
+    - `ops/_checks/order_contract_check.ps1` -> PASS
+    - `ops/_checks/reservation_contract_check.ps1` -> PASS
+    - `ops/_checks/rental_contract_check.ps1` -> FAIL (409 overlap on selected test listing; known data-state conflict, not UI/runtime regression)
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.
