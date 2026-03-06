@@ -174,8 +174,7 @@ try {
 }
 
 Write-Host ""
-$now = Get-Date
-$idempotencyKey = 'test-order-key-' + $now.ToString('yyyyMMddHHmmss') + '-' + $now.Millisecond.ToString('D3')
+$idempotencyKey = 'test-order-key-v1-' + [string]$listingId
 $orderBody = @{ listing_id = $listingId; quantity = 1 } | ConvertTo-Json
 $orderHeaders = @{
     'Content-Type' = 'application/json'
@@ -349,7 +348,7 @@ if (-not $hasFailures) {
         $canonicalOrderHeaders = @{
             'Content-Type' = 'application/json'
             'Authorization' = $authToken
-            'Idempotency-Key' = 'test-canonical-order-' + [guid]::NewGuid().ToString()
+            'Idempotency-Key' = 'test-canonical-order-v1-' + [string]$canonicalListingId
         }
         $canonicalOrderBody = @{
             listing_id = $canonicalListingId
