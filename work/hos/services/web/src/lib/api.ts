@@ -97,14 +97,14 @@ export async function hosMe(token: string) {
 }
 
 export async function adminTenants(token: string) {
-  return await fetchJson('/api/v1/admin/tenants', undefined, token);
+  return await fetchJson('/api/v1/admin/platform/tenants', undefined, token);
 }
 
 export async function adminUsers(token: string) {
-  return await fetchJson('/api/v1/admin/users', undefined, token);
+  return await fetchJson('/api/v1/admin/platform/users', undefined, token);
 }
 
 export async function adminAudit(token: string, limit: number = 50) {
   const qs = new URLSearchParams({ limit: String(limit) }).toString();
-  return await fetchJson(`/api/v1/admin/audit?${qs}`, undefined, token);
+  return await fetchJson(`/api/v1/admin/platform/audit?${qs}`, undefined, token);
 }

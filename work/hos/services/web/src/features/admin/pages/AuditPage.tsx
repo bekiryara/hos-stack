@@ -60,6 +60,9 @@ export function AuditPage() {
                 <div style={{ fontSize: '0.9rem', marginTop: '0.35rem' }}>
                   actor: <code>{row.actor_user_id || '-'}</code>
                 </div>
+                <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                  tenant: <code>{row.tenant_slug || row.tenant_id || '-'}</code>
+                </div>
                 {row.metadata ? <pre style={{ marginTop: '0.4rem' }}>{JSON.stringify(row.metadata, null, 2)}</pre> : null}
               </div>
             ))}

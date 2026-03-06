@@ -83,6 +83,7 @@ export function UsersPage() {
               <thead>
                 <tr>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Email</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Tenant</th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Role</th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Google</th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Created</th>
@@ -93,6 +94,9 @@ export function UsersPage() {
                 {items.map((row: any) => (
                   <tr key={row.id}>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.email || '-'}</td>
+                    <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+                      {row.tenant_slug || row.tenant_name || '-'}
+                    </td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                       <select
                         value={nextRoleByUserId[row.id] || (row.role || 'member')}
