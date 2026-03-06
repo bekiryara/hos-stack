@@ -50,9 +50,11 @@ return [
             'location_scope' => 'point',
             'service_time_model' => 'none',
             'offer_requirement' => 'no_offer',
+            'pricing_strategy' => 'base_only',
+            'billing_model' => 'one_time',
             'offer_variants' => [
-                ['key' => 'sale', 'label' => 'Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer'],
-                ['key' => 'rental', 'label' => 'Kiralik', 'transaction_mode' => 'rental', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'date_range', 'offer_requirement' => 'no_offer'],
+                ['key' => 'sale', 'label' => 'Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'one_time'],
+                ['key' => 'rental', 'label' => 'Kiralik', 'transaction_mode' => 'rental', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'date_range', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'per_day'],
             ],
         ],
 
@@ -64,11 +66,13 @@ return [
             'location_scope' => 'point',
             'service_time_model' => 'none',
             'offer_requirement' => 'optional_offer',
+            'pricing_strategy' => 'base_only',
+            'billing_model' => 'one_time',
             'offer_variants' => [
-                ['key' => 'sale', 'label' => 'Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer'],
-                ['key' => 'rental', 'label' => 'Kiralik', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'date_range', 'offer_requirement' => 'no_offer'],
-                ['key' => 'turistik_gunluk_kiralik', 'label' => 'Turistik Gunluk Kiralik', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'slot', 'offer_requirement' => 'optional_offer'],
-                ['key' => 'devren_satilik_konut', 'label' => 'Devren Satilik Konut', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer'],
+                ['key' => 'sale', 'label' => 'Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'one_time'],
+                ['key' => 'rental', 'label' => 'Kiralik', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'date_range', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'per_day'],
+                ['key' => 'turistik_gunluk_kiralik', 'label' => 'Turistik Gunluk Kiralik', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'slot', 'offer_requirement' => 'optional_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'per_day'],
+                ['key' => 'devren_satilik_konut', 'label' => 'Devren Satilik Konut', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'one_time'],
             ],
         ],
 
@@ -80,11 +84,13 @@ return [
             'location_scope' => 'point',
             'service_time_model' => 'none',
             'offer_requirement' => 'no_offer',
+            'pricing_strategy' => 'base_only',
+            'billing_model' => 'one_time',
             'offer_variants' => [
-                ['key' => 'sale', 'label' => 'Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer'],
-                ['key' => 'rental', 'label' => 'Kiralik', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'date_range', 'offer_requirement' => 'no_offer'],
-                ['key' => 'devren_satilik', 'label' => 'Devren Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer'],
-                ['key' => 'devren_kiralik', 'label' => 'Devren Kiralik', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'date_range', 'offer_requirement' => 'no_offer'],
+                ['key' => 'sale', 'label' => 'Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'one_time'],
+                ['key' => 'rental', 'label' => 'Kiralik', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'date_range', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'per_day'],
+                ['key' => 'devren_satilik', 'label' => 'Devren Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'one_time'],
+                ['key' => 'devren_kiralik', 'label' => 'Devren Kiralik', 'transaction_mode' => 'rental', 'interaction_mode' => 'contact_only', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'date_range', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'per_day'],
             ],
         ],
 
@@ -96,8 +102,10 @@ return [
             'location_scope' => 'point',
             'service_time_model' => 'none',
             'offer_requirement' => 'no_offer',
+            'pricing_strategy' => 'base_only',
+            'billing_model' => 'one_time',
             'offer_variants' => [
-                ['key' => 'sale', 'label' => 'Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer'],
+                ['key' => 'sale', 'label' => 'Satilik', 'transaction_mode' => 'sale', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'one_time'],
             ],
         ],
 
@@ -109,8 +117,10 @@ return [
             'location_scope' => 'point',
             'service_time_model' => 'slot',
             'offer_requirement' => 'optional_offer',
+            'pricing_strategy' => 'base_only',
+            'billing_model' => 'per_person',
             'offer_variants' => [
-                ['key' => 'reservation', 'label' => 'Rezervasyon', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'slot', 'offer_requirement' => 'optional_offer'],
+                ['key' => 'reservation', 'label' => 'Rezervasyon', 'transaction_mode' => 'reservation', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'provider_location', 'location_scope' => 'point', 'service_time_model' => 'slot', 'offer_requirement' => 'optional_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'per_person'],
             ],
         ],
 
@@ -122,8 +132,10 @@ return [
             'location_scope' => 'service_area',
             'service_time_model' => 'none',
             'offer_requirement' => 'no_offer',
+            'pricing_strategy' => 'base_only',
+            'billing_model' => 'one_time',
             'offer_variants' => [
-                ['key' => 'sale', 'label' => 'Siparis Ver', 'transaction_mode' => 'sale', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'customer_location', 'location_scope' => 'service_area', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer'],
+                ['key' => 'sale', 'label' => 'Siparis Ver', 'transaction_mode' => 'sale', 'interaction_mode' => 'flow', 'fulfillment_mode' => 'customer_location', 'location_scope' => 'service_area', 'service_time_model' => 'none', 'offer_requirement' => 'no_offer', 'pricing_strategy' => 'base_only', 'billing_model' => 'one_time'],
             ],
         ],
     ],

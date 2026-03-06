@@ -126,6 +126,8 @@ if (!function_exists('pazar_policy_primitive_defaults')) {
             'location_scope' => 'point',
             'service_time_model' => 'none',
             'offer_requirement' => 'no_offer',
+            'pricing_strategy' => 'base_only',
+            'billing_model' => 'one_time',
         ];
     }
 }
@@ -137,6 +139,17 @@ if (!function_exists('pazar_policy_primitive_valid_sets')) {
             'location_scope' => ['none' => true, 'city' => true, 'point' => true, 'service_area' => true],
             'service_time_model' => ['none' => true, 'date_range' => true, 'slot' => true, 'session' => true],
             'offer_requirement' => ['no_offer' => true, 'optional_offer' => true, 'required_offer' => true],
+            'pricing_strategy' => ['base_only' => true, 'offer_only' => true],
+            'billing_model' => [
+                'one_time' => true,
+                'per_day' => true,
+                'per_month' => true,
+                'per_night' => true,
+                'per_person' => true,
+                'per_hour' => true,
+                'per_session' => true,
+                'per_visit' => true,
+            ],
         ];
     }
 }
@@ -212,7 +225,7 @@ if (!function_exists('pazar_category_intent_schema')) {
                 'transaction_mode' => isset($v['transaction_mode']) ? (string) $v['transaction_mode'] : 'sale',
                 'interaction_mode' => isset($v['interaction_mode']) ? (string) $v['interaction_mode'] : 'contact_only',
             ];
-            foreach (['fulfillment_mode', 'location_scope', 'service_time_model', 'offer_requirement'] as $primitiveKey) {
+            foreach (['fulfillment_mode', 'location_scope', 'service_time_model', 'offer_requirement', 'pricing_strategy', 'billing_model'] as $primitiveKey) {
                 if (array_key_exists($primitiveKey, $v)) {
                     $row[$primitiveKey] = $v[$primitiveKey];
                 }
@@ -253,6 +266,16 @@ if (!function_exists('pazar_category_intent_schema')) {
             $schema['offer_requirement'] ?? null,
             $primitiveDefaults['offer_requirement']
         );
+        $pricingStrategy = pazar_normalize_policy_primitive(
+            'pricing_strategy',
+            $schema['pricing_strategy'] ?? null,
+            $primitiveDefaults['pricing_strategy']
+        );
+        $billingModel = pazar_normalize_policy_primitive(
+            'billing_model',
+            $schema['billing_model'] ?? null,
+            $primitiveDefaults['billing_model']
+        );
 
         $normalizedVariants = [];
         foreach ($variants as $v) {
@@ -265,6 +288,8 @@ if (!function_exists('pazar_category_intent_schema')) {
                 'location_scope' => pazar_normalize_policy_primitive('location_scope', $v['location_scope'] ?? null, $locationScope),
                 'service_time_model' => pazar_normalize_policy_primitive('service_time_model', $v['service_time_model'] ?? null, $serviceTimeModel),
                 'offer_requirement' => pazar_normalize_policy_primitive('offer_requirement', $v['offer_requirement'] ?? null, $offerRequirement),
+                'pricing_strategy' => pazar_normalize_policy_primitive('pricing_strategy', $v['pricing_strategy'] ?? null, $pricingStrategy),
+                'billing_model' => pazar_normalize_policy_primitive('billing_model', $v['billing_model'] ?? null, $billingModel),
             ];
         }
 
@@ -282,6 +307,8 @@ if (!function_exists('pazar_category_intent_schema')) {
             'location_scope' => $locationScope,
             'service_time_model' => $serviceTimeModel,
             'offer_requirement' => $offerRequirement,
+            'pricing_strategy' => $pricingStrategy,
+            'billing_model' => $billingModel,
         ];
     }
 }
@@ -321,6 +348,8 @@ if (!function_exists('pazar_effective_intent_policy')) {
             'location_scope' => (string) ($matchedVariant['location_scope'] ?? ($intentSchema['location_scope'] ?? 'point')),
             'service_time_model' => (string) ($matchedVariant['service_time_model'] ?? ($intentSchema['service_time_model'] ?? 'none')),
             'offer_requirement' => (string) ($matchedVariant['offer_requirement'] ?? ($intentSchema['offer_requirement'] ?? 'no_offer')),
+            'pricing_strategy' => (string) ($matchedVariant['pricing_strategy'] ?? ($intentSchema['pricing_strategy'] ?? 'base_only')),
+            'billing_model' => (string) ($matchedVariant['billing_model'] ?? ($intentSchema['billing_model'] ?? 'one_time')),
         ];
     }
 }
@@ -376,6 +405,8 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
             'location_scope' => true,
             'service_time_model' => true,
             'offer_requirement' => true,
+            'pricing_strategy' => true,
+            'billing_model' => true,
         ];
         $allowedKeys = \Illuminate\Support\Facades\DB::table('category_filter_schema')
             ->where('category_id', $categoryId)
@@ -528,6 +559,8 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         $attributes['location_scope'] = (string) ($effectiveIntent['location_scope'] ?? ($intentSchema['location_scope'] ?? 'point'));
         $attributes['service_time_model'] = (string) ($effectiveIntent['service_time_model'] ?? ($intentSchema['service_time_model'] ?? 'none'));
         $attributes['offer_requirement'] = (string) ($effectiveIntent['offer_requirement'] ?? ($intentSchema['offer_requirement'] ?? 'no_offer'));
+        $attributes['pricing_strategy'] = (string) ($effectiveIntent['pricing_strategy'] ?? ($intentSchema['pricing_strategy'] ?? 'base_only'));
+        $attributes['billing_model'] = (string) ($effectiveIntent['billing_model'] ?? ($intentSchema['billing_model'] ?? 'one_time'));
 
         // Determine effective transaction mode (after offer_variant normalization).
         $effectiveMode = '';
@@ -571,7 +604,7 @@ if (!function_exists('pazar_guard_listing_catalog_write')) {
         }
 
         foreach (array_keys($attributes) as $k) {
-            if (in_array($k, ['offer_variant', 'interaction_mode', 'fulfillment_mode', 'location_scope', 'service_time_model', 'offer_requirement'], true)) continue;
+            if (in_array($k, ['offer_variant', 'interaction_mode', 'fulfillment_mode', 'location_scope', 'service_time_model', 'offer_requirement', 'pricing_strategy', 'billing_model'], true)) continue;
             if (!array_key_exists($k, $appliesMap)) continue;
             $applies = $appliesMap[$k];
             if (is_array($applies) && !in_array($effectiveMode, $applies, true)) {
@@ -717,6 +750,8 @@ if (!function_exists('pazar_normalize_listing_policy_fields')) {
         $attrs['location_scope'] = (string) ($effectiveIntent['location_scope'] ?? ($intent['location_scope'] ?? 'point'));
         $attrs['service_time_model'] = (string) ($effectiveIntent['service_time_model'] ?? ($intent['service_time_model'] ?? 'none'));
         $attrs['offer_requirement'] = (string) ($effectiveIntent['offer_requirement'] ?? ($intent['offer_requirement'] ?? 'no_offer'));
+        $attrs['pricing_strategy'] = (string) ($effectiveIntent['pricing_strategy'] ?? ($intent['pricing_strategy'] ?? 'base_only'));
+        $attrs['billing_model'] = (string) ($effectiveIntent['billing_model'] ?? ($intent['billing_model'] ?? 'one_time'));
 
         $listing['attributes'] = $attrs;
         $listing['supports_packages'] = isset($intent['supports_packages']) ? (bool) $intent['supports_packages'] : false;

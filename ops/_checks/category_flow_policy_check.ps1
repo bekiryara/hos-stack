@@ -50,6 +50,8 @@ $validFulfillmentModes = @("provider_location", "customer_location", "remote", "
 $validLocationScopes = @("none", "city", "point", "service_area")
 $validServiceTimeModels = @("none", "date_range", "slot", "session")
 $validOfferRequirements = @("no_offer", "optional_offer", "required_offer")
+$validPricingStrategies = @("base_only", "offer_only")
+$validBillingModels = @("one_time", "per_day", "per_month", "per_night", "per_person", "per_hour", "per_session", "per_visit")
 $primitiveViolations = @()
 
 foreach ($ruleKey in $rules.Keys) {
@@ -89,6 +91,18 @@ foreach ($ruleKey in $rules.Keys) {
             }
         }
     }
+    if ($rule.PSObject.Properties['pricing_strategy']) {
+        $v = [string]$rule.pricing_strategy
+        if ($validPricingStrategies -notcontains $v) {
+            $primitiveViolations += "rules.$ruleKey.pricing_strategy invalid: $v"
+        }
+    }
+    if ($rule.PSObject.Properties['billing_model']) {
+        $v = [string]$rule.billing_model
+        if ($validBillingModels -notcontains $v) {
+            $primitiveViolations += "rules.$ruleKey.billing_model invalid: $v"
+        }
+    }
 
     if ($rule.PSObject.Properties['offer_variants'] -and $rule.offer_variants) {
         foreach ($variant in $rule.offer_variants) {
@@ -119,6 +133,18 @@ foreach ($ruleKey in $rules.Keys) {
                 $v = [string]$variant.offer_requirement
                 if ($validOfferRequirements -notcontains $v) {
                     $primitiveViolations += "rules.$ruleKey.offer_variants[$variantKey].offer_requirement invalid: $v"
+                }
+            }
+            if ($variant.PSObject.Properties['pricing_strategy']) {
+                $v = [string]$variant.pricing_strategy
+                if ($validPricingStrategies -notcontains $v) {
+                    $primitiveViolations += "rules.$ruleKey.offer_variants[$variantKey].pricing_strategy invalid: $v"
+                }
+            }
+            if ($variant.PSObject.Properties['billing_model']) {
+                $v = [string]$variant.billing_model
+                if ($validBillingModels -notcontains $v) {
+                    $primitiveViolations += "rules.$ruleKey.offer_variants[$variantKey].billing_model invalid: $v"
                 }
             }
         }

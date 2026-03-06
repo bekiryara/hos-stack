@@ -18,6 +18,8 @@ Open a new rule only if at least one of these differs from the current parent/fa
   - `location_scope`
   - `service_time_model`
   - `offer_requirement`
+  - `pricing_strategy`
+  - `billing_model`
 
 If behavior is the same, inherit from existing parent rule.
 
@@ -36,4 +38,3 @@ If behavior is the same, inherit from existing parent rule.
 - No temporary per-category code patches in UI/backend.
 - No duplicate rule with same behavior.
 - No release with failing route/schema snapshot drift.
-

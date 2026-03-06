@@ -68,6 +68,8 @@ const POLICY_KEYS = new Set([
   'location_scope',
   'service_time_model',
   'offer_requirement',
+  'pricing_strategy',
+  'billing_model',
 ]);
 
 export default {

@@ -16,7 +16,7 @@
   - Temporary tracked root artifacts (`tmp_*`) removed in commit `88aa944`.
 - Variant-level deterministic policy shipped (policy + resolver + create form):
   - Commit `73a335c`: primitive fields now resolve per `offer_variant`
-    (`fulfillment_mode`, `location_scope`, `service_time_model`, `offer_requirement`).
+    (`fulfillment_mode`, `location_scope`, `service_time_model`, `offer_requirement`, `pricing_strategy`, `billing_model`).
   - Commit `7e90a09`: intent resolver fix to preserve variant primitive fields.
   - UI contract confirmed on Konut variants:
     - `sale` -> `time_model=none`

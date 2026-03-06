@@ -4,6 +4,17 @@
 
 **Rule:** Only edit this top `[Unreleased]` section. Any lower legacy blocks are historical artifacts and must not be appended to.
 
+### policy/ui: add pricing_strategy + billing_model primitives to deterministic chain (2026-03-06)
+- Extended category policy primitives to include `pricing_strategy` and `billing_model` at rule and variant level.
+- Backend resolver/guard/read normalization now enforces and projects these two fields deterministically with existing primitives.
+- Create/Edit shared form now displays effective policy values for Pricing and Billing and preserves them in normalized attributes.
+- Policy gate updated:
+  - `ops/_checks/category_flow_policy_check.ps1` validates enum sets for both new primitives.
+- Validation:
+  - `ops/_checks/category_flow_policy_check.ps1` PASS
+  - `ops/_checks/policy_variant_matrix_check.ps1` PASS
+  - `npm --prefix work/marketplace-web run -s build` PASS
+
 ### ops/policy: deterministic pre-release flow + variant matrix gate (2026-03-06)
 - Added new contract check: `ops/_checks/policy_variant_matrix_check.ps1`.
 - Wired `Policy Variant Matrix` as a blocking check in `ops_status`.

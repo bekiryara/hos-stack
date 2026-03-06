@@ -132,6 +132,12 @@
         <div class="primitive-item">
           <strong>Offer Rule:</strong> {{ primitiveLabel('offer_requirement', effectiveIntentSchema.offer_requirement) }}
         </div>
+        <div class="primitive-item">
+          <strong>Pricing:</strong> {{ primitiveLabel('pricing_strategy', effectiveIntentSchema.pricing_strategy) }}
+        </div>
+        <div class="primitive-item">
+          <strong>Billing:</strong> {{ primitiveLabel('billing_model', effectiveIntentSchema.billing_model) }}
+        </div>
       </div>
       <small class="hint">Bu alanlar kategori policy'sinden gelir ve backend tarafinda zorlanir.</small>
     </div>
@@ -340,6 +346,8 @@ export default {
         location_scope: selected.location_scope || schema.location_scope || 'point',
         service_time_model: selected.service_time_model || schema.service_time_model || 'none',
         offer_requirement: selected.offer_requirement || schema.offer_requirement || 'no_offer',
+        pricing_strategy: selected.pricing_strategy || schema.pricing_strategy || 'base_only',
+        billing_model: selected.billing_model || schema.billing_model || 'one_time',
       };
     },
     currentTransactionMode() {
@@ -470,6 +478,20 @@ export default {
           optional_offer: 'Paket opsiyonel',
           required_offer: 'Paket zorunlu',
         },
+        pricing_strategy: {
+          base_only: 'Temel fiyat',
+          offer_only: 'Sadece paket fiyatlari',
+        },
+        billing_model: {
+          one_time: 'Tek seferlik',
+          per_day: 'Gunluk',
+          per_month: 'Aylik',
+          per_night: 'Gecelik',
+          per_person: 'Kisi basi',
+          per_hour: 'Saatlik',
+          per_session: 'Seanslik',
+          per_visit: 'Ziyaret basi',
+        },
       };
       const map = dict[kind] || {};
       return map[raw] || raw || '-';
@@ -569,6 +591,8 @@ export default {
       this.local.attributes.location_scope = v.location_scope || this.intentSchema?.location_scope || 'point';
       this.local.attributes.service_time_model = v.service_time_model || this.intentSchema?.service_time_model || 'none';
       this.local.attributes.offer_requirement = v.offer_requirement || this.intentSchema?.offer_requirement || 'no_offer';
+      this.local.attributes.pricing_strategy = v.pricing_strategy || this.intentSchema?.pricing_strategy || 'base_only';
+      this.local.attributes.billing_model = v.billing_model || this.intentSchema?.billing_model || 'one_time';
     },
     validateIntentCompatibility() {
       const errors = [];
