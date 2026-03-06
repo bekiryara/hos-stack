@@ -10,6 +10,7 @@ export function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
   const [nextRoleByUserId, setNextRoleByUserId] = useState<Record<string, UserRole>>({});
   const [message, setMessage] = useState<string | null>(null);
@@ -46,6 +47,12 @@ export function UsersPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!actionError) return;
+    const t = window.setTimeout(() => setActionError(null), 7000);
+    return () => window.clearTimeout(t);
+  }, [actionError]);
+
   async function handleSaveRole(userId: string) {
     const token = localStorage.getItem('hos_admin_token') || '';
     if (!token) {
@@ -70,6 +77,7 @@ export function UsersPage() {
 
     setSavingUserId(userId);
     setError(null);
+    setActionError(null);
     setMessage(null);
     try {
       await adminUpdateUserRole(token, userId, role);
@@ -77,7 +85,7 @@ export function UsersPage() {
       setMessage('Rol guncellendi. Gerekirse geri alabilirsiniz.');
       await load();
     } catch (e: any) {
-      setError(trAdminError(e?.body?.error || e?.message, 'Rol guncellenemedi'));
+      setActionError(trAdminError(e?.body?.error || e?.message, 'Rol guncellenemedi'));
     } finally {
       setSavingUserId(null);
     }
@@ -115,6 +123,14 @@ export function UsersPage() {
           <div className="card error">
             <div className="title">Hata</div>
             <pre>{String(error)}</pre>
+          </div>
+        ) : null}
+        {actionError ? (
+          <div className="card" style={{ marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+              <pre style={{ margin: 0 }}>{actionError}</pre>
+              <button onClick={() => setActionError(null)}>Kapat</button>
+            </div>
           </div>
         ) : null}
         {message ? (

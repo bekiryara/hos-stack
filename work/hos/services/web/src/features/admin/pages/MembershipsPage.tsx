@@ -16,6 +16,7 @@ export function MembershipsPage() {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [nextByKey, setNextByKey] = useState<Record<string, { role: MembershipRole; status: MembershipStatus }>>({});
@@ -60,6 +61,12 @@ export function MembershipsPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!actionError) return;
+    const t = window.setTimeout(() => setActionError(null), 7000);
+    return () => window.clearTimeout(t);
+  }, [actionError]);
+
   async function handleSave(row: any) {
     const token = localStorage.getItem('hos_admin_token') || '';
     if (!token) {
@@ -90,6 +97,7 @@ export function MembershipsPage() {
 
     setSavingKey(key);
     setError(null);
+    setActionError(null);
     setMessage(null);
     try {
       await adminUpdateMembership(token, String(row.tenant_id), String(row.user_id), patch);
@@ -102,7 +110,7 @@ export function MembershipsPage() {
       setMessage('Uyelik guncellendi. Gerekirse geri alabilirsiniz.');
       await load();
     } catch (e: any) {
-      setError(trAdminError(e?.body?.error || e?.message, 'Uyelik guncellenemedi'));
+      setActionError(trAdminError(e?.body?.error || e?.message, 'Uyelik guncellenemedi'));
     } finally {
       setSavingKey(null);
     }
@@ -116,6 +124,7 @@ export function MembershipsPage() {
       return;
     }
     setError(null);
+    setActionError(null);
     setMessage(null);
     try {
       await adminUpdateMembership(token, undoMembership.tenantId, undoMembership.userId, {
@@ -126,7 +135,7 @@ export function MembershipsPage() {
       setMessage('Son degisiklik geri alindi.');
       await load();
     } catch (e: any) {
-      setError(trAdminError(e?.body?.error || e?.message, 'Geri alma islemi basarisiz oldu'));
+      setActionError(trAdminError(e?.body?.error || e?.message, 'Geri alma islemi basarisiz oldu'));
     }
   }
 
@@ -143,6 +152,14 @@ export function MembershipsPage() {
           <div className="card error">
             <div className="title">Hata</div>
             <pre>{String(error)}</pre>
+          </div>
+        ) : null}
+        {actionError ? (
+          <div className="card" style={{ marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+              <pre style={{ margin: 0 }}>{actionError}</pre>
+              <button onClick={() => setActionError(null)}>Kapat</button>
+            </div>
           </div>
         ) : null}
         {message ? (
