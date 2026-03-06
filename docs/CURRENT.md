@@ -58,6 +58,13 @@
   - Validation:
     - `npm run build` -> PASS
     - `ops/_checks/rental_contract_check.ps1` -> PASS
+ - Order create pricing-label alignment (2026-03-06):
+  - `CreateOrderPage` now derives multiplier input/summary label from listing `billing_model` (instead of fixed `Adet`).
+  - Success and pre-submit pricing cards consume policy-derived billing model for deterministic multiplier label rendering.
+  - Validation:
+    - `npm run build` -> PASS
+    - `ops/_checks/order_contract_check.ps1` -> PASS
+    - `ops/_checks/create_edit_parity_check.ps1` -> PASS
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.

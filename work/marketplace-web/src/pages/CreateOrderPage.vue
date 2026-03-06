@@ -22,7 +22,7 @@
         class="success-pricing"
         :totals="success.totals"
         :multiplier="success.quantity || 1"
-        multiplier-label="Adet"
+        :billing-model="success.totals?.billing_model || listingBillingModel"
       />
       <div class="success-actions">
         <router-link v-if="success.listing_id" :to="`/listing/${success.listing_id}`" class="action-link">Ilana don</router-link>
@@ -42,7 +42,7 @@
 
       <div class="form-group" v-if="!formData.listing_id">
         <label>
-          Listing ID <span class="required">*</span>
+          Ilan ID <span class="required">*</span>
           <input
             v-model="listingIdInput"
             type="text"
@@ -56,7 +56,7 @@
 
       <div class="form-group">
         <label>
-          Adet <span class="required">*</span>
+          {{ multiplierInputLabel }} <span class="required">*</span>
           <input
             v-model.number="formData.quantity"
             type="number"
@@ -73,7 +73,7 @@
         :price-amount="listingPreview.price"
         :price-currency="listingPreview.price_currency"
         :multiplier="formData.quantity"
-        multiplier-label="Adet"
+        :billing-model="listingBillingModel"
       />
 
       <button type="submit" :disabled="loading" class="submit-button">
@@ -105,7 +105,23 @@ export default {
       error: null,
       authError: null,
       success: null,
+      listingBillingModel: '',
     };
+  },
+  computed: {
+    multiplierInputLabel() {
+      const map = {
+        one_time: 'Adet',
+        per_day: 'Gun',
+        per_night: 'Gece',
+        per_month: 'Ay',
+        per_person: 'Kisi',
+        per_hour: 'Saat',
+        per_session: 'Seans',
+        per_visit: 'Ziyaret',
+      };
+      return map[String(this.listingBillingModel || '').trim()] || 'Adet';
+    },
   },
   async mounted() {
     const userId = getUserId();
@@ -130,8 +146,13 @@ export default {
       this.listingLoading = true;
       try {
         this.listingPreview = await api.getListing(id);
+        const attrs = this.listingPreview?.attributes && typeof this.listingPreview.attributes === 'object'
+          ? this.listingPreview.attributes
+          : {};
+        this.listingBillingModel = String(attrs.billing_model || this.listingPreview?.billing_model || '').trim();
       } catch {
         this.listingPreview = null;
+        this.listingBillingModel = '';
       } finally {
         this.listingLoading = false;
       }
