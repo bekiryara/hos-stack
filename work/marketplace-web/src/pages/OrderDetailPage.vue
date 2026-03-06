@@ -73,6 +73,7 @@ import SectionShell from '../components/portal/SectionShell.vue';
 import { api } from '../api/client.js';
 import { getStatusLabel } from '../lib/displayLabels.js';
 import { formatDisplayDate, formatDisplayPrice } from '../lib/displayFormatters.js';
+import { getActiveTenantId } from '../lib/session.js';
 
 export default {
   name: 'OrderDetailPage',
@@ -147,10 +148,22 @@ export default {
       this.loadError = null;
       this.loading = true;
       try {
-        const res = await api.getMyOrderById(this.id);
-        this.fetched = res?.data ?? res?.item ?? res ?? {};
+        const personalRes = await api.getMyOrderById(this.id);
+        this.fetched = personalRes?.data ?? personalRes?.item ?? personalRes ?? {};
       } catch (err) {
-        this.loadError = (err.message || err.status || 'Request failed').toString();
+        const firstError = (err.message || err.status || 'Request failed').toString();
+        const activeTenantId = getActiveTenantId();
+        if (activeTenantId) {
+          try {
+            const storeRes = await api.getStoreOrderById(this.id, activeTenantId);
+            this.fetched = storeRes?.data ?? storeRes?.item ?? storeRes ?? {};
+            this.loadError = null;
+            return;
+          } catch {
+            // Keep original personal-scope error in limited mode.
+          }
+        }
+        this.loadError = firstError;
       } finally {
         this.loading = false;
       }
