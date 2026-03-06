@@ -68,7 +68,8 @@
 
     <div class="form-group">
       <label class="price-label">
-        Fiyat
+        {{ canonicalPriceFieldLabel }}
+        <span v-if="isCanonicalPriceRequired" class="required">*</span>
       </label>
       <div class="price-row">
         <input
@@ -76,7 +77,9 @@
           type="number"
           min="0"
           step="1"
-          placeholder="Fiyat"
+          :required="isCanonicalPriceRequired"
+          :disabled="!isCanonicalPriceEnabled"
+          :placeholder="canonicalPricePlaceholder"
           class="form-input"
         />
         <select v-model="local.currency" class="form-input price-currency">
@@ -85,6 +88,14 @@
           <option value="EUR">EUR</option>
         </select>
       </div>
+      <small class="hint">
+        <strong>Pricing:</strong> {{ primitiveLabel('pricing_strategy', effectiveIntentSchema.pricing_strategy) }}
+        <span class="dot">•</span>
+        <strong>Billing:</strong> {{ primitiveLabel('billing_model', effectiveIntentSchema.billing_model) }}
+      </small>
+      <small v-if="!isCanonicalPriceEnabled" class="hint">
+        Bu ilanda fiyat girisi paket (offer) uzerinden yapilir.
+      </small>
       <small class="hint">
         Canonical fiyat alani. Eski attribute fiyatlari gecis icin ayrica kalabilir.
       </small>
@@ -234,6 +245,26 @@
       </div>
     </div>
 
+    <div v-if="showScheduleSection" class="form-group">
+      <label>Zaman ve Uygunluk</label>
+      <div class="hint-box">
+        {{ timeModelGuidance }}
+      </div>
+      <div v-if="availabilityFilters.length > 0" class="schedule-grid">
+        <div
+          v-for="filter in availabilityFilters"
+          :key="`availability-${filter.attribute_key}`"
+          class="attribute-field"
+        >
+          <FilterField
+            :filter="filter"
+            mode="create"
+            v-model="local.attributes[filter.attribute_key]"
+          />
+        </div>
+      </div>
+    </div>
+
     <div v-if="filterSchema && filterSchema.filters" class="form-group">
       <h3>Attributes (from filter-schema)</h3>
       <small v-if="hiddenFiltersCount > 0" class="hint">
@@ -358,6 +389,12 @@ export default {
       return 'sale';
     },
     visibleFilters() {
+      return this.baseApplicableFilters.filter((f) => !this.isAvailabilityFilter(f));
+    },
+    availabilityFilters() {
+      return this.baseApplicableFilters.filter((f) => this.isAvailabilityFilter(f));
+    },
+    baseApplicableFilters() {
       const schema = this.filterSchema;
       const list = schema && Array.isArray(schema.filters) ? schema.filters : [];
       return list.filter((f) => {
@@ -370,7 +407,7 @@ export default {
     hiddenFiltersCount() {
       const schema = this.filterSchema;
       const list = schema && Array.isArray(schema.filters) ? schema.filters : [];
-      return list.length - this.visibleFilters.length;
+      return list.length - this.visibleFilters.length - this.availabilityFilters.length;
     },
     policyTimeModel() {
       return String(this.effectiveIntentSchema?.service_time_model || '');
@@ -380,6 +417,49 @@ export default {
     },
     policyOfferRule() {
       return String(this.effectiveIntentSchema?.offer_requirement || '');
+    },
+    policyPricingStrategy() {
+      return String(this.effectiveIntentSchema?.pricing_strategy || '');
+    },
+    policyBillingModel() {
+      return String(this.effectiveIntentSchema?.billing_model || '');
+    },
+    isCanonicalPriceEnabled() {
+      return this.policyPricingStrategy !== 'offer_only';
+    },
+    isCanonicalPriceRequired() {
+      return this.isCanonicalPriceEnabled;
+    },
+    canonicalPriceFieldLabel() {
+      const map = {
+        one_time: 'Toplam Fiyat',
+        per_day: 'Gunluk Fiyat',
+        per_month: 'Aylik Fiyat',
+        per_night: 'Gecelik Fiyat',
+        per_person: 'Kisi Basi Fiyat',
+        per_hour: 'Saatlik Fiyat',
+        per_session: 'Seans Fiyati',
+        per_visit: 'Ziyaret Basi Fiyat',
+      };
+      return map[this.policyBillingModel] || 'Fiyat';
+    },
+    canonicalPricePlaceholder() {
+      return this.isCanonicalPriceEnabled ? `${this.canonicalPriceFieldLabel} giriniz` : 'Paket fiyatlari kullanilir';
+    },
+    showScheduleSection() {
+      return this.policyTimeModel !== 'none' || this.availabilityFilters.length > 0;
+    },
+    timeModelGuidance() {
+      if (this.policyTimeModel === 'slot') {
+        return 'Randevu slotu modelinde musaitlik gun/saat bilgilerini bu bolumde tanimlayabilirsiniz.';
+      }
+      if (this.policyTimeModel === 'date_range') {
+        return 'Tarih araligi modelinde musaitlik tarih araligini ve ilgili detaylari bu bolumde tanimlayabilirsiniz.';
+      }
+      if (this.policyTimeModel === 'session') {
+        return 'Seans modelinde seans bazli uygunluk bilgilerini bu bolumde tanimlayabilirsiniz.';
+      }
+      return 'Bu ilanda zaman modeli gerekmiyor.';
     },
     shouldHideLegacyCityFilter() {
       return ['city', 'point', 'service_area'].includes(this.policyLocationScope);
@@ -507,6 +587,14 @@ export default {
       if (raw.length === 0) return true;
       return raw.map(String).includes(m);
     },
+    isAvailabilityFilter(filter) {
+      const key = String(filter?.attribute_key || '').toLowerCase();
+      const label = String(filter?.label || '').toLowerCase();
+      const haystack = `${key} ${label}`;
+      if (!haystack.trim()) return false;
+      if (/(ilan_tarihi|listing_date|date_posted)/.test(haystack)) return false;
+      return /(availability|available|schedule|slot|time|date|day|hour|tarih|saat|gun|baslangic|bitis|session)/.test(haystack);
+    },
     emitCategoryChange() {
       if (this.isEditMode) return;
       this.submitAttempted = false;
@@ -593,6 +681,9 @@ export default {
       this.local.attributes.offer_requirement = v.offer_requirement || this.intentSchema?.offer_requirement || 'no_offer';
       this.local.attributes.pricing_strategy = v.pricing_strategy || this.intentSchema?.pricing_strategy || 'base_only';
       this.local.attributes.billing_model = v.billing_model || this.intentSchema?.billing_model || 'one_time';
+      if (this.local.attributes.pricing_strategy === 'offer_only') {
+        this.local.price_amount = null;
+      }
     },
     validateIntentCompatibility() {
       const errors = [];
@@ -611,6 +702,9 @@ export default {
       }
       if ((mode === 'sale' || mode === 'rental') && offerRule === 'required_offer') {
         errors.push('Bu kategoride required_offer su anda sale/rental akisinda desteklenmiyor.');
+      }
+      if (this.isCanonicalPriceRequired && !Number.isFinite(Number(this.local.price_amount))) {
+        errors.push(`${this.canonicalPriceFieldLabel} zorunludur.`);
       }
 
       errors.push(...this.validateLocationInputs());
@@ -750,7 +844,10 @@ export default {
       const rawAttrs = this.local.attributes && typeof this.local.attributes === 'object' ? this.local.attributes : {};
       let attributesPayload = {};
       if (this.submitVisibleOnly) {
-        const visibleKeys = new Set((this.visibleFilters || []).map((f) => String(f.attribute_key)));
+        const visibleKeys = new Set([
+          ...(this.visibleFilters || []).map((f) => String(f.attribute_key)),
+          ...(this.availabilityFilters || []).map((f) => String(f.attribute_key)),
+        ]);
         visibleKeys.add('offer_variant');
         visibleKeys.add('interaction_mode');
         visibleKeys.add('gender_context');
@@ -768,7 +865,7 @@ export default {
         category_id: this.local.category_id,
         title: this.local.title,
         description: this.local.description,
-        price_amount: this.local.price_amount,
+        price_amount: this.isCanonicalPriceEnabled ? this.local.price_amount : null,
         currency: this.local.currency || 'TRY',
         transaction_modes: [...(this.local.transaction_modes || [])],
         location: locationPayload,
@@ -871,6 +968,10 @@ export default {
   padding: 1rem;
   background: #f9f9f9;
   border-radius: 4px;
+}
+
+.schedule-grid {
+  margin-top: 0.75rem;
 }
 
 .location-grid {
