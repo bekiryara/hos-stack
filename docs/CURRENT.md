@@ -101,6 +101,16 @@
     - `npm run build` -> PASS
     - `ops/_checks/create_edit_parity_check.ps1` -> PASS
     - `ops/_checks/listing_contract_check.ps1` -> PASS
+ - Availability schema guard for time-model categories (2026-03-06):
+  - New check: `ops/_checks/availability_schema_check.ps1`.
+  - Guard rule:
+    - Critical categories (`vehicle`, `konut`, `is-yeri`, `events`) with non-none `service_time_model`
+      must expose at least one `filter_mode=availability` field in filter-schema.
+  - Ops command added:
+    - `ops.ps1 availability-schema`
+  - Current finding:
+    - Check reports missing availability filter definitions for `vehicle`, `konut`, `is-yeri`, `events`.
+    - Next action is dataset/schema completion (not app-layer patching).
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.
