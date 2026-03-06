@@ -21,11 +21,11 @@ These are the only scripts you should run directly in normal workflows:
 ## Daily Entrypoint
 
 - `.\ops\ops_run.ps1` - Daily baseline gates (Prototype profile by default)
-- `.\ops\ops_run.ps1 -Profile Full` - Before release (includes `ops_status.ps1`)
+- `.\ops\ops_run.ps1 -Profile Full` - Deep local/CI-like run
+- `.\ops\ops_run.ps1 -Profile Release` - Deterministic pre-release gate path (status -Ci + snapshots + release-check)
 
 ---
 
 ## See Also
 
 - `docs/runbooks/OPS_ENTRYPOINTS.md` - **Canonical details**
-

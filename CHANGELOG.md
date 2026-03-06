@@ -4,6 +4,28 @@
 
 **Rule:** Only edit this top `[Unreleased]` section. Any lower legacy blocks are historical artifacts and must not be appended to.
 
+### ops/policy: deterministic pre-release flow + variant matrix gate (2026-03-06)
+- Added new contract check: `ops/_checks/policy_variant_matrix_check.ps1`.
+- Wired `Policy Variant Matrix` as a blocking check in `ops_status`.
+- Added dispatcher commands:
+  - `policy-variant-matrix`
+  - `category-flow-policy`
+  - `listing-contract`
+- Extended `ops_run` with `-Profile Release`:
+  - `status -Ci`
+  - `routes-snapshot`
+  - `schema-snapshot`
+  - `release-check -Ci`
+- Fixed release-check count bug in `ops.ps1` (`@(...).Count`) to prevent false PASS when a single FAIL exists.
+- Added missing required doc: `docs/REPO_LAYOUT.md`.
+- Added new runbooks:
+  - `docs/runbooks/OPS_ENTRYPOINTS.md`
+  - `docs/runbooks/policy_extension.md`
+  - `docs/runbooks/service_area_phase2_plan.md`
+- Updated:
+  - `docs/ops/OPS_ENTRYPOINTS.md`
+  - `docs/RULES.md`
+
 ### policy/docs: variant deterministic matrix + snapshot drift cleanup (2026-03-06)
 - Fixed intent resolver to preserve variant-level primitive fields in intent-schema output.
 - Verified Konut variant matrix behavior:

@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Prototype', 'Full')]
+    [ValidateSet('Prototype', 'Full', 'Release')]
     [string]$Profile = 'Prototype'
 )
 
@@ -134,6 +134,56 @@ if ($Profile -eq 'Full') {
 
     if ($prototypeExitCode -ne 0 -or $pazarSpineExitCode -ne 0 -or $opsStatusExitCode -ne 0) {
         $hasFailures = $true
+    }
+}
+
+# Release profile: deterministic pre-release gate path
+if ($Profile -eq 'Release') {
+    Write-Host "Running Release profile (status -Ci + snapshots + release-check)..." -ForegroundColor Yellow
+    Write-Host ""
+
+    $hasWarnings = $false
+    $steps = @(
+        @{ Name = "Ops Status (-Ci)"; Command = { & $opsEntry status -Ci }; PassOnWarn = $true },
+        @{ Name = "Routes Snapshot"; Command = { & $opsEntry routes-snapshot }; PassOnWarn = $false },
+        @{ Name = "Schema Snapshot"; Command = { & $opsEntry schema-snapshot }; PassOnWarn = $false },
+        @{ Name = "Release Check"; Command = { & $opsEntry release-check -Ci }; PassOnWarn = $true }
+    )
+
+    $idx = 1
+    foreach ($step in $steps) {
+        Write-Host "[$idx/$($steps.Count)] Running $($step.Name)..." -ForegroundColor Yellow
+        try {
+            & $step.Command
+            $code = [int]$LASTEXITCODE
+            if ($code -eq 0) {
+                Write-Host "PASS: $($step.Name)" -ForegroundColor Green
+                $results += [PSCustomObject]@{ Check = $step.Name; Status = 'PASS' }
+            } elseif ($code -eq 2 -and $step.PassOnWarn) {
+                Write-Host "WARN: $($step.Name)" -ForegroundColor Yellow
+                $results += [PSCustomObject]@{ Check = $step.Name; Status = 'WARN' }
+                $hasWarnings = $true
+            } else {
+                Write-Host "FAIL: $($step.Name) (exit=$code)" -ForegroundColor Red
+                $results += [PSCustomObject]@{ Check = $step.Name; Status = 'FAIL' }
+                $hasFailures = $true
+            }
+        } catch {
+            Write-Host "ERROR: $($step.Name) failed: $($_.Exception.Message)" -ForegroundColor Red
+            $results += [PSCustomObject]@{ Check = $step.Name; Status = 'ERROR' }
+            $hasFailures = $true
+        }
+        Write-Host ""
+        $idx++
+    }
+
+    if (-not $hasFailures -and $hasWarnings) {
+        Write-Host "=== SUMMARY ===" -ForegroundColor Cyan
+        $results | Format-Table -AutoSize
+        Write-Host ""
+        Write-Host "OVERALL STATUS: WARN" -ForegroundColor Yellow
+        Write-Host "Release profile completed with warnings." -ForegroundColor Yellow
+        exit 2
     }
 }
 

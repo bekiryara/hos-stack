@@ -67,6 +67,7 @@ $checkRegistry = @(
     # Baseline CI: security boundary (SSOT: Admin in H-OS, not Pazar)
     @{ Id = "security_audit"; Name = "Security Audit"; ScriptPath = ".\ops\security_audit.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $false },
     @{ Id = "conformance"; Name = "Conformance"; ScriptPath = ".\ops\conformance.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $false },
+    @{ Id = "policy_variant_matrix"; Name = "Policy Variant Matrix"; ScriptPath = ".\ops\policy_variant_matrix_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); CoreDependent = $true },
     @{ Id = "product_spine"; Name = "Product Spine Check"; ScriptPath = ".\ops\product_spine_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "product_spine_e2e"; Name = "Product Spine E2E Check"; ScriptPath = ".\ops\product_spine_e2e_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },
     @{ Id = "product_read_path"; Name = "Product Read Path Check"; ScriptPath = ".\ops\product_read_path_check.ps1"; Blocking = $true; OnFailAction = "incident_bundle"; Arguments = @(); Optional = $true; CoreDependent = $true },

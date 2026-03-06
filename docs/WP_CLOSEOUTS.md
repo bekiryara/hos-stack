@@ -393,3 +393,18 @@ If a WP entry has a wrong WP number/title/date or a proof link mistake:
     - sale -> time model `none`
     - rental -> time model `date_range`
     - reservation -> time model `slot`
+
+---
+
+## WP-NEXT: Deterministic release path + policy matrix gate - PASS
+
+- **Date:** 2026-03-06
+- **Outcome:**
+  - Added `policy_variant_matrix_check` to lock critical variant contract.
+  - Added `ops_run -Profile Release` for deterministic pre-release check order.
+  - Added policy extension standard and service-area phase-2 planning docs.
+  - Fixed release-check counting bug that could misreport single FAIL state.
+- **Validation:**
+  - `ops/_checks/policy_variant_matrix_check.ps1` PASS
+  - `ops/ops.ps1 policy-variant-matrix` PASS
+  - `ops/ops.ps1 release-check -Ci` now correctly reports FAIL when git is dirty.

@@ -28,6 +28,12 @@
   - Snapshot drift cleaned:
     - `ops/_checks/routes_snapshot.ps1` -> PASS
     - `ops/_checks/schema_snapshot.ps1` -> PASS
+- Ops/policy governance hardening (2026-03-06):
+  - New blocking gate: `ops/_checks/policy_variant_matrix_check.ps1` (Konut variant matrix lock).
+  - `ops_run` has `Release` profile (deterministic pre-release path).
+  - New policy and planning runbooks:
+    - `docs/runbooks/policy_extension.md`
+    - `docs/runbooks/service_area_phase2_plan.md`
 
 ## What is the Stack?
 

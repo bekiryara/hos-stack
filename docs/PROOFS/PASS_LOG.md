@@ -27,3 +27,5 @@ Her satır: tarih + hangi komut(lar) + sonuç + (varsa) commit.
 2026-03-06 | ops: category_flow_policy_check, listing_contract_check | PASS | commits: 73a335c, 7e90a09
 2026-03-06 | ui: Konut variant matrix manual verify (sale/rental/reservation time model mapping) | PASS | commits: 73a335c, 7e90a09
 2026-03-06 | ops: routes_snapshot, schema_snapshot | PASS | snapshots refreshed
+2026-03-06 | ops: policy_variant_matrix_check, ops dispatcher policy-variant-matrix | PASS
+2026-03-06 | ops: release-check count bug validation (dirty git correctly FAIL) | PASS

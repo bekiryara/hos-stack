@@ -16,7 +16,7 @@ param(
   [string]$Command = "help",
 
   # Pass-through for ops_run.ps1
-  [ValidateSet('Prototype', 'Full')]
+  [ValidateSet('Prototype', 'Full', 'Release')]
   [string]$Profile = 'Prototype',
 
   # Pass-through for stack_up/stack_down.ps1
@@ -58,7 +58,7 @@ function Show-Help {
   Write-Host "  down       Stack down (core|obs|all) via stack_down.ps1" -ForegroundColor White
   Write-Host "             Options: -StackProfile core|obs|all" -ForegroundColor Gray
   Write-Host "  run        Daily pack (ops_run) -Profile Prototype|Full" -ForegroundColor White
-  Write-Host "             Options: -Profile Prototype|Full" -ForegroundColor Gray
+  Write-Host "             Options: -Profile Prototype|Full|Release" -ForegroundColor Gray
   Write-Host "  status     Ops dashboard (ops_status.ps1)" -ForegroundColor White
   Write-Host "             Options: -Ci (include optional checks)" -ForegroundColor Gray
   Write-Host "  smoke      Smoke pack (world_status_check + smoke_surface)" -ForegroundColor White
@@ -73,6 +73,7 @@ function Show-Help {
   Write-Host "             Options: -Ci" -ForegroundColor Gray
   Write-Host "  release-check RC0 release checklist enforcement" -ForegroundColor White
   Write-Host "             Options: -Ci" -ForegroundColor Gray
+  Write-Host "  policy-variant-matrix Variant policy matrix contract check" -ForegroundColor White
   Write-Host ""
   Write-Host "Other commands (still supported):" -ForegroundColor Yellow
   Write-Host "  verify     Stack health (verify.ps1)" -ForegroundColor White
@@ -123,6 +124,8 @@ function Show-Help {
   Write-Host "  product-read-path Product read path check (product_read_path_check.ps1)" -ForegroundColor White
   Write-Host "  product-api-smoke Product API smoke (product_api_smoke.ps1)" -ForegroundColor White
   Write-Host "  product-spine-smoke Product spine smoke (product_spine_smoke.ps1)" -ForegroundColor White
+  Write-Host "  category-flow-policy Category flow policy check (category_flow_policy_check.ps1)" -ForegroundColor White
+  Write-Host "  listing-contract Listing contract check (listing_contract_check.ps1)" -ForegroundColor White
   Write-Host "  public-ready     Public release readiness (public_ready_check.ps1)" -ForegroundColor White
   Write-Host "  verify-wp-closeouts WP closeouts verification (verify_wp_closeouts.ps1)" -ForegroundColor White
   Write-Host "  closeouts-rollover Closeouts rollover tool (closeouts_rollover.ps1)" -ForegroundColor White
@@ -755,9 +758,9 @@ function Invoke-ReleaseCheck {
     Write-Host ""
     $script:releaseCheckResults | Format-Table -Property Check, Status, ExitCode, Notes -AutoSize
 
-    $failCount = ($script:releaseCheckResults | Where-Object { $_.Status -eq "FAIL" }).Count
-    $warnCount = ($script:releaseCheckResults | Where-Object { $_.Status -eq "WARN" }).Count
-    $passCount = ($script:releaseCheckResults | Where-Object { $_.Status -eq "PASS" }).Count
+    $failCount = @($script:releaseCheckResults | Where-Object { $_.Status -eq "FAIL" }).Count
+    $warnCount = @($script:releaseCheckResults | Where-Object { $_.Status -eq "WARN" }).Count
+    $passCount = @($script:releaseCheckResults | Where-Object { $_.Status -eq "PASS" }).Count
 
     Write-Host ""
     Write-Host "Summary: $passCount PASS, $warnCount WARN, $failCount FAIL" -ForegroundColor Gray
@@ -936,6 +939,9 @@ switch ($cmd) {
   { $_ -in @("product-read-path", "product_read_path") } { Invoke-TargetScript -RelPath "_checks\\product_read_path_check.ps1"; break }
   { $_ -in @("product-api-smoke", "product_api_smoke") } { Invoke-TargetScript -RelPath "_checks\\product_api_smoke.ps1"; break }
   { $_ -in @("product-spine-smoke", "product_spine_smoke") } { Invoke-TargetScript -RelPath "_checks\\product_spine_smoke.ps1"; break }
+  { $_ -in @("category-flow-policy", "category_flow_policy") } { Invoke-TargetScript -RelPath "_checks\\category_flow_policy_check.ps1"; break }
+  { $_ -in @("listing-contract", "listing_contract") } { Invoke-TargetScript -RelPath "_checks\\listing_contract_check.ps1"; break }
+  { $_ -in @("policy-variant-matrix", "policy_variant_matrix", "variant-matrix") } { Invoke-TargetScript -RelPath "_checks\\policy_variant_matrix_check.ps1"; break }
   { $_ -in @("public-ready", "public_ready") } { Invoke-TargetScript -RelPath "_checks\\public_ready_check.ps1"; break }
   { $_ -in @("verify-wp-closeouts", "verify_wp_closeouts") } { Invoke-TargetScript -RelPath "_checks\\verify_wp_closeouts.ps1"; break }
   { $_ -in @("closeouts-rollover", "closeouts_rollover") } { Invoke-TargetScript -RelPath "_tools\\closeouts_rollover.ps1"; break }
@@ -948,4 +954,3 @@ switch ($cmd) {
     break
   }
 }
-
