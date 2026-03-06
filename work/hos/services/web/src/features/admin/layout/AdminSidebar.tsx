@@ -1,12 +1,12 @@
 import React from 'react';
 
 const links = [
-  { href: '/ui/admin/control-center', label: 'Control Center' },
-  { href: '/ui/admin/dashboard', label: 'Dashboard' },
-  { href: '/ui/admin/tenants', label: 'Tenants' },
-  { href: '/ui/admin/users', label: 'Users' },
-  { href: '/ui/admin/memberships', label: 'Memberships' },
-  { href: '/ui/admin/audit', label: 'Audit' },
+  { href: '/admin', label: 'Control Center' },
+  { href: '/admin/dashboard', label: 'Dashboard' },
+  { href: '/admin/tenants', label: 'Tenants' },
+  { href: '/admin/users', label: 'Users' },
+  { href: '/admin/memberships', label: 'Memberships' },
+  { href: '/admin/audit', label: 'Audit' },
 ];
 
 export function AdminSidebar() {

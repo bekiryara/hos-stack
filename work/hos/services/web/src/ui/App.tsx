@@ -215,7 +215,7 @@ export function App() {
           <button onClick={loadWorlds} disabled={worldsLoading} style={{ marginLeft: '0.5rem' }}>
             {worldsLoading ? 'Loading…' : 'Refresh Worlds'}
           </button>
-          <a href="/ui/admin/control-center" style={{ marginLeft: '0.75rem' }}>Admin Control Center</a>
+          <a href="/admin" style={{ marginLeft: '0.75rem' }}>Admin Control Center</a>
           <a href="/api/v1/health" target="_blank" rel="noreferrer">/api/v1/health</a>
         </div>
       </header>

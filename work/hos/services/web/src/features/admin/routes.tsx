@@ -10,12 +10,20 @@ export function isAdminRoutePath(pathname: string): boolean {
   return pathname.startsWith('/ui/admin') || pathname.startsWith('/admin');
 }
 
+function normalizeAdminPath(pathname: string): string {
+  if (pathname.startsWith('/ui/admin')) {
+    return pathname.replace('/ui/admin', '/admin');
+  }
+  return pathname;
+}
+
 export function resolveAdminRoute(pathname: string): React.ReactElement | null {
   if (!isAdminRoutePath(pathname)) return null;
-  if (pathname === '/ui/admin/dashboard') return <DashboardPage />;
-  if (pathname === '/ui/admin/tenants') return <TenantsPage />;
-  if (pathname === '/ui/admin/users') return <UsersPage />;
-  if (pathname === '/ui/admin/memberships') return <MembershipsPage />;
-  if (pathname === '/ui/admin/audit') return <AuditPage />;
+  const path = normalizeAdminPath(pathname);
+  if (path === '/admin/dashboard') return <DashboardPage />;
+  if (path === '/admin/tenants') return <TenantsPage />;
+  if (path === '/admin/users') return <UsersPage />;
+  if (path === '/admin/memberships') return <MembershipsPage />;
+  if (path === '/admin/audit') return <AuditPage />;
   return <AdminControlCenterPage />;
 }
