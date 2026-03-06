@@ -1,6 +1,6 @@
 <template>
   <form @submit.prevent="onSubmit" class="listing-form">
-    <div class="form-group">
+    <div v-if="showTenantSection" class="form-group">
       <label>
         Aktif Firma <span class="required">*</span>
         <div v-if="tenantId" class="tenant-id-display">
@@ -28,7 +28,7 @@
       </label>
     </div>
 
-    <div class="form-group">
+    <div v-if="!isEditMode" class="form-group">
       <label class="category-label">
         Kategori <span class="required">*</span>
       </label>
@@ -40,16 +40,15 @@
         @gender-context="onGenderContext"
       />
     </div>
-
     <div class="form-group">
       <label>
-        Title <span class="required">*</span>
+        Baslik <span class="required">*</span>
         <input
           v-model="local.title"
           type="text"
           required
           maxlength="120"
-          placeholder="Listing title (max 120 chars)"
+          placeholder="Ilan basligi (max 120 karakter)"
           class="form-input"
         />
       </label>
@@ -57,10 +56,10 @@
 
     <div class="form-group">
       <label>
-        Description
+        Aciklama
         <textarea
           v-model="local.description"
-          placeholder="Optional description"
+          placeholder="Istege bagli aciklama"
           class="form-input"
           rows="4"
         />
@@ -91,7 +90,7 @@
       </small>
     </div>
 
-    <div class="form-group">
+    <div v-if="!isEditMode" class="form-group">
       <label>
         İlan Türü <span class="required">*</span>
         <select
@@ -197,18 +196,6 @@
           Ic Kapi No
           <input v-model.trim="local.location.door_no" type="text" class="form-input" placeholder="Orn: 5" />
         </label>
-        <label class="full-width">
-          Acik Adres
-          <input v-model.trim="local.location.address_line" type="text" class="form-input" placeholder="Mahalle, sokak, no..." />
-        </label>
-        <label>
-          Enlem
-          <input v-model.trim="local.location.lat" type="number" step="any" class="form-input" placeholder="38.4237" />
-        </label>
-        <label>
-          Boylam
-          <input v-model.trim="local.location.lng" type="number" step="any" class="form-input" placeholder="27.1428" />
-        </label>
       </div>
 
       <div v-else-if="policyLocationScope === 'service_area'" class="service-area-editor">
@@ -263,9 +250,14 @@
       <div v-for="(msg, idx) in submitErrors" :key="idx">{{ msg }}</div>
     </div>
 
-    <button type="submit" :disabled="loading || !tenantId" class="submit-button">
-      {{ loading ? 'Creating...' : 'Create Listing (DRAFT)' }}
-    </button>
+    <div class="submit-actions" :class="{ dual: hasSecondaryAction }">
+      <button type="submit" :disabled="loading || !tenantId" class="submit-button">
+        {{ loading ? submitLoadingText : submitButtonText }}
+      </button>
+      <router-link v-if="hasSecondaryAction" :to="secondaryActionTo" class="submit-button submit-button-secondary">
+        {{ secondaryActionLabel }}
+      </router-link>
+    </div>
   </form>
 </template>
 
@@ -281,6 +273,7 @@ export default {
     FilterField,
   },
   props: {
+    mode: { type: String, default: 'create' },
     categoriesTree: { type: Array, default: () => [] },
     filterSchema: { type: Object, default: null },
     intentSchema: { type: Object, default: null },
@@ -291,6 +284,14 @@ export default {
     tenantId: { type: String, default: '' },
     tenantIdLoadError: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
+    categoryLabelText: { type: String, default: '-' },
+    initialValue: { type: Object, default: null },
+    submitVisibleOnly: { type: Boolean, default: true },
+    submitButtonText: { type: String, default: 'Create Listing (DRAFT)' },
+    submitLoadingText: { type: String, default: 'Creating...' },
+    showTenantSection: { type: Boolean, default: true },
+    secondaryActionTo: { type: String, default: '' },
+    secondaryActionLabel: { type: String, default: '' },
   },
   emits: ['category-change', 'location-city-change', 'location-district-change', 'submit'],
   data() {
@@ -322,6 +323,9 @@ export default {
     };
   },
   computed: {
+    isEditMode() {
+      return String(this.mode || 'create') === 'edit';
+    },
     selectedOfferVariant() {
       const schema = this.intentSchema;
       const key = this.local.offer_variant || '';
@@ -396,8 +400,18 @@ export default {
     submitErrors() {
       return this.validateIntentCompatibility();
     },
+    hasSecondaryAction() {
+      return String(this.secondaryActionTo || '').trim() !== '' && String(this.secondaryActionLabel || '').trim() !== '';
+    },
   },
   watch: {
+    initialValue: {
+      handler(next) {
+        this.applyInitialValue(next);
+      },
+      immediate: true,
+      deep: true,
+    },
     intentSchema: {
       handler(newSchema) {
         this.submitAttempted = false;
@@ -472,6 +486,7 @@ export default {
       return raw.map(String).includes(m);
     },
     emitCategoryChange() {
+      if (this.isEditMode) return;
       this.submitAttempted = false;
       this.local.offer_variant = '';
       this.local.transaction_modes = [];
@@ -502,7 +517,45 @@ export default {
       }
     },
     onOfferVariantChange() {
+      if (this.isEditMode) return;
       this.applyOfferVariant();
+    },
+    applyInitialValue(source) {
+      if (!source || typeof source !== 'object') return;
+      const src = source;
+      if (src.category_id != null) this.local.category_id = String(src.category_id);
+      this.local.title = String(src.title || '');
+      this.local.description = src.description == null ? '' : String(src.description);
+      this.local.price_amount = Number.isFinite(Number(src.price_amount)) ? Number(src.price_amount) : null;
+      this.local.currency = String(src.currency || 'TRY').toUpperCase();
+      this.local.transaction_modes = Array.isArray(src.transaction_modes) ? src.transaction_modes.map((v) => String(v)) : [];
+
+      const attrs = src.attributes && typeof src.attributes === 'object' ? { ...src.attributes } : {};
+      this.local.attributes = attrs;
+      const variant = String(attrs.offer_variant || '');
+      if (variant) this.local.offer_variant = variant;
+
+      const loc = src.location && typeof src.location === 'object' ? src.location : {};
+      const nextLocation = {
+        city: String(loc.city || ''),
+        district: String(loc.district || ''),
+        neighborhood: String(loc.neighborhood || ''),
+        street: String(loc.street || ''),
+        building_no: String(loc.building_no || ''),
+        door_no: String(loc.door_no || ''),
+        address_line: String(loc.address_line || ''),
+        lat: loc.lat == null ? '' : String(loc.lat),
+        lng: loc.lng == null ? '' : String(loc.lng),
+        service_area: [{ city: '', all_districts: false, districts_text: '' }],
+      };
+      if (Array.isArray(loc.service_area) && loc.service_area.length > 0) {
+        nextLocation.service_area = loc.service_area.map((row) => ({
+          city: String(row?.city || ''),
+          all_districts: Boolean(row?.all_districts),
+          districts_text: Array.isArray(row?.districts) ? row.districts.map((d) => String(d)).join(', ') : '',
+        }));
+      }
+      this.local.location = nextLocation;
     },
     applyOfferVariant() {
       const v = this.selectedOfferVariant;
@@ -670,18 +723,21 @@ export default {
       if (this.submitErrors.length > 0) {
         return;
       }
-      const visibleKeys = new Set((this.visibleFilters || []).map((f) => String(f.attribute_key)));
-      visibleKeys.add('offer_variant');
-      visibleKeys.add('interaction_mode');
-      visibleKeys.add('gender_context');
-
       const rawAttrs = this.local.attributes && typeof this.local.attributes === 'object' ? this.local.attributes : {};
-      const filteredAttrs = {};
-      Object.keys(rawAttrs).forEach((k) => {
-        if (visibleKeys.has(String(k))) {
-          filteredAttrs[k] = rawAttrs[k];
-        }
-      });
+      let attributesPayload = {};
+      if (this.submitVisibleOnly) {
+        const visibleKeys = new Set((this.visibleFilters || []).map((f) => String(f.attribute_key)));
+        visibleKeys.add('offer_variant');
+        visibleKeys.add('interaction_mode');
+        visibleKeys.add('gender_context');
+        Object.keys(rawAttrs).forEach((k) => {
+          if (visibleKeys.has(String(k))) {
+            attributesPayload[k] = rawAttrs[k];
+          }
+        });
+      } else {
+        attributesPayload = { ...rawAttrs };
+      }
       const locationPayload = this.buildLocationPayload();
 
       const snapshot = {
@@ -692,8 +748,7 @@ export default {
         currency: this.local.currency || 'TRY',
         transaction_modes: [...(this.local.transaction_modes || [])],
         location: locationPayload,
-        // Submit only visible attrs (do not delete hidden values from local state).
-        attributes: filteredAttrs,
+        attributes: attributesPayload,
       };
       this.$emit('submit', snapshot);
     },
@@ -883,7 +938,18 @@ export default {
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
+  margin-top: 0;
+}
+
+.submit-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.submit-actions.dual {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .submit-button:disabled {
@@ -893,6 +959,15 @@ export default {
 
 .submit-button:hover:not(:disabled) {
   background: #0052a3;
+}
+
+.submit-button-secondary {
+  background: #e5e7eb;
+  color: #111827;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tenant-id-display {
