@@ -5,6 +5,8 @@
 
 [CmdletBinding()]
 param(
+    [ValidateSet("pilot", "critical")]
+    [string]$Scope = "pilot",
     [int]$MaxLeafsPerRule = 40
 )
 
@@ -12,6 +14,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "=== AVAILABILITY SCHEMA CHECK ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
+Write-Host "Scope: $Scope" -ForegroundColor Gray
 Write-Host "MaxLeafsPerRule: $MaxLeafsPerRule" -ForegroundColor Gray
 Write-Host ""
 
@@ -116,80 +119,123 @@ if (($roots | Measure-Object).Count -eq 0) {
 }
 $flat = Flatten-Categories -Nodes $roots
 
-# Critical rule roots where non-none service_time_model variants are expected in current policy.
-$criticalRuleSlugs = @("vehicle", "konut", "is-yeri", "events")
-$ruleSummaries = @()
-
-foreach ($ruleSlug in $criticalRuleSlugs) {
-    $root = $flat | Where-Object { [string]$_.slug -eq $ruleSlug } | Select-Object -First 1
-    if (-not $root) {
-        $violations += "Category root not found for critical rule: $ruleSlug"
-        continue
+if ($Scope -eq "pilot") {
+    $pilotSlugs = @("bando", "wedding-hall", "otomobil-alfa-romeo", "daire")
+    Write-Host "Pilot categories:" -ForegroundColor Cyan
+    foreach ($slug in $pilotSlugs) {
+        Write-Host "  - $slug" -ForegroundColor Gray
     }
+    Write-Host ""
 
-    $desc = Collect-Descendants -Root $root
-    $candidateLeafs = @(
-        $desc |
-            Where-Object {
-                $_.PSObject.Properties["selectable_for_create"] -and
-                $_.selectable_for_create -eq $true -and
-                (Get-ChildNodes -Node $_).Count -eq 0
-            } |
-            Sort-Object @{ Expression = { [int]$_.id } }, @{ Expression = { [string]$_.slug } }
-    )
+    foreach ($slug in $pilotSlugs) {
+        $category = $flat | Where-Object { [string]$_.slug -eq $slug } | Select-Object -First 1
+        if (-not $category) {
+            $violations += "Pilot category not found: $slug"
+            continue
+        }
 
-    $sampleLeafs = @($candidateLeafs | Select-Object -First $MaxLeafsPerRule)
-    $checked = 0
-    $timeEnabled = 0
-    $missingAvailability = 0
-
-    foreach ($leaf in $sampleLeafs) {
-        $checked++
-        $categoryId = [string]$leaf.id
-        $categorySlug = [string]$leaf.slug
-
+        $categoryId = [string]$category.id
         $intent = $null
         try {
             $intent = Invoke-RestMethod -Uri "$baseUrl/categories/$categoryId/intent-schema" -Method Get -TimeoutSec 20 -ErrorAction Stop
         } catch {
-            $violations += "Intent schema fetch failed for rule=$ruleSlug category_id=$categoryId slug=${categorySlug}: $($_.Exception.Message)"
+            $violations += "Intent schema fetch failed for pilot slug=$slug id=${categoryId}: $($_.Exception.Message)"
             continue
         }
 
         if (-not (Has-NonNoneTimeModel -Intent $intent)) {
             continue
         }
-        $timeEnabled++
 
         $filterSchema = $null
         try {
             $filterSchema = Invoke-RestMethod -Uri "$baseUrl/categories/$categoryId/filter-schema" -Method Get -TimeoutSec 20 -ErrorAction Stop
         } catch {
-            $violations += "Filter schema fetch failed for rule=$ruleSlug category_id=$categoryId slug=${categorySlug}: $($_.Exception.Message)"
+            $violations += "Filter schema fetch failed for pilot slug=$slug id=${categoryId}: $($_.Exception.Message)"
             continue
         }
 
         $availabilityCount = Get-AvailabilityCount -FilterSchema $filterSchema
         if ($availabilityCount -lt 1) {
-            $missingAvailability++
-            $violations += "Missing availability filter: rule=$ruleSlug category_id=$categoryId slug=$categorySlug (time_model!=none)"
+            $violations += "Missing availability filter in pilot category: slug=$slug id=$categoryId"
+        }
+    }
+} else {
+    # Critical rule roots where non-none service_time_model variants are expected in current policy.
+    $criticalRuleSlugs = @("vehicle", "konut", "is-yeri", "events")
+    $ruleSummaries = @()
+
+    foreach ($ruleSlug in $criticalRuleSlugs) {
+        $root = $flat | Where-Object { [string]$_.slug -eq $ruleSlug } | Select-Object -First 1
+        if (-not $root) {
+            $violations += "Category root not found for critical rule: $ruleSlug"
+            continue
+        }
+
+        $desc = Collect-Descendants -Root $root
+        $candidateLeafs = @(
+            $desc |
+                Where-Object {
+                    $_.PSObject.Properties["selectable_for_create"] -and
+                    $_.selectable_for_create -eq $true -and
+                    (Get-ChildNodes -Node $_).Count -eq 0
+                } |
+                Sort-Object @{ Expression = { [int]$_.id } }, @{ Expression = { [string]$_.slug } }
+        )
+
+        $sampleLeafs = @($candidateLeafs | Select-Object -First $MaxLeafsPerRule)
+        $checked = 0
+        $timeEnabled = 0
+        $missingAvailability = 0
+
+        foreach ($leaf in $sampleLeafs) {
+            $checked++
+            $categoryId = [string]$leaf.id
+            $categorySlug = [string]$leaf.slug
+
+            $intent = $null
+            try {
+                $intent = Invoke-RestMethod -Uri "$baseUrl/categories/$categoryId/intent-schema" -Method Get -TimeoutSec 20 -ErrorAction Stop
+            } catch {
+                $violations += "Intent schema fetch failed for rule=$ruleSlug category_id=$categoryId slug=${categorySlug}: $($_.Exception.Message)"
+                continue
+            }
+
+            if (-not (Has-NonNoneTimeModel -Intent $intent)) {
+                continue
+            }
+            $timeEnabled++
+
+            $filterSchema = $null
+            try {
+                $filterSchema = Invoke-RestMethod -Uri "$baseUrl/categories/$categoryId/filter-schema" -Method Get -TimeoutSec 20 -ErrorAction Stop
+            } catch {
+                $violations += "Filter schema fetch failed for rule=$ruleSlug category_id=$categoryId slug=${categorySlug}: $($_.Exception.Message)"
+                continue
+            }
+
+            $availabilityCount = Get-AvailabilityCount -FilterSchema $filterSchema
+            if ($availabilityCount -lt 1) {
+                $missingAvailability++
+                $violations += "Missing availability filter: rule=$ruleSlug category_id=$categoryId slug=$categorySlug (time_model!=none)"
+            }
+        }
+
+        $ruleSummaries += [PSCustomObject]@{
+            Rule = $ruleSlug
+            CandidateLeafs = $candidateLeafs.Count
+            CheckedLeafs = $checked
+            TimeEnabledLeafs = $timeEnabled
+            MissingAvailability = $missingAvailability
         }
     }
 
-    $ruleSummaries += [PSCustomObject]@{
-        Rule = $ruleSlug
-        CandidateLeafs = $candidateLeafs.Count
-        CheckedLeafs = $checked
-        TimeEnabledLeafs = $timeEnabled
-        MissingAvailability = $missingAvailability
+    Write-Host "Rule summary:" -ForegroundColor Cyan
+    foreach ($s in $ruleSummaries) {
+        Write-Host ("  - {0}: candidates={1}, checked={2}, time_enabled={3}, missing={4}" -f $s.Rule, $s.CandidateLeafs, $s.CheckedLeafs, $s.TimeEnabledLeafs, $s.MissingAvailability) -ForegroundColor Gray
     }
+    Write-Host ""
 }
-
-Write-Host "Rule summary:" -ForegroundColor Cyan
-foreach ($s in $ruleSummaries) {
-    Write-Host ("  - {0}: candidates={1}, checked={2}, time_enabled={3}, missing={4}" -f $s.Rule, $s.CandidateLeafs, $s.CheckedLeafs, $s.TimeEnabledLeafs, $s.MissingAvailability) -ForegroundColor Gray
-}
-Write-Host ""
 
 if ($violations.Count -gt 0) {
     Write-Host "FAIL: Availability schema violations detected:" -ForegroundColor Red

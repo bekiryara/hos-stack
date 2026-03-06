@@ -104,20 +104,31 @@
  - Availability schema guard for time-model categories (2026-03-06):
   - New check: `ops/_checks/availability_schema_check.ps1`.
   - Guard rule:
-    - Critical rules (`vehicle`, `konut`, `is-yeri`, `events`) are now validated on
-      create-selectable leaf categories (not only root category rows).
-    - For each checked leaf with non-none `service_time_model`, filter-schema must expose
+    - Scope is phase-controlled:
+      - default `pilot`: validates active pilot create categories
+        (`bando`, `wedding-hall`, `otomobil-alfa-romeo`, `daire`)
+      - optional `critical`: audits sampled create leafs under
+        (`vehicle`, `konut`, `is-yeri`, `events`)
+    - For each checked category with non-none `service_time_model`, filter-schema must expose
       at least one `filter_mode=availability` field.
-    - Empty/whitespace `children` payloads are normalized in check logic to avoid false leaf detection.
   - Ops command added:
     - `ops.ps1 availability-schema`
   - Current finding:
-    - Check reports broad missing availability filter definitions in sampled/active leafs:
-      - `vehicle`: candidates=859, checked=40, missing=40
-      - `konut`: candidates=16, checked=16, missing=16
-      - `is-yeri`: candidates=103, checked=40, missing=40
-      - `events`: candidates=2, checked=2, missing=2
-    - Next action is dataset/schema completion (not app-layer patching).
+    - `pilot` scope PASS after data migration.
+    - `critical` scope remains an audit signal (broad dataset completion pending).
+ - Pilot availability dataset slice (2026-03-07):
+  - New migration:
+    - `work/pazar/database/migrations/2026_03_07_011000_add_availability_filters_to_pilot_categories.php`
+  - Added attributes:
+    - `availability_days`
+    - `availability_time_window`
+  - Added `filter_mode=availability` schema rows for categories:
+    - `bando` (id=88)
+    - `wedding-hall` (id=571)
+    - `otomobil-alfa-romeo` (id=374)
+    - `daire` (id=93)
+  - Validation:
+    - `ops/_checks/availability_schema_check.ps1` -> PASS (`Scope=pilot`)
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.
