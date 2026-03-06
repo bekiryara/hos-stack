@@ -4,6 +4,23 @@
 
 **Rule:** Only edit this top `[Unreleased]` section. Any lower legacy blocks are historical artifacts and must not be appended to.
 
+### transaction/policy: enforce pricing_strategy without flow-specific if/else duplication (2026-03-06)
+- Added shared transaction policy helpers in `work/pazar/routes/pricing_resolver.php`:
+  - `pazar_listing_effective_policy(...)`
+  - `pazar_validate_transaction_offer_policy(...)`
+- Applied shared enforcement in create endpoints:
+  - `POST /v1/orders`
+  - `POST /v1/rentals`
+  - `POST /v1/reservations`
+- Rules now deterministic:
+  - `pricing_strategy=offer_only` requires `offer_id` when selection is supported.
+  - For flows that do not support offer selection (order/rental v1), offer-required policies fail with explicit validation errors.
+  - `no_offer` rejects `offer_id`.
+- `pazar_resolve_transaction_pricing(...)` now accepts effective policy and emits deterministic `billing_model` fallback for listing-based pricing.
+- Validation:
+  - `ops/_checks/category_flow_policy_check.ps1` PASS
+  - `ops/_checks/listing_contract_check.ps1` PASS
+
 ### policy/ui: add pricing_strategy + billing_model primitives to deterministic chain (2026-03-06)
 - Extended category policy primitives to include `pricing_strategy` and `billing_model` at rule and variant level.
 - Backend resolver/guard/read normalization now enforces and projects these two fields deterministically with existing primitives.

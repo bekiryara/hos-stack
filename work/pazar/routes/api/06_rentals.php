@@ -22,6 +22,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     // Validate required fields
     $validated = $request->validate([
         'listing_id' => 'required|uuid',
+        'offer_id' => 'nullable|uuid',
         'start_at' => 'required|date',
         'end_at' => 'required|date|after:start_at'
     ]);
@@ -45,8 +46,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
 
     // Policy-derived service primitives (deterministic).
     // Rental flow supports date_range model; legacy 'none' is allowed for backward compatibility.
-    $intent = pazar_category_intent_schema((int) $listing->category_id);
-    $serviceTimeModel = isset($intent['service_time_model']) ? (string) $intent['service_time_model'] : 'none';
+    $effectivePolicy = pazar_listing_effective_policy($listing);
+    $serviceTimeModel = isset($effectivePolicy['service_time_model']) ? (string) $effectivePolicy['service_time_model'] : 'none';
     if (!in_array($serviceTimeModel, ['date_range', 'none'], true)) {
         return response()->json([
             'error' => 'VALIDATION_ERROR',
@@ -54,18 +55,16 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         ], 422);
     }
 
-    // Offer requirement policy:
-    // Rental v1 does not support selecting offer_id in create payload.
-    $offerRequirement = isset($intent['offer_requirement']) ? (string) $intent['offer_requirement'] : 'no_offer';
-    if ($offerRequirement === 'required_offer') {
-        return response()->json([
-            'error' => 'VALIDATION_ERROR',
-            'message' => 'rental create requires offer selection, but offer-based rental is not supported in v1'
-        ], 422);
-    }
+    $offerPolicyError = pazar_validate_transaction_offer_policy(
+        $effectivePolicy,
+        isset($validated['offer_id']) ? (string) $validated['offer_id'] : null,
+        false,
+        'Rental'
+    );
+    if ($offerPolicyError instanceof \Illuminate\Http\JsonResponse) return $offerPolicyError;
 
     try {
-        $pricing = pazar_resolve_transaction_pricing($listing, null);
+        $pricing = pazar_resolve_transaction_pricing($listing, null, $effectivePolicy);
     } catch (\InvalidArgumentException $e) {
         return response()->json([
             'error' => 'VALIDATION_ERROR',

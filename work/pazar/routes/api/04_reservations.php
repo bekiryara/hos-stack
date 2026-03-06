@@ -50,8 +50,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
 
     // Policy-derived service primitives (deterministic).
     // Reservation flow currently supports slot/session service time models.
-    $intent = pazar_category_intent_schema((int) $listing->category_id);
-    $serviceTimeModel = isset($intent['service_time_model']) ? (string) $intent['service_time_model'] : 'none';
+    $effectivePolicy = pazar_listing_effective_policy($listing);
+    $serviceTimeModel = isset($effectivePolicy['service_time_model']) ? (string) $effectivePolicy['service_time_model'] : 'none';
     if (!in_array($serviceTimeModel, ['slot', 'session'], true)) {
         return response()->json([
             'error' => 'VALIDATION_ERROR',
@@ -59,22 +59,13 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         ], 422);
     }
 
-    // Offer requirement policy:
-    // - required_offer: offer_id must be provided
-    // - no_offer: offer_id must not be provided
-    $offerRequirement = isset($intent['offer_requirement']) ? (string) $intent['offer_requirement'] : 'no_offer';
-    if ($offerRequirement === 'required_offer' && empty($validated['offer_id'])) {
-        return response()->json([
-            'error' => 'VALIDATION_ERROR',
-            'message' => 'offer_id is required for this service model'
-        ], 422);
-    }
-    if ($offerRequirement === 'no_offer' && !empty($validated['offer_id'])) {
-        return response()->json([
-            'error' => 'VALIDATION_ERROR',
-            'message' => 'offer_id is not allowed for this service model'
-        ], 422);
-    }
+    $offerPolicyError = pazar_validate_transaction_offer_policy(
+        $effectivePolicy,
+        isset($validated['offer_id']) ? (string) $validated['offer_id'] : null,
+        true,
+        'Reservation'
+    );
+    if ($offerPolicyError instanceof \Illuminate\Http\JsonResponse) return $offerPolicyError;
 
     // Validate offer_id (package) if provided:
     // - must exist
@@ -105,7 +96,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     }
 
     try {
-        $pricing = pazar_resolve_transaction_pricing($listing, $offer);
+        $pricing = pazar_resolve_transaction_pricing($listing, $offer, $effectivePolicy);
     } catch (\InvalidArgumentException $e) {
         return response()->json([
             'error' => 'VALIDATION_ERROR',
