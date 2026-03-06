@@ -43,7 +43,7 @@ export function AdminControlCenterPage() {
     setAdminErr(null);
     setAuthBusy(true);
     try {
-      const resp = await hosLogin({ email, password });
+      const resp = await hosLogin({ admin: true, email, password });
       const t = resp?.token || resp?.access_token || resp?.jwt;
       if (!t) throw new Error('Giris basarili ama token donmedi');
       setToken(String(t));

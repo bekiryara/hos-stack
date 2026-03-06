@@ -7,6 +7,7 @@ import { issueRefreshToken, sessionCookieOptions } from "./helpers.js";
 
 const loginBody = z.object({
   tenantSlug: z.string().min(3).max(50).optional(),
+  admin: z.boolean().optional(),
   email: z.string().email(),
   password: z.string().min(1).max(200)
 });
@@ -20,8 +21,35 @@ export function registerLogin(app, { db }) {
       if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
 
       const body = parsed.data;
+      const email = body.email.toLowerCase();
       const DEFAULT_PUBLIC_TENANT_SLUG = readEnvOrFile("DEFAULT_PUBLIC_TENANT_SLUG") || "public";
       const tenantSlug = body.tenantSlug || DEFAULT_PUBLIC_TENANT_SLUG;
+
+      // Platform admin login mode: allow tenantSlug-free login for unique privileged identity.
+      // This is used by /admin to avoid tenant coupling in the UI.
+      if (body.admin === true && !body.tenantSlug) {
+        const adminUsers = await db.query(
+          "select id, tenant_id, password_hash, role from users where email = $1 and role in ('owner','admin') order by created_at asc limit 2",
+          [email]
+        );
+        if (adminUsers.rowCount === 0) return reply.code(401).send({ error: "invalid_credentials" });
+        if (adminUsers.rowCount > 1) return reply.code(409).send({ error: "admin_tenant_required" });
+
+        const adminUser = adminUsers.rows[0];
+        if (!verifyPassword(body.password, adminUser.password_hash)) {
+          return reply.code(401).send({ error: "invalid_credentials" });
+        }
+
+        const token = signAccessToken({
+          sub: adminUser.id,
+          tenantId: adminUser.tenant_id,
+          role: adminUser.role ?? "admin"
+        });
+        const refresh = await issueRefreshToken(db, { tenantId: adminUser.tenant_id, userId: adminUser.id });
+        reply.setCookie("hos_refresh", refresh.token, sessionCookieOptions(req));
+        await audit(db, { action: "user.login.admin", tenantId: adminUser.tenant_id, actorUserId: adminUser.id });
+        return reply.send({ token });
+      }
 
       if (tenantSlug === DEFAULT_PUBLIC_TENANT_SLUG) {
         // Public customer login MUST be tenant-scoped to avoid cross-tenant ambiguity.
@@ -36,7 +64,7 @@ export function registerLogin(app, { db }) {
         const publicTenantId = publicTenant.rows[0].id;
         const user = await db.query(
           "select id, tenant_id, password_hash, role from users where tenant_id = $1 and email = $2 limit 1",
-          [publicTenantId, body.email.toLowerCase()]
+          [publicTenantId, email]
         );
         if (user.rowCount === 0) return reply.code(401).send({ error: "invalid_credentials" });
         if (!verifyPassword(body.password, user.rows[0].password_hash)) {
@@ -59,7 +87,7 @@ export function registerLogin(app, { db }) {
 
         const user = await db.query(
           "select id, password_hash, role from users where tenant_id = $1 and email = $2",
-          [tenant.rows[0].id, body.email.toLowerCase()]
+          [tenant.rows[0].id, email]
         );
         if (user.rowCount === 0) return reply.code(401).send({ error: "invalid_credentials" });
         if (!verifyPassword(body.password, user.rows[0].password_hash))
