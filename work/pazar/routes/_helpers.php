@@ -206,12 +206,18 @@ if (!function_exists('pazar_category_intent_schema')) {
             $key = isset($v['key']) ? (string) $v['key'] : '';
             if ($key === '' || isset($seen[$key])) continue;
             $seen[$key] = true;
-            $variants[] = [
+            $row = [
                 'key' => $key,
                 'label' => isset($v['label']) ? (string) $v['label'] : $key,
                 'transaction_mode' => isset($v['transaction_mode']) ? (string) $v['transaction_mode'] : 'sale',
                 'interaction_mode' => isset($v['interaction_mode']) ? (string) $v['interaction_mode'] : 'contact_only',
             ];
+            foreach (['fulfillment_mode', 'location_scope', 'service_time_model', 'offer_requirement'] as $primitiveKey) {
+                if (array_key_exists($primitiveKey, $v)) {
+                    $row[$primitiveKey] = $v[$primitiveKey];
+                }
+            }
+            $variants[] = $row;
         }
         if (empty($variants)) {
             $variants = $default['offer_variants'];
