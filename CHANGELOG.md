@@ -4,6 +4,20 @@
 
 **Rule:** Only edit this top `[Unreleased]` section. Any lower legacy blocks are historical artifacts and must not be appended to.
 
+### policy/docs: variant deterministic matrix + snapshot drift cleanup (2026-03-06)
+- Fixed intent resolver to preserve variant-level primitive fields in intent-schema output.
+- Verified Konut variant matrix behavior:
+  - `sale -> none`
+  - `rental -> date_range`
+  - `reservation -> slot`
+- Refreshed ops contract snapshots:
+  - `ops/snapshots/routes.pazar.json`
+  - `ops/snapshots/schema.pazar.sql`
+- Updated docs truth:
+  - `docs/SPEC.md` listing DB note updated to normalized location columns.
+  - `docs/CURRENT.md`, `docs/WP_CLOSEOUTS.md`, `docs/PROOFS/PASS_LOG.md` synced.
+- Commits: `73a335c`, `7e90a09`, `4cb15ef`
+
 ### marketplace: firm settings + tenant address spine stabilization (2026-03-05)
 - Added firm settings separation and stabilized tenant address flows between firm settings and listing create.
 - Fixed tenant-address preload/autofill edge cases for district and neighborhood preservation.
@@ -620,4 +634,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/bekiryara/stack/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/bekiryara/stack/releases/tag/v0.1.0
-

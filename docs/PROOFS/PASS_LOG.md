@@ -26,3 +26,4 @@ Her satır: tarih + hangi komut(lar) + sonuç + (varsa) commit.
 2026-03-04 | ops: full (verify, openapi, conformance, v2, messaging PASS; Trendyol coverage accepted FAIL 98.3%, 81 unreachable) | PARTIAL / KNOWN FAIL | commit: 22a4ec5
 2026-03-06 | ops: category_flow_policy_check, listing_contract_check | PASS | commits: 73a335c, 7e90a09
 2026-03-06 | ui: Konut variant matrix manual verify (sale/rental/reservation time model mapping) | PASS | commits: 73a335c, 7e90a09
+2026-03-06 | ops: routes_snapshot, schema_snapshot | PASS | snapshots refreshed

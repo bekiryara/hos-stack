@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict avCSLDB2AblYhod4HRNftYbekz6hJMbwDk3mz8Y9PdBelzcDfwaDr6dI5nJaxSn
+\restrict kdPbkTgHTKjDSIBe1NgFcmwgNT64gCn4MRFMsUGePO3JVfhhEpK79tI9j5r7aaS
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -189,6 +189,40 @@ CREATE TABLE public.listing_offers (
 
 
 --
+-- Name: listing_service_areas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.listing_service_areas (
+    id bigint NOT NULL,
+    listing_id uuid NOT NULL,
+    city character varying(120) NOT NULL,
+    all_districts boolean DEFAULT false NOT NULL,
+    districts_json json,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: listing_service_areas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.listing_service_areas_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: listing_service_areas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.listing_service_areas_id_seq OWNED BY public.listing_service_areas.id;
+
+
+--
 -- Name: listings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -206,7 +240,16 @@ CREATE TABLE public.listings (
     category_id bigint,
     transaction_modes_json json,
     attributes_json json,
-    location_json json
+    location_scope character varying(20),
+    location_city character varying(120),
+    location_district character varying(120),
+    location_neighborhood character varying(120),
+    location_street character varying(160),
+    location_building_no character varying(50),
+    location_door_no character varying(50),
+    location_address_line text,
+    location_lat numeric(10,7),
+    location_lng numeric(10,7)
 );
 
 
@@ -338,6 +381,13 @@ ALTER TABLE ONLY public.idempotency_keys ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: listing_service_areas id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.listing_service_areas ALTER COLUMN id SET DEFAULT nextval('public.listing_service_areas_id_seq'::regclass);
+
+
+--
 -- Name: migrations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -430,6 +480,14 @@ ALTER TABLE ONLY public.listing_offers
 
 ALTER TABLE ONLY public.listing_offers
     ADD CONSTRAINT listing_offers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: listing_service_areas listing_service_areas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.listing_service_areas
+    ADD CONSTRAINT listing_service_areas_pkey PRIMARY KEY (id);
 
 
 --
@@ -558,6 +616,34 @@ CREATE INDEX listings_category_id_status_index ON public.listings USING btree (c
 
 
 --
+-- Name: listings_location_city_district_neighborhood_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX listings_location_city_district_neighborhood_index ON public.listings USING btree (location_city, location_district, location_neighborhood);
+
+
+--
+-- Name: listings_location_city_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX listings_location_city_status_index ON public.listings USING btree (location_city, status);
+
+
+--
+-- Name: listings_location_lat_lng_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX listings_location_lat_lng_index ON public.listings USING btree (location_lat, location_lng);
+
+
+--
+-- Name: listings_location_scope_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX listings_location_scope_status_index ON public.listings USING btree (location_scope, status);
+
+
+--
 -- Name: listings_tenant_id_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -583,6 +669,20 @@ CREATE INDEX listings_title_index ON public.listings USING btree (title);
 --
 
 CREATE INDEX listings_world_status_index ON public.listings USING btree (world, status);
+
+
+--
+-- Name: lsa_city_all_districts_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX lsa_city_all_districts_index ON public.listing_service_areas USING btree (city, all_districts);
+
+
+--
+-- Name: lsa_listing_city_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX lsa_listing_city_index ON public.listing_service_areas USING btree (listing_id, city);
 
 
 --
@@ -744,6 +844,14 @@ ALTER TABLE ONLY public.listing_offers
 
 
 --
+-- Name: listing_service_areas listing_service_areas_listing_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.listing_service_areas
+    ADD CONSTRAINT listing_service_areas_listing_id_foreign FOREIGN KEY (listing_id) REFERENCES public.listings(id) ON DELETE CASCADE;
+
+
+--
 -- Name: listings listings_category_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -787,5 +895,5 @@ ALTER TABLE ONLY public.reservations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict avCSLDB2AblYhod4HRNftYbekz6hJMbwDk3mz8Y9PdBelzcDfwaDr6dI5nJaxSn
+\unrestrict kdPbkTgHTKjDSIBe1NgFcmwgNT64gCn4MRFMsUGePO3JVfhhEpK79tI9j5r7aaS
 

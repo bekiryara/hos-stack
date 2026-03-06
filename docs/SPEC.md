@@ -383,7 +383,7 @@ CI workflow `.github/workflows/gate-spec.yml` enforces:
 - `GET /api/v1/listings/{id}` - Get single listing
 
 **Database:**
-- `listings` table (with category_id, transaction_modes_json, attributes_json, location_json)
+- `listings` table (with category_id, transaction_modes_json, attributes_json, normalized location columns)
 
 **Acceptance Criteria:**
 - Listing creation validates required attributes against category_filter_schema

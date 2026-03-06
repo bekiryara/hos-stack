@@ -25,8 +25,9 @@
 - Validation status (2026-03-06):
   - `ops/_checks/category_flow_policy_check.ps1` -> PASS
   - `ops/_checks/listing_contract_check.ps1` -> PASS
-  - `ops/ops_status.ps1` -> core checks PASS; snapshot gates show intentional drift
-    (`routes snapshot`, `schema snapshot`) pending snapshot refresh.
+  - Snapshot drift cleaned:
+    - `ops/_checks/routes_snapshot.ps1` -> PASS
+    - `ops/_checks/schema_snapshot.ps1` -> PASS
 
 ## What is the Stack?
 
