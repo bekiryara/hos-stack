@@ -104,12 +104,19 @@
  - Availability schema guard for time-model categories (2026-03-06):
   - New check: `ops/_checks/availability_schema_check.ps1`.
   - Guard rule:
-    - Critical categories (`vehicle`, `konut`, `is-yeri`, `events`) with non-none `service_time_model`
-      must expose at least one `filter_mode=availability` field in filter-schema.
+    - Critical rules (`vehicle`, `konut`, `is-yeri`, `events`) are now validated on
+      create-selectable leaf categories (not only root category rows).
+    - For each checked leaf with non-none `service_time_model`, filter-schema must expose
+      at least one `filter_mode=availability` field.
+    - Empty/whitespace `children` payloads are normalized in check logic to avoid false leaf detection.
   - Ops command added:
     - `ops.ps1 availability-schema`
   - Current finding:
-    - Check reports missing availability filter definitions for `vehicle`, `konut`, `is-yeri`, `events`.
+    - Check reports broad missing availability filter definitions in sampled/active leafs:
+      - `vehicle`: candidates=859, checked=40, missing=40
+      - `konut`: candidates=16, checked=16, missing=16
+      - `is-yeri`: candidates=103, checked=40, missing=40
+      - `events`: candidates=2, checked=2, missing=2
     - Next action is dataset/schema completion (not app-layer patching).
 
 - Tenant Address Spine stabilized in Marketplace:
