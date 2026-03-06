@@ -46,33 +46,22 @@ if ($policy.rules) {
 # Matrix rows are explicit contract targets.
 # Extend this table gradually when new business-critical families stabilize.
 $matrix = @(
-    @{
-        Rule = "konut"
-        Variant = "sale"
-        TransactionMode = "sale"
-        InteractionMode = "contact_only"
-        LocationScope = "point"
-        ServiceTimeModel = "none"
-        OfferRequirement = "no_offer"
-    },
-    @{
-        Rule = "konut"
-        Variant = "rental"
-        TransactionMode = "rental"
-        InteractionMode = "contact_only"
-        LocationScope = "point"
-        ServiceTimeModel = "date_range"
-        OfferRequirement = "no_offer"
-    },
-    @{
-        Rule = "konut"
-        Variant = "turistik_gunluk_kiralik"
-        TransactionMode = "reservation"
-        InteractionMode = "flow"
-        LocationScope = "point"
-        ServiceTimeModel = "slot"
-        OfferRequirement = "optional_offer"
-    }
+    @{ Rule = "vehicle"; Variant = "sale"; TransactionMode = "sale"; InteractionMode = "contact_only"; PricingStrategy = "base_only"; BillingModel = "one_time"; LocationScope = "point"; ServiceTimeModel = "none"; OfferRequirement = "no_offer" },
+    @{ Rule = "vehicle"; Variant = "rental"; TransactionMode = "rental"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "per_day"; LocationScope = "point"; ServiceTimeModel = "date_range"; OfferRequirement = "no_offer" },
+
+    @{ Rule = "konut"; Variant = "sale"; TransactionMode = "sale"; InteractionMode = "contact_only"; PricingStrategy = "base_only"; BillingModel = "one_time"; LocationScope = "point"; ServiceTimeModel = "none"; OfferRequirement = "no_offer" },
+    @{ Rule = "konut"; Variant = "rental"; TransactionMode = "rental"; InteractionMode = "contact_only"; PricingStrategy = "base_only"; BillingModel = "per_day"; LocationScope = "point"; ServiceTimeModel = "date_range"; OfferRequirement = "no_offer" },
+    @{ Rule = "konut"; Variant = "turistik_gunluk_kiralik"; TransactionMode = "reservation"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "per_day"; LocationScope = "point"; ServiceTimeModel = "slot"; OfferRequirement = "optional_offer" },
+    @{ Rule = "konut"; Variant = "devren_satilik_konut"; TransactionMode = "sale"; InteractionMode = "contact_only"; PricingStrategy = "base_only"; BillingModel = "one_time"; LocationScope = "point"; ServiceTimeModel = "none"; OfferRequirement = "no_offer" },
+
+    @{ Rule = "is-yeri"; Variant = "sale"; TransactionMode = "sale"; InteractionMode = "contact_only"; PricingStrategy = "base_only"; BillingModel = "one_time"; LocationScope = "point"; ServiceTimeModel = "none"; OfferRequirement = "no_offer" },
+    @{ Rule = "is-yeri"; Variant = "rental"; TransactionMode = "rental"; InteractionMode = "contact_only"; PricingStrategy = "base_only"; BillingModel = "per_day"; LocationScope = "point"; ServiceTimeModel = "date_range"; OfferRequirement = "no_offer" },
+    @{ Rule = "is-yeri"; Variant = "devren_satilik"; TransactionMode = "sale"; InteractionMode = "contact_only"; PricingStrategy = "base_only"; BillingModel = "one_time"; LocationScope = "point"; ServiceTimeModel = "none"; OfferRequirement = "no_offer" },
+    @{ Rule = "is-yeri"; Variant = "devren_kiralik"; TransactionMode = "rental"; InteractionMode = "contact_only"; PricingStrategy = "base_only"; BillingModel = "per_day"; LocationScope = "point"; ServiceTimeModel = "date_range"; OfferRequirement = "no_offer" },
+
+    @{ Rule = "service-product"; Variant = "sale"; TransactionMode = "sale"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "one_time"; LocationScope = "point"; ServiceTimeModel = "none"; OfferRequirement = "no_offer" },
+    @{ Rule = "events"; Variant = "reservation"; TransactionMode = "reservation"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "per_person"; LocationScope = "point"; ServiceTimeModel = "slot"; OfferRequirement = "optional_offer" },
+    @{ Rule = "food"; Variant = "sale"; TransactionMode = "sale"; InteractionMode = "flow"; PricingStrategy = "base_only"; BillingModel = "one_time"; LocationScope = "service_area"; ServiceTimeModel = "none"; OfferRequirement = "no_offer" }
 )
 
 $violations = @()
@@ -105,6 +94,8 @@ foreach ($row in $matrix) {
     $checks = @(
         @{ Field = "transaction_mode"; Expected = [string]$row.TransactionMode },
         @{ Field = "interaction_mode"; Expected = [string]$row.InteractionMode },
+        @{ Field = "pricing_strategy"; Expected = [string]$row.PricingStrategy },
+        @{ Field = "billing_model"; Expected = [string]$row.BillingModel },
         @{ Field = "location_scope"; Expected = [string]$row.LocationScope },
         @{ Field = "service_time_model"; Expected = [string]$row.ServiceTimeModel },
         @{ Field = "offer_requirement"; Expected = [string]$row.OfferRequirement }
@@ -134,4 +125,3 @@ if ($violations.Count -gt 0) {
 Write-Host "PASS: Variant matrix contract is valid" -ForegroundColor Green
 Write-Host "=== POLICY VARIANT MATRIX CHECK: PASS ===" -ForegroundColor Green
 exit 0
-

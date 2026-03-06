@@ -7,8 +7,17 @@
 
 - Commit-certified completed works are tracked at:
   - `docs/RELEASES/COMPLETED_WORKS_2026_03_06.md`
+- WP closeout addendum for latest layer:
+  - `docs/WP_CLOSEOUTS_2026_03_06.md`
 
 ## Recent Updates (2026-03-05 to 2026-03-06)
+
+- Primitive matrix governance locked (2026-03-06):
+  - New runbook: `docs/runbooks/primitive_matrix_v1.md` (canonical behavior families table).
+  - `ops/_checks/policy_variant_matrix_check.ps1` expanded to assert all active rule/variant rows,
+    including `pricing_strategy` and `billing_model`.
+  - Validation:
+    - `ops/_checks/policy_variant_matrix_check.ps1` -> PASS
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.
