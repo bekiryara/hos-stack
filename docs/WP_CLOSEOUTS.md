@@ -408,3 +408,24 @@ If a WP entry has a wrong WP number/title/date or a proof link mistake:
   - `ops/_checks/policy_variant_matrix_check.ps1` PASS
   - `ops/ops.ps1 policy-variant-matrix` PASS
   - `ops/ops.ps1 release-check -Ci` now correctly reports FAIL when git is dirty.
+
+---
+
+## WP-NEXT: Edit/Create alignment + pricing primitives expansion - PASS
+
+- **Date:** 2026-03-06
+- **Commits:** `3e74f30`, `a6dabb4`
+- **Outcome:**
+  - Edit page now uses shared Create form backbone (single form logic).
+  - Edit UI simplified: duplicate blocks removed, Turkish labels/actions aligned.
+  - Point-scope location UI simplified by hiding `address_line`, `lat`, `lng`.
+  - Policy primitive chain expanded with:
+    - `pricing_strategy`
+    - `billing_model`
+  - Backend resolver/guard/read normalization now projects and enforces these fields deterministically.
+  - Create/Edit UI now displays effective policy values for Pricing and Billing.
+- **Validation:**
+  - `ops/_checks/category_flow_policy_check.ps1` PASS
+  - `ops/_checks/policy_variant_matrix_check.ps1` PASS
+  - `npm --prefix work/marketplace-web run -s build` PASS
+  - `ops/frontend_refresh.ps1 -Build` applied and UI verified.
