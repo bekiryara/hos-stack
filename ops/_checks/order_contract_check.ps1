@@ -32,6 +32,9 @@ $orderId = $null
 $canRunSellerActions = $false
 $orderCompatibleCategoryId = $null
 $orderCompatibleAttrs = @{}
+$canonicalOrderId = $null
+$draftOrderIdempotencyKey = $null
+$createdOrderIds = @()
 $createOrderUrl = "${pazarBaseUrl}/api/v1/orders"
 
 function Get-TenantIdFromMemberships {
@@ -187,6 +190,7 @@ try {
     $orderResponse = Invoke-RestMethod -Uri $createOrderUrl -Method Post -Body $orderBody -Headers $orderHeaders -TimeoutSec 15 -ErrorAction Stop
     if ($orderResponse.id -and $orderResponse.status -eq 'placed' -and $orderResponse.totals -and $orderResponse.totals.pricing_source -eq 'listing') {
         $orderId = $orderResponse.id
+        $createdOrderIds += [string]$orderId
         Write-Host "PASS: Order created successfully" -ForegroundColor Green
         Write-Host "  Order ID: $orderId" -ForegroundColor Gray
         Write-Host "  Status: $($orderResponse.status)" -ForegroundColor Gray
@@ -297,6 +301,7 @@ if (-not $hasFailures) {
             'Authorization' = $authToken
             'Idempotency-Key' = 'test-order-draft-' + (Get-Date -Format 'yyyyMMddHHmmssfff')
         }
+        $draftOrderIdempotencyKey = [string]$negativeHeaders['Idempotency-Key']
         $negativeBody = @{ listing_id = $draftListing.id; quantity = 1 } | ConvertTo-Json
         try {
             Invoke-RestMethod -Uri $createOrderUrl -Method Post -Body $negativeBody -Headers $negativeHeaders -TimeoutSec 15 -ErrorAction Stop | Out-Null
@@ -355,6 +360,10 @@ if (-not $hasFailures) {
             quantity = 2
         } | ConvertTo-Json
         $canonicalOrder = Invoke-RestMethod -Uri $createOrderUrl -Method Post -Body $canonicalOrderBody -Headers $canonicalOrderHeaders -TimeoutSec 15 -ErrorAction Stop
+        if ($canonicalOrder.id) {
+            $canonicalOrderId = [string]$canonicalOrder.id
+            $createdOrderIds += [string]$canonicalOrder.id
+        }
 
         if (-not $canonicalOrder.totals) {
             throw 'Canonical price order did not return totals'
@@ -373,6 +382,31 @@ if (-not $hasFailures) {
 }
 
 Write-Host ""
+if (($createdOrderIds | Measure-Object).Count -gt 0) {
+    Write-Host "[CLEANUP] Removing test orders/idempotency keys..." -ForegroundColor Yellow
+    try {
+        $orderLiterals = ($createdOrderIds | Select-Object -Unique | ForEach-Object { "'$_'" }) -join ','
+        if (-not [string]::IsNullOrWhiteSpace($orderLiterals)) {
+            $deleteOrdersSql = "DELETE FROM orders WHERE id IN ($orderLiterals);"
+            docker compose exec -T pazar-db psql -U pazar -d pazar -c $deleteOrdersSql | Out-Null
+        }
+
+        $cleanupKeys = @()
+        if ($listingId) { $cleanupKeys += "test-order-key-v1-$listingId" }
+        if ($listingId) { $cleanupKeys += "test-canonical-order-v1-$listingId" }
+        if ($draftOrderIdempotencyKey) { $cleanupKeys += $draftOrderIdempotencyKey }
+        if (($cleanupKeys | Measure-Object).Count -gt 0) {
+            $keyLiterals = ($cleanupKeys | Select-Object -Unique | ForEach-Object { "'$_'" }) -join ','
+            $deleteKeysSql = "DELETE FROM idempotency_keys WHERE key IN ($keyLiterals);"
+            docker compose exec -T pazar-db psql -U pazar -d pazar -c $deleteKeysSql | Out-Null
+        }
+        Write-Host "PASS: Test cleanup completed" -ForegroundColor Green
+    } catch {
+        Write-Host "WARN: Test cleanup skipped/failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+    Write-Host ""
+}
+
 if ($hasFailures) {
     Write-Host "=== ORDER CONTRACT CHECK: FAIL ===" -ForegroundColor Red
     if (Test-Path "${scriptDir}\_lib\ops_exit.ps1") {

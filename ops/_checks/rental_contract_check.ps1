@@ -22,6 +22,8 @@ $hosBaseUrl = "http://localhost:3000"
 $providerTenantId = $null
 $activeTenantId = $null
 $canRunProviderActions = $false
+$createdRentalIds = @()
+$cleanupIdempotencyKeys = @()
  
 # Load test_auth helper
 if (Test-Path "${scriptDir}\_lib\test_auth.ps1") {
@@ -195,6 +197,7 @@ Write-Host ""
 # Generate deterministic idempotency key base
 $now = Get-Date
 $idempotencyKey = "test-rental-key-" + $now.ToString("yyyyMMddHHmmss") + "-" + $now.Millisecond.ToString("D3")
+$cleanupIdempotencyKeys += $idempotencyKey
  
 # Test 1: Create rental -> PASS (201)
 Write-Host "[1] Testing POST /api/v1/rentals (create rental)..." -ForegroundColor Yellow
@@ -226,6 +229,7 @@ try {
     $resp = Invoke-RestMethod -Uri $createRentalUrl -Method Post -Body $rentalBody -Headers $headers -TimeoutSec 10 -ErrorAction Stop
     if ($resp.id -and $resp.status -eq "requested" -and $resp.price_amount -and $resp.price_currency -and $resp.pricing_source -eq "listing") {
         $rentalId = $resp.id
+        $createdRentalIds += [string]$rentalId
         $providerTenantId = $resp.provider_tenant_id
         Write-Host "PASS: Rental created successfully" -ForegroundColor Green
         Write-Host "  Rental ID: $rentalId" -ForegroundColor Gray
@@ -286,6 +290,7 @@ if ($rentalId -and -not $hasFailures) {
         $overlapStartAt = (Get-Date).AddDays($startDays + 1).ToString("yyyy-MM-ddTHH:mm:ssZ")
         $overlapEndAt = (Get-Date).AddDays($startDays + 2).ToString("yyyy-MM-ddTHH:mm:ssZ")
         $overlapKey = "test-rental-overlap-" + $now.ToString("yyyyMMddHHmmss") + "-" + ($now.Millisecond + 100).ToString("D3")
+        $cleanupIdempotencyKeys += $overlapKey
  
         $overlapHeaders = @{
             "Content-Type" = "application/json"
@@ -371,6 +376,30 @@ if ($rentalId -and -not $hasFailures -and -not $canRunProviderActions) {
     Write-Host "[4-5] SKIP: Provider accept tests skipped (selected listing not owned by active tenant)." -ForegroundColor Yellow
 }
  
+Write-Host ""
+if (($createdRentalIds | Measure-Object).Count -gt 0 -or ($cleanupIdempotencyKeys | Measure-Object).Count -gt 0) {
+    Write-Host "[CLEANUP] Removing test rentals/idempotency keys..." -ForegroundColor Yellow
+    try {
+        $uniqueRentalIds = $createdRentalIds | Select-Object -Unique
+        if (($uniqueRentalIds | Measure-Object).Count -gt 0) {
+            $rentalLiterals = ($uniqueRentalIds | ForEach-Object { "'$_'" }) -join ','
+            $deleteRentalsSql = "DELETE FROM rentals WHERE id IN ($rentalLiterals);"
+            docker compose exec -T pazar-db psql -U pazar -d pazar -c $deleteRentalsSql | Out-Null
+        }
+
+        $uniqueKeys = $cleanupIdempotencyKeys | Select-Object -Unique
+        if (($uniqueKeys | Measure-Object).Count -gt 0) {
+            $keyLiterals = ($uniqueKeys | ForEach-Object { "'$_'" }) -join ','
+            $deleteKeysSql = "DELETE FROM idempotency_keys WHERE key IN ($keyLiterals);"
+            docker compose exec -T pazar-db psql -U pazar -d pazar -c $deleteKeysSql | Out-Null
+        }
+        Write-Host "PASS: Test cleanup completed" -ForegroundColor Green
+    } catch {
+        Write-Host "WARN: Test cleanup skipped/failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+    Write-Host ""
+}
+
 Write-Host ""
  
 # Summary

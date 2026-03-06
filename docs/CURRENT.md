@@ -328,8 +328,7 @@ This ensures baseline remains stable and prevents breaking changes.
 - `GET /api/v1/listings` is the only listing read/search endpoint.
 - Filter contract:
   - Primary: `filters[...]`
-  - Legacy/backward compatible: `attrs[...]` (still supported; do not build new logic on this)
-  - Priority: if `filters[...]` exists → use it; else if `attrs[...]` exists → use it.
+  - `attrs[...]` is retired; requests using `attrs[...]` are rejected with `422 VALIDATION_ERROR`.
 - Category-scoped validation:
   - If `category_id` is provided and invalid → 404.
   - If `category_id` is provided and filter keys are not defined by catalog schema for that category (or descendants) → 422.
@@ -347,7 +346,7 @@ This ensures baseline remains stable and prevents breaking changes.
 - Do not add new listing search endpoints (only `GET /api/v1/listings`).
 - Do not add category-specific SQL or category-specific frontend pages.
 - Do not hardcode filter keys/types in frontend; UI renders from catalog schema.
-- Do not add new logic that depends on `attrs[...]` (legacy only; kept for compatibility).
+- Do not reintroduce `attrs[...]` compatibility path in backend or frontend query handling.
 
 **Not Included in V1:**
 - Payment processing

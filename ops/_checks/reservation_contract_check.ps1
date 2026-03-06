@@ -24,6 +24,8 @@ $authToken = $null
 $listingId = $null
 $offerId = $null
 $reservationId = $null
+$createdReservationIds = @()
+$cleanupIdempotencyKeys = @()
 
 # Load test_auth helper
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -546,6 +548,7 @@ try {
         $hasFailures = $true
     } else {
         $reservationId = $createResponse.id
+        $createdReservationIds += [string]$reservationId
         Write-Host "PASS: Reservation created successfully" -ForegroundColor Green
         Write-Host "  Reservation ID: $reservationId" -ForegroundColor Gray
         Write-Host "  Status: $($createResponse.status)" -ForegroundColor Gray
@@ -638,6 +641,7 @@ Write-Host ""
 # Test 3: Create conflict reservation same slot => PASS 409
 Write-Host "[3] Testing POST /api/v1/reservations (conflict - same slot)..." -ForegroundColor Yellow
 $conflictIdempotencyKey = "test-conflict-key-" + (Get-Date -Format "yyyyMMddHHmmss")
+$cleanupIdempotencyKeys += $conflictIdempotencyKey
 # Use the SAME slot as test 1 to create a conflict (but different idempotency key).
 # If Test-1 failed, slotStart/slotEnd will be null; in that case skip this test to avoid false failures.
 if (-not $slotStart -or -not $slotEnd) {
@@ -681,6 +685,7 @@ Write-Host ""
 # Test 4: Create reservation with party_size > capacity_max => PASS 422 (VALIDATION_ERROR)
 Write-Host "[4] Testing POST /api/v1/reservations (party_size > capacity_max)..." -ForegroundColor Yellow
 $invalidIdempotencyKey = "test-invalid-key-" + (Get-Date -Format "yyyyMMddHHmmss")
+$cleanupIdempotencyKeys += $invalidIdempotencyKey
     # Use different slot window (31 days + different hour) to avoid conflicts
     $invalidTestNow = Get-Date
     $invalidIdempotencyHash = [System.Security.Cryptography.MD5]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($invalidIdempotencyKey))
@@ -741,6 +746,7 @@ if ($listingId) {
         $acceptCreated = Invoke-CreateReservationWithRetry -PazarBaseUrl $pazarBaseUrl -AuthToken $authToken -ListingId $listingId -PartySize 50 -OfferId $null -IdempotencyPrefix "test-accept-key" -DaysAhead 140 -DurationHours 4 -MaxAttempts 8
         $acceptTestCreateResponse = $acceptCreated.response
         $acceptTestReservationId = $acceptTestCreateResponse.id
+        if ($acceptTestReservationId) { $createdReservationIds += [string]$acceptTestReservationId }
         
         # Now test accept
         $acceptUrl = "${pazarBaseUrl}/api/v1/reservations/${acceptTestReservationId}/accept"
@@ -792,6 +798,7 @@ if ($listingId) {
         $rejectCreated = Invoke-CreateReservationWithRetry -PazarBaseUrl $pazarBaseUrl -AuthToken $authToken -ListingId $listingId -PartySize 50 -OfferId $null -IdempotencyPrefix "test-reject-key" -DaysAhead 150 -DurationHours 4 -MaxAttempts 8
         $rejectTestCreateResponse = $rejectCreated.response
         $rejectTestReservationId = $rejectTestCreateResponse.id
+        if ($rejectTestReservationId) { $createdReservationIds += [string]$rejectTestReservationId }
         
         # Now test reject (missing header)
         $acceptUrl = "${pazarBaseUrl}/api/v1/reservations/${rejectTestReservationId}/accept"
@@ -825,6 +832,30 @@ if ($listingId) {
 } else {
     Write-Host "[6] SKIP: Cannot test reject (listing ID not available)" -ForegroundColor Yellow
     $hasFailures = $true
+}
+
+Write-Host ""
+if (($createdReservationIds | Measure-Object).Count -gt 0 -or ($cleanupIdempotencyKeys | Measure-Object).Count -gt 0) {
+    Write-Host "[CLEANUP] Removing test reservations/idempotency keys..." -ForegroundColor Yellow
+    try {
+        $uniqueReservationIds = $createdReservationIds | Select-Object -Unique
+        if (($uniqueReservationIds | Measure-Object).Count -gt 0) {
+            $reservationLiterals = ($uniqueReservationIds | ForEach-Object { "'$_'" }) -join ','
+            $deleteReservationsSql = "DELETE FROM reservations WHERE id IN ($reservationLiterals);"
+            docker compose exec -T pazar-db psql -U pazar -d pazar -c $deleteReservationsSql | Out-Null
+        }
+
+        $uniqueKeys = $cleanupIdempotencyKeys | Select-Object -Unique
+        if (($uniqueKeys | Measure-Object).Count -gt 0) {
+            $keyLiterals = ($uniqueKeys | ForEach-Object { "'$_'" }) -join ','
+            $deleteKeysSql = "DELETE FROM idempotency_keys WHERE key IN ($keyLiterals);"
+            docker compose exec -T pazar-db psql -U pazar -d pazar -c $deleteKeysSql | Out-Null
+        }
+        Write-Host "PASS: Test cleanup completed" -ForegroundColor Green
+    } catch {
+        Write-Host "WARN: Test cleanup skipped/failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+    Write-Host ""
 }
 
 Write-Host ""
