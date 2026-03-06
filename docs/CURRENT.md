@@ -14,6 +14,19 @@
   - Account portal kept focused on account-level information.
 - Repo hygiene:
   - Temporary tracked root artifacts (`tmp_*`) removed in commit `88aa944`.
+- Variant-level deterministic policy shipped (policy + resolver + create form):
+  - Commit `73a335c`: primitive fields now resolve per `offer_variant`
+    (`fulfillment_mode`, `location_scope`, `service_time_model`, `offer_requirement`).
+  - Commit `7e90a09`: intent resolver fix to preserve variant primitive fields.
+  - UI contract confirmed on Konut variants:
+    - `sale` -> `time_model=none`
+    - `rental` -> `time_model=date_range`
+    - `reservation` -> `time_model=slot`
+- Validation status (2026-03-06):
+  - `ops/_checks/category_flow_policy_check.ps1` -> PASS
+  - `ops/_checks/listing_contract_check.ps1` -> PASS
+  - `ops/ops_status.ps1` -> core checks PASS; snapshot gates show intentional drift
+    (`routes snapshot`, `schema snapshot`) pending snapshot refresh.
 
 ## What is the Stack?
 

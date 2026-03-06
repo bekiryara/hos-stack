@@ -374,3 +374,22 @@ If a WP entry has a wrong WP number/title/date or a proof link mistake:
 - **Outcome:** Firm management boundary clarified with `/firm/settings`; tenant address select-cascade and Create Listing tenant-address autofill stabilized.
 - **Commits:** `32fe2d6`, `b0f6afa`, `5c57e67`, `839fde1`, `070f6b3`, `920c6aa`
 - **Scope:** Marketplace web + docs alignment; no destructive schema change.
+
+---
+
+## WP-NEXT: Variant-level deterministic policy (offer_variant primitives) - PASS
+
+- **Date:** 2026-03-06
+- **Commits:** `73a335c`, `7e90a09`
+- **Outcome:**
+  - Policy primitives are deterministic at `offer_variant` level.
+  - Backend intent resolver and listing write/read normalization use effective variant policy.
+  - Create Listing form reflects effective variant primitives in real time.
+  - Resolver bug fixed: variant primitive fields are preserved in intent-schema build.
+- **Validation:**
+  - `ops/_checks/category_flow_policy_check.ps1` PASS
+  - `ops/_checks/listing_contract_check.ps1` PASS
+  - UI verified on `Konut > Daire`:
+    - sale -> time model `none`
+    - rental -> time model `date_range`
+    - reservation -> time model `slot`
