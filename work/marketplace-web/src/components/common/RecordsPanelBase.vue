@@ -194,11 +194,21 @@ export default {
       return this.formatPrice(totals.subtotal, totals.currency);
     },
     formatReservationPrice(row) {
-      if (!row || row.price_amount == null) return '—';
+      if (!row) return '—';
+      const totals = row?.totals;
+      if (totals && typeof totals === 'object' && totals.subtotal != null) {
+        return this.formatPrice(totals.subtotal, totals.currency);
+      }
+      if (row.price_amount == null) return '—';
       return this.formatPrice(row.price_amount, row.price_currency);
     },
     formatRentalPrice(row) {
-      if (!row || row.price_amount == null) return '—';
+      if (!row) return '—';
+      const totals = row?.totals;
+      if (totals && typeof totals === 'object' && totals.subtotal != null) {
+        return this.formatPrice(totals.subtotal, totals.currency);
+      }
+      if (row.price_amount == null) return '—';
       return this.formatPrice(row.price_amount, row.price_currency);
     },
     detailLink(row) {

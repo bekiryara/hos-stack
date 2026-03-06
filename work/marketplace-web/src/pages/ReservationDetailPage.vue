@@ -39,8 +39,16 @@
           <span class="summary-value">{{ safe(item.party_size) }}</span>
         </div>
         <div class="summary-item">
-          <span class="summary-label">Fiyat</span>
-          <span class="summary-value">{{ formatPrice(item.price_amount, item.price_currency) }}</span>
+          <span class="summary-label">Birim Fiyat</span>
+          <span class="summary-value">{{ formatTotals('unit_price') }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Carpan</span>
+          <span class="summary-value">{{ formatMultiplier() }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Toplam</span>
+          <span class="summary-value">{{ formatTotals('subtotal') }}</span>
         </div>
       </div>
     </SectionShell>
@@ -89,6 +97,7 @@ export default {
         price_amount: null,
         price_currency: null,
         billing_model: null,
+        totals: null,
         slot_start: null,
         slot_end: null,
         party_size: null,
@@ -130,6 +139,7 @@ export default {
         price_amount: q.price_amount ?? null,
         price_currency: q.price_currency ?? null,
         billing_model: q.billing_model ?? null,
+        totals: null,
         slot_start: q.slot_start ?? null,
         slot_end: q.slot_end ?? null,
         party_size: q.party_size ?? null,
@@ -155,6 +165,23 @@ export default {
     },
     formatPrice(amount, currency) {
       return formatDisplayPrice(amount, currency);
+    },
+    formatTotals(field) {
+      const totals = this.item?.totals;
+      if (totals && typeof totals === 'object' && totals[field] != null) {
+        return this.formatPrice(totals[field], totals.currency);
+      }
+      if (field === 'unit_price' || field === 'subtotal') {
+        return this.formatPrice(this.item?.price_amount, this.item?.price_currency);
+      }
+      return '—';
+    },
+    formatMultiplier() {
+      const totals = this.item?.totals;
+      if (totals && typeof totals === 'object' && totals.multiplier != null) {
+        return this.safe(totals.multiplier);
+      }
+      return this.safe(this.item?.party_size || 1);
     },
   },
 };

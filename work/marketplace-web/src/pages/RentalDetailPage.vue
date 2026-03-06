@@ -35,8 +35,16 @@
           <span class="summary-value">{{ formatDate(item.end_at) }}</span>
         </div>
         <div class="summary-item">
-          <span class="summary-label">Fiyat</span>
-          <span class="summary-value">{{ formatPrice(item.price_amount, item.price_currency) }}</span>
+          <span class="summary-label">Birim Fiyat</span>
+          <span class="summary-value">{{ formatTotals('unit_price') }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Carpan</span>
+          <span class="summary-value">{{ formatMultiplier() }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Toplam</span>
+          <span class="summary-value">{{ formatTotals('subtotal') }}</span>
         </div>
         <div class="summary-item">
           <span class="summary-label">Talep Tarihi</span>
@@ -88,6 +96,7 @@ export default {
         price_amount: null,
         price_currency: null,
         billing_model: null,
+        totals: null,
         start_at: null,
         end_at: null,
         status: null,
@@ -127,6 +136,7 @@ export default {
         price_amount: q.price_amount ?? null,
         price_currency: q.price_currency ?? null,
         billing_model: q.billing_model ?? null,
+        totals: null,
         start_at: q.start_at ?? null,
         end_at: q.end_at ?? null,
         status: q.status ?? null,
@@ -163,6 +173,23 @@ export default {
     },
     formatPrice(amount, currency) {
       return formatDisplayPrice(amount, currency);
+    },
+    formatTotals(field) {
+      const totals = this.item?.totals;
+      if (totals && typeof totals === 'object' && totals[field] != null) {
+        return this.formatPrice(totals[field], totals.currency);
+      }
+      if (field === 'unit_price' || field === 'subtotal') {
+        return this.formatPrice(this.item?.price_amount, this.item?.price_currency);
+      }
+      return '—';
+    },
+    formatMultiplier() {
+      const totals = this.item?.totals;
+      if (totals && typeof totals === 'object' && totals.multiplier != null) {
+        return this.safe(totals.multiplier);
+      }
+      return '1';
     },
   },
 };
