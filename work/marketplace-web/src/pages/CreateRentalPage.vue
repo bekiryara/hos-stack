@@ -58,7 +58,7 @@
 
       <div class="form-group">
         <label>
-          Baslangic Tarihi <span class="required">*</span>
+          {{ startLabel }} <span class="required">*</span>
           <input
             v-model="formData.start_at"
             type="datetime-local"
@@ -70,7 +70,7 @@
 
       <div class="form-group">
         <label>
-          Bitis Tarihi <span class="required">*</span>
+          {{ endLabel }} <span class="required">*</span>
           <input
             v-model="formData.end_at"
             type="datetime-local"
@@ -78,6 +78,10 @@
             class="form-input"
           />
         </label>
+      </div>
+
+      <div class="form-group time-hint" v-if="timeHint">
+        {{ timeHint }}
       </div>
 
       <button type="submit" :disabled="loading" class="submit-button">
@@ -108,7 +112,37 @@ export default {
       authError: null,
       success: null,
       listingCategoryId: null,
+      listingBillingModel: '',
     };
+  },
+  computed: {
+    isHourly() {
+      return this.listingBillingModel === 'per_hour';
+    },
+    isDaily() {
+      return this.listingBillingModel === 'per_day';
+    },
+    startLabel() {
+      return this.isHourly ? 'Baslangic Saati' : 'Baslangic Tarihi';
+    },
+    endLabel() {
+      return this.isHourly ? 'Bitis Saati' : 'Bitis Tarihi';
+    },
+    timeHint() {
+      if (this.isHourly) return 'Saatlik modelde toplam tutar saat carpanina gore hesaplanir.';
+      if (this.isDaily) return 'Gunluk modelde toplam tutar gun carpanina gore hesaplanir.';
+      return '';
+    },
+  },
+  watch: {
+    'formData.listing_id'(value, oldValue) {
+      const next = String(value || '').trim();
+      const prev = String(oldValue || '').trim();
+      if (next === prev) return;
+      if (/^[0-9a-fA-F-]{36}$/.test(next)) {
+        this.loadListingCategory(next);
+      }
+    },
   },
   mounted() {
     const userId = getUserId();
@@ -130,6 +164,8 @@ export default {
         if (listing && listing.category_id) {
           this.listingCategoryId = listing.category_id;
         }
+        const attrs = listing?.attributes && typeof listing.attributes === 'object' ? listing.attributes : {};
+        this.listingBillingModel = String(attrs.billing_model || listing?.billing_model || '').trim();
       } catch (err) {
         console.warn('Ilan kategorisi yuklenemedi:', err);
       }
@@ -230,6 +266,15 @@ export default {
 
 .form-group {
   margin-bottom: 1.5rem;
+}
+
+.time-hint {
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  background: #f8fbff;
+  color: #1e3a8a;
+  font-size: 0.92rem;
 }
 
 .form-group label {
