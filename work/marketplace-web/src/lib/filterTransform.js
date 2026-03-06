@@ -90,14 +90,7 @@ export function hydrateStateFromQuery({ query, schemaFilters }) {
     }
   }
 
-  // Backward-compat: accept legacy f_* format if filters is missing
-  if (!rawFilters) {
-    rawFilters = {};
-    Object.keys(query || {}).forEach((k) => {
-      if (!k.startsWith('f_')) return;
-      rawFilters[k.slice(2)] = query[k];
-    });
-  }
+  if (!rawFilters) rawFilters = {};
 
   const filterState = {};
   Object.keys(rawFilters || {}).forEach((rawKey) => {
@@ -135,4 +128,3 @@ export function hydrateStateFromQuery({ query, schemaFilters }) {
 
   return { q, sort, page, filterState };
 }
-
