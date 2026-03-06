@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict kdPbkTgHTKjDSIBe1NgFcmwgNT64gCn4MRFMsUGePO3JVfhhEpK79tI9j5r7aaS
+\restrict iHm4fYTYTmvCDzaHrNBigptdBwaNwb7fzgtkyty2BfFcVXYKGFo4ElKz8DS9NK1
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -318,7 +318,8 @@ CREATE TABLE public.rentals (
     pricing_source character varying(20),
     price_amount integer,
     price_currency character varying(3),
-    billing_model character varying(30)
+    billing_model character varying(30),
+    totals_json json
 );
 
 
@@ -341,7 +342,8 @@ CREATE TABLE public.reservations (
     pricing_source character varying(20),
     price_amount integer,
     price_currency character varying(3),
-    billing_model character varying(30)
+    billing_model character varying(30),
+    totals_json json
 );
 
 
@@ -895,5 +897,5 @@ ALTER TABLE ONLY public.reservations
 -- PostgreSQL database dump complete
 --
 
-\unrestrict kdPbkTgHTKjDSIBe1NgFcmwgNT64gCn4MRFMsUGePO3JVfhhEpK79tI9j5r7aaS
+\unrestrict iHm4fYTYTmvCDzaHrNBigptdBwaNwb7fzgtkyty2BfFcVXYKGFo4ElKz8DS9NK1
 
