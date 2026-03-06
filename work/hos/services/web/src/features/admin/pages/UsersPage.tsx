@@ -12,7 +12,7 @@ export function UsersPage() {
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
     if (!token) {
-      setError('Missing token. Please login from Control Center first.');
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
       setItems([]);
       return;
     }
@@ -29,7 +29,7 @@ export function UsersPage() {
         )
       );
     } catch (e: any) {
-      setError(e?.body?.error || e?.message || 'Failed to load users');
+      setError(e?.body?.error || e?.message || 'Kullanicilar yuklenemedi');
       setItems([]);
     } finally {
       setLoading(false);
@@ -43,7 +43,7 @@ export function UsersPage() {
   async function handleSaveRole(userId: string) {
     const token = localStorage.getItem('hos_admin_token') || '';
     if (!token) {
-      setError('Missing token. Please login from Control Center first.');
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
       return;
     }
     const role = nextRoleByUserId[userId];
@@ -55,24 +55,24 @@ export function UsersPage() {
       await adminUpdateUserRole(token, userId, role);
       await load();
     } catch (e: any) {
-      setError(e?.body?.error || e?.message || 'Failed to update role');
+      setError(e?.body?.error || e?.message || 'Rol guncellenemedi');
     } finally {
       setSavingUserId(null);
     }
   }
 
   return (
-    <AdminLayout title="Users">
+    <AdminLayout title="Kullanicilar">
       <div className="card">
-        <div className="title">Users</div>
+        <div className="title">Kullanicilar</div>
         <div style={{ marginBottom: '0.75rem' }}>
           <button onClick={load} disabled={loading}>
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading ? 'Yenileniyor...' : 'Yenile'}
           </button>
         </div>
         {error ? (
           <div className="card error">
-            <div className="title">Error</div>
+            <div className="title">Hata</div>
             <pre>{String(error)}</pre>
           </div>
         ) : null}
@@ -83,11 +83,11 @@ export function UsersPage() {
               <thead>
                 <tr>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Email</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Tenant</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Role</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Firma</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Rol</th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Google</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Created</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Actions</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Olusturulma</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Islemler</th>
                 </tr>
               </thead>
               <tbody>
@@ -113,11 +113,11 @@ export function UsersPage() {
                         <option value="owner">owner</option>
                       </select>
                     </td>
-                    <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.google_linked ? 'Yes' : 'No'}</td>
+                    <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.google_linked ? 'Evet' : 'Hayir'}</td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.created_at || '-'}</td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                       <button onClick={() => handleSaveRole(row.id)} disabled={savingUserId === row.id}>
-                        {savingUserId === row.id ? 'Saving...' : 'Save'}
+                        {savingUserId === row.id ? 'Kaydediliyor...' : 'Kaydet'}
                       </button>
                     </td>
                   </tr>

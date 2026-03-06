@@ -5,6 +5,15 @@ import { AdminLayout } from '../layout/AdminLayout';
 type MembershipRole = 'member' | 'admin' | 'owner';
 type MembershipStatus = 'active' | 'inactive' | 'suspended';
 
+function trError(input: any): string {
+  const raw = String(input || '');
+  if (raw.includes('cannot_remove_last_owner')) return 'Bu firmada en az 1 aktif sahip kalmalidir.';
+  if (raw.includes('membership_not_found')) return 'Uyelik kaydi bulunamadi.';
+  if (raw.includes('invalid_user_id')) return 'Gecersiz kullanici kimligi.';
+  if (raw.includes('invalid_tenant_id')) return 'Gecersiz firma kimligi.';
+  return raw;
+}
+
 export function MembershipsPage() {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
@@ -16,7 +25,7 @@ export function MembershipsPage() {
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
     if (!token) {
-      setError('Missing token. Please login from Control Center first.');
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
       setItems([]);
       setNextByKey({});
       return;
@@ -40,7 +49,7 @@ export function MembershipsPage() {
         )
       );
     } catch (e: any) {
-      setError(e?.body?.error || e?.message || 'Failed to load memberships');
+      setError(trError(e?.body?.error || e?.message || 'Uyelikler yuklenemedi'));
       setItems([]);
       setNextByKey({});
     } finally {
@@ -55,7 +64,7 @@ export function MembershipsPage() {
   async function handleSave(row: any) {
     const token = localStorage.getItem('hos_admin_token') || '';
     if (!token) {
-      setError('Missing token. Please login from Control Center first.');
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
       return;
     }
 
@@ -80,24 +89,24 @@ export function MembershipsPage() {
       setMessage('Uyelik guncellendi.');
       await load();
     } catch (e: any) {
-      setError(e?.body?.error || e?.message || 'Failed to update membership');
+      setError(trError(e?.body?.error || e?.message || 'Uyelik guncellenemedi'));
     } finally {
       setSavingKey(null);
     }
   }
 
   return (
-    <AdminLayout title="Memberships">
+    <AdminLayout title="Uyelikler">
       <div className="card">
-        <div className="title">Memberships</div>
+        <div className="title">Uyelikler</div>
         <div style={{ marginBottom: '0.75rem' }}>
           <button onClick={load} disabled={loading}>
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading ? 'Yenileniyor...' : 'Yenile'}
           </button>
         </div>
         {error ? (
           <div className="card error">
-            <div className="title">Error</div>
+            <div className="title">Hata</div>
             <pre>{String(error)}</pre>
           </div>
         ) : null}
@@ -112,12 +121,12 @@ export function MembershipsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>User</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Tenant</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Role</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Status</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Created</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Actions</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Kullanici</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Firma</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Rol</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Durum</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Olusturulma</th>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Islemler</th>
                 </tr>
               </thead>
               <tbody>
@@ -170,7 +179,7 @@ export function MembershipsPage() {
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.created_at || '-'}</td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                       <button onClick={() => handleSave(row)} disabled={!changed || savingKey === key}>
-                        {savingKey === key ? 'Saving...' : 'Save'}
+                        {savingKey === key ? 'Kaydediliyor...' : 'Kaydet'}
                       </button>
                     </td>
                   </tr>

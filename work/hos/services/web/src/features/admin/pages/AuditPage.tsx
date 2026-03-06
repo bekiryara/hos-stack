@@ -10,7 +10,7 @@ export function AuditPage() {
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
     if (!token) {
-      setError('Missing token. Please login from Control Center first.');
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
       setItems([]);
       return;
     }
@@ -22,7 +22,7 @@ export function AuditPage() {
       const next = Array.isArray(out?.items) ? out.items : Array.isArray(out) ? out : [];
       setItems(next);
     } catch (e: any) {
-      setError(e?.body?.error || e?.message || 'Failed to load audit');
+      setError(e?.body?.error || e?.message || 'Denetim kayitlari yuklenemedi');
       setItems([]);
     } finally {
       setLoading(false);
@@ -34,21 +34,21 @@ export function AuditPage() {
   }, [load]);
 
   return (
-    <AdminLayout title="Audit">
+    <AdminLayout title="Denetim">
       <div className="card">
-        <div className="title">Audit Stream</div>
+        <div className="title">Denetim Kayitlari</div>
         <div style={{ marginBottom: '0.75rem' }}>
           <button onClick={load} disabled={loading}>
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading ? 'Yenileniyor...' : 'Yenile'}
           </button>
         </div>
         {error ? (
           <div className="card error">
-            <div className="title">Error</div>
+            <div className="title">Hata</div>
             <pre>{String(error)}</pre>
           </div>
         ) : null}
-        {!error && items.length === 0 ? <p>No audit events found.</p> : null}
+        {!error && items.length === 0 ? <p>Denetim kaydi bulunamadi.</p> : null}
         {items.length > 0 ? (
           <div style={{ display: 'grid', gap: '0.6rem' }}>
             {items.map((row: any) => (
@@ -58,10 +58,10 @@ export function AuditPage() {
                   <span style={{ color: '#9ca3af' }}>{row.created_at || '-'}</span>
                 </div>
                 <div style={{ fontSize: '0.9rem', marginTop: '0.35rem' }}>
-                  actor: <code>{row.actor_user_id || '-'}</code>
+                  islem yapan: <code>{row.actor_user_id || '-'}</code>
                 </div>
                 <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                  tenant: <code>{row.tenant_slug || row.tenant_id || '-'}</code>
+                  firma: <code>{row.tenant_slug || row.tenant_id || '-'}</code>
                 </div>
                 {row.metadata ? <pre style={{ marginTop: '0.4rem' }}>{JSON.stringify(row.metadata, null, 2)}</pre> : null}
               </div>

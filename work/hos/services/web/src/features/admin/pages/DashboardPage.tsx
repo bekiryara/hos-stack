@@ -12,7 +12,7 @@ export function DashboardPage() {
   const load = React.useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
     if (!token) {
-      setError('Missing token. Please login from Control Center first.');
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
       setOverview(null);
       setWorlds([]);
       return;

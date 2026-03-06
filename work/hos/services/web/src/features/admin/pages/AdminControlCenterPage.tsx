@@ -65,13 +65,13 @@ export function AdminControlCenterPage() {
   }
 
   return (
-    <AdminLayout title="Yonetim Girisi">
+    <AdminLayout title="Kontrol Merkezi">
       <p className="hint">
-        Platform yonetimi tek adresten yapilir.
+        Bu ekran oturum ve hizli erisim icindir. Sistem ozeti icin Pano ekranini kullanin.
       </p>
 
       <div className="card">
-        <div className="title">Giris</div>
+        <div className="title">Oturum Islemleri</div>
         <div style={{ display: 'grid', gap: '0.5rem', maxWidth: 520 }}>
           <label>
             E-posta

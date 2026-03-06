@@ -7,6 +7,7 @@ import { UsersPage } from './pages/UsersPage';
 import { hasAdminToken } from './session';
 
 const routeMap: Record<string, React.ReactElement> = {
+  '/admin/control-center': <AdminControlCenterPage />,
   '/admin/dashboard': <DashboardPage />,
   '/admin/users': <UsersPage />,
   '/admin/memberships': <MembershipsPage />,
