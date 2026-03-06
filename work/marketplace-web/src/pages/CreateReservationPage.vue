@@ -80,11 +80,24 @@
         </label>
       </div>
 
-      <div class="form-group">
+      <div v-if="requiresPartySize" class="form-group">
         <label>
           Kisi Sayisi <span class="required">*</span>
           <input
             v-model.number="formData.party_size"
+            type="number"
+            required
+            min="1"
+            class="form-input"
+          />
+        </label>
+      </div>
+
+      <div v-if="requiresSessionCount" class="form-group">
+        <label>
+          Seans Sayisi <span class="required">*</span>
+          <input
+            v-model.number="formData.session_count"
             type="number"
             required
             min="1"
@@ -116,13 +129,34 @@ export default {
         slot_start: '',
         slot_end: '',
         party_size: 1,
+        session_count: 1,
       },
       loading: false,
       error: null,
       authError: null,
       success: null,
       listingCategoryId: null,
+      listingBillingModel: '',
     };
+  },
+  computed: {
+    requiresPartySize() {
+      return this.listingBillingModel === 'per_person';
+    },
+    requiresSessionCount() {
+      return this.listingBillingModel === 'per_session';
+    },
+  },
+  watch: {
+    'formData.listing_id'(value, oldValue) {
+      const next = String(value || '').trim();
+      const prev = String(oldValue || '').trim();
+      if (next === prev) return;
+      // Best-effort preload for dynamic billing-model fields.
+      if (/^[0-9a-fA-F-]{36}$/.test(next)) {
+        this.loadListingCategory(next);
+      }
+    },
   },
   mounted() {
     const userId = getUserId();
@@ -144,6 +178,8 @@ export default {
         if (listing && listing.category_id) {
           this.listingCategoryId = listing.category_id;
         }
+        const attrs = listing?.attributes && typeof listing.attributes === 'object' ? listing.attributes : {};
+        this.listingBillingModel = String(attrs.billing_model || listing?.billing_model || '').trim();
       } catch (err) {
         console.warn('Ilan kategorisi yuklenemedi:', err);
       }
@@ -167,8 +203,16 @@ export default {
         return;
       }
 
-      if (!this.formData.listing_id || !this.formData.slot_start || !this.formData.slot_end || !this.formData.party_size) {
+      if (!this.formData.listing_id || !this.formData.slot_start || !this.formData.slot_end) {
         this.error = { message: 'Lutfen zorunlu alanlari doldurun', status: 400 };
+        return;
+      }
+      if (this.requiresPartySize && !this.formData.party_size) {
+        this.error = { message: 'Kisi sayisi zorunludur', status: 400 };
+        return;
+      }
+      if (this.requiresSessionCount && !this.formData.session_count) {
+        this.error = { message: 'Seans sayisi zorunludur', status: 400 };
         return;
       }
 
@@ -195,7 +239,8 @@ export default {
           listing_id: this.formData.listing_id,
           slot_start: slotStart,
           slot_end: slotEnd,
-          party_size: this.formData.party_size,
+          party_size: this.requiresPartySize ? this.formData.party_size : 1,
+          session_count: this.requiresSessionCount ? Math.max(1, Number(this.formData.session_count || 1)) : undefined,
         };
 
         const result = await api.createReservation(payload, userId || null);

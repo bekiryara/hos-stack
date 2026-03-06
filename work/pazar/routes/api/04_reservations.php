@@ -28,7 +28,8 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'offer_id' => 'nullable|uuid',
         'slot_start' => 'required|date',
         'slot_end' => 'required|date|after:slot_start',
-        'party_size' => 'required|integer|min:1'
+        'party_size' => 'required|integer|min:1',
+        'session_count' => 'nullable|integer|min:1'
     ]);
     
     // Get listing
@@ -52,6 +53,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     // Reservation flow currently supports slot/session service time models.
     $effectivePolicy = pazar_listing_effective_policy($listing);
     $serviceTimeModel = isset($effectivePolicy['service_time_model']) ? (string) $effectivePolicy['service_time_model'] : 'none';
+    $billingModel = isset($effectivePolicy['billing_model']) ? (string) $effectivePolicy['billing_model'] : 'one_time';
     if (!in_array($serviceTimeModel, ['slot', 'session'], true)) {
         return response()->json([
             'error' => 'VALIDATION_ERROR',
@@ -96,8 +98,13 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
     }
 
     try {
+        $sessionCount = isset($validated['session_count']) && is_numeric($validated['session_count'])
+            ? max(1, (int) $validated['session_count'])
+            : 1;
         $pricing = pazar_resolve_transaction_pricing($listing, $offer, $effectivePolicy, [
             'party_size' => $validated['party_size'],
+            // per_session uses quantity as multiplier source.
+            'quantity' => ($billingModel === 'per_session') ? $sessionCount : 1,
             'start_at' => $validated['slot_start'],
             'end_at' => $validated['slot_end'],
         ]);
@@ -185,6 +192,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'currency' => $pricing['price_currency'],
         'billing_model' => $pricing['billing_model'],
         'pricing_source' => $pricing['pricing_source'],
+        'session_count' => isset($sessionCount) ? $sessionCount : 1,
     ];
 
     DB::table('reservations')->insert([
@@ -220,6 +228,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':personal', 'auth
         'slot_start' => $slotStart->format('Y-m-d\TH:i:s\Z'),
         'slot_end' => $slotEnd->format('Y-m-d\TH:i:s\Z'),
         'party_size' => $validated['party_size'],
+        'session_count' => isset($sessionCount) ? $sessionCount : 1,
         'status' => 'requested',
         'created_at' => now()->toISOString()
     ];

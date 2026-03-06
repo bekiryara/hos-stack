@@ -45,6 +45,13 @@
     - `npm run build` -> PASS
     - `ops/_checks/policy_variant_matrix_check.ps1` -> PASS
     - `ops/_checks/create_edit_parity_check.ps1` -> PASS
+ - Reservation per_session functional slice (2026-03-06):
+  - `POST /v1/reservations` now accepts `session_count` and feeds `quantity=session_count` into pricing resolve when `billing_model=per_session`.
+  - Reservation `totals_json`/response include `session_count` for deterministic read-back.
+  - `CreateReservationPage` dynamically shows `Seans Sayisi` input only for `per_session` listings and submits `session_count`.
+  - Validation:
+    - `npm run build` -> PASS
+    - `ops/_checks/reservation_contract_check.ps1` -> PASS
 
 - Tenant Address Spine stabilized in Marketplace:
   - Firm register and firm settings use city/district/neighborhood select-cascade.
