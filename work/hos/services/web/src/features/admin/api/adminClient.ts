@@ -58,6 +58,43 @@ export async function adminOverview(token: string) {
   }
 }
 
+export async function adminUpdateMembership(
+  token: string,
+  tenantId: string,
+  userId: string,
+  patch: { role?: 'member' | 'admin' | 'owner'; status?: 'active' | 'inactive' | 'suspended' }
+) {
+  const resp = await fetch(
+    `/api/v1/admin/platform/memberships/${encodeURIComponent(tenantId)}/${encodeURIComponent(userId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(patch),
+      cache: 'no-store',
+    }
+  );
+
+  const text = await resp.text();
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = { raw: text };
+  }
+
+  if (!resp.ok) {
+    const err: any = new Error(`PATCH /api/v1/admin/platform/memberships/:tenantId/:userId failed: ${resp.status}`);
+    err.status = resp.status;
+    err.body = json;
+    rethrowWithAuthHandling(err);
+  }
+  return json;
+}
+
 export async function adminUpdateUserRole(token: string, userId: string, role: 'member' | 'admin' | 'owner') {
   const resp = await fetch(`/api/v1/admin/platform/users/${encodeURIComponent(userId)}/role`, {
     method: 'PATCH',

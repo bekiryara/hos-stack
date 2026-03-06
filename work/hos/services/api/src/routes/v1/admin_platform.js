@@ -79,6 +79,67 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     return reply.send({ items: res.rows });
   });
 
+  const patchMembershipBody = z
+    .object({
+      role: z.enum(["member", "admin", "owner"]).optional(),
+      status: z.enum(["active", "inactive", "suspended"]).optional()
+    })
+    .refine((v) => v.role !== undefined || v.status !== undefined, {
+      message: "role_or_status_required"
+    });
+
+  app.patch("/admin/platform/memberships/:tenantId/:userId", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner"]);
+    if (!payload) return;
+
+    const tenantId = String(req.params?.tenantId || "");
+    const userId = String(req.params?.userId || "");
+    if (!tenantId) return reply.code(400).send({ error: "invalid_tenant_id" });
+    if (!userId) return reply.code(400).send({ error: "invalid_user_id" });
+
+    const body = patchMembershipBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: body.error.flatten() });
+
+    const currentRes = await db.query(
+      "select tenant_id, user_id, role, status from memberships where tenant_id = $1 and user_id = $2 limit 1",
+      [tenantId, userId]
+    );
+    if (currentRes.rowCount === 0) return reply.code(404).send({ error: "membership_not_found" });
+
+    const current = currentRes.rows[0];
+    const nextRole = body.data.role ?? current.role;
+    const nextStatus = body.data.status ?? current.status;
+
+    if (current.role === "owner" && current.status === "active" && (nextRole !== "owner" || nextStatus !== "active")) {
+      const owners = await db.query(
+        "select count(*)::int as c from memberships where tenant_id = $1 and role = 'owner' and status = 'active'",
+        [tenantId]
+      );
+      const count = owners.rows?.[0]?.c ?? 0;
+      if (count <= 1) {
+        return reply.code(409).send({ error: "cannot_remove_last_owner" });
+      }
+    }
+
+    await db.query(
+      "update memberships set role = $1, status = $2, updated_at = now() where tenant_id = $3 and user_id = $4",
+      [nextRole, nextStatus, tenantId, userId]
+    );
+
+    if (body.data.role !== undefined) {
+      await db.query("update users set role = $1 where tenant_id = $2 and id = $3", [nextRole, tenantId, userId]);
+    }
+
+    await audit(db, {
+      action: "membership.update.platform",
+      tenantId,
+      actorUserId: payload.sub,
+      metadata: { targetUserId: userId, role: nextRole, status: nextStatus }
+    });
+
+    return reply.send({ ok: true, item: { tenant_id: tenantId, user_id: userId, role: nextRole, status: nextStatus } });
+  });
+
   app.get("/admin/platform/audit", async (req, reply) => {
     const payload = requireRole(req, reply, ["owner", "admin"]);
     if (!payload) return;
