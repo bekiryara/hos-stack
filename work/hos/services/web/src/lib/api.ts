@@ -108,3 +108,7 @@ export async function adminAudit(token: string, limit: number = 50) {
   const qs = new URLSearchParams({ limit: String(limit) }).toString();
   return await fetchJson(`/api/v1/admin/platform/audit?${qs}`, undefined, token);
 }
+
+export async function adminOverview(token: string) {
+  return await fetchJson('/api/v1/admin/platform/overview', undefined, token);
+}

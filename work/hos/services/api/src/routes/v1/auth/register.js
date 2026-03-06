@@ -60,6 +60,10 @@ export function registerRegister(app, { db }) {
             "insert into users (id, tenant_id, email, password_hash, role) values ($1, $2, $3, $4, $5)",
             [userId, tenantId, body.email.toLowerCase(), passwordHash, role]
           );
+          await db.query(
+            "insert into memberships (tenant_id, user_id, role, status) values ($1, $2, $3, $4) on conflict (tenant_id, user_id) do update set role = $3, status = $4",
+            [tenantId, userId, role, "active"]
+          );
           const token = signAccessToken({ sub: userId, tenantId: null, role });
           return reply.code(201).send({ token });
         } catch (e) {
@@ -84,6 +88,10 @@ export function registerRegister(app, { db }) {
           await db.query(
             "insert into users (id, tenant_id, email, password_hash, role) values ($1, $2, $3, $4, $5)",
             [userId, tenantId, body.email.toLowerCase(), passwordHash, role]
+          );
+          await db.query(
+            "insert into memberships (tenant_id, user_id, role, status) values ($1, $2, $3, $4) on conflict (tenant_id, user_id) do update set role = $3, status = $4",
+            [tenantId, userId, role, "active"]
           );
           await audit(db, { action: "user.register", tenantId, actorUserId: userId });
         } catch (e) {

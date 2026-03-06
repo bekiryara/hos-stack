@@ -3,6 +3,7 @@ import { registerV1AuthRoutes } from "./auth_routes.js";
 import { registerV1MeRoutes } from "./me_routes.js";
 import { registerV1TenantRoutes } from "./tenant_routes.js";
 import { registerV1AdminPermitRoutes } from "./admin_permits.js";
+import { registerV1AdminPlatformRoutes } from "./admin_platform.js";
 import { registerV1AddressRoutes } from "./address_routes.js";
 
 /**
@@ -22,5 +23,6 @@ export async function registerV1Routes(app, { db, legacy = false }) {
   await registerV1MeRoutes(app, { db });
   await registerV1TenantRoutes(app, { db });
   await registerV1AddressRoutes(app, { db });
+  await registerV1AdminPlatformRoutes(app, { db });
   await registerV1AdminPermitRoutes(app, { db, legacy });
 }

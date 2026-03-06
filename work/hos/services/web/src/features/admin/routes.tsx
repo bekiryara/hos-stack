@@ -4,14 +4,17 @@ import { AuditPage } from './pages/AuditPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 
+const routeMap: Record<string, React.ReactElement> = {
+  '/admin/dashboard': <DashboardPage />,
+  '/admin/users': <UsersPage />,
+  '/admin/audit': <AuditPage />,
+};
+
 export function isAdminRoutePath(pathname: string): boolean {
   return pathname.startsWith('/admin');
 }
 
 export function resolveAdminRoute(pathname: string): React.ReactElement | null {
   if (!isAdminRoutePath(pathname)) return null;
-  if (pathname === '/admin/dashboard') return <DashboardPage />;
-  if (pathname === '/admin/users') return <UsersPage />;
-  if (pathname === '/admin/audit') return <AuditPage />;
-  return <AdminControlCenterPage />;
+  return routeMap[pathname] ?? <AdminControlCenterPage />;
 }

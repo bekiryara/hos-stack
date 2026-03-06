@@ -1,19 +1,28 @@
 import React from 'react';
 import { AdminLayout } from '../layout/AdminLayout';
-import { getHealth, getWorlds } from '../../../lib/api';
+import { getWorlds } from '../../../lib/api';
+import { adminOverview } from '../api/adminClient';
 
 export function DashboardPage() {
   const [loading, setLoading] = React.useState(false);
-  const [health, setHealth] = React.useState<any>(null);
+  const [overview, setOverview] = React.useState<any>(null);
   const [worlds, setWorlds] = React.useState<any[]>([]);
   const [error, setError] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Missing token. Please login from Control Center first.');
+      setOverview(null);
+      setWorlds([]);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const [h, w] = await Promise.all([getHealth(), getWorlds()]);
-      setHealth(h);
+      const [o, w] = await Promise.all([adminOverview(token), getWorlds()]);
+      setOverview(o);
       setWorlds(Array.isArray(w) ? w : []);
     } catch (e: any) {
       setError(e?.message || 'Sistem durumu alinamadi');
@@ -41,7 +50,7 @@ export function DashboardPage() {
             <pre>{error}</pre>
           </div>
         ) : null}
-        <pre style={{ marginTop: 0 }}>{JSON.stringify(health, null, 2)}</pre>
+        <pre style={{ marginTop: 0 }}>{JSON.stringify(overview, null, 2)}</pre>
         <div style={{ display: 'grid', gap: '0.45rem', marginTop: '0.75rem' }}>
           {worlds.map((world: any) => (
             <div key={world.world_key} style={{ border: '1px solid rgba(255,255,255,.15)', borderRadius: 8, padding: '0.5rem 0.65rem' }}>
