@@ -42,6 +42,10 @@
     - `ops/_checks/policy_variant_matrix_check.ps1` -> PASS
     - `ops/_checks/category_flow_policy_check.ps1` -> PASS
     - `ops/_checks/listing_contract_check.ps1` -> PASS
+- Create V2 (phase-1) + parity cleanup (2026-03-06):
+  - Canonical pricing field now binds to `pricing_strategy` + `billing_model` (dynamic label and offer-only disable path).
+  - Time model guidance moved into explicit `Zaman ve Uygunluk` section.
+  - Duplicate Pricing/Billing rows removed from service model summary to avoid UI repetition.
 
 ## What is the Stack?
 

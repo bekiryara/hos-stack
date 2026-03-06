@@ -143,12 +143,6 @@
         <div class="primitive-item">
           <strong>Offer Rule:</strong> {{ primitiveLabel('offer_requirement', effectiveIntentSchema.offer_requirement) }}
         </div>
-        <div class="primitive-item">
-          <strong>Pricing:</strong> {{ primitiveLabel('pricing_strategy', effectiveIntentSchema.pricing_strategy) }}
-        </div>
-        <div class="primitive-item">
-          <strong>Billing:</strong> {{ primitiveLabel('billing_model', effectiveIntentSchema.billing_model) }}
-        </div>
       </div>
       <small class="hint">Bu alanlar kategori policy'sinden gelir ve backend tarafinda zorlanir.</small>
     </div>
