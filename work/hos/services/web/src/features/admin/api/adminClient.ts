@@ -1,6 +1,9 @@
 import {
   adminActionCenter as apiAdminActionCenter,
   adminAudit as apiAdminAudit,
+  adminCategoriesOverview as apiAdminCategoriesOverview,
+  adminCategoriesTree as apiAdminCategoriesTree,
+  adminCategoryMappings as apiAdminCategoryMappings,
   adminListings as apiAdminListings,
   adminListingsOverview as apiAdminListingsOverview,
   adminMemberships as apiAdminMemberships,
@@ -86,6 +89,36 @@ export async function adminListings(
 export async function adminListingsOverview(token: string) {
   try {
     return await apiAdminListingsOverview(token);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminCategoriesOverview(token: string) {
+  try {
+    return await apiAdminCategoriesOverview(token);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminCategoriesTree(
+  token: string,
+  opts?: { q?: string; status?: 'all' | 'active' | 'inactive' }
+) {
+  try {
+    return await apiAdminCategoriesTree(token, opts);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminCategoryMappings(
+  token: string,
+  opts?: { q?: string; mapping?: 'all' | 'mapped' | 'unmapped'; page?: number; per_page?: number }
+) {
+  try {
+    return await apiAdminCategoryMappings(token, opts);
   } catch (error: any) {
     rethrowWithAuthHandling(error);
   }

@@ -83,10 +83,17 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
 // WP-8: GUEST+ persona (no headers required)
 Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/v1/categories', function () {
     $view = (string) request()->query('view', '');
+    $status = strtolower(trim((string) request()->query('status', 'active')));
+    if (!in_array($status, ['active', 'inactive', 'all'], true)) {
+        $status = 'active';
+    }
 
     // Fetch all categories with parent relationships
-    $categories = DB::table('categories')
-        ->where('status', 'active')
+    $query = DB::table('categories');
+    if ($status !== 'all') {
+        $query->where('status', $status);
+    }
+    $categories = $query
         ->orderBy('sort_order')
         ->get()
         ->map(function ($cat) {
@@ -98,7 +105,7 @@ Route::middleware([\App\Http\Middleware\PersonaScope::class . ':guest'])->get('/
                 'slug' => $cat->slug,
                 // SPEC Canonical Model: title (DB column is `name`)
                 'title' => $cat->name,
-                // Additive: expose status for clients (already filtered to active)
+                // Additive: expose status for clients
                 'status' => $cat->status,
             ];
         })

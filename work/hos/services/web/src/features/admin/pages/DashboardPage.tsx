@@ -122,37 +122,6 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <a href="/admin/worlds">Dunyalar</a>
-          <a href="/admin/listings">Ilanlar</a>
-          <a href="/admin/users">Kullanicilar</a>
-          <a href="/admin/memberships">Uyelikler</a>
-          <a href="/admin/audit">Denetim</a>
-        </div>
-
-        <div style={{ marginTop: '0.9rem' }}>
-          <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Son Kritik Islemler</div>
-          {!Array.isArray(actionCenter?.latest_critical_events) || actionCenter.latest_critical_events.length === 0 ? (
-            <p style={{ color: '#9ca3af', margin: 0 }}>Kritik kayit yok.</p>
-          ) : (
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
-              {actionCenter.latest_critical_events.map((row: any) => (
-                <div key={row.id} className="card" style={{ padding: '0.6rem 0.7rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <strong>{row.action || '-'}</strong>
-                    <span style={{ color: '#9ca3af' }}>{row.created_at || '-'}</span>
-                  </div>
-                  <div style={{ fontSize: '0.9rem', marginTop: '0.35rem' }}>
-                    islem yapan: <code>{row.actor_email || row.actor_user_id || '-'}</code>
-                  </div>
-                  <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                    firma: <code>{row.tenant_slug || row.tenant_id || '-'}</code>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </AdminLayout>
   );

@@ -150,11 +150,219 @@ async function fetchPazarCategoryTitleMap({ pazarBaseUrl }) {
   }
 }
 
+async function fetchPazarCategoriesTree({ pazarBaseUrl, view = "", status = "" }) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const qs = new URLSearchParams();
+    if (view) qs.set("view", view);
+    if (status) qs.set("status", status);
+    const url = `${pazarBaseUrl}/api/v1/categories${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function flattenCategoryTree(nodes, out = []) {
+  if (!Array.isArray(nodes)) return out;
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    out.push(node);
+    const children = Array.isArray(node?.children) ? node.children : [];
+    if (children.length > 0) flattenCategoryTree(children, out);
+  }
+  return out;
+}
+
+function parseTrendyolWcFromSlug(slug) {
+  const s = String(slug || "");
+  const m = s.match(/-ty-c(\d+)$/);
+  return m?.[1] || null;
+}
+
 /**
  * Register platform-scoped admin routes.
  * Scope: global visibility across all tenants/worlds for owner/admin roles.
  */
 export async function registerV1AdminPlatformRoutes(app, { db }) {
+  app.get("/admin/platform/categories/overview", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    const [canonicalTree, menuTree] = await Promise.all([
+      fetchPazarCategoriesTree({ pazarBaseUrl, view: "", status: "all" }),
+      fetchPazarCategoriesTree({ pazarBaseUrl, view: "menu" }),
+    ]);
+
+    const canonicalFlat = flattenCategoryTree(canonicalTree, []);
+    const total = canonicalFlat.length;
+    const rootCount = canonicalFlat.filter((n) => n?.parent_id == null).length;
+    const activeCount = canonicalFlat.filter((n) => String(n?.status || "").toLowerCase() === "active").length;
+    const inactiveCount = canonicalFlat.filter((n) => String(n?.status || "").toLowerCase() !== "active").length;
+
+    const childCountById = {};
+    for (const n of canonicalFlat) {
+      const pid = String(n?.parent_id || "");
+      if (!pid) continue;
+      childCountById[pid] = (childCountById[pid] || 0) + 1;
+    }
+    const leafCount = canonicalFlat.filter((n) => !childCountById[String(n?.id || "")]).length;
+
+    const trendyolMapped = canonicalFlat.filter((n) => Boolean(parseTrendyolWcFromSlug(n?.slug))).length;
+    const byWc = new Map();
+    for (const n of canonicalFlat) {
+      const wc = parseTrendyolWcFromSlug(n?.slug);
+      if (!wc) continue;
+      const canonicalId = String(n?.canonical_category_id || n?.id || "");
+      if (!byWc.has(wc)) byWc.set(wc, new Set());
+      byWc.get(wc).add(canonicalId);
+    }
+    const wcConflictCount = Array.from(byWc.values()).filter((set) => set.size > 1).length;
+
+    const menuFlat = flattenCategoryTree(menuTree, []);
+    const menuNodeCount = menuFlat.length;
+    const menuWithCanonicalCount = menuFlat.filter((n) => n?.canonical_category_id != null).length;
+    const menuVirtualCount = menuFlat.filter((n) => String(n?.status || "") === "virtual").length;
+
+    return reply.send({
+      total_categories: total,
+      active_categories: activeCount,
+      inactive_categories: inactiveCount,
+      root_categories: rootCount,
+      leaf_categories: leafCount,
+      trendyol_mapped_categories: trendyolMapped,
+      trendyol_wc_conflict_count: wcConflictCount,
+      menu_nodes_total: menuNodeCount,
+      menu_nodes_with_canonical: menuWithCanonicalCount,
+      menu_virtual_nodes: menuVirtualCount,
+    });
+  });
+
+  app.get("/admin/platform/categories/tree", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    const q = parseSafeText(req?.query?.q, 120).toLowerCase();
+    const status = String(req?.query?.status || "all").toLowerCase();
+
+    const tree = await fetchPazarCategoriesTree({ pazarBaseUrl, view: "", status: "all" });
+    if (!q && status === "all") {
+      return reply.send({ tree });
+    }
+
+    const keepByStatus = (node) => {
+      if (status === "all") return true;
+      const s = String(node?.status || "").toLowerCase();
+      return s === status;
+    };
+    const keepByQuery = (node) => {
+      if (!q) return true;
+      const title = String(node?.title || "").toLowerCase();
+      const slug = String(node?.slug || "").toLowerCase();
+      const id = String(node?.id || "").toLowerCase();
+      return title.includes(q) || slug.includes(q) || id.includes(q);
+    };
+
+    const filterTree = (nodes) => {
+      if (!Array.isArray(nodes)) return [];
+      const out = [];
+      for (const node of nodes) {
+        const children = filterTree(Array.isArray(node?.children) ? node.children : []);
+        const selfMatch = keepByStatus(node) && keepByQuery(node);
+        if (selfMatch || children.length > 0) {
+          out.push({
+            ...node,
+            children,
+          });
+        }
+      }
+      return out;
+    };
+
+    return reply.send({ tree: filterTree(tree) });
+  });
+
+  app.get("/admin/platform/categories/mappings", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    const q = parseSafeText(req?.query?.q, 120).toLowerCase();
+    const mappingType = String(req?.query?.mapping || "all").toLowerCase();
+    const page = Math.max(1, Math.floor(Number(req?.query?.page ?? 1) || 1));
+    const perPage = parseLimit(req?.query?.per_page, 100);
+
+    const [canonicalTree, menuTree] = await Promise.all([
+      fetchPazarCategoriesTree({ pazarBaseUrl, view: "", status: "all" }),
+      fetchPazarCategoriesTree({ pazarBaseUrl, view: "menu" }),
+    ]);
+    const canonicalFlat = flattenCategoryTree(canonicalTree, []);
+    const menuFlat = flattenCategoryTree(menuTree, []);
+
+    const menuPlacementByCanonicalId = {};
+    for (const n of menuFlat) {
+      const cid = String(n?.canonical_category_id || "").trim();
+      if (!cid) continue;
+      menuPlacementByCanonicalId[cid] = (menuPlacementByCanonicalId[cid] || 0) + 1;
+    }
+
+    let items = canonicalFlat.map((n) => {
+      const internalId = String(n?.id || "");
+      const trendyolWc = parseTrendyolWcFromSlug(n?.slug);
+      return {
+        internal_category_id: internalId,
+        canonical_category_id: String(n?.canonical_category_id || n?.id || ""),
+        slug: String(n?.slug || ""),
+        title: String(n?.title || ""),
+        status: String(n?.status || ""),
+        external_source: trendyolWc ? "trendyol" : null,
+        external_id: trendyolWc,
+        menu_placements: menuPlacementByCanonicalId[internalId] || 0,
+      };
+    });
+
+    if (mappingType === "mapped") items = items.filter((x) => Boolean(x.external_id));
+    if (mappingType === "unmapped") items = items.filter((x) => !x.external_id);
+
+    if (q) {
+      items = items.filter((x) => {
+        return (
+          String(x.title || "").toLowerCase().includes(q) ||
+          String(x.slug || "").toLowerCase().includes(q) ||
+          String(x.internal_category_id || "").toLowerCase().includes(q) ||
+          String(x.external_id || "").toLowerCase().includes(q)
+        );
+      });
+    }
+
+    items.sort((a, b) => {
+      const t = String(a.title || "").localeCompare(String(b.title || ""), "tr");
+      if (t !== 0) return t;
+      return String(a.internal_category_id || "").localeCompare(String(b.internal_category_id || ""));
+    });
+
+    const total = items.length;
+    const offset = (page - 1) * perPage;
+    return reply.send({
+      items: items.slice(offset, offset + perPage),
+      page,
+      per_page: perPage,
+      total,
+    });
+  });
+
   app.get("/admin/platform/overview", async (req, reply) => {
     const payload = requireRole(req, reply, ["owner", "admin"]);
     if (!payload) return;

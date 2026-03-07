@@ -148,3 +148,29 @@ export async function adminListings(
 export async function adminListingsOverview(token: string) {
   return await fetchJson('/api/v1/admin/platform/listings/overview', undefined, token);
 }
+
+export async function adminCategoriesOverview(token: string) {
+  return await fetchJson('/api/v1/admin/platform/categories/overview', undefined, token);
+}
+
+export async function adminCategoriesTree(
+  token: string,
+  opts: { q?: string; status?: 'all' | 'active' | 'inactive' } = {}
+) {
+  const qs = new URLSearchParams();
+  if (opts.q) qs.set('q', opts.q);
+  if (opts.status) qs.set('status', opts.status);
+  return await fetchJson(`/api/v1/admin/platform/categories/tree${qs.toString() ? `?${qs.toString()}` : ''}`, undefined, token);
+}
+
+export async function adminCategoryMappings(
+  token: string,
+  opts: { q?: string; mapping?: 'all' | 'mapped' | 'unmapped'; page?: number; per_page?: number } = {}
+) {
+  const qs = new URLSearchParams();
+  if (opts.q) qs.set('q', opts.q);
+  if (opts.mapping) qs.set('mapping', opts.mapping);
+  qs.set('page', String(opts.page ?? 1));
+  qs.set('per_page', String(opts.per_page ?? 100));
+  return await fetchJson(`/api/v1/admin/platform/categories/mappings?${qs.toString()}`, undefined, token);
+}

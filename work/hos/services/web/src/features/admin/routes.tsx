@@ -1,6 +1,7 @@
 import React from 'react';
 import { AdminControlCenterPage } from './pages/AdminControlCenterPage';
 import { AuditPage } from './pages/AuditPage';
+import { CategoriesPage } from './pages/CategoriesPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MembershipsPage } from './pages/MembershipsPage';
 import { ListingsPage } from './pages/ListingsPage';
@@ -12,6 +13,7 @@ const routeMap: Record<string, React.ReactElement> = {
   '/admin/control-center': <AdminControlCenterPage />,
   '/admin/dashboard': <DashboardPage />,
   '/admin/worlds': <WorldsPage />,
+  '/admin/categories': <CategoriesPage />,
   '/admin/listings': <ListingsPage />,
   '/admin/users': <UsersPage />,
   '/admin/memberships': <MembershipsPage />,
