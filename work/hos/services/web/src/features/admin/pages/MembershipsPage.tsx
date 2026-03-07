@@ -21,6 +21,7 @@ export function MembershipsPage() {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [nextByKey, setNextByKey] = useState<Record<string, { role: MembershipRole; status: MembershipStatus }>>({});
   const [undoMembership, setUndoMembership] = useState<UndoMembership | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -48,6 +49,7 @@ export function MembershipsPage() {
           ])
         )
       );
+      setSelectedKeys((prev) => prev.filter((k) => next.some((m: any) => `${m.tenant_id}:${m.user_id}` === k)));
     } catch (e: any) {
       setError(trAdminError(e?.body?.error || e?.message, 'Uyelikler yuklenemedi'));
       setItems([]);
@@ -66,6 +68,8 @@ export function MembershipsPage() {
     const t = window.setTimeout(() => setActionError(null), 7000);
     return () => window.clearTimeout(t);
   }, [actionError]);
+
+  const allSelected = items.length > 0 && selectedKeys.length === items.length;
 
   async function handleSave(row: any) {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -199,6 +203,44 @@ export function MembershipsPage() {
     }
   }
 
+  async function handleBulkDeactivateMemberships() {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    if (selectedKeys.length === 0) return;
+
+    const selectedRows = items.filter((m: any) => selectedKeys.includes(`${m.tenant_id}:${m.user_id}`));
+    const ok = confirmRiskyAction({
+      title: 'Secili uyelikler pasife alinacak.',
+      summary: `Secili kayit sayisi: ${selectedRows.length}\nBu islem secili uyelikleri inactive yapar.`,
+      risk: 'medium',
+    });
+    if (!ok) return;
+
+    setError(null);
+    setActionError(null);
+    setMessage(null);
+    let success = 0;
+    const failed: string[] = [];
+    for (const row of selectedRows) {
+      try {
+        await adminMembershipLifecycle(token, String(row.tenant_id), String(row.user_id), 'deactivate');
+        success += 1;
+      } catch {
+        failed.push(row.user_email || row.user_id);
+      }
+    }
+    if (failed.length > 0) {
+      setActionError(`Toplu pasife alma tamamlandi. Basarili: ${success}, Hatali: ${failed.length} (${failed.slice(0, 3).join(', ')})`);
+    } else {
+      setMessage(`Toplu pasife alma tamamlandi. Basarili: ${success}`);
+    }
+    await load();
+    setSelectedKeys([]);
+  }
+
   return (
     <AdminLayout title="Uyelikler">
       <div className="card">
@@ -206,6 +248,9 @@ export function MembershipsPage() {
         <div style={{ marginBottom: '0.75rem' }}>
           <button onClick={load} disabled={loading}>
             {loading ? 'Yenileniyor...' : 'Yenile'}
+          </button>
+          <button onClick={handleBulkDeactivateMemberships} disabled={loading || selectedKeys.length === 0} style={{ marginLeft: '0.5rem' }}>
+            Secilileri Pasife Al ({selectedKeys.length})
           </button>
         </div>
         {error ? (
@@ -240,6 +285,17 @@ export function MembershipsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={(e) =>
+                        setSelectedKeys(
+                          e.target.checked ? items.map((m: any) => `${m.tenant_id}:${m.user_id}`) : []
+                        )
+                      }
+                    />
+                  </th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Kullanici</th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Firma</th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Rol</th>
@@ -257,6 +313,17 @@ export function MembershipsPage() {
                   const changed = next.role !== currentRole || next.status !== currentStatus;
                   return (
                   <tr key={key}>
+                    <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedKeys.includes(key)}
+                        onChange={(e) =>
+                          setSelectedKeys((prev) =>
+                            e.target.checked ? Array.from(new Set([...prev, key])) : prev.filter((k) => k !== key)
+                          )
+                        }
+                      />
+                    </td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                       {row.user_email || row.user_display_name || row.user_id || '-'}
                     </td>

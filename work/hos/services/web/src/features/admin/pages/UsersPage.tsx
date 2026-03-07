@@ -15,6 +15,7 @@ export function UsersPage() {
   const [nextRoleByUserId, setNextRoleByUserId] = useState<Record<string, UserRole>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [undoRole, setUndoRole] = useState<UndoUserRole | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -35,6 +36,7 @@ export function UsersPage() {
           next.map((u: any) => [u.id, (u.role || 'member') as UserRole])
         )
       );
+      setSelectedUserIds((prev) => prev.filter((id) => next.some((u: any) => u.id === id)));
     } catch (e: any) {
       setError(trAdminError(e?.body?.error || e?.message, 'Kullanicilar yuklenemedi'));
       setItems([]);
@@ -52,6 +54,8 @@ export function UsersPage() {
     const t = window.setTimeout(() => setActionError(null), 7000);
     return () => window.clearTimeout(t);
   }, [actionError]);
+
+  const allSelected = items.length > 0 && selectedUserIds.length === items.length;
 
   async function handleSaveRole(userId: string) {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -174,6 +178,47 @@ export function UsersPage() {
     }
   }
 
+  async function handleBulkDeactivateUsers() {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    if (selectedUserIds.length === 0) return;
+
+    const selectedRows = items.filter((x: any) => selectedUserIds.includes(String(x.id || '')));
+    const ok = confirmRiskyAction({
+      title: 'Secili kullanicilar pasife alinacak.',
+      summary: `Secili kayit sayisi: ${selectedRows.length}\nBu islem secili kayitlarin aktif uyeliklerini kapatir.`,
+      risk: 'medium',
+    });
+    if (!ok) return;
+
+    setError(null);
+    setActionError(null);
+    setMessage(null);
+    setUndoRole(null);
+    let success = 0;
+    const failed: string[] = [];
+    for (const row of selectedRows) {
+      const userId = String(row.id || '');
+      if (!userId) continue;
+      try {
+        await adminUserLifecycle(token, userId, 'deactivate');
+        success += 1;
+      } catch {
+        failed.push(row.email || userId);
+      }
+    }
+    if (failed.length > 0) {
+      setActionError(`Toplu pasife alma tamamlandi. Basarili: ${success}, Hatali: ${failed.length} (${failed.slice(0, 3).join(', ')})`);
+    } else {
+      setMessage(`Toplu pasife alma tamamlandi. Basarili: ${success}`);
+    }
+    await load();
+    setSelectedUserIds([]);
+  }
+
   return (
     <AdminLayout title="Kullanicilar">
       <div className="card">
@@ -181,6 +226,9 @@ export function UsersPage() {
         <div style={{ marginBottom: '0.75rem' }}>
           <button onClick={load} disabled={loading}>
             {loading ? 'Yenileniyor...' : 'Yenile'}
+          </button>
+          <button onClick={handleBulkDeactivateUsers} disabled={loading || selectedUserIds.length === 0} style={{ marginLeft: '0.5rem' }}>
+            Secilileri Pasife Al ({selectedUserIds.length})
           </button>
         </div>
         {error ? (
@@ -211,6 +259,15 @@ export function UsersPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
+                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={(e) =>
+                        setSelectedUserIds(e.target.checked ? items.map((x: any) => String(x.id || '')) : [])
+                      }
+                    />
+                  </th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Email</th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Firma</th>
                   <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Rol</th>
@@ -222,6 +279,19 @@ export function UsersPage() {
               <tbody>
                 {items.map((row: any) => (
                   <tr key={row.id}>
+                    <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedUserIds.includes(String(row.id || ''))}
+                        onChange={(e) =>
+                          setSelectedUserIds((prev) =>
+                            e.target.checked
+                              ? Array.from(new Set([...prev, String(row.id || '')]))
+                              : prev.filter((id) => id !== String(row.id || ''))
+                          )
+                        }
+                      />
+                    </td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.email || '-'}</td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                       {row.tenant_slug || row.tenant_name || '-'}
