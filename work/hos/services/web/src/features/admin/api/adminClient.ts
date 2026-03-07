@@ -12,7 +12,7 @@ import { clearAdminSession } from '../session';
 export { hosLogin };
 
 function rethrowWithAuthHandling(error: any): never {
-  if (error?.status === 401) {
+  if (error?.status === 401 || error?.status === 403) {
     clearAdminSession();
     window.location.href = '/admin';
   }

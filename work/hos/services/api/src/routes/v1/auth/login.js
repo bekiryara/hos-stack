@@ -24,10 +24,19 @@ export function registerLogin(app, { db }) {
       const email = body.email.toLowerCase();
       const DEFAULT_PUBLIC_TENANT_SLUG = readEnvOrFile("DEFAULT_PUBLIC_TENANT_SLUG") || "public";
       const tenantSlug = body.tenantSlug || DEFAULT_PUBLIC_TENANT_SLUG;
+      const adminEmailAllowRaw = String(readEnvOrFile("HOS_PLATFORM_ADMIN_EMAILS") || "");
+      const adminEmailAllow = adminEmailAllowRaw
+        .split(/[,\s;]+/)
+        .map((x) => x.trim().toLowerCase())
+        .filter(Boolean);
 
       // Platform admin login mode: allow tenantSlug-free login for unique privileged identity.
       // This is used by /admin to avoid tenant coupling in the UI.
       if (body.admin === true && !body.tenantSlug) {
+        if (adminEmailAllow.length > 0 && !adminEmailAllow.includes(email)) {
+          return reply.code(401).send({ error: "invalid_credentials" });
+        }
+
         const adminUsers = await db.query(
           "select id, tenant_id, password_hash, role from users where email = $1 and role in ('owner','admin') order by created_at asc limit 2",
           [email]
