@@ -6,26 +6,48 @@ import { trAdminError } from '../utils/opsSafety';
 const PAGE_SIZE = 100;
 const NOISE_ACTIONS = new Set(['user.login', 'user.login.admin', 'user.update.admin']);
 const CRITICAL_ACTION_KEYWORDS = ['delete', 'deactivate', 'suspend', 'owner', 'role.change', 'membership.delete'];
+const EXTRA_NOISE_ACTIONS = new Set(['user.login.google']);
 
 function toTime(v: any): number {
   const d = new Date(String(v || ''));
   return Number.isFinite(d.getTime()) ? d.getTime() : 0;
 }
 
+function isCriticalAction(action: any): boolean {
+  const a = String(action || '').toLowerCase();
+  return CRITICAL_ACTION_KEYWORDS.some((k) => a.includes(k));
+}
+
+function normalizeMeta(v: any): any {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+  return v;
+}
+
+function targetSummary(row: any): string | null {
+  const m = normalizeMeta(row?.metadata);
+  const targetUser = m.targetEmail || m.userEmail || m.targetUserId || m.userId || null;
+  const targetTenant = m.tenantSlug || m.tenant_id || row?.tenant_slug || row?.tenant_id || null;
+  if (!targetUser && !targetTenant) return null;
+  return `hedef: ${targetUser || '-'} | firma: ${targetTenant || '-'}`;
+}
+
 export function AuditPage() {
+  const initialSearch = new URLSearchParams(window.location.search);
+  const initialPageRaw = Number(initialSearch.get('page') || 0);
+  const initialPage = Number.isFinite(initialPageRaw) && initialPageRaw > 0 ? Math.floor(initialPageRaw) : 0;
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [q, setQ] = useState('');
-  const [action, setAction] = useState('');
-  const [actor, setActor] = useState('');
-  const [tenant, setTenant] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [hideNoise, setHideNoise] = useState(true);
-  const [mergeRepeats, setMergeRepeats] = useState(true);
-  const [criticalOnly, setCriticalOnly] = useState(false);
-  const [page, setPage] = useState(0);
+  const [q, setQ] = useState(initialSearch.get('q') || '');
+  const [action, setAction] = useState(initialSearch.get('action') || '');
+  const [actor, setActor] = useState(initialSearch.get('actor') || '');
+  const [tenant, setTenant] = useState(initialSearch.get('tenant') || '');
+  const [from, setFrom] = useState(initialSearch.get('from') || '');
+  const [to, setTo] = useState(initialSearch.get('to') || '');
+  const [hideNoise, setHideNoise] = useState((initialSearch.get('hideNoise') || '1') !== '0');
+  const [mergeRepeats, setMergeRepeats] = useState((initialSearch.get('mergeRepeats') || '1') !== '0');
+  const [criticalOnly, setCriticalOnly] = useState((initialSearch.get('criticalOnly') || '0') === '1');
+  const [page, setPage] = useState(initialPage);
   const [hasMore, setHasMore] = useState(false);
 
   const load = useCallback(async () => {
@@ -60,12 +82,27 @@ export function AuditPage() {
     setPage(0);
   }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats, criticalOnly]);
 
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (action) params.set('action', action);
+    if (actor) params.set('actor', actor);
+    if (tenant) params.set('tenant', tenant);
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (!hideNoise) params.set('hideNoise', '0');
+    if (!mergeRepeats) params.set('mergeRepeats', '0');
+    if (criticalOnly) params.set('criticalOnly', '1');
+    if (page > 0) params.set('page', String(page));
+    const nextUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    window.history.replaceState({}, '', nextUrl);
+  }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats, criticalOnly, page]);
+
   const visibleItems = React.useMemo(() => {
     const noNoise = hideNoise ? items.filter((x: any) => !NOISE_ACTIONS.has(String(x?.action || ''))) : items;
     const filtered = criticalOnly
       ? noNoise.filter((x: any) => {
-          const a = String(x?.action || '').toLowerCase();
-          return CRITICAL_ACTION_KEYWORDS.some((k) => a.includes(k));
+          return isCriticalAction(x?.action);
         })
       : noNoise;
     if (!mergeRepeats) return filtered;
@@ -73,21 +110,36 @@ export function AuditPage() {
     for (const row of filtered) {
       const last = out[out.length - 1];
       if (!last) {
-        out.push({ ...row, repeat_count: 1 });
+        out.push({ ...row, repeat_count: 1, first_created_at: row.created_at, last_created_at: row.created_at });
         continue;
       }
-      const sameAction = String(last.action || '') === String(row.action || '');
+      const rowAction = String(row.action || '');
+      const sameAction = String(last.action || '') === rowAction;
       const sameActor = String(last.actor_user_id || '') === String(row.actor_user_id || '');
       const sameTenant = String(last.tenant_slug || last.tenant_id || '') === String(row.tenant_slug || row.tenant_id || '');
-      const close = Math.abs(toTime(last.created_at) - toTime(row.created_at)) <= 120000;
+      const sameTarget = targetSummary(last) === targetSummary(row);
+      const mergeWindowMs = NOISE_ACTIONS.has(rowAction) || EXTRA_NOISE_ACTIONS.has(rowAction) ? 600000 : 120000;
+      const close = Math.abs(toTime(last.created_at) - toTime(row.created_at)) <= mergeWindowMs;
       if (sameAction && sameActor && sameTenant && close) {
         last.repeat_count = (last.repeat_count || 1) + 1;
+        last.last_created_at = row.created_at || last.last_created_at;
+        if (sameTarget) last.metadata = last.metadata || row.metadata;
       } else {
-        out.push({ ...row, repeat_count: 1 });
+        out.push({ ...row, repeat_count: 1, first_created_at: row.created_at, last_created_at: row.created_at });
       }
     }
     return out;
   }, [items, hideNoise, mergeRepeats, criticalOnly]);
+
+  const criticalItems = React.useMemo(
+    () => visibleItems.filter((x: any) => isCriticalAction(x?.action)),
+    [visibleItems]
+  );
+
+  const normalItems = React.useMemo(
+    () => visibleItems.filter((x: any) => !isCriticalAction(x?.action)),
+    [visibleItems]
+  );
 
   function resetFilters() {
     setQ('');
@@ -242,7 +294,49 @@ export function AuditPage() {
         {!error && visibleItems.length === 0 ? <p>Denetim kaydi bulunamadi.</p> : null}
         {visibleItems.length > 0 ? (
           <div style={{ display: 'grid', gap: '0.6rem' }}>
-            {visibleItems.map((row: any) => (
+            {criticalItems.length > 0 ? (
+              <div className="card" style={{ padding: '0.7rem 0.8rem', borderColor: 'rgba(248,113,113,.45)' }}>
+                <div style={{ fontWeight: 700, color: '#fca5a5', marginBottom: '0.5rem' }}>
+                  Kritik Kayitlar ({criticalItems.length})
+                </div>
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                  {criticalItems.map((row: any) => (
+                    <div key={`critical-${row.id}`} className="card" style={{ padding: '0.6rem 0.7rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <strong>
+                          {row.action || '-'}
+                          {row.repeat_count > 1 ? (
+                            <span style={{ marginLeft: '0.4rem', color: '#fbbf24', fontWeight: 500 }}>x{row.repeat_count}</span>
+                          ) : null}
+                        </strong>
+                        <span style={{ color: '#9ca3af' }}>
+                          {row.created_at || '-'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.9rem', marginTop: '0.35rem' }}>
+                        islem yapan: <code>{row.actor_email || row.actor_user_id || '-'}</code>
+                      </div>
+                      <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                        firma: <code>{row.tenant_slug || row.tenant_id || '-'}</code>
+                      </div>
+                      {targetSummary(row) ? (
+                        <div style={{ fontSize: '0.9rem', marginTop: '0.25rem', color: '#d1d5db' }}>
+                          {targetSummary(row)}
+                        </div>
+                      ) : null}
+                      {row.repeat_count > 1 ? (
+                          <div style={{ fontSize: '0.84rem', marginTop: '0.25rem', color: '#9ca3af' }}>
+                            zaman araligi: {row.first_created_at || '-'} {'->'} {row.last_created_at || '-'}
+                          </div>
+                      ) : null}
+                      {row.metadata ? <pre style={{ marginTop: '0.4rem' }}>{JSON.stringify(row.metadata, null, 2)}</pre> : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {normalItems.map((row: any) => (
               <div key={row.id} className="card" style={{ padding: '0.6rem 0.8rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <strong>
@@ -259,6 +353,16 @@ export function AuditPage() {
                 <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
                   firma: <code>{row.tenant_slug || row.tenant_id || '-'}</code>
                 </div>
+                {targetSummary(row) ? (
+                  <div style={{ fontSize: '0.9rem', marginTop: '0.25rem', color: '#d1d5db' }}>
+                    {targetSummary(row)}
+                  </div>
+                ) : null}
+                {row.repeat_count > 1 ? (
+                  <div style={{ fontSize: '0.84rem', marginTop: '0.25rem', color: '#9ca3af' }}>
+                    zaman araligi: {row.first_created_at || '-'} {'->'} {row.last_created_at || '-'}
+                  </div>
+                ) : null}
                 {row.metadata ? <pre style={{ marginTop: '0.4rem' }}>{JSON.stringify(row.metadata, null, 2)}</pre> : null}
               </div>
             ))}
