@@ -247,6 +247,44 @@ export function MembershipsPage() {
     setSelectedKeys([]);
   }
 
+  async function handleBulkDeleteMemberships() {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    if (selectedKeys.length === 0) return;
+
+    const selectedRows = items.filter((m: any) => selectedKeys.includes(`${m.tenant_id}:${m.user_id}`));
+    const ok = confirmRiskyAction({
+      title: 'Secili uyelikler kalici olarak silinecek.',
+      summary: `Secili kayit sayisi: ${selectedRows.length}\nBu islem geri alinamaz.`,
+      risk: 'critical',
+    });
+    if (!ok) return;
+
+    setError(null);
+    setActionError(null);
+    setMessage(null);
+    let success = 0;
+    const failed: string[] = [];
+    for (const row of selectedRows) {
+      try {
+        await adminMembershipLifecycle(token, String(row.tenant_id), String(row.user_id), 'delete');
+        success += 1;
+      } catch {
+        failed.push(row.user_email || row.user_id);
+      }
+    }
+    if (failed.length > 0) {
+      setActionError(`Toplu kalici silme tamamlandi. Basarili: ${success}, Hatali: ${failed.length} (${failed.slice(0, 3).join(', ')})`);
+    } else {
+      setMessage(`Toplu kalici silme tamamlandi. Basarili: ${success}`);
+    }
+    await load();
+    setSelectedKeys([]);
+  }
+
   return (
     <AdminLayout title="Uyelikler">
       <div className="card">
@@ -257,6 +295,13 @@ export function MembershipsPage() {
           </button>
           <button onClick={handleBulkDeactivateMemberships} disabled={loading || selectedKeys.length === 0} style={{ marginLeft: '0.5rem' }}>
             Secilileri Pasife Al ({selectedKeys.length})
+          </button>
+          <button
+            onClick={handleBulkDeleteMemberships}
+            disabled={loading || selectedKeys.length === 0}
+            style={{ marginLeft: '0.5rem', borderColor: 'rgba(248,113,113,.5)', color: '#fecaca' }}
+          >
+            Secilileri Kalici Sil ({selectedKeys.length})
           </button>
         </div>
         {error ? (

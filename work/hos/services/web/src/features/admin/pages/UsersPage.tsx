@@ -225,6 +225,47 @@ export function UsersPage() {
     setSelectedUserIds([]);
   }
 
+  async function handleBulkDeleteUsers() {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    if (selectedUserIds.length === 0) return;
+
+    const selectedRows = items.filter((x: any) => selectedUserIds.includes(String(x.id || '')));
+    const ok = confirmRiskyAction({
+      title: 'Secili kullanicilar kalici olarak silinecek.',
+      summary: `Secili kayit sayisi: ${selectedRows.length}\nBu islem geri alinamaz.`,
+      risk: 'critical',
+    });
+    if (!ok) return;
+
+    setError(null);
+    setActionError(null);
+    setMessage(null);
+    setUndoRole(null);
+    let success = 0;
+    const failed: string[] = [];
+    for (const row of selectedRows) {
+      const userId = String(row.id || '');
+      if (!userId) continue;
+      try {
+        await adminUserLifecycle(token, userId, 'delete');
+        success += 1;
+      } catch {
+        failed.push(row.email || userId);
+      }
+    }
+    if (failed.length > 0) {
+      setActionError(`Toplu kalici silme tamamlandi. Basarili: ${success}, Hatali: ${failed.length} (${failed.slice(0, 3).join(', ')})`);
+    } else {
+      setMessage(`Toplu kalici silme tamamlandi. Basarili: ${success}`);
+    }
+    await load();
+    setSelectedUserIds([]);
+  }
+
   return (
     <AdminLayout title="Kullanicilar">
       <div className="card">
@@ -235,6 +276,13 @@ export function UsersPage() {
           </button>
           <button onClick={handleBulkDeactivateUsers} disabled={loading || selectedUserIds.length === 0} style={{ marginLeft: '0.5rem' }}>
             Secilileri Pasife Al ({selectedUserIds.length})
+          </button>
+          <button
+            onClick={handleBulkDeleteUsers}
+            disabled={loading || selectedUserIds.length === 0}
+            style={{ marginLeft: '0.5rem', borderColor: 'rgba(248,113,113,.5)', color: '#fecaca' }}
+          >
+            Secilileri Kalici Sil ({selectedUserIds.length})
           </button>
         </div>
         {error ? (
