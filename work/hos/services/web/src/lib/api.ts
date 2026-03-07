@@ -110,10 +110,11 @@ export async function adminMemberships(token: string) {
 
 export async function adminAudit(
   token: string,
-  opts: { limit?: number; action?: string; actor?: string; tenant?: string; q?: string; from?: string; to?: string } = {}
+  opts: { limit?: number; offset?: number; action?: string; actor?: string; tenant?: string; q?: string; from?: string; to?: string } = {}
 ) {
   const qs = new URLSearchParams();
   qs.set('limit', String(opts.limit ?? 50));
+  qs.set('offset', String(opts.offset ?? 0));
   if (opts.action) qs.set('action', opts.action);
   if (opts.actor) qs.set('actor', opts.actor);
   if (opts.tenant) qs.set('tenant', opts.tenant);

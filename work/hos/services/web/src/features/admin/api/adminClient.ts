@@ -44,7 +44,7 @@ export async function adminMemberships(token: string) {
 
 export async function adminAudit(
   token: string,
-  opts?: { limit?: number; action?: string; actor?: string; tenant?: string; q?: string; from?: string; to?: string }
+  opts?: { limit?: number; offset?: number; action?: string; actor?: string; tenant?: string; q?: string; from?: string; to?: string }
 ) {
   try {
     return await apiAdminAudit(token, opts);

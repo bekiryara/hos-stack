@@ -25,6 +25,15 @@ function parseLimit(raw, fallback = 50) {
   return limit;
 }
 
+function parseOffset(raw) {
+  let offset = Number(raw ?? 0);
+  if (!Number.isFinite(offset)) offset = 0;
+  offset = Math.floor(offset);
+  if (offset < 0) offset = 0;
+  if (offset > 100000) offset = 100000;
+  return offset;
+}
+
 function parseIsoDate(raw) {
   if (!raw) return null;
   const d = new Date(String(raw));
@@ -215,6 +224,7 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     if (!payload) return;
 
     const limit = parseLimit(req?.query?.limit, 50);
+    const offset = parseOffset(req?.query?.offset);
     const actionLike = String(req?.query?.action || "").trim().toLowerCase();
     const actorLike = String(req?.query?.actor || "").trim().toLowerCase();
     const tenantLike = String(req?.query?.tenant || "").trim().toLowerCase();
@@ -253,8 +263,9 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     }
 
     params.push(limit);
+    params.push(offset);
     const whereSql = where.length > 0 ? `where ${where.join(" and ")}` : "";
-    const sql = `select a.id, a.action, a.created_at, a.metadata, a.actor_user_id, a.tenant_id, t.slug as tenant_slug from audit_events a left join tenants t on t.id = a.tenant_id ${whereSql} order by a.created_at desc limit $${i}`;
+    const sql = `select a.id, a.action, a.created_at, a.metadata, a.actor_user_id, au.email as actor_email, a.tenant_id, t.slug as tenant_slug from audit_events a left join tenants t on t.id = a.tenant_id left join users au on au.id = a.actor_user_id ${whereSql} order by a.created_at desc limit $${i} offset $${i + 1}`;
     const res = await db.query(sql, params);
 
     return reply.send({ items: res.rows.map((r) => ({ ...r, metadata: normalizeMetadata(r.metadata) })) });

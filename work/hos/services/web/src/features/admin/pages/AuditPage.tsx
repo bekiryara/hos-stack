@@ -3,6 +3,14 @@ import { adminAudit } from '../api/adminClient';
 import { AdminLayout } from '../layout/AdminLayout';
 import { trAdminError } from '../utils/opsSafety';
 
+const PAGE_SIZE = 100;
+const NOISE_ACTIONS = new Set(['user.login', 'user.login.admin', 'user.update.admin']);
+
+function toTime(v: any): number {
+  const d = new Date(String(v || ''));
+  return Number.isFinite(d.getTime()) ? d.getTime() : 0;
+}
+
 export function AuditPage() {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>([]);
@@ -13,6 +21,10 @@ export function AuditPage() {
   const [tenant, setTenant] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [hideNoise, setHideNoise] = useState(true);
+  const [mergeRepeats, setMergeRepeats] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -25,20 +37,49 @@ export function AuditPage() {
     setLoading(true);
     setError(null);
     try {
-      const out = await adminAudit(token, { limit: 200, q, action, actor, tenant, from, to });
+      const out = await adminAudit(token, { limit: PAGE_SIZE, offset: page * PAGE_SIZE, q, action, actor, tenant, from, to });
       const next = Array.isArray(out?.items) ? out.items : Array.isArray(out) ? out : [];
       setItems(next);
+      setHasMore(next.length === PAGE_SIZE);
     } catch (e: any) {
       setError(trAdminError(e?.body?.error || e?.message, 'Denetim kayitlari yuklenemedi'));
       setItems([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
-  }, [q, action, actor, tenant, from, to]);
+  }, [q, action, actor, tenant, from, to, page]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats]);
+
+  const visibleItems = React.useMemo(() => {
+    const filtered = hideNoise ? items.filter((x: any) => !NOISE_ACTIONS.has(String(x?.action || ''))) : items;
+    if (!mergeRepeats) return filtered;
+    const out: any[] = [];
+    for (const row of filtered) {
+      const last = out[out.length - 1];
+      if (!last) {
+        out.push({ ...row, repeat_count: 1 });
+        continue;
+      }
+      const sameAction = String(last.action || '') === String(row.action || '');
+      const sameActor = String(last.actor_user_id || '') === String(row.actor_user_id || '');
+      const sameTenant = String(last.tenant_slug || last.tenant_id || '') === String(row.tenant_slug || row.tenant_id || '');
+      const close = Math.abs(toTime(last.created_at) - toTime(row.created_at)) <= 120000;
+      if (sameAction && sameActor && sameTenant && close) {
+        last.repeat_count = (last.repeat_count || 1) + 1;
+      } else {
+        out.push({ ...row, repeat_count: 1 });
+      }
+    }
+    return out;
+  }, [items, hideNoise, mergeRepeats]);
 
   function resetFilters() {
     setQ('');
@@ -47,17 +88,22 @@ export function AuditPage() {
     setTenant('');
     setFrom('');
     setTo('');
+    setHideNoise(true);
+    setMergeRepeats(true);
+    setPage(0);
   }
 
   function exportCsv() {
-    const rows = items.map((row: any) => ({
+    const rows = visibleItems.map((row: any) => ({
       created_at: row.created_at || '',
       action: row.action || '',
+      actor_email: row.actor_email || '',
       actor_user_id: row.actor_user_id || '',
       tenant_slug: row.tenant_slug || row.tenant_id || '',
+      repeat_count: row.repeat_count || 1,
       metadata: row.metadata ? JSON.stringify(row.metadata) : '',
     }));
-    const headers = ['created_at', 'action', 'actor_user_id', 'tenant_slug', 'metadata'];
+    const headers = ['created_at', 'action', 'actor_email', 'actor_user_id', 'tenant_slug', 'repeat_count', 'metadata'];
     const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const csv = [headers.join(','), ...rows.map((r) => headers.map((h) => esc((r as any)[h])).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -86,8 +132,14 @@ export function AuditPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.5rem' }}>
             <input type="datetime-local" value={from} onChange={(e) => setFrom(e.target.value)} />
             <input type="datetime-local" value={to} onChange={(e) => setTo(e.target.value)} />
-            <div />
-            <div />
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <input type="checkbox" checked={hideNoise} onChange={(e) => setHideNoise(e.target.checked)} />
+              Gurultuyu gizle
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <input type="checkbox" checked={mergeRepeats} onChange={(e) => setMergeRepeats(e.target.checked)} />
+              Tekrarlari birlestir
+            </label>
           </div>
         </div>
         <div style={{ marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -100,6 +152,15 @@ export function AuditPage() {
           <button onClick={exportCsv} disabled={items.length === 0}>
             CSV Indir
           </button>
+          <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={loading || page === 0}>
+            Onceki Sayfa
+          </button>
+          <button onClick={() => setPage((p) => p + 1)} disabled={loading || !hasMore}>
+            Sonraki Sayfa
+          </button>
+          <span style={{ color: '#9ca3af', fontSize: '0.9rem', alignSelf: 'center' }}>
+            Sayfa: {page + 1}
+          </span>
         </div>
         {error ? (
           <div className="card error">
@@ -107,17 +168,22 @@ export function AuditPage() {
             <pre>{String(error)}</pre>
           </div>
         ) : null}
-        {!error && items.length === 0 ? <p>Denetim kaydi bulunamadi.</p> : null}
-        {items.length > 0 ? (
+        {!error && visibleItems.length === 0 ? <p>Denetim kaydi bulunamadi.</p> : null}
+        {visibleItems.length > 0 ? (
           <div style={{ display: 'grid', gap: '0.6rem' }}>
-            {items.map((row: any) => (
+            {visibleItems.map((row: any) => (
               <div key={row.id} className="card" style={{ padding: '0.6rem 0.8rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <strong>{row.action || '-'}</strong>
+                  <strong>
+                    {row.action || '-'}
+                    {row.repeat_count > 1 ? (
+                      <span style={{ marginLeft: '0.4rem', color: '#fbbf24', fontWeight: 500 }}>x{row.repeat_count}</span>
+                    ) : null}
+                  </strong>
                   <span style={{ color: '#9ca3af' }}>{row.created_at || '-'}</span>
                 </div>
                 <div style={{ fontSize: '0.9rem', marginTop: '0.35rem' }}>
-                  islem yapan: <code>{row.actor_user_id || '-'}</code>
+                  islem yapan: <code>{row.actor_email || row.actor_user_id || '-'}</code>
                 </div>
                 <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
                   firma: <code>{row.tenant_slug || row.tenant_id || '-'}</code>
