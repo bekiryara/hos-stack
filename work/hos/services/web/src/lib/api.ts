@@ -127,3 +127,7 @@ export async function adminAudit(
 export async function adminOverview(token: string) {
   return await fetchJson('/api/v1/admin/platform/overview', undefined, token);
 }
+
+export async function adminActionCenter(token: string) {
+  return await fetchJson('/api/v1/admin/platform/action-center', undefined, token);
+}

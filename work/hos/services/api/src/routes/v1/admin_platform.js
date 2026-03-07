@@ -73,6 +73,63 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     });
   });
 
+  app.get("/admin/platform/action-center", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const criticalActions = [
+      "user.delete.platform",
+      "user.deactivate.platform",
+      "membership.delete.platform",
+      "membership.deactivate.platform",
+      "user.role.change.platform"
+    ];
+
+    const [
+      critical24h,
+      usersDeactivated24h,
+      usersDeleted24h,
+      membershipsDeactivated24h,
+      membershipsDeleted24h,
+      ownerRiskTenants,
+      latestCritical
+    ] = await Promise.all([
+      db.query(
+        "select count(*)::int as c from audit_events where created_at >= now() - interval '24 hours' and action = any($1::text[])",
+        [criticalActions]
+      ),
+      db.query(
+        "select count(*)::int as c from audit_events where created_at >= now() - interval '24 hours' and action = 'user.deactivate.platform'"
+      ),
+      db.query(
+        "select count(*)::int as c from audit_events where created_at >= now() - interval '24 hours' and action = 'user.delete.platform'"
+      ),
+      db.query(
+        "select count(*)::int as c from audit_events where created_at >= now() - interval '24 hours' and action = 'membership.deactivate.platform'"
+      ),
+      db.query(
+        "select count(*)::int as c from audit_events where created_at >= now() - interval '24 hours' and action = 'membership.delete.platform'"
+      ),
+      db.query(
+        "select count(*)::int as c from (select tenant_id from memberships where status = 'active' group by tenant_id having sum(case when role = 'owner' then 1 else 0 end) = 1) r"
+      ),
+      db.query(
+        "select a.id, a.action, a.created_at, a.actor_user_id, au.email as actor_email, a.tenant_id, t.slug as tenant_slug from audit_events a left join tenants t on t.id = a.tenant_id left join users au on au.id = a.actor_user_id where a.action = any($1::text[]) order by a.created_at desc limit 10",
+        [criticalActions]
+      )
+    ]);
+
+    return reply.send({
+      critical_events_24h: critical24h.rows?.[0]?.c ?? 0,
+      owner_risk_tenants: ownerRiskTenants.rows?.[0]?.c ?? 0,
+      users_deactivated_24h: usersDeactivated24h.rows?.[0]?.c ?? 0,
+      users_deleted_24h: usersDeleted24h.rows?.[0]?.c ?? 0,
+      memberships_deactivated_24h: membershipsDeactivated24h.rows?.[0]?.c ?? 0,
+      memberships_deleted_24h: membershipsDeleted24h.rows?.[0]?.c ?? 0,
+      latest_critical_events: latestCritical.rows ?? []
+    });
+  });
+
   app.get("/admin/platform/tenants", async (req, reply) => {
     const payload = requireRole(req, reply, ["owner", "admin"]);
     if (!payload) return;

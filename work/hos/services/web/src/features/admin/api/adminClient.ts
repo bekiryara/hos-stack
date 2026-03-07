@@ -1,4 +1,5 @@
 import {
+  adminActionCenter as apiAdminActionCenter,
   adminAudit as apiAdminAudit,
   adminMemberships as apiAdminMemberships,
   adminOverview as apiAdminOverview,
@@ -56,6 +57,14 @@ export async function adminAudit(
 export async function adminOverview(token: string) {
   try {
     return await apiAdminOverview(token);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminActionCenter(token: string) {
+  try {
+    return await apiAdminActionCenter(token);
   } catch (error: any) {
     rethrowWithAuthHandling(error);
   }
