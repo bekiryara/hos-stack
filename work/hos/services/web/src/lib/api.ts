@@ -108,8 +108,18 @@ export async function adminMemberships(token: string) {
   return await fetchJson('/api/v1/admin/platform/memberships', undefined, token);
 }
 
-export async function adminAudit(token: string, limit: number = 50) {
-  const qs = new URLSearchParams({ limit: String(limit) }).toString();
+export async function adminAudit(
+  token: string,
+  opts: { limit?: number; action?: string; actor?: string; tenant?: string; q?: string; from?: string; to?: string } = {}
+) {
+  const qs = new URLSearchParams();
+  qs.set('limit', String(opts.limit ?? 50));
+  if (opts.action) qs.set('action', opts.action);
+  if (opts.actor) qs.set('actor', opts.actor);
+  if (opts.tenant) qs.set('tenant', opts.tenant);
+  if (opts.q) qs.set('q', opts.q);
+  if (opts.from) qs.set('from', opts.from);
+  if (opts.to) qs.set('to', opts.to);
   return await fetchJson(`/api/v1/admin/platform/audit?${qs}`, undefined, token);
 }
 

@@ -25,6 +25,12 @@ function parseLimit(raw, fallback = 50) {
   return limit;
 }
 
+function parseIsoDate(raw) {
+  if (!raw) return null;
+  const d = new Date(String(raw));
+  return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+}
+
 /**
  * Register platform-scoped admin routes.
  * Scope: global visibility across all tenants/worlds for owner/admin roles.
@@ -209,10 +215,47 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     if (!payload) return;
 
     const limit = parseLimit(req?.query?.limit, 50);
-    const res = await db.query(
-      "select a.id, a.action, a.created_at, a.metadata, a.actor_user_id, a.tenant_id, t.slug as tenant_slug from audit_events a left join tenants t on t.id = a.tenant_id order by a.created_at desc limit $1",
-      [limit]
-    );
+    const actionLike = String(req?.query?.action || "").trim().toLowerCase();
+    const actorLike = String(req?.query?.actor || "").trim().toLowerCase();
+    const tenantLike = String(req?.query?.tenant || "").trim().toLowerCase();
+    const qLike = String(req?.query?.q || "").trim().toLowerCase();
+    const fromIso = parseIsoDate(req?.query?.from);
+    const toIso = parseIsoDate(req?.query?.to);
+
+    const where = [];
+    const params = [];
+    let i = 1;
+
+    if (actionLike) {
+      where.push(`lower(a.action) like $${i++}`);
+      params.push(`%${actionLike}%`);
+    }
+    if (actorLike) {
+      where.push(`lower(coalesce(a.actor_user_id::text,'')) like $${i++}`);
+      params.push(`%${actorLike}%`);
+    }
+    if (tenantLike) {
+      where.push(`lower(coalesce(t.slug,'')) like $${i++}`);
+      params.push(`%${tenantLike}%`);
+    }
+    if (fromIso) {
+      where.push(`a.created_at >= $${i++}`);
+      params.push(fromIso);
+    }
+    if (toIso) {
+      where.push(`a.created_at <= $${i++}`);
+      params.push(toIso);
+    }
+    if (qLike) {
+      where.push(`(lower(coalesce(a.action,'')) like $${i} or lower(coalesce(a.actor_user_id::text,'')) like $${i} or lower(coalesce(t.slug,'')) like $${i})`);
+      params.push(`%${qLike}%`);
+      i += 1;
+    }
+
+    params.push(limit);
+    const whereSql = where.length > 0 ? `where ${where.join(" and ")}` : "";
+    const sql = `select a.id, a.action, a.created_at, a.metadata, a.actor_user_id, a.tenant_id, t.slug as tenant_slug from audit_events a left join tenants t on t.id = a.tenant_id ${whereSql} order by a.created_at desc limit $${i}`;
+    const res = await db.query(sql, params);
 
     return reply.send({ items: res.rows.map((r) => ({ ...r, metadata: normalizeMetadata(r.metadata) })) });
   });
