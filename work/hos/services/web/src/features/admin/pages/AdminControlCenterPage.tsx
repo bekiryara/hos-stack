@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { hosLogin, hosMe } from '../api/adminClient';
 import { AdminLayout } from '../layout/AdminLayout';
-import { clearAdminSession, getAdminToken, setAdminSession } from '../session';
+import { getAdminToken, setAdminSession } from '../session';
 
 export function AdminControlCenterPage() {
   const [token, setToken] = useState<string>(() => getAdminToken());
@@ -56,47 +56,55 @@ export function AdminControlCenterPage() {
     }
   }
 
-  function logout() {
-    clearAdminSession();
-    setToken('');
-    setMe(null);
-    setAdminErr(null);
-    window.location.href = '/admin';
-  }
-
   return (
     <AdminLayout title="Kontrol Merkezi">
       <p className="hint">
-        Bu ekran sadece yonetim oturumu icindir.
+        Bu ekran sadece yonetim girisi icindir.
       </p>
 
-      <div className="card">
+      <div className="card" style={{ maxWidth: 680, padding: '1.25rem' }}>
         <div className="title">Oturum Islemleri</div>
-        <div style={{ display: 'grid', gap: '0.5rem', maxWidth: 520 }}>
+        <div style={{ display: 'grid', gap: '1rem', maxWidth: 560 }}>
           <label>
-            E-posta
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@firma.com" autoComplete="username" />
+            <div style={{ marginBottom: '0.35rem', color: '#d1d5db' }}>E-posta</div>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !authBusy && email && password) {
+                  e.preventDefault();
+                  void adminDoLogin();
+                }
+              }}
+              placeholder="admin@firma.com"
+              autoComplete="username"
+              style={{ width: '100%', minHeight: 42 }}
+            />
           </label>
           <label>
-            Sifre
+            <div style={{ marginBottom: '0.35rem', color: '#d1d5db' }}>Sifre</div>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !authBusy && email && password) {
+                  e.preventDefault();
+                  void adminDoLogin();
+                }
+              }}
               placeholder="********"
               type="password"
               autoComplete="current-password"
+              style={{ width: '100%', minHeight: 42 }}
             />
           </label>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             <button onClick={adminDoLogin} disabled={authBusy || !email || !password}>
               {authBusy ? 'Giris yapiliyor...' : 'Giris Yap'}
             </button>
-            <button onClick={logout} disabled={!token || authBusy}>
-              Cikis Yap
-            </button>
           </div>
           {me ? (
-            <div style={{ fontSize: '0.9rem', color: '#666' }}>
+            <div style={{ fontSize: '0.92rem', color: '#9ca3af' }}>
               Giris yapan: <code>{me?.email || me?.sub || 'bilinmiyor'}</code> ({me?.memberships_count ?? 0} uyelik)
             </div>
           ) : (
