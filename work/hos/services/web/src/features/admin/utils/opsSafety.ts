@@ -9,6 +9,8 @@ export function trAdminError(input: unknown, fallback = 'Islem tamamlanamadi.'):
   if (raw.includes('invalid_user_id')) return 'Gecersiz kullanici kimligi.';
   if (raw.includes('invalid_tenant_id')) return 'Gecersiz firma kimligi.';
   if (raw.includes('role_or_status_required')) return 'Rol veya durum degisikligi secilmelidir.';
+  if (raw.includes('cannot_delete_current_admin_session')) return 'Acik olan kendi admin oturum hesabinizi bu ekrandan silemezsiniz.';
+  if (raw.includes('cannot_delete_user_with_permits')) return 'Bu kullaniciya bagli kayitlar oldugu icin kalici silme engellendi. Once pasife alin.';
   if (raw.includes('invalid_credentials')) return 'E-posta veya sifre hatali.';
   return raw;
 }

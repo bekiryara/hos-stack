@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { adminUpdateUserRole, adminUsers } from '../api/adminClient';
+import { adminUpdateUserRole, adminUserLifecycle, adminUsers } from '../api/adminClient';
 import { AdminLayout } from '../layout/AdminLayout';
 import { confirmRiskyAction, trAdminError } from '../utils/opsSafety';
 
@@ -110,6 +110,70 @@ export function UsersPage() {
     }
   }
 
+  async function handleDeactivateUser(row: any) {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    const currentRole = (row.role || 'member') as UserRole;
+    const risk: 'low' | 'medium' | 'critical' = currentRole === 'owner' ? 'critical' : 'medium';
+    const ok = confirmRiskyAction({
+      title: 'Kullanici pasife alinacak.',
+      summary: `Kullanici: ${row.email || row.id}\nFirma: ${row.tenant_slug || row.tenant_name || '-'}\nBu islem aktif uyelikleri kapatir.`,
+      risk,
+    });
+    if (!ok) return;
+
+    const userId = String(row.id || '');
+    if (!userId) return;
+    setSavingUserId(userId);
+    setError(null);
+    setActionError(null);
+    setMessage(null);
+    setUndoRole(null);
+    try {
+      await adminUserLifecycle(token, userId, 'deactivate');
+      setMessage('Kullanici pasife alindi.');
+      await load();
+    } catch (e: any) {
+      setActionError(trAdminError(e?.body?.error || e?.message, 'Kullanici pasife alinamadi'));
+    } finally {
+      setSavingUserId(null);
+    }
+  }
+
+  async function handleDeleteUser(row: any) {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    const ok = confirmRiskyAction({
+      title: 'Kullanici kalici olarak silinecek.',
+      summary: `Kullanici: ${row.email || row.id}\nFirma: ${row.tenant_slug || row.tenant_name || '-'}\nBu islem geri alinamaz.`,
+      risk: 'critical',
+    });
+    if (!ok) return;
+
+    const userId = String(row.id || '');
+    if (!userId) return;
+    setSavingUserId(userId);
+    setError(null);
+    setActionError(null);
+    setMessage(null);
+    setUndoRole(null);
+    try {
+      await adminUserLifecycle(token, userId, 'delete');
+      setMessage('Kullanici kalici olarak silindi.');
+      await load();
+    } catch (e: any) {
+      setActionError(trAdminError(e?.body?.error || e?.message, 'Kullanici silinemedi'));
+    } finally {
+      setSavingUserId(null);
+    }
+  }
+
   return (
     <AdminLayout title="Kullanicilar">
       <div className="card">
@@ -181,9 +245,17 @@ export function UsersPage() {
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.google_linked ? 'Evet' : 'Hayir'}</td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.created_at || '-'}</td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                      <button onClick={() => handleSaveRole(row.id)} disabled={savingUserId === row.id}>
-                        {savingUserId === row.id ? 'Kaydediliyor...' : 'Kaydet'}
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        <button onClick={() => handleSaveRole(row.id)} disabled={savingUserId === row.id}>
+                          {savingUserId === row.id ? 'Kaydediliyor...' : 'Kaydet'}
+                        </button>
+                        <button onClick={() => handleDeactivateUser(row)} disabled={savingUserId === row.id}>
+                          Pasife Al
+                        </button>
+                        <button onClick={() => handleDeleteUser(row)} disabled={savingUserId === row.id}>
+                          Sil
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -156,6 +156,9 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
   const patchUserRoleBody = z.object({
     role: z.enum(["member", "admin", "owner"])
   });
+  const userLifecycleBody = z.object({
+    action: z.enum(["deactivate", "delete"])
+  });
 
   app.patch("/admin/platform/users/:id/role", async (req, reply) => {
     const payload = requireRole(req, reply, ["owner"]);
@@ -197,5 +200,73 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     });
 
     return reply.send({ ok: true });
+  });
+
+  app.post("/admin/platform/users/:id/lifecycle", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner"]);
+    if (!payload) return;
+
+    const body = userLifecycleBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: body.error.flatten() });
+
+    const userId = String(req.params?.id || "");
+    if (!userId) return reply.code(400).send({ error: "invalid_user_id" });
+    if (userId === String(payload.sub || "")) return reply.code(409).send({ error: "cannot_delete_current_admin_session" });
+
+    const target = await db.query("select id, tenant_id, email, role from users where id = $1 limit 1", [userId]);
+    if (target.rowCount === 0) return reply.code(404).send({ error: "user_not_found" });
+    const targetTenantId = target.rows[0].tenant_id;
+    const targetEmail = target.rows[0].email;
+
+    const lockedOwner = await db.query(
+      "select m.tenant_id from memberships m where m.user_id = $1 and m.role = 'owner' and m.status = 'active' and (select count(*)::int from memberships mo where mo.tenant_id = m.tenant_id and mo.role = 'owner' and mo.status = 'active') <= 1 limit 1",
+      [userId]
+    );
+    if (lockedOwner.rowCount > 0) return reply.code(409).send({ error: "cannot_remove_last_owner" });
+
+    if (body.data.action === "deactivate") {
+      const disabledMemberships = await db.query(
+        "update memberships set status = 'inactive', updated_at = now() where user_id = $1 and status = 'active'",
+        [userId]
+      );
+      await db.query("update users set role = 'member' where id = $1 and role <> 'member'", [userId]);
+
+      await audit(db, {
+        action: "user.deactivate.platform",
+        tenantId: targetTenantId,
+        actorUserId: payload.sub,
+        metadata: { targetUserId: userId, targetEmail, activeMembershipsDisabled: disabledMemberships.rowCount ?? 0 }
+      });
+
+      return reply.send({ ok: true, action: "deactivate", active_memberships_disabled: disabledMemberships.rowCount ?? 0 });
+    }
+
+    const permitRefs = await db.query("select count(*)::int as c from hos_permits where actor_id = $1", [userId]);
+    const permitCount = permitRefs.rows?.[0]?.c ?? 0;
+    if (permitCount > 0) {
+      return reply.code(409).send({ error: "cannot_delete_user_with_permits", permits_count: permitCount });
+    }
+
+    await db.query("begin");
+    try {
+      const del = await db.query("delete from users where id = $1", [userId]);
+      if (del.rowCount === 0) {
+        await db.query("rollback");
+        return reply.code(404).send({ error: "user_not_found" });
+      }
+      await db.query("commit");
+    } catch (e) {
+      await db.query("rollback");
+      throw e;
+    }
+
+    await audit(db, {
+      action: "user.delete.platform",
+      tenantId: targetTenantId,
+      actorUserId: payload.sub,
+      metadata: { targetUserId: userId, targetEmail }
+    });
+
+    return reply.send({ ok: true, action: "delete" });
   });
 }

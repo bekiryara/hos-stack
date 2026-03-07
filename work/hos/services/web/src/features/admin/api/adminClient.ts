@@ -123,3 +123,32 @@ export async function adminUpdateUserRole(token: string, userId: string, role: '
   }
   return json;
 }
+
+export async function adminUserLifecycle(token: string, userId: string, action: 'deactivate' | 'delete') {
+  const resp = await fetch(`/api/v1/admin/platform/users/${encodeURIComponent(userId)}/lifecycle`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ action }),
+    cache: 'no-store',
+  });
+
+  const text = await resp.text();
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = { raw: text };
+  }
+
+  if (!resp.ok) {
+    const err: any = new Error(`POST /api/v1/admin/platform/users/:id/lifecycle failed: ${resp.status}`);
+    err.status = resp.status;
+    err.body = json;
+    rethrowWithAuthHandling(err);
+  }
+  return json;
+}
