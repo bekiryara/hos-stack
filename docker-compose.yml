@@ -35,9 +35,8 @@ services:
       PORT: 3000
       HOS_DEBUG_OIDC: "true"
       HOS_API_KEY: "dev-api-key"
-      # Comma-separated admin login allowlist (e.g. "bekiryarason@gmail.com,bekiryara@test.com")
-      # Empty means allow all owner/admin emails (legacy behavior).
-      HOS_PLATFORM_ADMIN_EMAILS: ""
+      # Comma-separated admin login allowlist.
+      HOS_PLATFORM_ADMIN_EMAILS: "bekiryarason@gmail.com,bekiryara@test.com"
       # Where the browser should land after successful Google OAuth.
       # Used by /v1/auth/google/callback (HTML flow) to hand token back to Marketplace.
       MARKETPLACE_WEB_PUBLIC_URL: "http://localhost:3002/marketplace"
@@ -218,4 +217,3 @@ volumes:
     name: pazar_cache
   messaging_db_data:
     name: messaging_db_data
-
