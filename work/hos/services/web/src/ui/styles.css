@@ -215,6 +215,23 @@ code {
   background: #263244;
 }
 
+[data-marker="hos-admin-layout"] .admin-tab-btn {
+  background: transparent;
+  border-color: rgba(255,255,255,.10);
+  color: #c5cedc;
+}
+
+[data-marker="hos-admin-layout"] .admin-tab-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,.035);
+  border-color: rgba(255,255,255,.18);
+}
+
+[data-marker="hos-admin-layout"] .admin-tab-btn.active {
+  background: rgba(125, 154, 193, 0.18);
+  border-color: rgba(125, 154, 193, 0.35);
+  color: #e8edf7;
+}
+
 [data-marker="hos-admin-layout"] input,
 [data-marker="hos-admin-layout"] select,
 [data-marker="hos-admin-layout"] textarea {

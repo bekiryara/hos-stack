@@ -174,3 +174,7 @@ export async function adminCategoryMappings(
   qs.set('per_page', String(opts.per_page ?? 100));
   return await fetchJson(`/api/v1/admin/platform/categories/mappings?${qs.toString()}`, undefined, token);
 }
+
+export async function adminCategoryListingStats(token: string, categoryId: string) {
+  return await fetchJson(`/api/v1/admin/platform/categories/${encodeURIComponent(categoryId)}/listing-stats`, undefined, token);
+}

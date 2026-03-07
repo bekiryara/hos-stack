@@ -190,6 +190,46 @@ function parseTrendyolWcFromSlug(slug) {
   return m?.[1] || null;
 }
 
+function collectDescendantCategoryIds(tree, rootId) {
+  const byId = new Map();
+  const roots = Array.isArray(tree) ? tree : [];
+  const stack = [...roots];
+  while (stack.length > 0) {
+    const n = stack.pop();
+    if (!n || typeof n !== "object") continue;
+    const id = String(n?.id || "").trim();
+    if (id) byId.set(id, n);
+    const children = Array.isArray(n?.children) ? n.children : [];
+    for (const c of children) stack.push(c);
+  }
+
+  const ids = new Set();
+  const walk = (node) => {
+    if (!node || typeof node !== "object") return;
+    const id = String(node?.id || "").trim();
+    if (id) ids.add(id);
+    const children = Array.isArray(node?.children) ? node.children : [];
+    for (const c of children) walk(c);
+  };
+  walk(byId.get(String(rootId)));
+  return ids;
+}
+
+function buildCategoryNodeMap(tree) {
+  const byId = new Map();
+  const roots = Array.isArray(tree) ? tree : [];
+  const stack = [...roots];
+  while (stack.length > 0) {
+    const n = stack.pop();
+    if (!n || typeof n !== "object") continue;
+    const id = String(n?.id || "").trim();
+    if (id) byId.set(id, n);
+    const children = Array.isArray(n?.children) ? n.children : [];
+    for (const c of children) stack.push(c);
+  }
+  return byId;
+}
+
 /**
  * Register platform-scoped admin routes.
  * Scope: global visibility across all tenants/worlds for owner/admin roles.
@@ -360,6 +400,79 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
       page,
       per_page: perPage,
       total,
+    });
+  });
+
+  app.get("/admin/platform/categories/:id/listing-stats", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const categoryId = String(req.params?.id || "").trim();
+    if (!categoryId) return reply.code(400).send({ error: "invalid_category_id" });
+
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    const statuses = ["draft", "published", "paused", "archived"];
+
+    const [tree, menuTree, ...listingSets] = await Promise.all([
+      fetchPazarCategoriesTree({ pazarBaseUrl, view: "", status: "all" }),
+      fetchPazarCategoriesTree({ pazarBaseUrl, view: "menu" }),
+      ...statuses.map((status) => fetchPazarListings({ pazarBaseUrl, status, perPage: LISTING_FETCH_PER_STATUS })),
+    ]);
+
+    const categoryNodeById = buildCategoryNodeMap(tree);
+    const selectedNode = categoryNodeById.get(categoryId);
+    if (!selectedNode) return reply.code(404).send({ error: "category_not_found" });
+
+    const descendantIds = collectDescendantCategoryIds(tree, categoryId);
+    if (descendantIds.size === 0) return reply.code(404).send({ error: "category_not_found" });
+
+    const directChildren = Array.isArray(selectedNode?.children) ? selectedNode.children : [];
+    const directChildrenCount = directChildren.length;
+    const subtreeCategoryCount = Math.max(0, descendantIds.size - 1);
+
+    const menuFlat = flattenCategoryTree(menuTree, []);
+    let menuPlacementsDirect = 0;
+    let menuPlacementsSubtree = 0;
+    for (const n of menuFlat) {
+      const cid = String(n?.canonical_category_id || "").trim();
+      if (!cid) continue;
+      if (cid === categoryId) menuPlacementsDirect += 1;
+      if (descendantIds.has(cid)) menuPlacementsSubtree += 1;
+    }
+
+    const directByStatus = { draft: 0, published: 0, paused: 0, archived: 0 };
+    const subtreeByStatus = { draft: 0, published: 0, paused: 0, archived: 0 };
+    let directTotal = 0;
+    let subtreeTotal = 0;
+
+    statuses.forEach((status, idx) => {
+      const rows = Array.isArray(listingSets[idx]) ? listingSets[idx] : [];
+      for (const r of rows) {
+        const lid = String(r?.category_id || "").trim();
+        if (!lid) continue;
+        if (lid === categoryId) {
+          directByStatus[status] += 1;
+          directTotal += 1;
+        }
+        if (descendantIds.has(lid)) {
+          subtreeByStatus[status] += 1;
+          subtreeTotal += 1;
+        }
+      }
+    });
+
+    return reply.send({
+      category_id: categoryId,
+      direct_children_count: directChildrenCount,
+      subtree_category_count: subtreeCategoryCount,
+      menu_placements_direct: menuPlacementsDirect,
+      menu_placements_subtree: menuPlacementsSubtree,
+      direct_total: directTotal,
+      subtree_total: subtreeTotal,
+      direct_by_status: directByStatus,
+      subtree_by_status: subtreeByStatus,
+      scanned_statuses: statuses,
+      scanned_per_status_limit: LISTING_FETCH_PER_STATUS,
     });
   });
 
