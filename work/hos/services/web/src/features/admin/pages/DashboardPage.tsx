@@ -1,6 +1,5 @@
 import React from 'react';
 import { AdminLayout } from '../layout/AdminLayout';
-import { getWorlds } from '../../../lib/api';
 import { adminActionCenter, adminOverview } from '../api/adminClient';
 import { trAdminError } from '../utils/opsSafety';
 
@@ -8,7 +7,6 @@ export function DashboardPage() {
   const [loading, setLoading] = React.useState(false);
   const [overview, setOverview] = React.useState<any>(null);
   const [actionCenter, setActionCenter] = React.useState<any>(null);
-  const [worlds, setWorlds] = React.useState<any[]>([]);
   const [error, setError] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
@@ -16,17 +14,15 @@ export function DashboardPage() {
     if (!token) {
       setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
       setOverview(null);
-      setWorlds([]);
       return;
     }
 
     setLoading(true);
     setError(null);
     try {
-      const [o, ac, w] = await Promise.all([adminOverview(token), adminActionCenter(token), getWorlds()]);
+      const [o, ac] = await Promise.all([adminOverview(token), adminActionCenter(token)]);
       setOverview(o);
       setActionCenter(ac);
-      setWorlds(Array.isArray(w) ? w : []);
     } catch (e: any) {
       setError(trAdminError(e?.body?.error || e?.message, 'Sistem durumu alinamadi'));
     } finally {
@@ -40,6 +36,28 @@ export function DashboardPage() {
 
   return (
     <AdminLayout title="Sistem Pano">
+      <div className="card">
+        <div className="title">Platform Ozeti</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.6rem' }}>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Toplam Firma</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>{overview?.tenants_total ?? 0}</div>
+          </div>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Toplam Kullanici</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>{overview?.users_total ?? 0}</div>
+          </div>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Aktif Uyelik</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>{overview?.memberships_active ?? 0}</div>
+          </div>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Denetim (24s)</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>{overview?.audit_events_24h ?? 0}</div>
+          </div>
+        </div>
+      </div>
+
       <div className="card">
         <div className="title">Aksiyon Merkezi</div>
         <div style={{ marginBottom: '0.75rem' }}>
@@ -69,6 +87,7 @@ export function DashboardPage() {
         </div>
 
         <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <a href="/admin/worlds">Dunyalar</a>
           <a href="/admin/users">Kullanicilar</a>
           <a href="/admin/memberships">Uyelikler</a>
           <a href="/admin/audit">Denetim</a>
@@ -96,18 +115,6 @@ export function DashboardPage() {
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="title">Dunya Durumu</div>
-        <pre style={{ marginTop: 0 }}>{JSON.stringify(overview, null, 2)}</pre>
-        <div style={{ display: 'grid', gap: '0.45rem', marginTop: '0.75rem' }}>
-          {worlds.map((world: any) => (
-            <div key={world.world_key} style={{ border: '1px solid rgba(255,255,255,.15)', borderRadius: 8, padding: '0.5rem 0.65rem' }}>
-              <strong>{world.world_key}</strong> - {world.availability || '-'} - {world.phase || '-'} v{world.version || '-'}
-            </div>
-          ))}
         </div>
       </div>
     </AdminLayout>

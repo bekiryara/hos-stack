@@ -4,11 +4,13 @@ import { AuditPage } from './pages/AuditPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MembershipsPage } from './pages/MembershipsPage';
 import { UsersPage } from './pages/UsersPage';
+import { WorldsPage } from './pages/WorldsPage';
 import { hasAdminToken } from './session';
 
 const routeMap: Record<string, React.ReactElement> = {
   '/admin/control-center': <AdminControlCenterPage />,
   '/admin/dashboard': <DashboardPage />,
+  '/admin/worlds': <WorldsPage />,
   '/admin/users': <UsersPage />,
   '/admin/memberships': <MembershipsPage />,
   '/admin/audit': <AuditPage />,

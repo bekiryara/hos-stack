@@ -3,6 +3,7 @@ import React from 'react';
 const links = [
   { href: '/admin/control-center', label: 'Kontrol Merkezi' },
   { href: '/admin/dashboard', label: 'Pano' },
+  { href: '/admin/worlds', label: 'Dunyalar' },
   { href: '/admin/users', label: 'Kullanicilar' },
   { href: '/admin/memberships', label: 'Uyelikler' },
   { href: '/admin/audit', label: 'Denetim' },
