@@ -5,6 +5,7 @@ import { trAdminError } from '../utils/opsSafety';
 
 const PAGE_SIZE = 100;
 const NOISE_ACTIONS = new Set(['user.login', 'user.login.admin', 'user.update.admin']);
+const CRITICAL_ACTION_KEYWORDS = ['delete', 'deactivate', 'suspend', 'owner', 'role.change', 'membership.delete'];
 
 function toTime(v: any): number {
   const d = new Date(String(v || ''));
@@ -23,6 +24,7 @@ export function AuditPage() {
   const [to, setTo] = useState('');
   const [hideNoise, setHideNoise] = useState(true);
   const [mergeRepeats, setMergeRepeats] = useState(true);
+  const [criticalOnly, setCriticalOnly] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
 
@@ -56,10 +58,16 @@ export function AuditPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats]);
+  }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats, criticalOnly]);
 
   const visibleItems = React.useMemo(() => {
-    const filtered = hideNoise ? items.filter((x: any) => !NOISE_ACTIONS.has(String(x?.action || ''))) : items;
+    const noNoise = hideNoise ? items.filter((x: any) => !NOISE_ACTIONS.has(String(x?.action || ''))) : items;
+    const filtered = criticalOnly
+      ? noNoise.filter((x: any) => {
+          const a = String(x?.action || '').toLowerCase();
+          return CRITICAL_ACTION_KEYWORDS.some((k) => a.includes(k));
+        })
+      : noNoise;
     if (!mergeRepeats) return filtered;
     const out: any[] = [];
     for (const row of filtered) {
@@ -79,7 +87,7 @@ export function AuditPage() {
       }
     }
     return out;
-  }, [items, hideNoise, mergeRepeats]);
+  }, [items, hideNoise, mergeRepeats, criticalOnly]);
 
   function resetFilters() {
     setQ('');
@@ -90,6 +98,7 @@ export function AuditPage() {
     setTo('');
     setHideNoise(true);
     setMergeRepeats(true);
+    setCriticalOnly(false);
     setPage(0);
   }
 
@@ -111,6 +120,7 @@ export function AuditPage() {
     if (name === 'today') {
       setAction('');
       setHideNoise(true);
+      setCriticalOnly(false);
       setMergeRepeats(true);
       setFrom(toLocalInput(startOfDay));
       setTo(toLocalInput(now));
@@ -120,18 +130,21 @@ export function AuditPage() {
       setAction('delete|deactivate|owner');
       setQ('delete deactivate owner');
       setHideNoise(true);
+      setCriticalOnly(true);
       setMergeRepeats(false);
       return;
     }
     if (name === 'login') {
       setAction('user.login');
       setHideNoise(false);
+      setCriticalOnly(false);
       setMergeRepeats(true);
       return;
     }
     setAction('update|change|membership');
     setQ('update change membership');
     setHideNoise(true);
+    setCriticalOnly(false);
     setMergeRepeats(false);
   }
 
@@ -165,7 +178,7 @@ export function AuditPage() {
       <div className="card">
         <div className="title">Denetim Kayitlari</div>
         <div style={{ display: 'grid', gap: '0.5rem', marginBottom: '0.75rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '0.5rem' }}>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Genel arama" />
             <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Islem (action)" />
             <input value={actor} onChange={(e) => setActor(e.target.value)} placeholder="Islem yapan (actor)" />
@@ -181,6 +194,10 @@ export function AuditPage() {
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <input type="checkbox" checked={mergeRepeats} onChange={(e) => setMergeRepeats(e.target.checked)} />
               Tekrarlari birlestir
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <input type="checkbox" checked={criticalOnly} onChange={(e) => setCriticalOnly(e.target.checked)} />
+              Sadece kritik
             </label>
           </div>
         </div>

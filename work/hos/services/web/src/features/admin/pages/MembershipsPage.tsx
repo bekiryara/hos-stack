@@ -11,6 +11,12 @@ type UndoMembership = {
   role: MembershipRole;
   status: MembershipStatus;
 };
+type BulkUndoMembership = {
+  tenantId: string;
+  userId: string;
+  role: MembershipRole;
+  status: MembershipStatus;
+};
 
 export function MembershipsPage() {
   const [loading, setLoading] = useState(false);
@@ -21,6 +27,7 @@ export function MembershipsPage() {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [nextByKey, setNextByKey] = useState<Record<string, { role: MembershipRole; status: MembershipStatus }>>({});
   const [undoMembership, setUndoMembership] = useState<UndoMembership | null>(null);
+  const [undoBulkDeactivate, setUndoBulkDeactivate] = useState<BulkUndoMembership[] | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const bulkCheckStyle: React.CSSProperties = {
     width: '1.15rem',
@@ -75,7 +82,19 @@ export function MembershipsPage() {
     return () => window.clearTimeout(t);
   }, [actionError]);
 
+  useEffect(() => {
+    if (!undoBulkDeactivate || undoBulkDeactivate.length === 0) return;
+    const t = window.setTimeout(() => setUndoBulkDeactivate(null), 45000);
+    return () => window.clearTimeout(t);
+  }, [undoBulkDeactivate]);
+
   const allSelected = items.length > 0 && selectedKeys.length === items.length;
+  const summary = React.useMemo(() => {
+    const total = items.length;
+    const active = items.filter((x: any) => String(x.status || '') === 'active').length;
+    const owners = items.filter((x: any) => String(x.role || '') === 'owner').length;
+    return { total, active, owners, selected: selectedKeys.length };
+  }, [items, selectedKeys.length]);
 
   async function handleSave(row: any) {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -228,23 +247,64 @@ export function MembershipsPage() {
     setError(null);
     setActionError(null);
     setMessage(null);
+    setUndoBulkDeactivate(null);
     let success = 0;
     const failed: string[] = [];
+    const undoEntries: BulkUndoMembership[] = [];
     for (const row of selectedRows) {
       try {
         await adminMembershipLifecycle(token, String(row.tenant_id), String(row.user_id), 'deactivate');
         success += 1;
+        undoEntries.push({
+          tenantId: String(row.tenant_id),
+          userId: String(row.user_id),
+          role: (row.role || 'member') as MembershipRole,
+          status: (row.status || 'active') as MembershipStatus,
+        });
       } catch {
         failed.push(row.user_email || row.user_id);
       }
     }
+    if (undoEntries.length > 0) {
+      setUndoBulkDeactivate(undoEntries);
+    }
     if (failed.length > 0) {
       setActionError(`Toplu pasife alma tamamlandi. Basarili: ${success}, Hatali: ${failed.length} (${failed.slice(0, 3).join(', ')})`);
     } else {
-      setMessage(`Toplu pasife alma tamamlandi. Basarili: ${success}`);
+      setMessage(`Toplu pasife alma tamamlandi. Basarili: ${success}. 45 sn icinde geri alabilirsiniz.`);
     }
     await load();
     setSelectedKeys([]);
+  }
+
+  async function handleUndoBulkDeactivate() {
+    if (!undoBulkDeactivate || undoBulkDeactivate.length === 0) return;
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+
+    setError(null);
+    setActionError(null);
+    setMessage(null);
+    let success = 0;
+    const failed: string[] = [];
+    for (const row of undoBulkDeactivate) {
+      try {
+        await adminUpdateMembership(token, row.tenantId, row.userId, { role: row.role, status: row.status });
+        success += 1;
+      } catch {
+        failed.push(row.userId);
+      }
+    }
+    if (failed.length > 0) {
+      setActionError(`Toplu geri alma tamamlandi. Basarili: ${success}, Hatali: ${failed.length} (${failed.slice(0, 3).join(', ')})`);
+    } else {
+      setMessage(`Toplu geri alma tamamlandi. Basarili: ${success}`);
+    }
+    setUndoBulkDeactivate(null);
+    await load();
   }
 
   async function handleBulkDeleteMemberships() {
@@ -289,6 +349,14 @@ export function MembershipsPage() {
     <AdminLayout title="Uyelikler">
       <div className="card">
         <div className="title">Uyelikler</div>
+        <div className="card" style={{ marginBottom: '0.75rem', padding: '0.6rem 0.8rem' }}>
+          <div style={{ display: 'flex', gap: '0.9rem', flexWrap: 'wrap', fontSize: '0.92rem' }}>
+            <span>Toplam: <strong>{summary.total}</strong></span>
+            <span>Secili: <strong>{summary.selected}</strong></span>
+            <span>Aktif: <strong>{summary.active}</strong></span>
+            <span>Owner: <strong>{summary.owners}</strong></span>
+          </div>
+        </div>
         <div style={{ marginBottom: '0.75rem' }}>
           <button onClick={load} disabled={loading}>
             {loading ? 'Yenileniyor...' : 'Yenile'}
@@ -322,6 +390,9 @@ export function MembershipsPage() {
           <div className="card" style={{ marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <pre style={{ margin: 0 }}>{message}</pre>
+              {undoBulkDeactivate && undoBulkDeactivate.length > 0 ? (
+                <button onClick={handleUndoBulkDeactivate}>Toplu Geri Al</button>
+              ) : null}
               {undoMembership ? (
                 <button onClick={handleUndoMembership}>
                   Geri Al

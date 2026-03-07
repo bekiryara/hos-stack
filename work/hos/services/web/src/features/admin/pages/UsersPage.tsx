@@ -62,6 +62,13 @@ export function UsersPage() {
   }, [actionError]);
 
   const allSelected = items.length > 0 && selectedUserIds.length === items.length;
+  const summary = React.useMemo(() => {
+    const total = items.length;
+    const owners = items.filter((x: any) => String(x.role || '') === 'owner').length;
+    const admins = items.filter((x: any) => String(x.role || '') === 'admin').length;
+    const googleLinked = items.filter((x: any) => Boolean(x.google_linked)).length;
+    return { total, owners, admins, googleLinked, selected: selectedUserIds.length };
+  }, [items, selectedUserIds.length]);
 
   async function handleSaveRole(userId: string) {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -270,6 +277,15 @@ export function UsersPage() {
     <AdminLayout title="Kullanicilar">
       <div className="card">
         <div className="title">Kullanicilar</div>
+        <div className="card" style={{ marginBottom: '0.75rem', padding: '0.6rem 0.8rem' }}>
+          <div style={{ display: 'flex', gap: '0.9rem', flexWrap: 'wrap', fontSize: '0.92rem' }}>
+            <span>Toplam: <strong>{summary.total}</strong></span>
+            <span>Secili: <strong>{summary.selected}</strong></span>
+            <span>Owner: <strong>{summary.owners}</strong></span>
+            <span>Admin: <strong>{summary.admins}</strong></span>
+            <span>Google bagli: <strong>{summary.googleLinked}</strong></span>
+          </div>
+        </div>
         <div style={{ marginBottom: '0.75rem' }}>
           <button onClick={load} disabled={loading}>
             {loading ? 'Yenileniyor...' : 'Yenile'}
