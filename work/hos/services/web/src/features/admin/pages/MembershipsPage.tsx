@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { adminMemberships, adminUpdateMembership } from '../api/adminClient';
+import { adminMembershipLifecycle, adminMemberships, adminUpdateMembership } from '../api/adminClient';
 import { AdminLayout } from '../layout/AdminLayout';
 import { confirmRiskyAction, trAdminError } from '../utils/opsSafety';
 
@@ -139,6 +139,66 @@ export function MembershipsPage() {
     }
   }
 
+  async function handleDeactivateMembership(row: any) {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    const currentRole = (row.role || 'member') as MembershipRole;
+    const risk: 'low' | 'medium' | 'critical' = currentRole === 'owner' ? 'critical' : 'medium';
+    const ok = confirmRiskyAction({
+      title: 'Uyelik pasife alinacak.',
+      summary: `Kullanici: ${row.user_email || row.user_id}\nFirma: ${row.tenant_slug || row.tenant_id}\nBu islem uyeligi kapatir.`,
+      risk,
+    });
+    if (!ok) return;
+
+    const key = `${row.tenant_id}:${row.user_id}`;
+    setSavingKey(key);
+    setError(null);
+    setActionError(null);
+    setMessage(null);
+    try {
+      await adminMembershipLifecycle(token, String(row.tenant_id), String(row.user_id), 'deactivate');
+      setMessage('Uyelik pasife alindi.');
+      await load();
+    } catch (e: any) {
+      setActionError(trAdminError(e?.body?.error || e?.message, 'Uyelik pasife alinamadi'));
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function handleDeleteMembership(row: any) {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    const ok = confirmRiskyAction({
+      title: 'Uyelik kalici olarak silinecek.',
+      summary: `Kullanici: ${row.user_email || row.user_id}\nFirma: ${row.tenant_slug || row.tenant_id}\nBu islem geri alinamaz.`,
+      risk: 'critical',
+    });
+    if (!ok) return;
+
+    const key = `${row.tenant_id}:${row.user_id}`;
+    setSavingKey(key);
+    setError(null);
+    setActionError(null);
+    setMessage(null);
+    try {
+      await adminMembershipLifecycle(token, String(row.tenant_id), String(row.user_id), 'delete');
+      setMessage('Uyelik kalici olarak silindi.');
+      await load();
+    } catch (e: any) {
+      setActionError(trAdminError(e?.body?.error || e?.message, 'Uyelik silinemedi'));
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
   return (
     <AdminLayout title="Uyelikler">
       <div className="card">
@@ -237,9 +297,17 @@ export function MembershipsPage() {
                     </td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.created_at || '-'}</td>
                     <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                      <button onClick={() => handleSave(row)} disabled={!changed || savingKey === key}>
-                        {savingKey === key ? 'Kaydediliyor...' : 'Kaydet'}
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        <button onClick={() => handleSave(row)} disabled={!changed || savingKey === key}>
+                          {savingKey === key ? 'Kaydediliyor...' : 'Kaydet'}
+                        </button>
+                        <button onClick={() => handleDeactivateMembership(row)} disabled={savingKey === key}>
+                          Pasife Al
+                        </button>
+                        <button onClick={() => handleDeleteMembership(row)} disabled={savingKey === key}>
+                          Sil
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )})}

@@ -87,6 +87,9 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     .refine((v) => v.role !== undefined || v.status !== undefined, {
       message: "role_or_status_required"
     });
+  const membershipLifecycleBody = z.object({
+    action: z.enum(["deactivate", "delete"])
+  });
 
   app.patch("/admin/platform/memberships/:tenantId/:userId", async (req, reply) => {
     const payload = requireRole(req, reply, ["owner"]);
@@ -138,6 +141,67 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     });
 
     return reply.send({ ok: true, item: { tenant_id: tenantId, user_id: userId, role: nextRole, status: nextStatus } });
+  });
+
+  app.post("/admin/platform/memberships/:tenantId/:userId/lifecycle", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner"]);
+    if (!payload) return;
+
+    const tenantId = String(req.params?.tenantId || "");
+    const userId = String(req.params?.userId || "");
+    if (!tenantId) return reply.code(400).send({ error: "invalid_tenant_id" });
+    if (!userId) return reply.code(400).send({ error: "invalid_user_id" });
+
+    const body = membershipLifecycleBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: body.error.flatten() });
+
+    const currentRes = await db.query(
+      "select tenant_id, user_id, role, status from memberships where tenant_id = $1 and user_id = $2 limit 1",
+      [tenantId, userId]
+    );
+    if (currentRes.rowCount === 0) return reply.code(404).send({ error: "membership_not_found" });
+
+    const current = currentRes.rows[0];
+    const isOwnerActive = current.role === "owner" && current.status === "active";
+    if (isOwnerActive) {
+      const owners = await db.query(
+        "select count(*)::int as c from memberships where tenant_id = $1 and role = 'owner' and status = 'active'",
+        [tenantId]
+      );
+      const count = owners.rows?.[0]?.c ?? 0;
+      if (count <= 1) return reply.code(409).send({ error: "cannot_remove_last_owner" });
+    }
+
+    if (body.data.action === "deactivate") {
+      await db.query(
+        "update memberships set status = 'inactive', updated_at = now() where tenant_id = $1 and user_id = $2",
+        [tenantId, userId]
+      );
+      await db.query(
+        "update users set role = 'member' where id = $1 and tenant_id = $2 and role <> 'member'",
+        [userId, tenantId]
+      );
+      await audit(db, {
+        action: "membership.deactivate.platform",
+        tenantId,
+        actorUserId: payload.sub,
+        metadata: { targetUserId: userId }
+      });
+      return reply.send({ ok: true, action: "deactivate" });
+    }
+
+    await db.query("delete from memberships where tenant_id = $1 and user_id = $2", [tenantId, userId]);
+    await db.query(
+      "update users set role = 'member' where id = $1 and tenant_id = $2 and role <> 'member'",
+      [userId, tenantId]
+    );
+    await audit(db, {
+      action: "membership.delete.platform",
+      tenantId,
+      actorUserId: payload.sub,
+      metadata: { targetUserId: userId }
+    });
+    return reply.send({ ok: true, action: "delete" });
   });
 
   app.get("/admin/platform/audit", async (req, reply) => {

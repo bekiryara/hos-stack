@@ -95,6 +95,45 @@ export async function adminUpdateMembership(
   return json;
 }
 
+export async function adminMembershipLifecycle(
+  token: string,
+  tenantId: string,
+  userId: string,
+  action: 'deactivate' | 'delete'
+) {
+  const resp = await fetch(
+    `/api/v1/admin/platform/memberships/${encodeURIComponent(tenantId)}/${encodeURIComponent(userId)}/lifecycle`,
+    {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ action }),
+      cache: 'no-store',
+    }
+  );
+
+  const text = await resp.text();
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = { raw: text };
+  }
+
+  if (!resp.ok) {
+    const err: any = new Error(
+      `POST /api/v1/admin/platform/memberships/:tenantId/:userId/lifecycle failed: ${resp.status}`
+    );
+    err.status = resp.status;
+    err.body = json;
+    rethrowWithAuthHandling(err);
+  }
+  return json;
+}
+
 export async function adminUpdateUserRole(token: string, userId: string, role: 'member' | 'admin' | 'owner') {
   const resp = await fetch(`/api/v1/admin/platform/users/${encodeURIComponent(userId)}/role`, {
     method: 'PATCH',
