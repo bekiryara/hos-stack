@@ -1,6 +1,10 @@
 import { z } from "zod";
+import pg from "pg";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { audit } from "../../audit.js";
 import { requireRole } from "./request_auth.js";
+const { Pool } = pg;
 
 function normalizeMetadata(v) {
   if (v == null) return {};
@@ -250,6 +254,137 @@ function buildCategoryNodeMap(tree) {
     for (const c of children) stack.push(c);
   }
   return byId;
+}
+
+function parseCsvLine(line) {
+  const out = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      out.push(current);
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  out.push(current);
+  return out;
+}
+
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readJsonFile(filePath) {
+  const raw = await fs.readFile(filePath, "utf8");
+  return JSON.parse(raw);
+}
+
+async function countCsvRows(filePath) {
+  const raw = await fs.readFile(filePath, "utf8");
+  const lines = raw.split(/\r?\n/).filter((x) => String(x || "").trim().length > 0);
+  if (lines.length <= 1) return 0;
+  return lines.length - 1;
+}
+
+async function countSchemaPairsFromCsvFiles(csvFiles) {
+  let total = 0;
+  for (const filePath of csvFiles) {
+    if (!(await fileExists(filePath))) continue;
+    const raw = await fs.readFile(filePath, "utf8");
+    const lines = raw.split(/\r?\n/).filter((x) => String(x || "").trim().length > 0);
+    if (lines.length <= 1) continue;
+    const header = parseCsvLine(lines[0]).map((h) => String(h || "").replace(/^\uFEFF/, "").trim());
+    const categoryIdx = header.indexOf("category_slug");
+    const attrIdx = header.indexOf("attribute_key");
+    if (categoryIdx < 0 || attrIdx < 0) continue;
+    for (let i = 1; i < lines.length; i += 1) {
+      const row = parseCsvLine(lines[i]);
+      const categorySlug = String(row[categoryIdx] || "").trim();
+      const attrKey = String(row[attrIdx] || "").trim();
+      if (categorySlug && attrKey) total += 1;
+    }
+  }
+  return total;
+}
+
+async function resolveDatasetRoot() {
+  const candidates = [
+    process.env.CATALOG_DATASET_ROOT || "",
+    "D:/stack-data/catalog-dataset",
+    "/stack-data/catalog-dataset",
+    "/data/catalog-dataset",
+    path.resolve(process.cwd(), "../stack-data/catalog-dataset"),
+    path.resolve(process.cwd(), "../../stack-data/catalog-dataset"),
+    path.resolve(process.cwd(), "../../../stack-data/catalog-dataset"),
+  ]
+    .map((x) => String(x || "").trim())
+    .filter(Boolean);
+  for (const candidate of candidates) {
+    if (await fileExists(candidate)) return candidate;
+  }
+  return null;
+}
+
+function metricStatusByEquality(values) {
+  const normalized = values.filter((v) => Number.isFinite(Number(v))).map((v) => Number(v));
+  if (normalized.length < 2) return "warn";
+  const first = normalized[0];
+  return normalized.every((v) => v === first) ? "pass" : "fail";
+}
+
+function toMetric({ key, label, status, value, source = null, reason = null, details = null, threshold = null, action = null }) {
+  return { key, label, status, value, source, reason, details, threshold, action };
+}
+
+function summarizeOverallStatus(sections) {
+  let pass = 0;
+  let warn = 0;
+  let fail = 0;
+  for (const section of sections) {
+    const rows = Array.isArray(section?.metrics) ? section.metrics : [];
+    for (const row of rows) {
+      const status = String(row?.status || "").toLowerCase();
+      if (status === "fail") fail += 1;
+      else if (status === "warn") warn += 1;
+      else pass += 1;
+    }
+  }
+  const overall_status = fail > 0 ? "fail" : warn > 0 ? "warn" : "pass";
+  return { overall_status, summary: { pass, warn, fail } };
+}
+
+let pazarDbPool = null;
+function getPazarDbPool() {
+  const url = String(process.env.PAZAR_DATABASE_URL || "").trim();
+  if (!url) return null;
+  if (!pazarDbPool) pazarDbPool = new Pool({ connectionString: url });
+  return pazarDbPool;
+}
+
+async function queryCount(pool, sql) {
+  try {
+    const out = await pool.query(sql);
+    return Number(out.rows?.[0]?.c ?? 0);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -531,6 +666,460 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     } catch (e) {
       return reply.code(e?.status || 502).send({ error: "category_contracts_unavailable" });
     }
+  });
+
+  app.get("/admin/platform/categories/health", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    let sampleCategoryId = "";
+    let pazarCategoriesTotal = null;
+    let pazarAttributesTotal = null;
+    let pazarSchemaActiveTotal = null;
+    let inactiveListingsCount = null;
+    let unknownAttrsCount = null;
+    let missingInteractionCount = null;
+    let unknownAttrsSamples = [];
+    let runtimeReason = null;
+    let dbReason = null;
+    const reservedKeys = new Set([
+      "offer_variant",
+      "interaction_mode",
+      "fulfillment_mode",
+      "location_scope",
+      "service_time_model",
+      "offer_requirement",
+    ]);
+
+    const statuses = ["draft", "published", "paused", "archived"];
+    const allowedKeysCache = new Map();
+    const extractMode = (listing) => {
+      const modes = Array.isArray(listing?.transaction_modes)
+        ? listing.transaction_modes
+        : Array.isArray(listing?.transactionModes)
+          ? listing.transactionModes
+          : [];
+      return String(modes?.[0] || "").trim();
+    };
+    const extractAttrs = (listing) => {
+      const attrs = listing?.attributes;
+      return attrs && typeof attrs === "object" && !Array.isArray(attrs) ? attrs : {};
+    };
+
+    const categoryStatusById = new Map();
+
+    const pazarDb = getPazarDbPool();
+    if (pazarDb) {
+      const [catTotal, attrTotal, schemaTotal] = await Promise.all([
+        queryCount(pazarDb, "SELECT count(*)::int AS c FROM categories"),
+        queryCount(pazarDb, "SELECT count(*)::int AS c FROM attributes"),
+        queryCount(pazarDb, "SELECT count(*)::int AS c FROM category_filter_schema WHERE status = 'active'"),
+      ]);
+      pazarCategoriesTotal = catTotal;
+      pazarAttributesTotal = attrTotal;
+      pazarSchemaActiveTotal = schemaTotal;
+      if (catTotal == null || attrTotal == null || schemaTotal == null) {
+        dbReason = "Pazar DB sorgusu basarisiz";
+      }
+    } else {
+      dbReason = "PAZAR_DATABASE_URL tanimli degil";
+    }
+
+    const contractsMetrics = [];
+    try {
+      const tree = await fetchPazarJson({ url: `${pazarBaseUrl}/api/v1/categories` });
+      const ok = Array.isArray(tree) && tree.length > 0;
+      if (ok) {
+        const flat = flattenCategoryTree(tree, []);
+        if (pazarCategoriesTotal == null) pazarCategoriesTotal = flat.length;
+        sampleCategoryId = String(flat?.[0]?.id || "").trim();
+        for (const n of flat) {
+          const id = String(n?.id || "").trim();
+          if (!id) continue;
+          categoryStatusById.set(id, String(n?.status || "").toLowerCase());
+        }
+      }
+      if (!sampleCategoryId && ok) {
+        sampleCategoryId = "";
+      }
+      contractsMetrics.push(
+        toMetric({
+          key: "contract_categories_tree",
+          label: "Kategori Sozlesmesi",
+          status: ok ? "pass" : "fail",
+          value: ok ? "Erisilebilir" : "Bos/hatali",
+          source: "pazar_api",
+          details: { endpoint: "/api/v1/categories" },
+        })
+      );
+    } catch {
+      contractsMetrics.push(
+        toMetric({
+          key: "contract_categories_tree",
+          label: "Kategori Sozlesmesi",
+          status: "fail",
+          value: "Erisilemiyor",
+          source: "pazar_api",
+          details: { endpoint: "/api/v1/categories" },
+        })
+      );
+      runtimeReason = "Pazar categories endpoint erisilemedi";
+    }
+
+    if (sampleCategoryId) {
+      try {
+        const filterSchema = await fetchPazarJson({
+          url: `${pazarBaseUrl}/api/v1/categories/${encodeURIComponent(sampleCategoryId)}/filter-schema`,
+        });
+        const ok = Boolean(filterSchema && typeof filterSchema === "object");
+        contractsMetrics.push(
+          toMetric({
+            key: "contract_filter_schema",
+            label: "Filtre Sema Sozlesmesi",
+            status: ok ? "pass" : "fail",
+            value: ok ? "Erisilebilir" : "Hatali",
+            source: "pazar_api",
+            details: { endpoint: "/api/v1/categories/:id/filter-schema", sample_category_id: sampleCategoryId },
+          })
+        );
+      } catch {
+        contractsMetrics.push(
+          toMetric({
+            key: "contract_filter_schema",
+            label: "Filtre Sema Sozlesmesi",
+            status: "fail",
+            value: "Erisilemiyor",
+            source: "pazar_api",
+            details: { endpoint: "/api/v1/categories/:id/filter-schema", sample_category_id: sampleCategoryId },
+          })
+        );
+      }
+      try {
+        const intentSchema = await fetchPazarJson({
+          url: `${pazarBaseUrl}/api/v1/categories/${encodeURIComponent(sampleCategoryId)}/intent-schema`,
+        });
+        const ok = Boolean(intentSchema && typeof intentSchema === "object");
+        contractsMetrics.push(
+          toMetric({
+            key: "contract_intent_schema",
+            label: "Niyet Sema Sozlesmesi",
+            status: ok ? "pass" : "fail",
+            value: ok ? "Erisilebilir" : "Hatali",
+            source: "pazar_api",
+            details: { endpoint: "/api/v1/categories/:id/intent-schema", sample_category_id: sampleCategoryId },
+          })
+        );
+      } catch {
+        contractsMetrics.push(
+          toMetric({
+            key: "contract_intent_schema",
+            label: "Niyet Sema Sozlesmesi",
+            status: "fail",
+            value: "Erisilemiyor",
+            source: "pazar_api",
+            details: { endpoint: "/api/v1/categories/:id/intent-schema", sample_category_id: sampleCategoryId },
+          })
+        );
+      }
+    } else {
+      contractsMetrics.push(
+        toMetric({
+          key: "contract_filter_schema",
+          label: "Filtre Sema Sozlesmesi",
+          status: "warn",
+          value: "Ornek kategori bulunamadi",
+          source: "pazar_api",
+        })
+      );
+      contractsMetrics.push(
+        toMetric({
+          key: "contract_intent_schema",
+          label: "Niyet Sema Sozlesmesi",
+          status: "warn",
+          value: "Ornek kategori bulunamadi",
+          source: "pazar_api",
+        })
+      );
+    }
+
+    const getAllowedKeysForCategoryMode = async (categoryId, mode) => {
+      const cacheKey = `${categoryId}|${mode || "*"}`;
+      if (allowedKeysCache.has(cacheKey)) return allowedKeysCache.get(cacheKey);
+      const endpoint = `${pazarBaseUrl}/api/v1/categories/${encodeURIComponent(categoryId)}/filter-schema`;
+      const schema = await fetchPazarJson({ url: endpoint });
+      const filters = Array.isArray(schema?.filters) ? schema.filters : [];
+      const keys = new Set();
+      for (const f of filters) {
+        const key = String(f?.key || "").trim();
+        if (!key) continue;
+        const applies = Array.isArray(f?.applies_to_transaction_modes) ? f.applies_to_transaction_modes : null;
+        if (!mode || !applies || applies.length === 0 || applies.includes(mode)) {
+          keys.add(key);
+        }
+      }
+      allowedKeysCache.set(cacheKey, keys);
+      return keys;
+    };
+
+    if (categoryStatusById.size > 0) {
+      try {
+        const listingBuckets = await Promise.all(
+          statuses.map((status) => fetchPazarListings({ pazarBaseUrl, status, perPage: LISTING_FETCH_PER_STATUS }))
+        );
+        const allListings = listingBuckets.flat().filter((x) => x && typeof x === "object");
+        const publishedListings = Array.isArray(listingBuckets?.[1]) ? listingBuckets[1] : [];
+        let inactiveCount = 0;
+        let unknownCount = 0;
+        const unknownListingIds = new Set();
+        const unknownByListing = new Map();
+        let publishedMissingCount = 0;
+
+        for (const row of allListings) {
+          const listingId = String(row?.id || "").trim();
+          const categoryId = String(row?.category_id || "").trim();
+          const listingTitle = String(row?.title || "").trim();
+          const categoryStatus = String(categoryStatusById.get(categoryId) || "");
+          if (categoryId && categoryStatus && categoryStatus !== "active") inactiveCount += 1;
+
+          const attrs = extractAttrs(row);
+          const mode = extractMode(row);
+          if (!categoryId) continue;
+          const allowedKeys = await getAllowedKeysForCategoryMode(categoryId, mode);
+          const keys = Object.keys(attrs || {});
+          for (const key of keys) {
+            if (reservedKeys.has(key)) continue;
+            if (!allowedKeys.has(key)) {
+              if (!unknownListingIds.has(listingId)) {
+                unknownListingIds.add(listingId);
+                unknownCount += 1;
+              }
+              if (!unknownByListing.has(listingId)) {
+                unknownByListing.set(listingId, {
+                  listing_id: listingId || "-",
+                  listing_title: listingTitle || "-",
+                  category_id: categoryId || "-",
+                  unknown_keys: new Set(),
+                });
+              }
+              unknownByListing.get(listingId).unknown_keys.add(key);
+              break;
+            }
+          }
+        }
+
+        for (const row of publishedListings) {
+          const attrs = extractAttrs(row);
+          const interactionMode = String(attrs?.interaction_mode || "").trim();
+          if (!interactionMode) publishedMissingCount += 1;
+        }
+
+        inactiveListingsCount = inactiveCount;
+        unknownAttrsCount = unknownCount;
+        missingInteractionCount = publishedMissingCount;
+        unknownAttrsSamples = Array.from(unknownByListing.values())
+          .map((x) => ({
+            listing_id: x.listing_id,
+            listing_title: x.listing_title,
+            category_id: x.category_id,
+            unknown_keys: Array.from(x.unknown_keys.values()),
+          }))
+          .slice(0, 10);
+      } catch {
+        runtimeReason = "Runtime metrikleri icin pazar listing/schema verisi okunamadi";
+      }
+    }
+
+    let datasetRoot = null;
+    let datasetReason = null;
+    let manifestGeneratedAt = null;
+    let ssotCategoriesCount = null;
+    let ssotAttributesCount = null;
+    let ssotSchemaCount = null;
+    let manifestCategoriesCount = null;
+    let manifestAttributesCount = null;
+    let manifestSchemaCount = null;
+
+    try {
+      datasetRoot = await resolveDatasetRoot();
+      if (datasetRoot) {
+        const csvDir = path.join(datasetRoot, "csv");
+        const manifestDir = path.join(datasetRoot, "out", "manifests");
+
+        const manifestMetaPath = path.join(manifestDir, "manifest.meta.json");
+        if (await fileExists(manifestMetaPath)) {
+          const meta = await readJsonFile(manifestMetaPath);
+          manifestGeneratedAt = String(meta?.generated_at || "");
+        }
+
+        const ssotCategoriesPath = path.join(csvDir, "categories.csv");
+        const ssotAttributesPath = path.join(csvDir, "attributes.csv");
+        ssotCategoriesCount = await countCsvRows(ssotCategoriesPath);
+        ssotAttributesCount = await countCsvRows(ssotAttributesPath);
+
+        const schemaMainPath = path.join(csvDir, "schema.csv");
+        const schemaDirPath = path.join(csvDir, "schema");
+        const schemaFiles = [];
+        if (await fileExists(schemaMainPath)) schemaFiles.push(schemaMainPath);
+        if (await fileExists(schemaDirPath)) {
+          const entries = await fs.readdir(schemaDirPath, { withFileTypes: true });
+          for (const e of entries) {
+            if (e.isFile() && e.name.toLowerCase().endsWith(".csv")) schemaFiles.push(path.join(schemaDirPath, e.name));
+          }
+        }
+        ssotSchemaCount = await countSchemaPairsFromCsvFiles(schemaFiles);
+
+        const manifestCategoriesPath = path.join(manifestDir, "categories", "catalog.csv.json");
+        const manifestAttributesPath = path.join(manifestDir, "attributes.json");
+        const manifestSchemaPath = path.join(manifestDir, "schema", "catalog.csv.json");
+
+        if (await fileExists(manifestCategoriesPath)) {
+          const v = await readJsonFile(manifestCategoriesPath);
+          manifestCategoriesCount = Array.isArray(v) ? v.length : null;
+        }
+        if (await fileExists(manifestAttributesPath)) {
+          const v = await readJsonFile(manifestAttributesPath);
+          manifestAttributesCount = Array.isArray(v) ? v.length : null;
+        }
+        if (await fileExists(manifestSchemaPath)) {
+          const blocks = await readJsonFile(manifestSchemaPath);
+          if (Array.isArray(blocks)) {
+            let pairCount = 0;
+            for (const b of blocks) {
+              const slugCount = Array.isArray(b?.category_slugs) ? b.category_slugs.length : 0;
+              const fieldCount = Array.isArray(b?.fields) ? b.fields.length : 0;
+              pairCount += slugCount * fieldCount;
+            }
+            manifestSchemaCount = pairCount;
+          }
+        }
+      } else {
+        datasetReason = "Dataset mount yok";
+      }
+    } catch {
+      // Dataset/report read errors should not break admin health endpoint.
+      datasetReason = "Dataset okunamadi";
+    }
+
+    const alignmentMetrics = [];
+    const catParityStatus = metricStatusByEquality([ssotCategoriesCount, manifestCategoriesCount, pazarCategoriesTotal]);
+    alignmentMetrics.push(
+      toMetric({
+        key: "alignment_categories_parity",
+        label: "Kategori Sayisi Hizasi (Toplam)",
+        status: catParityStatus,
+        value: `${ssotCategoriesCount ?? "-"} / ${manifestCategoriesCount ?? "-"} / ${pazarCategoriesTotal ?? "-"}`,
+        source: "dataset_manifest+pazar_db",
+        reason: !datasetRoot ? datasetReason : dbReason,
+        details: { ssot: ssotCategoriesCount, manifest: manifestCategoriesCount, db_total: pazarCategoriesTotal },
+        threshold: "ssot == manifest == db_total",
+      })
+    );
+    const attrParityStatus = metricStatusByEquality([ssotAttributesCount, manifestAttributesCount, pazarAttributesTotal]);
+    alignmentMetrics.push(
+      toMetric({
+        key: "alignment_attributes_parity",
+        label: "Attribute Sayisi Hizasi",
+        status: attrParityStatus,
+        value: `${ssotAttributesCount ?? "-"} / ${manifestAttributesCount ?? "-"} / ${pazarAttributesTotal ?? "-"}`,
+        source: "dataset_manifest+pazar_db",
+        reason: !datasetRoot ? datasetReason : dbReason,
+        details: { ssot: ssotAttributesCount, manifest: manifestAttributesCount, db_total: pazarAttributesTotal },
+        threshold: "ssot == manifest == db_total",
+      })
+    );
+    const schemaParityStatus = metricStatusByEquality([ssotSchemaCount, manifestSchemaCount, pazarSchemaActiveTotal]);
+    alignmentMetrics.push(
+      toMetric({
+        key: "alignment_schema_pairs_parity",
+        label: "Aktif Sema Cifti Hizasi",
+        status: schemaParityStatus,
+        value: `${ssotSchemaCount ?? "-"} / ${manifestSchemaCount ?? "-"} / ${pazarSchemaActiveTotal ?? "-"}`,
+        source: "dataset_manifest+pazar_db",
+        reason: !datasetRoot ? datasetReason : dbReason,
+        details: { ssot: ssotSchemaCount, manifest: manifestSchemaCount, db_active: pazarSchemaActiveTotal },
+        threshold: "ssot == manifest == db_active",
+      })
+    );
+
+    let manifestFreshStatus = "info";
+    let manifestFreshValue = "Bilinmiyor";
+    if (manifestGeneratedAt) {
+      const generated = new Date(manifestGeneratedAt);
+      if (Number.isFinite(generated.getTime())) {
+        const ageHours = Math.floor((Date.now() - generated.getTime()) / (1000 * 60 * 60));
+        manifestFreshStatus = ageHours <= 72 ? "pass" : "info";
+        manifestFreshValue = `${ageHours}saat`;
+      }
+    }
+    alignmentMetrics.push(
+      toMetric({
+        key: "alignment_manifest_freshness",
+        label: "Manifest Guncelligi",
+        status: manifestFreshStatus,
+        value: manifestFreshValue,
+        source: "dataset_manifest",
+        reason: !manifestGeneratedAt ? datasetReason || "Manifest meta bulunamadi" : null,
+        details: { generated_at: manifestGeneratedAt || null },
+        threshold: "<=72 saat",
+      })
+    );
+
+    const runtimeMetrics = [
+      toMetric({
+        key: "runtime_inactive_category_listings",
+        label: "Inactive Kategoriye Bagli Ilan",
+        status:
+          inactiveListingsCount == null ? "warn" : inactiveListingsCount === 0 ? "pass" : "fail",
+        value: inactiveListingsCount ?? "N/A",
+        source: "pazar_api",
+        reason: inactiveListingsCount == null ? runtimeReason : null,
+        threshold: "=0",
+        action: { type: "tab", target: "agac" },
+      }),
+      toMetric({
+        key: "runtime_unknown_attribute_keys",
+        label: "Bilinmeyen Attribute Anahtari",
+        status: unknownAttrsCount == null ? "warn" : unknownAttrsCount === 0 ? "pass" : "warn",
+        value: unknownAttrsCount ?? "N/A",
+        source: "pazar_api",
+        reason: unknownAttrsCount == null ? runtimeReason : null,
+        details: unknownAttrsSamples.length > 0 ? { samples: unknownAttrsSamples } : null,
+        threshold: "=0 (ilk faz WARN)",
+        action: { type: "tab", target: "attribute" },
+      }),
+      toMetric({
+        key: "runtime_missing_interaction_mode",
+        label: "Published + interaction_mode Eksik",
+        status:
+          missingInteractionCount == null ? "warn" : missingInteractionCount === 0 ? "pass" : "fail",
+        value: missingInteractionCount ?? "N/A",
+        source: "pazar_api",
+        reason: missingInteractionCount == null ? runtimeReason : null,
+        threshold: "=0",
+        action: { type: "report", target: "v2_gate" },
+      }),
+    ];
+
+    const sections = [
+      { key: "alignment", label: "SSOT / Manifest / Veritabani Hizasi", metrics: alignmentMetrics },
+      { key: "runtime", label: "Calisma Sagligi", metrics: runtimeMetrics },
+      { key: "contracts", label: "Sozlesme Sagligi", metrics: contractsMetrics },
+    ];
+    const overall = summarizeOverallStatus(sections);
+
+    return reply.send({
+      generated_at: new Date().toISOString(),
+      dataset_root: datasetRoot,
+      manifest_generated_at: manifestGeneratedAt,
+      overall_status: overall.overall_status,
+      summary: overall.summary,
+      sections,
+      actions: [
+        { type: "tab", target: "agac", label: "Agaca Git" },
+        { type: "report", target: "v2_gate", label: "V2 Gate" },
+      ],
+    });
   });
 
   app.get("/admin/platform/overview", async (req, reply) => {
@@ -1165,3 +1754,4 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     return reply.send({ ok: true, action: "delete" });
   });
 }
+

@@ -142,6 +142,33 @@ export async function adminCategoryContracts(token: string, categoryId: string) 
   }
 }
 
+export async function adminCategoryHealth(token: string) {
+  const resp = await fetch('/api/v1/admin/platform/categories/health', {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  const text = await resp.text();
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = { raw: text };
+  }
+
+  if (!resp.ok) {
+    const err: any = new Error(`GET /api/v1/admin/platform/categories/health failed: ${resp.status}`);
+    err.status = resp.status;
+    err.body = json;
+    rethrowWithAuthHandling(err);
+  }
+  return json;
+}
+
 export async function adminUpdateMembership(
   token: string,
   tenantId: string,

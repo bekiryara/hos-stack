@@ -5,6 +5,12 @@ import { getAdminToken, setAdminSession } from '../session';
 import { trAdminError } from '../utils/opsSafety';
 
 export function AdminControlCenterPage() {
+  const search = new URLSearchParams(window.location.search);
+  const nextPath = search.get('next') || '';
+  const safeNextPath =
+    nextPath.startsWith('/admin/') && nextPath !== '/admin/control-center'
+      ? nextPath
+      : '/admin/dashboard';
   const [token, setToken] = useState<string>(() => getAdminToken());
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -49,7 +55,7 @@ export function AdminControlCenterPage() {
       setToken(tokenValue);
       setAdminSession(tokenValue, email);
       setPassword('');
-      window.location.href = '/admin/dashboard';
+      window.location.href = safeNextPath;
     } catch (e: any) {
       setAdminErr(trAdminError(e?.body?.error || e?.message, 'Giris yapilamadi.'));
     } finally {
@@ -58,14 +64,21 @@ export function AdminControlCenterPage() {
   }
 
   return (
-    <AdminLayout title="Kontrol Merkezi">
-      <p className="hint">
-        Bu ekran sadece yonetim girisi icindir.
-      </p>
-
-      <div className="card" style={{ maxWidth: 680, padding: '1.25rem' }}>
-        <div className="title">Oturum Islemleri</div>
-        <div style={{ display: 'grid', gap: '1rem', maxWidth: 560 }}>
+    <AdminLayout title="Admin Giris">
+      <div
+        style={{
+          minHeight: 'calc(100vh - 220px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div className="card" style={{ width: '100%', maxWidth: 680, padding: '1.25rem' }}>
+          <div className="title">Oturum Islemleri</div>
+          <p className="hint" style={{ marginTop: 0 }}>
+            Bu ekran sadece yonetim girisi icindir.
+          </p>
+          <div style={{ display: 'grid', gap: '1rem', maxWidth: 560 }}>
           <label>
             <div style={{ marginBottom: '0.35rem', color: '#d1d5db' }}>E-posta</div>
             <input
@@ -117,6 +130,7 @@ export function AdminControlCenterPage() {
               <pre>{adminErr}</pre>
             </div>
           ) : null}
+          </div>
         </div>
       </div>
     </AdminLayout>

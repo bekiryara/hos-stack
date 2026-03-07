@@ -42,6 +42,8 @@ services:
       MARKETPLACE_WEB_PUBLIC_URL: "http://localhost:3002/marketplace"
       OTEL_ENABLED: "false"
       PAZAR_STATUS_URL: "http://pazar-app:80"
+      PAZAR_DATABASE_URL: postgresql://pazar:pazar_password@pazar-db:5432/pazar
+      CATALOG_DATASET_ROOT: /stack-data/catalog-dataset
       MESSAGING_STATUS_URL: "http://messaging-api:3000"
       MESSAGING_PING_URL: "http://messaging-api:3000"
       WORLD_PING_TIMEOUT_MS: "8000"
@@ -58,6 +60,8 @@ services:
       - google_client_id
       - google_client_secret
       - google_redirect_uri
+    volumes:
+      - ../stack-data:/stack-data:ro
     restart: unless-stopped
     networks:
       default:

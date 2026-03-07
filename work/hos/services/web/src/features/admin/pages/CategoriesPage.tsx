@@ -3,6 +3,7 @@ import {
   adminCategoriesOverview,
   adminCategoriesTree,
   adminCategoryContracts,
+  adminCategoryHealth,
   adminCategoryMappings,
   adminCategoryListingStats,
 } from '../api/adminClient';
@@ -32,6 +33,7 @@ type MappingRow = {
 
 type CategoryTab = 'genel' | 'agac';
 type DetailTab = 'durum' | 'sema' | 'attribute' | 'eslesme';
+type HealthStatus = 'pass' | 'warn' | 'fail' | 'info';
 
 function countTree(nodes: CategoryNode[]): number {
   let total = 0;
@@ -50,6 +52,54 @@ function collectTreeIds(nodes: CategoryNode[], out: string[] = []): string[] {
     if (children.length > 0) collectTreeIds(children, out);
   }
   return out;
+}
+
+function healthColor(status: HealthStatus | string | undefined): string {
+  if (status === 'pass') return '#86efac';
+  if (status === 'warn') return '#fde68a';
+  if (status === 'fail') return '#fca5a5';
+  if (status === 'info') return '#93c5fd';
+  return '#9ca3af';
+}
+
+function healthLabel(status: HealthStatus | string | undefined): string {
+  if (status === 'pass') return 'Gecer';
+  if (status === 'warn') return 'Uyari';
+  if (status === 'fail') return 'Kritik';
+  if (status === 'info') return 'Bilgi';
+  return '-';
+}
+
+function healthValue(value: unknown): string {
+  if (value == null) return '-';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value);
+}
+
+function healthSourceLabel(value: unknown): string {
+  const src = String(value || '').trim().toLowerCase();
+  if (!src) return '-';
+  if (src === 'pazar_api') return 'Pazar API';
+  if (src === 'dataset_manifest') return 'SSOT + Manifest';
+  if (src === 'dataset_manifest+pazar_db') return 'SSOT + Manifest + Pazar Veritabani';
+  return String(value);
+}
+
+function formatDateTimeTr(value: unknown): string {
+  const raw = String(value || '').trim();
+  if (!raw) return '-';
+  const d = new Date(raw);
+  if (!Number.isFinite(d.getTime())) return raw;
+  return d.toLocaleString('tr-TR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
 }
 
 function CategoryTree({
@@ -145,6 +195,34 @@ export function CategoriesPage() {
   const [mappingLoading, setMappingLoading] = React.useState(false);
   const [mappingError, setMappingError] = React.useState<string | null>(null);
   const [selectedMapping, setSelectedMapping] = React.useState<MappingRow | null>(null);
+  const selectedNodeIdRef = React.useRef('');
+  const [healthLoading, setHealthLoading] = React.useState(false);
+  const [healthError, setHealthError] = React.useState<string | null>(null);
+  const [health, setHealth] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    selectedNodeIdRef.current = String(selectedNode?.id || '').trim();
+  }, [selectedNode?.id]);
+
+  const loadHealth = React.useCallback(async () => {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    if (!token) {
+      setHealth(null);
+      setHealthError('Oturum bulunamadi. Once Kontrol Merkezi ekranindan giris yapin.');
+      return;
+    }
+    setHealthLoading(true);
+    setHealthError(null);
+    try {
+      const out = await adminCategoryHealth(token);
+      setHealth(out || null);
+    } catch (e: any) {
+      setHealth(null);
+      setHealthError(trAdminError(e?.body?.error || e?.message, 'Kategori saglik verisi alinamadi'));
+    } finally {
+      setHealthLoading(false);
+    }
+  }, []);
 
   const load = React.useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -166,7 +244,7 @@ export function CategoriesPage() {
       // Agac acik/kapali durumunu koru; secim degisince veya yenilemede sifirlama.
 
       // Secili kategori agacta hala varsa koru, yoksa temizle
-      const prevId = String(selectedNode?.id || '').trim();
+      const prevId = selectedNodeIdRef.current;
       if (prevId) {
         const ids = new Set(collectTreeIds(nextTree, []));
         if (!ids.has(prevId)) {
@@ -186,6 +264,10 @@ export function CategoriesPage() {
   React.useEffect(() => {
     void load();
   }, [load]);
+
+  React.useEffect(() => {
+    void loadHealth();
+  }, [loadHealth]);
 
   React.useEffect(() => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -304,12 +386,18 @@ export function CategoriesPage() {
     });
   }, []);
 
+  const handleRefresh = React.useCallback(async () => {
+    await Promise.all([load(), loadHealth()]);
+  }, [load, loadHealth]);
+
   return (
     <AdminLayout title="Kategori Yonetimi">
       <div className="card">
         <div className="title">Kategori Kontrol Merkezi</div>
         <div style={{ marginBottom: '0.75rem' }}>
-          <button onClick={load} disabled={loading}>{loading ? 'Yukleniyor...' : 'Yenile'}</button>
+          <button onClick={handleRefresh} disabled={loading || healthLoading}>
+            {loading || healthLoading ? 'Yukleniyor...' : 'Yenile'}
+          </button>
         </div>
         {error ? (
           <div className="card error">
@@ -343,9 +431,100 @@ export function CategoriesPage() {
       {activeTab === 'genel' ? (
         <div className="card">
           <div className="title">Genel Durum</div>
-          <p style={{ margin: 0, color: '#9ca3af' }}>
-            Kategori secimi ve detay inceleme icin Agac sekmesine gecin.
-          </p>
+          {healthLoading ? <p style={{ margin: 0 }}>Kategori sagligi yukleniyor...</p> : null}
+          {healthError ? <p style={{ margin: 0 }}>{healthError}</p> : null}
+          {!healthLoading && !healthError ? (
+            <>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+                  gap: '0.6rem',
+                  marginBottom: '0.7rem',
+                }}
+              >
+                <div className="card" style={{ padding: '0.6rem' }}>
+                  <div>Genel Sonuc</div>
+                  <strong style={{ color: healthColor(health?.overall_status) }}>{healthLabel(health?.overall_status)}</strong>
+                </div>
+                <div className="card" style={{ padding: '0.6rem' }}>
+                  <div>Gecer</div>
+                  <strong>{health?.summary?.pass ?? 0}</strong>
+                </div>
+                <div className="card" style={{ padding: '0.6rem' }}>
+                  <div>Uyari</div>
+                  <strong>{health?.summary?.warn ?? 0}</strong>
+                </div>
+                <div className="card" style={{ padding: '0.6rem' }}>
+                  <div>Kritik</div>
+                  <strong>{health?.summary?.fail ?? 0}</strong>
+                </div>
+                <div className="card" style={{ padding: '0.6rem' }}>
+                  <div>Manifest Tarihi</div>
+                  <strong>{formatDateTimeTr(health?.manifest_generated_at)}</strong>
+                </div>
+              </div>
+
+              {Array.isArray(health?.sections) ? (
+                <div style={{ display: 'grid', gap: '0.7rem' }}>
+                  {health.sections.map((section: any, idx: number) => (
+                    <div key={String(section?.key || idx)} className="card" style={{ padding: '0.6rem' }}>
+                      <div className="title" style={{ marginBottom: '0.4rem' }}>{String(section?.label || section?.key || '-')}</div>
+                      {!Array.isArray(section?.metrics) || section.metrics.length === 0 ? (
+                        <p style={{ margin: 0 }}>Metrik yok.</p>
+                      ) : (
+                        <div style={{ display: 'grid', gap: '0.5rem' }}>
+                          {section.metrics.map((metric: any, mIdx: number) => (
+                            <div
+                              key={String(metric?.key || mIdx)}
+                              style={{
+                                border: '1px solid rgba(148,163,184,0.25)',
+                                borderRadius: '8px',
+                                padding: '0.5rem',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                <strong>{String(metric?.label || metric?.key || '-')}</strong>
+                                <span style={{ color: healthColor(metric?.status) }}>{healthLabel(metric?.status)}</span>
+                              </div>
+                              <div style={{ marginTop: '0.2rem' }}>
+                                <strong>Deger:</strong> {healthValue(metric?.value)}
+                              </div>
+                              {metric?.source ? (
+                                <div style={{ color: '#9ca3af', marginTop: '0.2rem' }}>
+                                  Kaynak: {healthSourceLabel(metric.source)}
+                                </div>
+                              ) : null}
+                              {metric?.reason ? (
+                                <div style={{ color: '#fcd34d', marginTop: '0.2rem' }}>
+                                  Neden: {String(metric.reason)}
+                                </div>
+                              ) : null}
+                              {Array.isArray(metric?.details?.samples) && metric.details.samples.length > 0 ? (
+                                <div style={{ color: '#9ca3af', marginTop: '0.25rem' }}>
+                                  Ornekler: {metric.details.samples
+                                    .slice(0, 3)
+                                    .map((s: any) => `${String(s?.listing_id || '-')}:${Array.isArray(s?.unknown_keys) ? s.unknown_keys.join(',') : '-'}`)
+                                    .join(' | ')}
+                                </div>
+                              ) : null}
+                              {metric?.threshold ? (
+                                <div style={{ color: '#9ca3af', marginTop: '0.2rem' }}>
+                                  Hedef: {String(metric.threshold)}
+                                </div>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ margin: 0, color: '#9ca3af' }}>Saglik metrikleri bulunamadi.</p>
+              )}
+            </>
+          ) : null}
         </div>
       ) : null}
 

@@ -94,6 +94,25 @@ function rowSummaryTr(row: any): string | null {
   return null;
 }
 
+function fmtAuditDate(value: any): string {
+  const raw = String(value || '').trim();
+  if (!raw) return '-';
+  const d = new Date(raw);
+  if (!Number.isFinite(d.getTime())) return raw;
+  try {
+    return d.toLocaleString('tr-TR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch {
+    return raw;
+  }
+}
+
 export function AuditPage() {
   const initialSearch = new URLSearchParams(window.location.search);
   const initialPageRaw = Number(initialSearch.get('page') || 0);
@@ -113,6 +132,11 @@ export function AuditPage() {
   const [tab, setTab] = useState<AuditTab>((initialSearch.get('tab') as AuditTab) || 'all');
   const [page, setPage] = useState(initialPage);
   const [hasMore, setHasMore] = useState(false);
+  const serverFiltersKey = React.useMemo(
+    () => JSON.stringify({ q, action, actor, tenant, from, to }),
+    [q, action, actor, tenant, from, to]
+  );
+  const lastServerFiltersKeyRef = React.useRef(serverFiltersKey);
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -139,12 +163,16 @@ export function AuditPage() {
   }, [q, action, actor, tenant, from, to, page]);
 
   useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats, criticalOnly, tab]);
+    const filtersChanged = lastServerFiltersKeyRef.current !== serverFiltersKey;
+    if (filtersChanged) {
+      lastServerFiltersKeyRef.current = serverFiltersKey;
+      if (page !== 0) {
+        setPage(0);
+        return;
+      }
+    }
+    void load();
+  }, [serverFiltersKey, page, load]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -380,42 +408,56 @@ export function AuditPage() {
                 </div>
                 <div style={{ display: 'grid', gap: '0.5rem' }}>
                   {criticalItems.map((row: any) => (
-                    <div key={`critical-${row.id}`} className="card" style={{ padding: '0.6rem 0.7rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <div key={`critical-${row.id}`} className="card" style={{ padding: '0.85rem 0.95rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
                         <strong>
                           {actionLabelTr(row.action)}
                           {row.repeat_count > 1 ? (
-                            <span style={{ marginLeft: '0.4rem', color: '#cbd5e1', fontWeight: 500 }}>x{row.repeat_count}</span>
+                            <span
+                              style={{
+                                marginLeft: '0.5rem',
+                                color: '#e5e7eb',
+                                fontWeight: 600,
+                                fontSize: '0.8rem',
+                                border: '1px solid rgba(148,163,184,.5)',
+                                borderRadius: 999,
+                                padding: '0.1rem 0.5rem',
+                              }}
+                            >
+                              x{row.repeat_count}
+                            </span>
                           ) : null}
                         </strong>
-                        <span style={{ color: '#9ca3af' }}>
-                          {row.created_at || '-'}
+                        <span style={{ color: '#9ca3af', fontSize: '0.88rem' }}>
+                          {fmtAuditDate(row.created_at)}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.9rem', marginTop: '0.35rem' }}>
-                        islem yapan: <code>{row.actor_email || row.actor_user_id || '-'}</code>
-                      </div>
-                      <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                        firma: <code>{row.tenant_slug || row.tenant_id || '-'}</code>
+                      <div style={{ display: 'grid', gap: '0.35rem', marginTop: '0.55rem', fontSize: '0.92rem' }}>
+                        <div>
+                          <strong style={{ color: '#cbd5e1' }}>Islem Yapan:</strong> {row.actor_email || row.actor_user_id || '-'}
+                        </div>
+                        <div>
+                          <strong style={{ color: '#cbd5e1' }}>Firma:</strong> {row.tenant_slug || row.tenant_id || '-'}
+                        </div>
                       </div>
                       {targetSummary(row) ? (
-                        <div style={{ fontSize: '0.9rem', marginTop: '0.25rem', color: '#d1d5db' }}>
-                          {targetSummary(row)}
+                        <div style={{ fontSize: '0.92rem', marginTop: '0.45rem', color: '#d1d5db' }}>
+                          <strong style={{ color: '#cbd5e1' }}>Hedef:</strong> {targetSummary(row)}
                         </div>
                       ) : null}
                       {rowSummaryTr(row) ? (
-                        <div style={{ fontSize: '0.9rem', marginTop: '0.25rem', color: '#d1d5db' }}>
-                          {rowSummaryTr(row)}
+                        <div style={{ fontSize: '0.92rem', marginTop: '0.45rem', color: '#e5e7eb' }}>
+                          <strong style={{ color: '#cbd5e1' }}>Ozet:</strong> {rowSummaryTr(row)}
                         </div>
                       ) : null}
                       {row.repeat_count > 1 ? (
-                          <div style={{ fontSize: '0.84rem', marginTop: '0.25rem', color: '#9ca3af' }}>
-                            zaman araligi: {row.first_created_at || '-'} {'->'} {row.last_created_at || '-'}
+                          <div style={{ fontSize: '0.84rem', marginTop: '0.45rem', color: '#9ca3af' }}>
+                            <strong style={{ color: '#94a3b8' }}>Zaman Araligi:</strong> {fmtAuditDate(row.first_created_at)} {'->'} {fmtAuditDate(row.last_created_at)}
                           </div>
                       ) : null}
                       {row.metadata ? (
-                        <details style={{ marginTop: '0.4rem' }}>
-                          <summary>Ham detay</summary>
+                        <details style={{ marginTop: '0.55rem' }}>
+                          <summary>Ham Detay (JSON)</summary>
                           <pre>{JSON.stringify(row.metadata, null, 2)}</pre>
                         </details>
                       ) : null}
@@ -426,40 +468,54 @@ export function AuditPage() {
             ) : null}
 
             {normalItems.map((row: any) => (
-              <div key={row.id} className="card" style={{ padding: '0.6rem 0.8rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <div key={row.id} className="card" style={{ padding: '0.85rem 0.95rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   <strong>
                     {actionLabelTr(row.action)}
                     {row.repeat_count > 1 ? (
-                      <span style={{ marginLeft: '0.4rem', color: '#e8c784', fontWeight: 500 }}>x{row.repeat_count}</span>
+                      <span
+                        style={{
+                          marginLeft: '0.5rem',
+                          color: '#f3f4f6',
+                          fontWeight: 600,
+                          fontSize: '0.8rem',
+                          border: '1px solid rgba(148,163,184,.5)',
+                          borderRadius: 999,
+                          padding: '0.1rem 0.5rem',
+                        }}
+                      >
+                        x{row.repeat_count}
+                      </span>
                     ) : null}
                   </strong>
-                  <span style={{ color: '#9ca3af' }}>{row.created_at || '-'}</span>
+                  <span style={{ color: '#9ca3af', fontSize: '0.88rem' }}>{fmtAuditDate(row.created_at)}</span>
                 </div>
-                <div style={{ fontSize: '0.9rem', marginTop: '0.35rem' }}>
-                  islem yapan: <code>{row.actor_email || row.actor_user_id || '-'}</code>
-                </div>
-                <div style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                  firma: <code>{row.tenant_slug || row.tenant_id || '-'}</code>
+                <div style={{ display: 'grid', gap: '0.35rem', marginTop: '0.55rem', fontSize: '0.92rem' }}>
+                  <div>
+                    <strong style={{ color: '#cbd5e1' }}>Islem Yapan:</strong> {row.actor_email || row.actor_user_id || '-'}
+                  </div>
+                  <div>
+                    <strong style={{ color: '#cbd5e1' }}>Firma:</strong> {row.tenant_slug || row.tenant_id || '-'}
+                  </div>
                 </div>
                 {targetSummary(row) ? (
-                  <div style={{ fontSize: '0.9rem', marginTop: '0.25rem', color: '#d1d5db' }}>
-                    {targetSummary(row)}
+                  <div style={{ fontSize: '0.92rem', marginTop: '0.45rem', color: '#d1d5db' }}>
+                    <strong style={{ color: '#cbd5e1' }}>Hedef:</strong> {targetSummary(row)}
                   </div>
                 ) : null}
                 {rowSummaryTr(row) ? (
-                  <div style={{ fontSize: '0.9rem', marginTop: '0.25rem', color: '#d1d5db' }}>
-                    {rowSummaryTr(row)}
+                  <div style={{ fontSize: '0.92rem', marginTop: '0.45rem', color: '#e5e7eb' }}>
+                    <strong style={{ color: '#cbd5e1' }}>Ozet:</strong> {rowSummaryTr(row)}
                   </div>
                 ) : null}
                 {row.repeat_count > 1 ? (
-                  <div style={{ fontSize: '0.84rem', marginTop: '0.25rem', color: '#9ca3af' }}>
-                    zaman araligi: {row.first_created_at || '-'} {'->'} {row.last_created_at || '-'}
+                  <div style={{ fontSize: '0.84rem', marginTop: '0.45rem', color: '#9ca3af' }}>
+                    <strong style={{ color: '#94a3b8' }}>Zaman Araligi:</strong> {fmtAuditDate(row.first_created_at)} {'->'} {fmtAuditDate(row.last_created_at)}
                   </div>
                 ) : null}
                 {row.metadata ? (
-                  <details style={{ marginTop: '0.4rem' }}>
-                    <summary>Ham detay</summary>
+                  <details style={{ marginTop: '0.55rem' }}>
+                    <summary>Ham Detay (JSON)</summary>
                     <pre>{JSON.stringify(row.metadata, null, 2)}</pre>
                   </details>
                 ) : null}

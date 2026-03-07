@@ -35,5 +35,12 @@ export function resolveAdminRoute(pathname: string): React.ReactElement | null {
   // All other admin routes are protected behind a token.
   const target = routeMap[pathname];
   if (!target) return <AdminControlCenterPage />;
-  return hasAdminToken() ? target : <AdminControlCenterPage />;
+  if (hasAdminToken()) return target;
+
+  const next = encodeURIComponent(pathname);
+  const loginPath = `/admin/control-center?next=${next}`;
+  if (window.location.pathname !== '/admin/control-center') {
+    window.history.replaceState({}, '', loginPath);
+  }
+  return <AdminControlCenterPage />;
 }

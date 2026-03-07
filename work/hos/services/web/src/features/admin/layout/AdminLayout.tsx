@@ -10,6 +10,9 @@ type AdminLayoutProps = {
 export function AdminLayout({ title, children }: AdminLayoutProps) {
   const loggedIn = hasAdminToken();
   const adminEmail = getAdminEmail();
+  const pathname = window.location.pathname;
+  const isControlCenterRoute = pathname === '/admin' || pathname === '/admin/control-center';
+  const showSidebar = loggedIn && !isControlCenterRoute;
 
   function handleLogout() {
     clearAdminSession();
@@ -37,8 +40,15 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
 
       <main className="main admin-main" style={{ maxWidth: '1400px' }}>
         <h1 className="admin-page-title">{title}</h1>
-        <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', gap: '1rem' }}>
-          <AdminSidebar />
+        <div
+          className="admin-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: showSidebar ? '260px minmax(0, 1fr)' : 'minmax(0, 1fr)',
+            gap: '1rem',
+          }}
+        >
+          {showSidebar ? <AdminSidebar /> : null}
           <section className="admin-content">{children}</section>
         </div>
       </main>
