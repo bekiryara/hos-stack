@@ -18,7 +18,7 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
 
   return (
     <div className="page" data-marker="hos-admin-layout">
-      <header className="top">
+      <header className="top admin-top">
         <div className="brand">
           H-OS Yonetim <span style={{ fontSize: '0.7rem', color: '#ff6b6b', fontWeight: 'normal' }}>(DEV)</span>
         </div>
@@ -35,11 +35,11 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
         </div>
       </header>
 
-      <main className="main" style={{ maxWidth: '1400px' }}>
-        <h1>{title}</h1>
-        <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', gap: '1rem' }}>
+      <main className="main admin-main" style={{ maxWidth: '1400px' }}>
+        <h1 className="admin-page-title">{title}</h1>
+        <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', gap: '1rem' }}>
           <AdminSidebar />
-          <section>{children}</section>
+          <section className="admin-content">{children}</section>
         </div>
       </main>
     </div>

@@ -9,14 +9,21 @@ const links = [
 ];
 
 export function AdminSidebar() {
+  const pathname = window.location.pathname;
+
   return (
     <nav aria-label="Admin navigation">
-      <div className="card">
+      <div className="card admin-sidebar-card">
         <div className="title">Yonetim Menusu</div>
-        <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+        <ul className="admin-sidebar-list" style={{ margin: 0, paddingLeft: 0, listStyle: 'none' }}>
           {links.map((link) => (
-            <li key={link.href} style={{ marginBottom: '0.35rem' }}>
-              <a href={link.href}>{link.label}</a>
+            <li key={link.href}>
+              <a
+                href={link.href}
+                className={pathname === link.href ? 'admin-nav-link active' : 'admin-nav-link'}
+              >
+                {link.label}
+              </a>
             </li>
           ))}
         </ul>
