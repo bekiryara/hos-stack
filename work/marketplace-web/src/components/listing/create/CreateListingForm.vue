@@ -1028,18 +1028,18 @@ export default {
 }
 
 .minor-btn.danger {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #b91c1c;
+  background: #fff8e6;
+  border-color: #f5d9a8;
+  color: #7c5a17;
 }
 
 .submit-errors {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
-  color: #b71c1c;
-  background: #ffebee;
-  border: 1px solid #ffcdd2;
-  border-left: 3px solid #c62828;
+  color: #6b4e16;
+  background: #fff8e8;
+  border: 1px solid #f2dfb3;
+  border-left: 3px solid #caa256;
   border-radius: 4px;
   padding: 0.65rem 0.75rem;
   font-size: 0.9rem;
@@ -1072,10 +1072,10 @@ export default {
 
 .warning-box {
   margin-top: 0.6rem;
-  border-color: #fde68a;
-  border-left-color: #f59e0b;
-  background: #fffbeb;
-  color: #92400e;
+  border-color: #f1e2bb;
+  border-left-color: #caa256;
+  background: #fffaf0;
+  color: #70521b;
 }
 
 .submit-actions {
@@ -1138,14 +1138,14 @@ export default {
 }
 
 .tenant-id-warning {
-  color: #f57c00;
+  color: #7a5a1a;
   display: block;
   margin-top: 0.5rem;
   font-size: 0.875rem;
-  background: #fff3e0;
+  background: #fff8ec;
   padding: 0.5rem;
   border-radius: 4px;
-  border-left: 3px solid #ff9800;
+  border-left: 3px solid #caa256;
 }
 
 .category-label {

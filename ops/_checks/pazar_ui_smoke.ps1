@@ -1,5 +1,5 @@
 # pazar_ui_smoke.ps1 - UI Smoke Test + Logging Regression Check
-# Verifies /ui/admin/control-center is accessible and logs show no permission denied errors
+# Verifies /admin is accessible and logs show no permission denied errors
 # PowerShell 5.1 compatible, ASCII-only output
 
 param(
@@ -25,8 +25,8 @@ Push-Location $repoRoot
 try {
     Write-Info "=== Pazar UI Smoke Test ==="
     
-    $baseUrl = "http://localhost:8080"
-    $uiEndpoint = "${baseUrl}/ui/admin/control-center"
+    $baseUrl = "http://localhost:3002"
+    $uiEndpoint = "${baseUrl}/admin"
     
     # Check if Docker stack is available
     $dockerAvailable = $false

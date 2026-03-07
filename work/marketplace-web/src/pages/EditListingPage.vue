@@ -279,9 +279,9 @@ export default {
 }
 
 .state-error {
-  border-color: #fca5a5;
-  background: #fef2f2;
-  color: #991b1b;
+  border-color: #edd7a6;
+  background: #fff8e8;
+  color: #6b4e16;
 }
 
 .state-success {
