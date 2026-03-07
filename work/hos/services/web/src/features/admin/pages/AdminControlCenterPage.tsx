@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { hosLogin, hosMe } from '../api/adminClient';
 import { AdminLayout } from '../layout/AdminLayout';
 import { getAdminToken, setAdminSession } from '../session';
+import { trAdminError } from '../utils/opsSafety';
 
 export function AdminControlCenterPage() {
   const [token, setToken] = useState<string>(() => getAdminToken());
@@ -9,7 +10,7 @@ export function AdminControlCenterPage() {
   const [password, setPassword] = useState<string>('');
   const [authBusy, setAuthBusy] = useState(false);
   const [me, setMe] = useState<any>(null);
-  const [adminErr, setAdminErr] = useState<any>(null);
+  const [adminErr, setAdminErr] = useState<string | null>(null);
 
   useEffect(() => {
     setAdminSession(token, email || undefined);
@@ -26,14 +27,14 @@ export function AdminControlCenterPage() {
   async function adminRefreshMe() {
     setAdminErr(null);
     if (!token) {
-      setAdminErr(new Error('Token bulunamadi'));
+      setAdminErr('Token bulunamadi');
       return;
     }
     try {
       const m = await hosMe(token);
       setMe(m);
     } catch (e: any) {
-      setAdminErr(e);
+      setAdminErr(trAdminError(e?.body?.error || e?.message, 'Oturum bilgisi alinamadi.'));
     }
   }
 
@@ -50,7 +51,7 @@ export function AdminControlCenterPage() {
       setPassword('');
       window.location.href = '/admin/dashboard';
     } catch (e: any) {
-      setAdminErr(e);
+      setAdminErr(trAdminError(e?.body?.error || e?.message, 'Giris yapilamadi.'));
     } finally {
       setAuthBusy(false);
     }
@@ -113,7 +114,7 @@ export function AdminControlCenterPage() {
           {adminErr ? (
             <div className="card error" style={{ marginTop: '0.75rem' }}>
               <div className="title">Hata</div>
-              <pre>{JSON.stringify({ message: adminErr?.message, status: adminErr?.status, body: adminErr?.body }, null, 2)}</pre>
+              <pre>{adminErr}</pre>
             </div>
           ) : null}
         </div>
