@@ -150,6 +150,28 @@ async function fetchPazarCategoryTitleMap({ pazarBaseUrl }) {
   }
 }
 
+async function fetchPazarJson({ url }) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      const err = new Error(`pazar_fetch_failed_${response.status}`);
+      err.status = response.status;
+      err.message = text || err.message;
+      throw err;
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function fetchPazarCategoriesTree({ pazarBaseUrl, view = "", status = "" }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
@@ -474,6 +496,41 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
       scanned_statuses: statuses,
       scanned_per_status_limit: LISTING_FETCH_PER_STATUS,
     });
+  });
+
+  app.get("/admin/platform/categories/:id/contracts", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const categoryId = String(req.params?.id || "").trim();
+    if (!categoryId) return reply.code(400).send({ error: "invalid_category_id" });
+
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    try {
+      const [filterSchema, intentSchema] = await Promise.all([
+        fetchPazarJson({ url: `${pazarBaseUrl}/api/v1/categories/${encodeURIComponent(categoryId)}/filter-schema` }),
+        fetchPazarJson({ url: `${pazarBaseUrl}/api/v1/categories/${encodeURIComponent(categoryId)}/intent-schema` }),
+      ]);
+
+      const filters = Array.isArray(filterSchema?.filters) ? filterSchema.filters : [];
+      const requiredCount = filters.filter((f) => Boolean(f?.required)).length;
+      const optionalCount = Math.max(0, filters.length - requiredCount);
+      const withOptionsCount = filters.filter((f) => Array.isArray(f?.rules?.options) && f.rules.options.length > 0).length;
+
+      return reply.send({
+        category_id: categoryId,
+        filter_schema: filterSchema,
+        intent_schema: intentSchema,
+        attribute_summary: {
+          total: filters.length,
+          required: requiredCount,
+          optional: optionalCount,
+          with_options: withOptionsCount,
+        },
+      });
+    } catch (e) {
+      return reply.code(e?.status || 502).send({ error: "category_contracts_unavailable" });
+    }
   });
 
   app.get("/admin/platform/overview", async (req, reply) => {

@@ -1,5 +1,11 @@
 import React from 'react';
-import { adminCategoriesOverview, adminCategoriesTree, adminCategoryMappings, adminCategoryListingStats } from '../api/adminClient';
+import {
+  adminCategoriesOverview,
+  adminCategoriesTree,
+  adminCategoryContracts,
+  adminCategoryMappings,
+  adminCategoryListingStats,
+} from '../api/adminClient';
 import { AdminLayout } from '../layout/AdminLayout';
 import { trAdminError } from '../utils/opsSafety';
 
@@ -24,7 +30,8 @@ type MappingRow = {
   menu_placements: number;
 };
 
-type CategoryTab = 'genel' | 'agac' | 'eslesmeler';
+type CategoryTab = 'genel' | 'agac';
+type DetailTab = 'durum' | 'sema' | 'attribute' | 'eslesme';
 
 function countTree(nodes: CategoryNode[]): number {
   let total = 0;
@@ -89,11 +96,9 @@ function CategoryTree({
               }}
             >
               {hasChildren ? (
-                <span style={{ color: '#9ca3af', marginRight: '0.35rem' }}>
-                  {isExpanded ? '▾' : '▸'}
-                </span>
+                <span style={{ color: '#9ca3af', marginRight: '0.35rem' }}>{isExpanded ? 'v' : '>'}</span>
               ) : (
-                <span style={{ color: '#9ca3af', marginRight: '0.35rem' }}>•</span>
+                <span style={{ color: '#9ca3af', marginRight: '0.35rem' }}>*</span>
               )}
               <strong>{node?.title || '-'}</strong>{' '}
               <span style={{ color: '#9ca3af' }}>({id})</span>{' '}
@@ -119,6 +124,7 @@ export function CategoriesPage() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState<CategoryTab>('genel');
+  const [detailTab, setDetailTab] = React.useState<DetailTab>('durum');
 
   const [overview, setOverview] = React.useState<any>(null);
   const [tree, setTree] = React.useState<CategoryNode[]>([]);
@@ -128,15 +134,17 @@ export function CategoriesPage() {
   const [treeQ, setTreeQ] = React.useState('');
   const [treeStatus, setTreeStatus] = React.useState<'all' | 'active' | 'inactive'>('all');
 
-  const [mappingQ, setMappingQ] = React.useState('');
-  const [mappingType, setMappingType] = React.useState<'all' | 'mapped' | 'unmapped'>('all');
-  const [mappingPage, setMappingPage] = React.useState(1);
-  const [mappings, setMappings] = React.useState<MappingRow[]>([]);
-  const [mappingTotal, setMappingTotal] = React.useState(0);
-  const [mappingPerPage] = React.useState(25);
   const [listingStatsLoading, setListingStatsLoading] = React.useState(false);
   const [listingStatsError, setListingStatsError] = React.useState<string | null>(null);
   const [listingStats, setListingStats] = React.useState<any>(null);
+
+  const [contractsLoading, setContractsLoading] = React.useState(false);
+  const [contractsError, setContractsError] = React.useState<string | null>(null);
+  const [contracts, setContracts] = React.useState<any>(null);
+
+  const [mappingLoading, setMappingLoading] = React.useState(false);
+  const [mappingError, setMappingError] = React.useState<string | null>(null);
+  const [selectedMapping, setSelectedMapping] = React.useState<MappingRow | null>(null);
 
   const load = React.useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -148,29 +156,32 @@ export function CategoriesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [o, t, m] = await Promise.all([
+      const [o, t] = await Promise.all([
         adminCategoriesOverview(token),
         adminCategoriesTree(token, { q: treeQ || undefined, status: treeStatus }),
-        adminCategoryMappings(token, {
-          q: mappingQ || undefined,
-          mapping: mappingType,
-          page: mappingPage,
-          per_page: mappingPerPage,
-        }),
       ]);
       setOverview(o || null);
       const nextTree = Array.isArray(t?.tree) ? t.tree : [];
       setTree(nextTree);
-      setSelectedNode(null);
-      if (!treeQ.trim()) setExpandedIds(new Set());
-      setMappings(Array.isArray(m?.items) ? m.items : []);
-      setMappingTotal(Number(m?.total || 0));
+      // Agac acik/kapali durumunu koru; secim degisince veya yenilemede sifirlama.
+
+      // Secili kategori agacta hala varsa koru, yoksa temizle
+      const prevId = String(selectedNode?.id || '').trim();
+      if (prevId) {
+        const ids = new Set(collectTreeIds(nextTree, []));
+        if (!ids.has(prevId)) {
+          setSelectedNode(null);
+          setListingStats(null);
+          setContracts(null);
+          setSelectedMapping(null);
+        }
+      }
     } catch (e: any) {
       setError(trAdminError(e?.body?.error || e?.message, 'Kategori verileri alinamadi'));
     } finally {
       setLoading(false);
     }
-  }, [mappingPage, mappingPerPage, mappingQ, mappingType, treeQ, treeStatus]);
+  }, [treeQ, treeStatus]);
 
   React.useEffect(() => {
     void load();
@@ -209,6 +220,72 @@ export function CategoriesPage() {
   }, [selectedNode?.id]);
 
   React.useEffect(() => {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    const categoryId = String(selectedNode?.id || '').trim();
+    if (!token || !categoryId) {
+      setContracts(null);
+      setContractsError(null);
+      setContractsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setContractsLoading(true);
+    setContractsError(null);
+    (async () => {
+      try {
+        const out = await adminCategoryContracts(token, categoryId);
+        if (!cancelled) setContracts(out || null);
+      } catch (e: any) {
+        if (!cancelled) {
+          setContracts(null);
+          setContractsError(trAdminError(e?.body?.error || e?.message, 'Kategori sema bilgisi alinamadi'));
+        }
+      } finally {
+        if (!cancelled) setContractsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedNode?.id]);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('hos_admin_token') || '';
+    const categoryId = String(selectedNode?.id || '').trim();
+    if (!token || !categoryId) {
+      setSelectedMapping(null);
+      setMappingError(null);
+      setMappingLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setMappingLoading(true);
+    setMappingError(null);
+    (async () => {
+      try {
+        const out = await adminCategoryMappings(token, { q: categoryId, mapping: 'all', page: 1, per_page: 10 });
+        const items = Array.isArray(out?.items) ? out.items : [];
+        const exact = items.find((x: any) => String(x?.internal_category_id || '') === categoryId) || null;
+        if (!cancelled) setSelectedMapping(exact);
+      } catch (e: any) {
+        if (!cancelled) {
+          setSelectedMapping(null);
+          setMappingError(trAdminError(e?.body?.error || e?.message, 'Eslesme bilgisi alinamadi'));
+        }
+      } finally {
+        if (!cancelled) setMappingLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedNode?.id]);
+
+  React.useEffect(() => {
     const query = treeQ.trim();
     if (!query) return;
     const ids = collectTreeIds(tree, []);
@@ -216,7 +293,8 @@ export function CategoriesPage() {
   }, [tree, treeQ]);
 
   const treeCount = countTree(tree);
-  const mappingPages = Math.max(1, Math.ceil(mappingTotal / mappingPerPage));
+  const hasFilterRows = Array.isArray(contracts?.filter_schema?.filters) && contracts.filter_schema.filters.length > 0;
+
   const handleToggleExpand = React.useCallback((id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -253,26 +331,11 @@ export function CategoriesPage() {
 
       <div className="card" style={{ padding: '0.5rem' }}>
         <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
-          <button
-            className={activeTab === 'genel' ? 'admin-tab-btn active' : 'admin-tab-btn'}
-            type="button"
-            onClick={() => setActiveTab('genel')}
-          >
+          <button className={activeTab === 'genel' ? 'admin-tab-btn active' : 'admin-tab-btn'} type="button" onClick={() => setActiveTab('genel')}>
             Genel
           </button>
-          <button
-            className={activeTab === 'agac' ? 'admin-tab-btn active' : 'admin-tab-btn'}
-            type="button"
-            onClick={() => setActiveTab('agac')}
-          >
+          <button className={activeTab === 'agac' ? 'admin-tab-btn active' : 'admin-tab-btn'} type="button" onClick={() => setActiveTab('agac')}>
             Agac
-          </button>
-          <button
-            className={activeTab === 'eslesmeler' ? 'admin-tab-btn active' : 'admin-tab-btn'}
-            type="button"
-            onClick={() => setActiveTab('eslesmeler')}
-          >
-            Eslesmeler
           </button>
         </div>
       </div>
@@ -281,7 +344,7 @@ export function CategoriesPage() {
         <div className="card">
           <div className="title">Genel Durum</div>
           <p style={{ margin: 0, color: '#9ca3af' }}>
-            Bu sekme hizli kontrol icindir. Detayli inceleme icin Agac veya Eslesmeler sekmesine gecin.
+            Kategori secimi ve detay inceleme icin Agac sekmesine gecin.
           </p>
         </div>
       ) : null}
@@ -303,8 +366,10 @@ export function CategoriesPage() {
               </select>
             </label>
           </div>
+
           <div style={{ marginBottom: '0.7rem' }}>Filtrelenmis dugum: <strong>{treeCount}</strong></div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(320px, 1fr)', gap: '0.75rem' }}>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(380px, 1.2fr)', gap: '0.75rem' }}>
             <div className="card" style={{ padding: '0.6rem', maxHeight: '520px', overflowY: 'auto' }}>
               {treeCount === 0 ? (
                 <p>Kategori bulunamadi.</p>
@@ -318,119 +383,172 @@ export function CategoriesPage() {
                 />
               )}
             </div>
+
             <div className="card" style={{ padding: '0.6rem' }}>
               <div className="title" style={{ marginBottom: '0.4rem' }}>Kategori Detayi</div>
               {!selectedNode ? (
                 <p>Detay gormek icin soldan bir kategori secin.</p>
               ) : (
                 <>
-                  <div style={{ display: 'grid', gap: '0.45rem' }}>
-                    <div><strong>Baslik:</strong> {selectedNode?.title || '-'}</div>
-                    <div><strong>ID:</strong> <code>{String(selectedNode?.id || '-')}</code></div>
-                    <div><strong>Slug:</strong> {selectedNode?.slug || '-'}</div>
-                    <div><strong>Durum:</strong> {selectedNode?.status || '-'}</div>
-                    <div><strong>Parent ID:</strong> {selectedNode?.parent_id || '-'}</div>
-                    <div><strong>Canonical ID:</strong> {selectedNode?.canonical_category_id || '-'}</div>
+                  <div className="card" style={{ padding: '0.45rem', marginBottom: '0.65rem' }}>
+                    <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+                      <button className={detailTab === 'durum' ? 'admin-tab-btn active' : 'admin-tab-btn'} type="button" onClick={() => setDetailTab('durum')}>
+                        Durum
+                      </button>
+                      <button className={detailTab === 'sema' ? 'admin-tab-btn active' : 'admin-tab-btn'} type="button" onClick={() => setDetailTab('sema')}>
+                        Sema
+                      </button>
+                      <button className={detailTab === 'attribute' ? 'admin-tab-btn active' : 'admin-tab-btn'} type="button" onClick={() => setDetailTab('attribute')}>
+                        Attribute
+                      </button>
+                      <button className={detailTab === 'eslesme' ? 'admin-tab-btn active' : 'admin-tab-btn'} type="button" onClick={() => setDetailTab('eslesme')}>
+                        Eslesme
+                      </button>
+                    </div>
                   </div>
-                  <div className="card" style={{ marginTop: '0.7rem', padding: '0.6rem' }}>
-                    <div className="title" style={{ marginBottom: '0.4rem' }}>Bagli Ilanlar</div>
-                    {listingStatsLoading ? <p style={{ margin: 0 }}>Istatistik yukleniyor...</p> : null}
-                    {listingStatsError ? <p style={{ margin: 0 }}>{listingStatsError}</p> : null}
-                    {!listingStatsLoading && !listingStatsError ? (
-                      <div style={{ display: 'grid', gap: '0.35rem' }}>
-                        <div><strong>Alt kategori sayisi:</strong> {listingStats?.subtree_category_count ?? 0}</div>
-                        <div><strong>Menu kullanim noktasi:</strong> {listingStats?.menu_placements_direct ?? 0} (bu kategori) / {listingStats?.menu_placements_subtree ?? 0} (alt dallar dahil)</div>
-                        <div><strong>Bu kategori:</strong> {listingStats?.direct_total ?? 0}</div>
-                        <div><strong>Alt dallar dahil:</strong> {listingStats?.subtree_total ?? 0}</div>
-                        <div>
-                          <strong>Durum (alt dallar dahil):</strong>{' '}
-                          Yayinda {listingStats?.subtree_by_status?.published ?? 0} | Taslak {listingStats?.subtree_by_status?.draft ?? 0} | Durduruldu {listingStats?.subtree_by_status?.paused ?? 0} | Arsiv {listingStats?.subtree_by_status?.archived ?? 0}
-                        </div>
+
+                  {detailTab === 'durum' ? (
+                    <>
+                      <div style={{ display: 'grid', gap: '0.45rem' }}>
+                        <div><strong>Baslik:</strong> {selectedNode?.title || '-'}</div>
+                        <div><strong>ID:</strong> <code>{String(selectedNode?.id || '-')}</code></div>
+                        <div><strong>Slug:</strong> {selectedNode?.slug || '-'}</div>
+                        <div><strong>Durum:</strong> {selectedNode?.status || '-'}</div>
+                        <div><strong>Parent ID:</strong> {selectedNode?.parent_id || '-'}</div>
+                        <div><strong>Canonical ID:</strong> {selectedNode?.canonical_category_id || '-'}</div>
                       </div>
-                    ) : null}
-                  </div>
+                      <div className="card" style={{ marginTop: '0.7rem', padding: '0.6rem' }}>
+                        <div className="title" style={{ marginBottom: '0.4rem' }}>Bagli Ilanlar</div>
+                        {listingStatsLoading ? <p style={{ margin: 0 }}>Istatistik yukleniyor...</p> : null}
+                        {listingStatsError ? <p style={{ margin: 0 }}>{listingStatsError}</p> : null}
+                        {!listingStatsLoading && !listingStatsError ? (
+                          <div style={{ display: 'grid', gap: '0.35rem' }}>
+                            <div><strong>Alt kategori sayisi:</strong> {listingStats?.subtree_category_count ?? 0}</div>
+                            <div><strong>Menu kullanim noktasi:</strong> {listingStats?.menu_placements_direct ?? 0} (bu kategori) / {listingStats?.menu_placements_subtree ?? 0} (alt dallar dahil)</div>
+                            <div><strong>Bu kategori:</strong> {listingStats?.direct_total ?? 0}</div>
+                            <div><strong>Alt dallar dahil:</strong> {listingStats?.subtree_total ?? 0}</div>
+                            <div>
+                              <strong>Durum (alt dallar dahil):</strong>{' '}
+                              Yayinda {listingStats?.subtree_by_status?.published ?? 0} | Taslak {listingStats?.subtree_by_status?.draft ?? 0} | Durduruldu {listingStats?.subtree_by_status?.paused ?? 0} | Arsiv {listingStats?.subtree_by_status?.archived ?? 0}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </>
+                  ) : null}
+
+                  {detailTab === 'sema' ? (
+                    <>
+                      {contractsLoading ? <p>Sema yukleniyor...</p> : null}
+                      {contractsError ? <p>{contractsError}</p> : null}
+                      {!contractsLoading && !contractsError ? (
+                        <div style={{ display: 'grid', gap: '0.6rem' }}>
+                          <div className="card" style={{ padding: '0.6rem' }}>
+                            <div><strong>Kategori:</strong> {selectedNode?.title || '-'} (<code>{String(selectedNode?.id || '-')}</code>)</div>
+                            <div><strong>Varsayilan Varyant:</strong> {String(contracts?.intent_schema?.default_offer_variant || '-')}</div>
+                            <div>
+                              <strong>Islem Modlari:</strong>{' '}
+                              {Array.isArray(contracts?.intent_schema?.allowed_transaction_modes)
+                                ? contracts.intent_schema.allowed_transaction_modes.join(', ')
+                                : '-'}
+                            </div>
+                            <div>
+                              <strong>Offer Variants:</strong>{' '}
+                              {Array.isArray(contracts?.intent_schema?.offer_variants) ? contracts.intent_schema.offer_variants.length : 0}
+                            </div>
+                          </div>
+                          <details>
+                            <summary>Intent Semasi (Ham)</summary>
+                            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                              {JSON.stringify(contracts?.intent_schema ?? {}, null, 2)}
+                            </pre>
+                          </details>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+
+                  {detailTab === 'attribute' ? (
+                    <>
+                      {contractsLoading ? <p>Attribute yukleniyor...</p> : null}
+                      {contractsError ? <p>{contractsError}</p> : null}
+                      {!contractsLoading && !contractsError ? (
+                        <>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.6rem', marginBottom: '0.7rem' }}>
+                            <div className="card" style={{ padding: '0.6rem' }}><div>Toplam</div><strong>{contracts?.attribute_summary?.total ?? 0}</strong></div>
+                            <div className="card" style={{ padding: '0.6rem' }}><div>Zorunlu</div><strong>{contracts?.attribute_summary?.required ?? 0}</strong></div>
+                            <div className="card" style={{ padding: '0.6rem' }}><div>Opsiyonel</div><strong>{contracts?.attribute_summary?.optional ?? 0}</strong></div>
+                            <div className="card" style={{ padding: '0.6rem' }}><div>Secenekli</div><strong>{contracts?.attribute_summary?.with_options ?? 0}</strong></div>
+                          </div>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                              <thead>
+                                <tr>
+                                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Key</th>
+                                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Baslik</th>
+                                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Tip</th>
+                                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Zorunlu</th>
+                                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Secenek</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {!hasFilterRows ? (
+                                  <tr>
+                                    <td colSpan={5} style={{ padding: '0.6rem' }}>Attribute bulunamadi.</td>
+                                  </tr>
+                                ) : (
+                                  (contracts.filter_schema.filters as any[]).map((f: any, idx: number) => (
+                                    <tr key={String(f?.key || idx)}>
+                                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}><code>{String(f?.key || '-')}</code></td>
+                                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+                                        {String(f?.title || f?.label || f?.description || f?.key || '-')}
+                                      </td>
+                                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{String(f?.type || '-')}</td>
+                                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{f?.required ? 'Evet' : 'Hayir'}</td>
+                                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{Array.isArray(f?.rules?.options) ? f.rules.options.length : 0}</td>
+                                    </tr>
+                                  ))
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                          <details style={{ marginTop: '0.7rem' }}>
+                            <summary>Attribute Semasi (Ham)</summary>
+                            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                              {JSON.stringify(contracts?.filter_schema ?? {}, null, 2)}
+                            </pre>
+                          </details>
+                        </>
+                      ) : null}
+                    </>
+                  ) : null}
+
+                  {detailTab === 'eslesme' ? (
+                    <>
+                      {mappingLoading ? <p>Eslesme bilgisi yukleniyor...</p> : null}
+                      {mappingError ? <p>{mappingError}</p> : null}
+                      {!mappingLoading && !mappingError ? (
+                        <div className="card" style={{ padding: '0.6rem' }}>
+                          {!selectedMapping ? (
+                            <p style={{ margin: 0 }}>Bu kategori icin eslesme kaydi bulunamadi.</p>
+                          ) : (
+                            <div style={{ display: 'grid', gap: '0.45rem' }}>
+                              <div><strong>Kategori:</strong> {selectedMapping.title || '-'}</div>
+                              <div><strong>Internal ID:</strong> <code>{selectedMapping.internal_category_id || '-'}</code></div>
+                              <div><strong>Canonical ID:</strong> <code>{selectedMapping.canonical_category_id || '-'}</code></div>
+                              <div><strong>Slug:</strong> {selectedMapping.slug || '-'}</div>
+                              <div><strong>Dis Eslesme:</strong> {selectedMapping.external_source ? `${selectedMapping.external_source}:${selectedMapping.external_id || '-'}` : '-'}</div>
+                              <div><strong>Menu Kullanim:</strong> {selectedMapping.menu_placements ?? 0}</div>
+                              <div><strong>Durum:</strong> {selectedMapping.status || '-'}</div>
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
                 </>
               )}
             </div>
-          </div>
-        </div>
-      ) : null}
-
-      {activeTab === 'eslesmeler' ? (
-        <div className="card">
-          <div className="title">Kategori Eslesmeleri</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.6rem', marginBottom: '0.7rem' }}>
-            <label style={{ display: 'grid', gap: '0.35rem' }}>
-              <span>Arama</span>
-              <input
-                value={mappingQ}
-                onChange={(e) => {
-                  setMappingQ(e.target.value);
-                  setMappingPage(1);
-                }}
-                placeholder="Baslik / slug / kategori ID / dis ID"
-              />
-            </label>
-            <label style={{ display: 'grid', gap: '0.35rem' }}>
-              <span>Eslesme Durumu</span>
-              <select
-                value={mappingType}
-                onChange={(e) => {
-                  setMappingType(e.target.value as 'all' | 'mapped' | 'unmapped');
-                  setMappingPage(1);
-                }}
-              >
-                <option value="all">Hepsi</option>
-                <option value="mapped">Eslesmis</option>
-                <option value="unmapped">Eslesmemis</option>
-              </select>
-            </label>
-          </div>
-          <div style={{ marginBottom: '0.7rem' }}>
-            Toplam kayit: <strong>{mappingTotal}</strong> | Sayfa: <strong>{mappingPage}</strong> / {mappingPages}
-          </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Kategori</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Slug</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Dis Eslesme</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Menu</th>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>Durum</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mappings.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{ padding: '0.6rem' }}>Kayit bulunamadi.</td>
-                  </tr>
-                ) : (
-                  mappings.map((row) => (
-                    <tr key={row.internal_category_id}>
-                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                        <div>{row.title || '-'}</div>
-                        <div style={{ color: '#9ca3af', fontSize: '0.82rem' }}><code>{row.internal_category_id}</code></div>
-                      </td>
-                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.slug || '-'}</td>
-                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                        {row.external_source ? `${row.external_source}:${row.external_id || '-'}` : '-'}
-                      </td>
-                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.menu_placements ?? 0}</td>
-                      <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>{row.status || '-'}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div style={{ marginTop: '0.7rem' }}>
-            <button onClick={() => setMappingPage((p) => Math.max(1, p - 1))} disabled={mappingPage <= 1 || loading}>
-              Onceki Sayfa
-            </button>
-            <button onClick={() => setMappingPage((p) => Math.min(mappingPages, p + 1))} disabled={mappingPage >= mappingPages || loading} style={{ marginLeft: '0.5rem' }}>
-              Sonraki Sayfa
-            </button>
           </div>
         </div>
       ) : null}

@@ -178,3 +178,7 @@ export async function adminCategoryMappings(
 export async function adminCategoryListingStats(token: string, categoryId: string) {
   return await fetchJson(`/api/v1/admin/platform/categories/${encodeURIComponent(categoryId)}/listing-stats`, undefined, token);
 }
+
+export async function adminCategoryContracts(token: string, categoryId: string) {
+  return await fetchJson(`/api/v1/admin/platform/categories/${encodeURIComponent(categoryId)}/contracts`, undefined, token);
+}

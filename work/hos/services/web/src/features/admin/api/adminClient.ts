@@ -3,6 +3,7 @@ import {
   adminAudit as apiAdminAudit,
   adminCategoriesOverview as apiAdminCategoriesOverview,
   adminCategoriesTree as apiAdminCategoriesTree,
+  adminCategoryContracts as apiAdminCategoryContracts,
   adminCategoryListingStats as apiAdminCategoryListingStats,
   adminCategoryMappings as apiAdminCategoryMappings,
   adminListings as apiAdminListings,
@@ -128,6 +129,14 @@ export async function adminCategoryMappings(
 export async function adminCategoryListingStats(token: string, categoryId: string) {
   try {
     return await apiAdminCategoryListingStats(token, categoryId);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminCategoryContracts(token: string, categoryId: string) {
+  try {
+    return await apiAdminCategoryContracts(token, categoryId);
   } catch (error: any) {
     rethrowWithAuthHandling(error);
   }
