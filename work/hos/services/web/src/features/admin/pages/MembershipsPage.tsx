@@ -22,6 +22,12 @@ export function MembershipsPage() {
   const [nextByKey, setNextByKey] = useState<Record<string, { role: MembershipRole; status: MembershipStatus }>>({});
   const [undoMembership, setUndoMembership] = useState<UndoMembership | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const bulkCheckStyle: React.CSSProperties = {
+    width: '1.15rem',
+    height: '1.15rem',
+    accentColor: '#60a5fa',
+    cursor: 'pointer',
+  };
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -285,9 +291,10 @@ export function MembershipsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>
+                  <th style={{ textAlign: 'center', width: '2.5rem', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.6rem 0.45rem' }}>
                     <input
                       type="checkbox"
+                      style={bulkCheckStyle}
                       checked={allSelected}
                       onChange={(e) =>
                         setSelectedKeys(
@@ -313,9 +320,10 @@ export function MembershipsPage() {
                   const changed = next.role !== currentRole || next.status !== currentStatus;
                   return (
                   <tr key={key}>
-                    <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+                    <td style={{ textAlign: 'center', padding: '0.6rem 0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                       <input
                         type="checkbox"
+                        style={bulkCheckStyle}
                         checked={selectedKeys.includes(key)}
                         onChange={(e) =>
                           setSelectedKeys((prev) =>

@@ -16,6 +16,12 @@ export function UsersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [undoRole, setUndoRole] = useState<UndoUserRole | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const bulkCheckStyle: React.CSSProperties = {
+    width: '1.15rem',
+    height: '1.15rem',
+    accentColor: '#60a5fa',
+    cursor: 'pointer',
+  };
 
   const load = useCallback(async () => {
     const token = localStorage.getItem('hos_admin_token') || '';
@@ -259,9 +265,10 @@ export function UsersPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.45rem' }}>
+                  <th style={{ textAlign: 'center', width: '2.5rem', borderBottom: '1px solid rgba(255,255,255,.15)', padding: '0.6rem 0.45rem' }}>
                     <input
                       type="checkbox"
+                      style={bulkCheckStyle}
                       checked={allSelected}
                       onChange={(e) =>
                         setSelectedUserIds(e.target.checked ? items.map((x: any) => String(x.id || '')) : [])
@@ -279,9 +286,10 @@ export function UsersPage() {
               <tbody>
                 {items.map((row: any) => (
                   <tr key={row.id}>
-                    <td style={{ padding: '0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+                    <td style={{ textAlign: 'center', padding: '0.6rem 0.45rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                       <input
                         type="checkbox"
+                        style={bulkCheckStyle}
                         checked={selectedUserIds.includes(String(row.id || ''))}
                         onChange={(e) =>
                           setSelectedUserIds((prev) =>
