@@ -40,6 +40,15 @@ function parseIsoDate(raw) {
   return Number.isFinite(d.getTime()) ? d.toISOString() : null;
 }
 
+function parseLikeTokens(raw) {
+  return String(raw || "")
+    .toLowerCase()
+    .split(/[\s|,;]+/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
 /**
  * Register platform-scoped admin routes.
  * Scope: global visibility across all tenants/worlds for owner/admin roles.
@@ -225,10 +234,10 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
 
     const limit = parseLimit(req?.query?.limit, 50);
     const offset = parseOffset(req?.query?.offset);
-    const actionLike = String(req?.query?.action || "").trim().toLowerCase();
+    const actionTokens = parseLikeTokens(req?.query?.action);
     const actorLike = String(req?.query?.actor || "").trim().toLowerCase();
     const tenantLike = String(req?.query?.tenant || "").trim().toLowerCase();
-    const qLike = String(req?.query?.q || "").trim().toLowerCase();
+    const qTokens = parseLikeTokens(req?.query?.q);
     const fromIso = parseIsoDate(req?.query?.from);
     const toIso = parseIsoDate(req?.query?.to);
 
@@ -236,9 +245,13 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
     const params = [];
     let i = 1;
 
-    if (actionLike) {
-      where.push(`lower(a.action) like $${i++}`);
-      params.push(`%${actionLike}%`);
+    if (actionTokens.length > 0) {
+      const parts = actionTokens.map((tok) => {
+        const p = `$${i++}`;
+        params.push(`%${tok}%`);
+        return `lower(a.action) like ${p}`;
+      });
+      where.push(`(${parts.join(" or ")})`);
     }
     if (actorLike) {
       where.push(`lower(coalesce(a.actor_user_id::text,'')) like $${i++}`);
@@ -256,10 +269,13 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
       where.push(`a.created_at <= $${i++}`);
       params.push(toIso);
     }
-    if (qLike) {
-      where.push(`(lower(coalesce(a.action,'')) like $${i} or lower(coalesce(a.actor_user_id::text,'')) like $${i} or lower(coalesce(t.slug,'')) like $${i})`);
-      params.push(`%${qLike}%`);
-      i += 1;
+    if (qTokens.length > 0) {
+      const qParts = qTokens.map((tok) => {
+        const p = `$${i++}`;
+        params.push(`%${tok}%`);
+        return `(lower(coalesce(a.action,'')) like ${p} or lower(coalesce(a.actor_user_id::text,'')) like ${p} or lower(coalesce(au.email,'')) like ${p} or lower(coalesce(t.slug,'')) like ${p})`;
+      });
+      where.push(`(${qParts.join(" or ")})`);
     }
 
     params.push(limit);

@@ -93,6 +93,48 @@ export function AuditPage() {
     setPage(0);
   }
 
+  function applyPreset(name: 'today' | 'critical' | 'login' | 'change') {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const toLocalInput = (d: Date) => {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    setQ('');
+    setActor('');
+    setTenant('');
+    setFrom('');
+    setTo('');
+    setPage(0);
+
+    if (name === 'today') {
+      setAction('');
+      setHideNoise(true);
+      setMergeRepeats(true);
+      setFrom(toLocalInput(startOfDay));
+      setTo(toLocalInput(now));
+      return;
+    }
+    if (name === 'critical') {
+      setAction('delete|deactivate|owner');
+      setQ('delete deactivate owner');
+      setHideNoise(true);
+      setMergeRepeats(false);
+      return;
+    }
+    if (name === 'login') {
+      setAction('user.login');
+      setHideNoise(false);
+      setMergeRepeats(true);
+      return;
+    }
+    setAction('update|change|membership');
+    setQ('update change membership');
+    setHideNoise(true);
+    setMergeRepeats(false);
+  }
+
   function exportCsv() {
     const rows = visibleItems.map((row: any) => ({
       created_at: row.created_at || '',
@@ -143,6 +185,18 @@ export function AuditPage() {
           </div>
         </div>
         <div style={{ marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button onClick={() => applyPreset('today')} disabled={loading}>
+            Bugun
+          </button>
+          <button onClick={() => applyPreset('critical')} disabled={loading}>
+            Kritik
+          </button>
+          <button onClick={() => applyPreset('login')} disabled={loading}>
+            Login
+          </button>
+          <button onClick={() => applyPreset('change')} disabled={loading}>
+            Degisiklik
+          </button>
           <button onClick={load} disabled={loading}>
             {loading ? 'Yenileniyor...' : 'Yenile'}
           </button>
