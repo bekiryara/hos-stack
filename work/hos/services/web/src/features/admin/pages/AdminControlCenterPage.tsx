@@ -67,7 +67,7 @@ export function AdminControlCenterPage() {
   return (
     <AdminLayout title="Kontrol Merkezi">
       <p className="hint">
-        Bu ekran oturum ve hizli erisim icindir. Sistem ozeti icin Pano ekranini kullanin.
+        Bu ekran sadece yonetim oturumu icindir.
       </p>
 
       <div className="card">
@@ -102,25 +102,12 @@ export function AdminControlCenterPage() {
           ) : (
             <div style={{ fontSize: '0.9rem', color: '#9ca3af' }}>Aktif admin oturumu yok.</div>
           )}
-          <div style={{ fontSize: '0.82rem', color: '#9ca3af' }}>
-            Oturum tokeni <code>hos_admin_token</code> anahtarinda tutulur.
-          </div>
           {adminErr ? (
             <div className="card error" style={{ marginTop: '0.75rem' }}>
               <div className="title">Hata</div>
               <pre>{JSON.stringify({ message: adminErr?.message, status: adminErr?.status, body: adminErr?.body }, null, 2)}</pre>
             </div>
           ) : null}
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="title">Hizli Erisim</div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <a href="/admin/dashboard">Sistem Durumu</a>
-          <a href="/admin/users">Kullanicilar</a>
-          <a href="/admin/memberships">Uyelikler</a>
-          <a href="/admin/audit">Denetim</a>
         </div>
       </div>
     </AdminLayout>
