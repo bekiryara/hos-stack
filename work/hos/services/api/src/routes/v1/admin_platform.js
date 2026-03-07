@@ -49,6 +49,107 @@ function parseLikeTokens(raw) {
     .slice(0, 8);
 }
 
+function parseListingStatus(raw) {
+  const s = String(raw || "all").trim().toLowerCase();
+  if (s === "all" || s === "draft" || s === "published" || s === "paused" || s === "archived") return s;
+  return "all";
+}
+
+function parseSafeText(raw, max = 120) {
+  const v = String(raw || "").trim();
+  if (!v) return "";
+  return v.slice(0, max);
+}
+
+const LISTING_FETCH_PER_STATUS = 1000;
+
+async function fetchPazarListings({ pazarBaseUrl, status, perPage }) {
+  const qs = new URLSearchParams();
+  qs.set("status", status);
+  qs.set("page", "1");
+  qs.set("per_page", String(perPage));
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(`${pazarBaseUrl}/api/v1/listings?${qs.toString()}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      const err = new Error(`pazar_listings_fetch_failed_${response.status}`);
+      err.status = response.status;
+      err.message = errorText || err.message;
+      throw err;
+    }
+
+    const data = await response.json();
+    if (!Array.isArray(data)) return [];
+    return data;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchPazarListingById({ pazarBaseUrl, listingId }) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(`${pazarBaseUrl}/api/v1/listings/${encodeURIComponent(listingId)}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      const err = new Error(`pazar_listing_fetch_failed_${response.status}`);
+      err.status = response.status;
+      err.message = errorText || err.message;
+      throw err;
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function collectCategoryMapFromTree(nodes, out = {}) {
+  if (!Array.isArray(nodes)) return out;
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    const id = String(node?.id || "").trim();
+    const title = String(node?.title || "").trim();
+    if (id) out[id] = title || id;
+    const children = Array.isArray(node?.children) ? node.children : [];
+    if (children.length > 0) collectCategoryMapFromTree(children, out);
+  }
+  return out;
+}
+
+async function fetchPazarCategoryTitleMap({ pazarBaseUrl }) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(`${pazarBaseUrl}/api/v1/categories`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) return {};
+    const data = await response.json();
+    return collectCategoryMapFromTree(data, {});
+  } catch {
+    return {};
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 /**
  * Register platform-scoped admin routes.
  * Scope: global visibility across all tenants/worlds for owner/admin roles.
@@ -128,6 +229,231 @@ export async function registerV1AdminPlatformRoutes(app, { db }) {
       memberships_deleted_24h: membershipsDeleted24h.rows?.[0]?.c ?? 0,
       latest_critical_events: latestCritical.rows ?? []
     });
+  });
+
+  app.get("/admin/platform/listings", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    const status = parseListingStatus(req?.query?.status);
+    const tenantId = parseSafeText(req?.query?.tenant_id, 64);
+    const q = parseSafeText(req?.query?.q, 120).toLowerCase();
+    const page = Math.max(1, Math.floor(Number(req?.query?.page ?? 1) || 1));
+    const perPage = parseLimit(req?.query?.per_page, 50);
+
+    const statusesToFetch = status === "all" ? ["draft", "published", "paused", "archived"] : [status];
+
+    let combined = [];
+    try {
+      const chunks = await Promise.all(
+        statusesToFetch.map((s) => fetchPazarListings({ pazarBaseUrl, status: s, perPage: LISTING_FETCH_PER_STATUS }))
+      );
+      combined = chunks.flat();
+    } catch (e) {
+      return reply.code(502).send({
+        error: "pazar_api_unavailable",
+        message: String(e?.message || e),
+      });
+    }
+
+    const seen = new Set();
+    let items = [];
+    for (const row of combined) {
+      const id = String(row?.id || "");
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      items.push(row);
+    }
+
+    if (tenantId) {
+      items = items.filter((x) => String(x?.tenant_id || "") === tenantId);
+    }
+
+    if (q) {
+      items = items.filter((x) => {
+        const title = String(x?.title || "").toLowerCase();
+        const id = String(x?.id || "").toLowerCase();
+        const tenant = String(x?.tenant_id || "").toLowerCase();
+        return title.includes(q) || id.includes(q) || tenant.includes(q);
+      });
+    }
+
+    items.sort((a, b) => {
+      const au = String(a?.updated_at || a?.created_at || "");
+      const bu = String(b?.updated_at || b?.created_at || "");
+      return bu.localeCompare(au);
+    });
+
+    const total = items.length;
+    const offset = (page - 1) * perPage;
+    const paged = items.slice(offset, offset + perPage);
+
+    const tenantIds = Array.from(
+      new Set(
+        paged
+          .map((x) => String(x?.tenant_id || "").trim())
+          .filter(Boolean)
+      )
+    );
+    let tenantMap = {};
+    if (tenantIds.length > 0) {
+      const tenantsRes = await db.query(
+        "select id, slug, coalesce(display_name, name, slug) as tenant_name from tenants where id = any($1::uuid[])",
+        [tenantIds]
+      );
+      tenantMap = Object.fromEntries(
+        (tenantsRes.rows || []).map((t) => [String(t.id), { slug: t.slug, name: t.tenant_name }])
+      );
+    }
+    const categoryTitleMap = await fetchPazarCategoryTitleMap({ pazarBaseUrl });
+    const enriched = paged.map((row) => {
+      const tid = String(row?.tenant_id || "");
+      const tenant = tenantMap[tid] || null;
+      const categoryId = String(row?.category_id || "").trim();
+      return {
+        ...row,
+        tenant_slug: tenant?.slug || null,
+        tenant_name: tenant?.name || null,
+        category_title: categoryId ? categoryTitleMap[categoryId] || null : null,
+      };
+    });
+
+    return reply.send({
+      items: enriched,
+      page,
+      per_page: perPage,
+      total,
+      statuses: statusesToFetch,
+    });
+  });
+
+  app.get("/admin/platform/listings/overview", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    const statuses = ["draft", "published", "paused", "archived"];
+    let combined = [];
+    try {
+      const chunks = await Promise.all(
+        statuses.map((s) => fetchPazarListings({ pazarBaseUrl, status: s, perPage: LISTING_FETCH_PER_STATUS }))
+      );
+      combined = chunks.flat();
+    } catch (e) {
+      return reply.code(502).send({
+        error: "pazar_api_unavailable",
+        message: String(e?.message || e),
+      });
+    }
+
+    const seen = new Set();
+    let items = [];
+    for (const row of combined) {
+      const id = String(row?.id || "");
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      items.push(row);
+    }
+
+    const counts = { draft: 0, published: 0, paused: 0, archived: 0 };
+    for (const row of items) {
+      const s = String(row?.status || "");
+      if (s === "draft") counts.draft += 1;
+      else if (s === "published") counts.published += 1;
+      else if (s === "paused") counts.paused += 1;
+      else if (s === "archived") counts.archived += 1;
+    }
+
+    const lifecycle24h = await db.query(
+      "select count(*)::int as total_24h, count(*) filter (where metadata->>'action' = 'publish')::int as publish_24h, count(*) filter (where metadata->>'action' = 'pause')::int as pause_24h, count(*) filter (where metadata->>'action' = 'archive')::int as archive_24h, count(*) filter (where metadata->>'action' = 'delete')::int as delete_24h from audit_events where action = 'listing.lifecycle.platform' and created_at >= now() - interval '24 hours'"
+    );
+
+    return reply.send({
+      total: items.length,
+      draft: counts.draft,
+      published: counts.published,
+      paused: counts.paused,
+      archived: counts.archived,
+      lifecycle_24h_total: lifecycle24h.rows?.[0]?.total_24h ?? 0,
+      lifecycle_24h_publish: lifecycle24h.rows?.[0]?.publish_24h ?? 0,
+      lifecycle_24h_pause: lifecycle24h.rows?.[0]?.pause_24h ?? 0,
+      lifecycle_24h_archive: lifecycle24h.rows?.[0]?.archive_24h ?? 0,
+      lifecycle_24h_delete: lifecycle24h.rows?.[0]?.delete_24h ?? 0,
+    });
+  });
+
+  app.post("/admin/platform/listings/:id/lifecycle", async (req, reply) => {
+    const payload = requireRole(req, reply, ["owner", "admin"]);
+    if (!payload) return;
+
+    const listingId = String(req.params?.id || "").trim();
+    if (!listingId) return reply.code(400).send({ error: "invalid_listing_id" });
+
+    const action = String(req?.body?.action || "").trim().toLowerCase();
+    if (!["publish", "pause", "archive", "delete"].includes(action)) {
+      return reply.code(400).send({ error: "invalid_action" });
+    }
+
+    const pazarBaseUrl = process.env.PAZAR_API_BASE_URL || "http://pazar-app:80";
+    let listing = null;
+    try {
+      listing = await fetchPazarListingById({ pazarBaseUrl, listingId });
+    } catch (e) {
+      const status = Number(e?.status || 502);
+      if (status === 404) return reply.code(404).send({ error: "listing_not_found" });
+      return reply.code(502).send({ error: "pazar_api_unavailable", message: String(e?.message || e) });
+    }
+
+    const authHeader = req.headers?.authorization ? String(req.headers.authorization) : "";
+    if (!authHeader) return reply.code(401).send({ error: "unauthorized" });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    let response = null;
+    let bodyText = "";
+    let out = null;
+    try {
+      response = await fetch(`${pazarBaseUrl}/api/v1/listings/${encodeURIComponent(listingId)}/admin-transition`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify({ action }),
+        signal: controller.signal,
+      });
+      bodyText = await response.text();
+      try {
+        out = bodyText ? JSON.parse(bodyText) : null;
+      } catch {
+        out = { raw: bodyText };
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!response?.ok) {
+      return reply.code(response?.status || 502).send(out || { error: "transition_failed" });
+    }
+
+    await audit(db, {
+      action: "listing.lifecycle.platform",
+      tenantId: String(listing?.tenant_id || payload.tenantId || ""),
+      actorUserId: payload.sub,
+      metadata: {
+        listingId,
+        listingTitle: String(listing?.title || ""),
+        listingTenantId: String(listing?.tenant_id || ""),
+        prevStatus: String(listing?.status || ""),
+        action,
+        nextStatus: String(out?.status || (action === "delete" ? "deleted" : "")),
+        deleted: Boolean(out?.deleted || false),
+      },
+    });
+
+    return reply.send({ ok: true, item: out });
   });
 
   app.get("/admin/platform/tenants", async (req, reply) => {

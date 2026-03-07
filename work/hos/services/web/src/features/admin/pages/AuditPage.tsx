@@ -7,6 +7,7 @@ const PAGE_SIZE = 100;
 const NOISE_ACTIONS = new Set(['user.login', 'user.login.admin', 'user.update.admin']);
 const CRITICAL_ACTION_KEYWORDS = ['delete', 'deactivate', 'suspend', 'owner', 'role.change', 'membership.delete'];
 const EXTRA_NOISE_ACTIONS = new Set(['user.login.google']);
+type AuditTab = 'all' | 'listing' | 'user' | 'membership';
 
 function toTime(v: any): number {
   const d = new Date(String(v || ''));
@@ -18,17 +19,79 @@ function isCriticalAction(action: any): boolean {
   return CRITICAL_ACTION_KEYWORDS.some((k) => a.includes(k));
 }
 
+function actionDomain(action: any): AuditTab | 'other' {
+  const a = String(action || '').toLowerCase();
+  if (a.startsWith('listing.')) return 'listing';
+  if (a.startsWith('user.')) return 'user';
+  if (a.startsWith('membership.')) return 'membership';
+  return 'other';
+}
+
+function actionLabelTr(action: any): string {
+  const a = String(action || '');
+  const map: Record<string, string> = {
+    'listing.lifecycle.platform': 'Ilan durum degisikligi',
+    'user.role.change.platform': 'Kullanici rol degisikligi',
+    'user.deactivate.platform': 'Kullanici pasife alindi',
+    'user.delete.platform': 'Kullanici kalici silindi',
+    'membership.update.platform': 'Uyelik guncellendi',
+    'membership.deactivate.platform': 'Uyelik pasife alindi',
+    'membership.delete.platform': 'Uyelik kalici silindi',
+    'user.login.admin': 'Admin girisi',
+  };
+  return map[a] || a || '-';
+}
+
 function normalizeMeta(v: any): any {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
   return v;
 }
 
 function targetSummary(row: any): string | null {
+  if (actionDomain(row?.action) === 'listing') return null;
   const m = normalizeMeta(row?.metadata);
   const targetUser = m.targetEmail || m.userEmail || m.targetUserId || m.userId || null;
   const targetTenant = m.tenantSlug || m.tenant_id || row?.tenant_slug || row?.tenant_id || null;
   if (!targetUser && !targetTenant) return null;
   return `hedef: ${targetUser || '-'} | firma: ${targetTenant || '-'}`;
+}
+
+function rowSummaryTr(row: any): string | null {
+  const action = String(row?.action || '');
+  const m = normalizeMeta(row?.metadata);
+
+  if (action === 'listing.lifecycle.platform') {
+    const listingId = String(m.listingId || '-');
+    const listingTitle = String(m.listingTitle || '').trim();
+    const prevStatus = String(m.prevStatus || '-');
+    const nextStatus = String(m.nextStatus || '-');
+    const actionTr =
+      String(m.action || '') === 'pause'
+        ? 'Durdur'
+        : String(m.action || '') === 'publish'
+          ? 'Yayina Al'
+          : String(m.action || '') === 'archive'
+            ? 'Arsivle'
+            : String(m.action || '') === 'delete'
+              ? 'Kalici Sil'
+            : String(m.action || '-');
+    const listingPart = listingTitle ? `${listingTitle} (${listingId})` : listingId;
+    return `Ilan: ${listingPart} | Islem: ${actionTr} | Durum: ${prevStatus} -> ${nextStatus}`;
+  }
+
+  if (action.startsWith('user.')) {
+    const target = String(m.targetEmail || m.userEmail || m.targetUserId || m.userId || '-');
+    return `Kullanici: ${target}`;
+  }
+
+  if (action.startsWith('membership.')) {
+    const target = String(m.targetEmail || m.userEmail || m.targetUserId || '-');
+    const role = String(m.role || '-');
+    const status = String(m.status || '-');
+    return `Uyelik hedefi: ${target} | Rol: ${role} | Durum: ${status}`;
+  }
+
+  return null;
 }
 
 export function AuditPage() {
@@ -47,6 +110,7 @@ export function AuditPage() {
   const [hideNoise, setHideNoise] = useState((initialSearch.get('hideNoise') || '1') !== '0');
   const [mergeRepeats, setMergeRepeats] = useState((initialSearch.get('mergeRepeats') || '1') !== '0');
   const [criticalOnly, setCriticalOnly] = useState((initialSearch.get('criticalOnly') || '0') === '1');
+  const [tab, setTab] = useState<AuditTab>((initialSearch.get('tab') as AuditTab) || 'all');
   const [page, setPage] = useState(initialPage);
   const [hasMore, setHasMore] = useState(false);
 
@@ -80,7 +144,7 @@ export function AuditPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats, criticalOnly]);
+  }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats, criticalOnly, tab]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -93,18 +157,26 @@ export function AuditPage() {
     if (!hideNoise) params.set('hideNoise', '0');
     if (!mergeRepeats) params.set('mergeRepeats', '0');
     if (criticalOnly) params.set('criticalOnly', '1');
+    if (tab !== 'all') params.set('tab', tab);
     if (page > 0) params.set('page', String(page));
     const nextUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
     window.history.replaceState({}, '', nextUrl);
-  }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats, criticalOnly, page]);
+  }, [q, action, actor, tenant, from, to, hideNoise, mergeRepeats, criticalOnly, tab, page]);
 
   const visibleItems = React.useMemo(() => {
     const noNoise = hideNoise ? items.filter((x: any) => !NOISE_ACTIONS.has(String(x?.action || ''))) : items;
+    const byTab =
+      tab === 'all'
+        ? noNoise
+        : noNoise.filter((x: any) => {
+            const d = actionDomain(x?.action);
+            return tab === d;
+          });
     const filtered = criticalOnly
-      ? noNoise.filter((x: any) => {
+      ? byTab.filter((x: any) => {
           return isCriticalAction(x?.action);
         })
-      : noNoise;
+      : byTab;
     if (!mergeRepeats) return filtered;
     const out: any[] = [];
     for (const row of filtered) {
@@ -129,7 +201,7 @@ export function AuditPage() {
       }
     }
     return out;
-  }, [items, hideNoise, mergeRepeats, criticalOnly]);
+  }, [items, hideNoise, mergeRepeats, criticalOnly, tab]);
 
   const criticalItems = React.useMemo(
     () => visibleItems.filter((x: any) => isCriticalAction(x?.action)),
@@ -151,6 +223,7 @@ export function AuditPage() {
     setHideNoise(true);
     setMergeRepeats(true);
     setCriticalOnly(false);
+    setTab('all');
     setPage(0);
   }
 
@@ -229,10 +302,16 @@ export function AuditPage() {
     <AdminLayout title="Denetim">
       <div className="card">
         <div className="title">Denetim Kayitlari</div>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+          <button onClick={() => setTab('all')} disabled={tab === 'all'}>Tum Isler</button>
+          <button onClick={() => setTab('listing')} disabled={tab === 'listing'}>Ilan</button>
+          <button onClick={() => setTab('user')} disabled={tab === 'user'}>Kullanici</button>
+          <button onClick={() => setTab('membership')} disabled={tab === 'membership'}>Uyelik</button>
+        </div>
         <div style={{ display: 'grid', gap: '0.5rem', marginBottom: '0.75rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '0.5rem' }}>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Genel arama" />
-            <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Islem (action)" />
+            <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Islem kodu (ornek: listing.lifecycle.platform)" />
             <input value={actor} onChange={(e) => setActor(e.target.value)} placeholder="Islem yapan (actor)" />
             <input value={tenant} onChange={(e) => setTenant(e.target.value)} placeholder="Firma (slug)" />
           </div>
@@ -295,8 +374,8 @@ export function AuditPage() {
         {visibleItems.length > 0 ? (
           <div style={{ display: 'grid', gap: '0.6rem' }}>
             {criticalItems.length > 0 ? (
-              <div className="card" style={{ padding: '0.7rem 0.8rem', borderColor: 'rgba(240,148,148,.32)' }}>
-                <div style={{ fontWeight: 700, color: '#e9b4b4', marginBottom: '0.5rem' }}>
+              <div className="card" style={{ padding: '0.7rem 0.8rem', borderColor: 'rgba(148,163,184,.28)', background: 'rgba(30,41,59,.28)' }}>
+                <div style={{ fontWeight: 700, color: '#cbd5e1', marginBottom: '0.5rem' }}>
                   Kritik Kayitlar ({criticalItems.length})
                 </div>
                 <div style={{ display: 'grid', gap: '0.5rem' }}>
@@ -304,9 +383,9 @@ export function AuditPage() {
                     <div key={`critical-${row.id}`} className="card" style={{ padding: '0.6rem 0.7rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
                         <strong>
-                          {row.action || '-'}
+                          {actionLabelTr(row.action)}
                           {row.repeat_count > 1 ? (
-                            <span style={{ marginLeft: '0.4rem', color: '#e8c784', fontWeight: 500 }}>x{row.repeat_count}</span>
+                            <span style={{ marginLeft: '0.4rem', color: '#cbd5e1', fontWeight: 500 }}>x{row.repeat_count}</span>
                           ) : null}
                         </strong>
                         <span style={{ color: '#9ca3af' }}>
@@ -324,12 +403,22 @@ export function AuditPage() {
                           {targetSummary(row)}
                         </div>
                       ) : null}
+                      {rowSummaryTr(row) ? (
+                        <div style={{ fontSize: '0.9rem', marginTop: '0.25rem', color: '#d1d5db' }}>
+                          {rowSummaryTr(row)}
+                        </div>
+                      ) : null}
                       {row.repeat_count > 1 ? (
                           <div style={{ fontSize: '0.84rem', marginTop: '0.25rem', color: '#9ca3af' }}>
                             zaman araligi: {row.first_created_at || '-'} {'->'} {row.last_created_at || '-'}
                           </div>
                       ) : null}
-                      {row.metadata ? <pre style={{ marginTop: '0.4rem' }}>{JSON.stringify(row.metadata, null, 2)}</pre> : null}
+                      {row.metadata ? (
+                        <details style={{ marginTop: '0.4rem' }}>
+                          <summary>Ham detay</summary>
+                          <pre>{JSON.stringify(row.metadata, null, 2)}</pre>
+                        </details>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -340,7 +429,7 @@ export function AuditPage() {
               <div key={row.id} className="card" style={{ padding: '0.6rem 0.8rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <strong>
-                    {row.action || '-'}
+                    {actionLabelTr(row.action)}
                     {row.repeat_count > 1 ? (
                       <span style={{ marginLeft: '0.4rem', color: '#e8c784', fontWeight: 500 }}>x{row.repeat_count}</span>
                     ) : null}
@@ -358,12 +447,22 @@ export function AuditPage() {
                     {targetSummary(row)}
                   </div>
                 ) : null}
+                {rowSummaryTr(row) ? (
+                  <div style={{ fontSize: '0.9rem', marginTop: '0.25rem', color: '#d1d5db' }}>
+                    {rowSummaryTr(row)}
+                  </div>
+                ) : null}
                 {row.repeat_count > 1 ? (
                   <div style={{ fontSize: '0.84rem', marginTop: '0.25rem', color: '#9ca3af' }}>
                     zaman araligi: {row.first_created_at || '-'} {'->'} {row.last_created_at || '-'}
                   </div>
                 ) : null}
-                {row.metadata ? <pre style={{ marginTop: '0.4rem' }}>{JSON.stringify(row.metadata, null, 2)}</pre> : null}
+                {row.metadata ? (
+                  <details style={{ marginTop: '0.4rem' }}>
+                    <summary>Ham detay</summary>
+                    <pre>{JSON.stringify(row.metadata, null, 2)}</pre>
+                  </details>
+                ) : null}
               </div>
             ))}
           </div>

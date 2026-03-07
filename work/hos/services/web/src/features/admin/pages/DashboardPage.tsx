@@ -1,11 +1,12 @@
 import React from 'react';
 import { AdminLayout } from '../layout/AdminLayout';
-import { adminActionCenter, adminOverview } from '../api/adminClient';
+import { adminActionCenter, adminListingsOverview, adminOverview } from '../api/adminClient';
 import { trAdminError } from '../utils/opsSafety';
 
 export function DashboardPage() {
   const [loading, setLoading] = React.useState(false);
   const [overview, setOverview] = React.useState<any>(null);
+  const [listingOverview, setListingOverview] = React.useState<any>(null);
   const [actionCenter, setActionCenter] = React.useState<any>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -20,8 +21,9 @@ export function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [o, ac] = await Promise.all([adminOverview(token), adminActionCenter(token)]);
+      const [o, lo, ac] = await Promise.all([adminOverview(token), adminListingsOverview(token), adminActionCenter(token)]);
       setOverview(o);
+      setListingOverview(lo);
       setActionCenter(ac);
     } catch (e: any) {
       setError(trAdminError(e?.body?.error || e?.message, 'Sistem durumu alinamadi'));
@@ -59,6 +61,40 @@ export function DashboardPage() {
       </div>
 
       <div className="card">
+        <div className="title">Ilan Gostergeleri</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.6rem' }}>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Toplam Ilan</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>{listingOverview?.total ?? 0}</div>
+          </div>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Yayinda</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>{listingOverview?.published ?? 0}</div>
+          </div>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Durduruldu</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>{listingOverview?.paused ?? 0}</div>
+          </div>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Taslak / Arsiv</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>
+              {(listingOverview?.draft ?? 0)} / {(listingOverview?.archived ?? 0)}
+            </div>
+          </div>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Ilan Islem (24s)</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700 }}>{listingOverview?.lifecycle_24h_total ?? 0}</div>
+          </div>
+          <div className="card" style={{ padding: '0.75rem' }}>
+            <div style={{ color: '#9ca3af', fontSize: '0.86rem' }}>Yayin/Durdur/Arsiv/Sil (24s)</div>
+            <div style={{ fontSize: '1rem', fontWeight: 700 }}>
+              {(listingOverview?.lifecycle_24h_publish ?? 0)} / {(listingOverview?.lifecycle_24h_pause ?? 0)} / {(listingOverview?.lifecycle_24h_archive ?? 0)} / {(listingOverview?.lifecycle_24h_delete ?? 0)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
         <div className="title">Aksiyon Merkezi</div>
         <div style={{ marginBottom: '0.75rem' }}>
           <button onClick={load} disabled={loading}>
@@ -88,6 +124,7 @@ export function DashboardPage() {
 
         <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <a href="/admin/worlds">Dunyalar</a>
+          <a href="/admin/listings">Ilanlar</a>
           <a href="/admin/users">Kullanicilar</a>
           <a href="/admin/memberships">Uyelikler</a>
           <a href="/admin/audit">Denetim</a>

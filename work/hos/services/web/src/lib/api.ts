@@ -131,3 +131,20 @@ export async function adminOverview(token: string) {
 export async function adminActionCenter(token: string) {
   return await fetchJson('/api/v1/admin/platform/action-center', undefined, token);
 }
+
+export async function adminListings(
+  token: string,
+  opts: { status?: 'all' | 'draft' | 'published' | 'paused' | 'archived'; tenant_id?: string; q?: string; page?: number; per_page?: number } = {}
+) {
+  const qs = new URLSearchParams();
+  qs.set('status', String(opts.status || 'all'));
+  qs.set('page', String(opts.page ?? 1));
+  qs.set('per_page', String(opts.per_page ?? 50));
+  if (opts.tenant_id) qs.set('tenant_id', opts.tenant_id);
+  if (opts.q) qs.set('q', opts.q);
+  return await fetchJson(`/api/v1/admin/platform/listings?${qs}`, undefined, token);
+}
+
+export async function adminListingsOverview(token: string) {
+  return await fetchJson('/api/v1/admin/platform/listings/overview', undefined, token);
+}

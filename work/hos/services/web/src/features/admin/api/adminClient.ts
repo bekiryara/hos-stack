@@ -1,6 +1,8 @@
 import {
   adminActionCenter as apiAdminActionCenter,
   adminAudit as apiAdminAudit,
+  adminListings as apiAdminListings,
+  adminListingsOverview as apiAdminListingsOverview,
   adminMemberships as apiAdminMemberships,
   adminOverview as apiAdminOverview,
   adminUsers as apiAdminUsers,
@@ -65,6 +67,25 @@ export async function adminOverview(token: string) {
 export async function adminActionCenter(token: string) {
   try {
     return await apiAdminActionCenter(token);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminListings(
+  token: string,
+  opts?: { status?: 'all' | 'draft' | 'published' | 'paused' | 'archived'; tenant_id?: string; q?: string; page?: number; per_page?: number }
+) {
+  try {
+    return await apiAdminListings(token, opts);
+  } catch (error: any) {
+    rethrowWithAuthHandling(error);
+  }
+}
+
+export async function adminListingsOverview(token: string) {
+  try {
+    return await apiAdminListingsOverview(token);
   } catch (error: any) {
     rethrowWithAuthHandling(error);
   }
@@ -197,6 +218,39 @@ export async function adminUserLifecycle(token: string, userId: string, action: 
 
   if (!resp.ok) {
     const err: any = new Error(`POST /api/v1/admin/platform/users/:id/lifecycle failed: ${resp.status}`);
+    err.status = resp.status;
+    err.body = json;
+    rethrowWithAuthHandling(err);
+  }
+  return json;
+}
+
+export async function adminListingLifecycle(
+  token: string,
+  listingId: string,
+  action: 'publish' | 'pause' | 'archive' | 'delete'
+) {
+  const resp = await fetch(`/api/v1/admin/platform/listings/${encodeURIComponent(listingId)}/lifecycle`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ action }),
+    cache: 'no-store',
+  });
+
+  const text = await resp.text();
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = { raw: text };
+  }
+
+  if (!resp.ok) {
+    const err: any = new Error(`POST /api/v1/admin/platform/listings/:id/lifecycle failed: ${resp.status}`);
     err.status = resp.status;
     err.body = json;
     rethrowWithAuthHandling(err);

@@ -12,6 +12,12 @@ export function trAdminError(input: unknown, fallback = 'Islem tamamlanamadi.'):
   if (raw.includes('cannot_delete_current_admin_session')) return 'Acik olan kendi admin oturum hesabinizi bu ekrandan silemezsiniz.';
   if (raw.includes('cannot_delete_user_with_permits')) return 'Bu kullaniciya bagli kayitlar oldugu icin kalici silme engellendi. Once pasife alin.';
   if (raw.includes('invalid_credentials')) return 'E-posta veya sifre hatali.';
+  if (raw.includes('listing_not_found')) return 'Ilan bulunamadi.';
+  if (raw.includes('invalid_listing_id')) return 'Gecersiz ilan kimligi.';
+  if (raw.includes('invalid_action')) return 'Gecersiz islem secimi.';
+  if (raw.includes('INVALID_TRANSITION') || raw.includes('invalid_transition')) return 'Bu durumdan secilen islem uygulanamaz.';
+  if (raw.includes('pazar_api_unavailable')) return 'Pazar servisine su anda erisilemiyor.';
+  if (raw.includes('listing_has_transactions')) return 'Bu ilana bagli siparis/kiralama/rezervasyon kayitlari oldugu icin kalici silme engellendi.';
   return raw;
 }
 

@@ -267,6 +267,63 @@ if (!function_exists('pazar_listing_write_owned_listing_or_error')) {
     }
 }
 
+if (!function_exists('pazar_admin_auth_payload_or_error')) {
+    function pazar_admin_auth_payload_or_error(\Illuminate\Http\Request $request) {
+        $authHeader = $request->header('Authorization');
+        if (!$authHeader || !preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
+            return response()->json([
+                'error' => 'UNAUTHORIZED',
+                'message' => 'Bearer token is required'
+            ], 401);
+        }
+
+        $token = $matches[1];
+        $jwtSecret = env('HOS_JWT_SECRET') ?: env('JWT_SECRET');
+        if ($jwtSecret === null || $jwtSecret === '') {
+            $jwtSecretFile = env('HOS_JWT_SECRET_FILE') ?: env('JWT_SECRET_FILE');
+            if ($jwtSecretFile && is_string($jwtSecretFile) && file_exists($jwtSecretFile)) {
+                $jwtSecret = trim((string) @file_get_contents($jwtSecretFile));
+            }
+        }
+
+        if (!$jwtSecret || strlen($jwtSecret) < 32) {
+            return response()->json([
+                'error' => 'VALIDATION_ERROR',
+                'message' => 'JWT secret not configured (HOS_JWT_SECRET or JWT_SECRET required)'
+            ], 500);
+        }
+
+        try {
+            $parts = explode('.', $token);
+            if (count($parts) !== 3) throw new \Exception('Invalid token format');
+
+            $payloadB64 = $parts[1];
+            $payloadB64Padded = str_pad(strtr($payloadB64, '-_', '+/'), strlen($payloadB64) % 4, '=', STR_PAD_RIGHT);
+            $payloadJson = base64_decode($payloadB64Padded, true);
+            if (!$payloadJson) throw new \Exception('Invalid payload encoding');
+
+            $payload = json_decode($payloadJson, true);
+            if (!$payload || !is_array($payload)) throw new \Exception('Invalid payload structure');
+            if (isset($payload['exp']) && $payload['exp'] < time()) throw new \Exception('Token expired');
+
+            $headerB64 = $parts[0];
+            $signatureB64 = $parts[2];
+            $data = $headerB64 . '.' . $payloadB64;
+            $expectedSignature = hash_hmac('sha256', $data, $jwtSecret, true);
+            $expectedSignatureB64 = strtr(rtrim(base64_encode($expectedSignature), '='), '+/', '-_');
+
+            if (!hash_equals($expectedSignatureB64, $signatureB64)) throw new \Exception('Invalid signature');
+
+            return $payload;
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'UNAUTHORIZED',
+                'message' => 'Invalid or expired token'
+            ], 401);
+        }
+    }
+}
+
 // Supply Spine Endpoints (WP-3)
 // POST /v1/listings - Create DRAFT listing
 // WP-8: STORE persona requires X-Active-Tenant-Id header (persona.scope:store)
@@ -467,5 +524,117 @@ Route::middleware($publishListingMiddleware)->post('/v1/listings/{id}/publish', 
     
     $updated = DB::table('listings')->where('id', $id)->first();
     
+    return response()->json(pazar_listing_write_response($updated));
+});
+
+// POST /v1/listings/{id}/admin-transition - Platform admin listing lifecycle transitions
+// Allowed actions:
+// - publish: draft|paused -> published
+// - pause: published -> paused
+// - archive: draft|paused -> archived
+// - delete: permanently delete listing when no transactions exist
+Route::middleware(['auth.any', 'auth.ctx'])->post('/v1/listings/{id}/admin-transition', function ($id, \Illuminate\Http\Request $request) {
+    $payload = pazar_admin_auth_payload_or_error($request);
+    if ($payload instanceof \Illuminate\Http\JsonResponse) return $payload;
+
+    $role = strtolower((string) ($payload['role'] ?? ''));
+    if (!in_array($role, ['owner', 'admin'], true)) {
+        return response()->json([
+            'error' => 'FORBIDDEN_SCOPE',
+            'message' => 'Admin role is required'
+        ], 403);
+    }
+
+    $validated = $request->validate([
+        'action' => 'required|string|in:publish,pause,archive,delete'
+    ]);
+
+    $listing = DB::table('listings')->where('id', (string) $id)->first();
+    if (!$listing) {
+        return response()->json([
+            'error' => 'listing_not_found',
+            'message' => "Listing with id {$id} not found"
+        ], 404);
+    }
+
+    $action = (string) $validated['action'];
+    $currentStatus = (string) ($listing->status ?? 'draft');
+    if ($action === 'delete') {
+        $ordersCount = Schema::hasTable('orders')
+            ? (int) DB::table('orders')->where('listing_id', (string) $id)->count()
+            : 0;
+        $rentalsCount = Schema::hasTable('rentals')
+            ? (int) DB::table('rentals')->where('listing_id', (string) $id)->count()
+            : 0;
+        $reservationsCount = Schema::hasTable('reservations')
+            ? (int) DB::table('reservations')->where('listing_id', (string) $id)->count()
+            : 0;
+
+        if (($ordersCount + $rentalsCount + $reservationsCount) > 0) {
+            return response()->json([
+                'error' => 'listing_has_transactions',
+                'message' => 'Listing has transaction records and cannot be deleted',
+                'counts' => [
+                    'orders' => $ordersCount,
+                    'rentals' => $rentalsCount,
+                    'reservations' => $reservationsCount,
+                ],
+            ], 409);
+        }
+
+        DB::transaction(function () use ($id) {
+            if (Schema::hasTable('listing_service_areas')) {
+                DB::table('listing_service_areas')->where('listing_id', (string) $id)->delete();
+            }
+            if (Schema::hasTable('listing_offers')) {
+                DB::table('listing_offers')->where('listing_id', (string) $id)->delete();
+            }
+            DB::table('listings')->where('id', (string) $id)->delete();
+        });
+
+        \Illuminate\Support\Facades\Log::info('listing.admin_delete', [
+            'listing_id' => (string) $id,
+            'actor_user_id' => (string) ($payload['sub'] ?? '')
+        ]);
+
+        return response()->json([
+            'id' => (string) $id,
+            'status' => 'deleted',
+            'deleted' => true,
+        ]);
+    }
+
+    $allow = [
+        'draft' => ['publish' => 'published', 'archive' => 'archived'],
+        'published' => ['pause' => 'paused'],
+        'paused' => ['publish' => 'published', 'archive' => 'archived'],
+        'archived' => []
+    ];
+
+    $nextStatus = $allow[$currentStatus][$action] ?? null;
+    if (!$nextStatus) {
+        return response()->json([
+            'error' => 'INVALID_TRANSITION',
+            'message' => "Action '{$action}' is not allowed from status '{$currentStatus}'",
+            'allowed_actions' => array_keys($allow[$currentStatus] ?? [])
+        ], 422);
+    }
+
+    DB::table('listings')
+        ->where('id', (string) $id)
+        ->update([
+            'status' => $nextStatus,
+            'updated_at' => now()
+        ]);
+
+    $updated = DB::table('listings')->where('id', (string) $id)->first();
+    \Illuminate\Support\Facades\Log::info('listing.admin_transition', [
+        'listing_id' => (string) $id,
+        'action' => $action,
+        'from' => $currentStatus,
+        'to' => $nextStatus,
+        'actor_user_id' => (string) ($payload['sub'] ?? '')
+    ]);
+
     return response()->json(pazar_listing_write_response($updated));
 });
