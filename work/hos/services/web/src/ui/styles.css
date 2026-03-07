@@ -129,13 +129,16 @@ code {
 
 /* Admin theme: docker-desktop-like dark shell */
 [data-marker="hos-admin-layout"] {
-  background: #0f1117;
+  background:
+    radial-gradient(900px 520px at 8% -8%, rgba(120, 140, 170, 0.09), transparent 60%),
+    #0f1218;
   min-height: 100vh;
+  color: #e7ebf3;
 }
 
 [data-marker="hos-admin-layout"] .admin-top {
-  background: #171a22;
-  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: #141923;
+  border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
 [data-marker="hos-admin-layout"] .admin-main {
@@ -158,8 +161,8 @@ code {
 }
 
 [data-marker="hos-admin-layout"] .admin-sidebar-card {
-  background: #151923;
-  border-color: rgba(255,255,255,.08);
+  background: #141a24;
+  border-color: rgba(255,255,255,.07);
   position: sticky;
   top: 74px;
 }
@@ -173,28 +176,66 @@ code {
   display: block;
   padding: 9px 10px;
   border-radius: 9px;
-  color: #cdd3df;
+  color: #c5cedc;
   border: 1px solid transparent;
   background: transparent;
   text-decoration: none;
 }
 
 [data-marker="hos-admin-layout"] .admin-nav-link:hover {
-  background: rgba(255,255,255,.05);
-  border-color: rgba(255,255,255,.09);
+  background: rgba(255,255,255,.035);
+  border-color: rgba(255,255,255,.08);
   text-decoration: none;
 }
 
 [data-marker="hos-admin-layout"] .admin-nav-link.active {
-  background: rgba(96,165,250,.14);
-  border-color: rgba(96,165,250,.45);
-  color: #dbeafe;
+  background: rgba(125, 154, 193, 0.18);
+  border-color: rgba(125, 154, 193, 0.35);
+  color: #e8edf7;
 }
 
 [data-marker="hos-admin-layout"] .card {
-  background: #171b25;
-  border-color: rgba(255,255,255,.08);
+  background: #161c27;
+  border-color: rgba(255,255,255,.07);
   border-radius: 12px;
+}
+
+[data-marker="hos-admin-layout"] .card .card {
+  background: #131924;
+  border-color: rgba(255,255,255,.06);
+}
+
+[data-marker="hos-admin-layout"] button {
+  background: #202938;
+  border-color: rgba(255,255,255,.12);
+  color: #e8ecf5;
+}
+
+[data-marker="hos-admin-layout"] button:hover:not(:disabled) {
+  background: #263244;
+}
+
+[data-marker="hos-admin-layout"] input,
+[data-marker="hos-admin-layout"] select,
+[data-marker="hos-admin-layout"] textarea {
+  background: #101620;
+  border-color: rgba(255,255,255,.12);
+  color: #e9edf6;
+}
+
+[data-marker="hos-admin-layout"] input:focus,
+[data-marker="hos-admin-layout"] select:focus,
+[data-marker="hos-admin-layout"] textarea:focus {
+  border-color: rgba(138, 180, 248, 0.55);
+  box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.14);
+}
+
+[data-marker="hos-admin-layout"] a {
+  color: #8ab4f8;
+}
+
+[data-marker="hos-admin-layout"] pre {
+  color: #aeb7c8;
 }
 
 @media (max-width: 940px) {

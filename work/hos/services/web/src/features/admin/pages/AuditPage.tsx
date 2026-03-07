@@ -295,8 +295,8 @@ export function AuditPage() {
         {visibleItems.length > 0 ? (
           <div style={{ display: 'grid', gap: '0.6rem' }}>
             {criticalItems.length > 0 ? (
-              <div className="card" style={{ padding: '0.7rem 0.8rem', borderColor: 'rgba(248,113,113,.45)' }}>
-                <div style={{ fontWeight: 700, color: '#fca5a5', marginBottom: '0.5rem' }}>
+              <div className="card" style={{ padding: '0.7rem 0.8rem', borderColor: 'rgba(240,148,148,.32)' }}>
+                <div style={{ fontWeight: 700, color: '#e9b4b4', marginBottom: '0.5rem' }}>
                   Kritik Kayitlar ({criticalItems.length})
                 </div>
                 <div style={{ display: 'grid', gap: '0.5rem' }}>
@@ -306,7 +306,7 @@ export function AuditPage() {
                         <strong>
                           {row.action || '-'}
                           {row.repeat_count > 1 ? (
-                            <span style={{ marginLeft: '0.4rem', color: '#fbbf24', fontWeight: 500 }}>x{row.repeat_count}</span>
+                            <span style={{ marginLeft: '0.4rem', color: '#e8c784', fontWeight: 500 }}>x{row.repeat_count}</span>
                           ) : null}
                         </strong>
                         <span style={{ color: '#9ca3af' }}>
@@ -342,7 +342,7 @@ export function AuditPage() {
                   <strong>
                     {row.action || '-'}
                     {row.repeat_count > 1 ? (
-                      <span style={{ marginLeft: '0.4rem', color: '#fbbf24', fontWeight: 500 }}>x{row.repeat_count}</span>
+                      <span style={{ marginLeft: '0.4rem', color: '#e8c784', fontWeight: 500 }}>x{row.repeat_count}</span>
                     ) : null}
                   </strong>
                   <span style={{ color: '#9ca3af' }}>{row.created_at || '-'}</span>

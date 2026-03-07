@@ -20,7 +20,7 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
     <div className="page" data-marker="hos-admin-layout">
       <header className="top admin-top">
         <div className="brand">
-          H-OS Yonetim <span style={{ fontSize: '0.7rem', color: '#ff6b6b', fontWeight: 'normal' }}>(DEV)</span>
+          H-OS Yonetim <span style={{ fontSize: '0.7rem', color: '#93a0b8', fontWeight: 'normal' }}>(DEV)</span>
         </div>
         <div className="actions">
           {loggedIn ? <span style={{ color: '#9ca3af', fontSize: '0.85rem' }}>Oturum: {adminEmail || 'admin'}</span> : null}
